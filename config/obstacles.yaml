@@ -1,0 +1,24 @@
+# MoveIt PlanningScene primitives.  All poses use base_link coordinates from
+# the URDF (the legacy MuJoCo Y-up -> Z-up display conversion is not used).
+# Dimensions are full values, unlike MuJoCo's box/cylinder half-size fields.
+obstacles:
+  - id: obs_box1
+    shape: box
+    frame_id: base_link
+    position: [0.25, 0.243, 0.4]
+    dimensions: [0.08, 0.08, 0.16]
+  - id: obs_sphere1
+    shape: sphere
+    frame_id: base_link
+    position: [-0.25, 0.343, 0.6]
+    dimensions: [0.05]
+  - id: obs_cyl1
+    shape: cylinder
+    frame_id: base_link
+    position: [0.22, 0.30, 0.9]
+    dimensions: [0.16, 0.03]
+  - id: obs_box2
+    shape: box
+    frame_id: base_link
+    position: [-0.1, 0.15, 0.9]
+    dimensions: [0.10, 0.10, 0.10]

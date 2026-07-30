@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="ninezzhou">
+  <!-- Reuse the authoritative robot model and only add the demo control system. -->
+  <xacro:include filename="$(find ninezzhou)/urdf/ninezzhou.urdf" />
+  <xacro:include filename="ninezzhou.ros2_control.xacro" />
+  <xacro:ninezzhou_mock_ros2_control name="NineZzhouMockSystem" />
+</robot>

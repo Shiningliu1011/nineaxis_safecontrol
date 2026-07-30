@@ -1,0 +1,16 @@
+plan_transition:
+  ros__parameters:
+    # Safe quick-start: solve/plan only the first point and never command hardware.
+    max_points: 1
+    point_stride: 1
+    use_current_state: true
+    planning_pipeline: ompl
+    planner_id: RRTConnectkConfigDefault
+    planning_time_s: 10.0
+    planning_attempts: 5
+    velocity_scale: 0.2
+    acceleration_scale: 0.2
+    max_joint_delta: 0.15
+    execute_transition: false
+    execute_task_path: false
+    dry_run: true

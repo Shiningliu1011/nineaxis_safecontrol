@@ -566,4 +566,22 @@
       effort="50"
       velocity="1.5" />
   </joint>
+  <!--
+    MoveIt end-effector frame.  The legacy MuJoCo planner represented the
+    working point as Link9 plus 0.235 m on local +X; expressing it as a fixed
+    URDF frame lets MoveIt own FK and IK without a Python-side offset.
+  -->
+  <link
+    name="tool0" />
+  <joint
+    name="tool0_fixed"
+    type="fixed">
+    <origin
+      xyz="0.235 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="Link9" />
+    <child
+      link="tool0" />
+  </joint>
 </robot>

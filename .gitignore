@@ -1,5 +1,19 @@
+# Python
 __pycache__/
 *.pyc
 *.pyo
+*.egg-info/
+
+# ROS2 / colcon build artifacts
+build/
+install/
+log/
+
+# 生成文件
 output/
+
+# IDE
 .vscode/
+build/
+install/
+log/
