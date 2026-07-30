@@ -1,0 +1,9 @@
+moveit_setup_assistant_config:
+  URDF:
+    package: ninezzhou_moveit_config
+    relative_path: config/ninezzhou.urdf.xacro
+  SRDF:
+    relative_path: config/ninezzhou.srdf
+  CONFIG:
+    author_name: robot_safecontrol maintainers
+    author_email: maintainer@example.com

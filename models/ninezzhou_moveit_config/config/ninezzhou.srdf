@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<robot name="ninezzhou">
+  <virtual_joint name="world_joint" type="fixed" parent_frame="world" child_link="base_link"/>
+
+  <group name="arm">
+    <chain base_link="base_link" tip_link="tool0"/>
+  </group>
+
+  <group_state name="home" group="arm">
+    <joint name="J1" value="0"/>
+    <joint name="J2" value="0"/>
+    <joint name="J3" value="0"/>
+    <joint name="J4" value="0"/>
+    <joint name="J5" value="0"/>
+    <joint name="J6" value="0"/>
+    <joint name="J7" value="0"/>
+    <joint name="J8" value="0"/>
+    <joint name="J9" value="0"/>
+  </group_state>
+
+  <!-- Conservative baseline: only directly connected links are disabled. Run
+       MoveIt Setup Assistant's self-collision generator before deployment to
+       derive an optimised matrix from the final collision meshes. -->
+  <disable_collisions link1="base_link" link2="Link1" reason="Adjacent"/>
+  <disable_collisions link1="Link1" link2="Link2" reason="Adjacent"/>
+  <disable_collisions link1="Link2" link2="Link3" reason="Adjacent"/>
+  <disable_collisions link1="Link3" link2="Link4" reason="Adjacent"/>
+  <disable_collisions link1="Link4" link2="Link5" reason="Adjacent"/>
+  <disable_collisions link1="Link5" link2="Link6" reason="Adjacent"/>
+  <disable_collisions link1="Link6" link2="Link7" reason="Adjacent"/>
+  <disable_collisions link1="Link7" link2="Link8" reason="Adjacent"/>
+  <disable_collisions link1="Link8" link2="Link9" reason="Adjacent"/>
+</robot>
