@@ -27,7 +27,7 @@ setup(
     entry_points={
         "console_scripts": [
             "plan_transition = robot_safecontrol_moveit.plan_transition:main",
-            "mujoco_viewer = robot_safecontrol_moveit.mujoco_viewer:main",
+            "mujoco_viewer = robot_safecontrol_moveit.mujoco_viewer_with_cylinder:main",
         ],
     },
 )
