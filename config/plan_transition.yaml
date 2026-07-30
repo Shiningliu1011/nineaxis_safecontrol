@@ -11,6 +11,7 @@ plan_transition:
     velocity_scale: 0.2
     acceleration_scale: 0.2
     max_joint_delta: 0.15
-    execute_transition: false
+    execute_transition: true
     execute_task_path: false
-    dry_run: true
+    dry_run: false
+    replay_rate_hz: 5.0

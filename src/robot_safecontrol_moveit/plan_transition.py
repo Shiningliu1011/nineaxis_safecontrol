@@ -61,6 +61,7 @@ class PipelineConfig:
     execute_transition: bool
     execute_task_path: bool
     dry_run: bool
+    replay_rate_hz: float
     task_lead_time_s: float
     task_time_scale: float
 
@@ -119,6 +120,7 @@ class TransitionPipelineNode(Node):
             execute_transition=bool(get("execute_transition").value),
             execute_task_path=bool(get("execute_task_path").value),
             dry_run=bool(get("dry_run").value),
+            replay_rate_hz=float(get("replay_rate_hz").value),
             task_lead_time_s=float(get("task_lead_time_s").value),
             task_time_scale=float(get("task_time_scale").value),
         )
@@ -168,6 +170,7 @@ class TransitionPipelineNode(Node):
         self.declare_parameter("execute_transition", False)
         self.declare_parameter("execute_task_path", False)
         self.declare_parameter("dry_run", True)
+        self.declare_parameter("replay_rate_hz", 5.0)
         self.declare_parameter("task_lead_time_s", 0.05)
         self.declare_parameter("task_time_scale", 1.0)
 
@@ -381,7 +384,10 @@ def run_pipeline(node: TransitionPipelineNode) -> None:
         )
         return
 
-    executor.execute(transition, dry_run=config.dry_run, wait=True)
+    if config.dry_run:
+        executor.execute(transition, dry_run=True, wait=True)
+    else:
+        executor.replay(transition, rate_hz=config.replay_rate_hz)
     if not config.execute_task_path:
         node.get_logger().info("Transition execution stage finished.")
         return
@@ -392,7 +398,10 @@ def run_pipeline(node: TransitionPipelineNode) -> None:
         lead_time_s=config.task_lead_time_s,
         time_scale=config.task_time_scale,
     )
-    executor.execute(task_trajectory, dry_run=config.dry_run, wait=True)
+    if config.dry_run:
+        executor.execute(task_trajectory, dry_run=True, wait=True)
+    else:
+        executor.replay(task_trajectory, rate_hz=config.replay_rate_hz)
     node.get_logger().info("Continuous task trajectory execution stage finished.")
 
 
