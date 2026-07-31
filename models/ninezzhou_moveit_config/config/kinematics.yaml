@@ -1,9 +1,8 @@
-# The input MAT file currently contains positions only. KDL therefore ignores
-# the dummy orientation required by the GetPositionIK message; switch this to
-# false only after the process/tool orientation is calibrated and supplied.
+# Full-pose IK is required when align_tool_x_to_surface_normal is true so
+# that the solver respects the per-waypoint orientation constraint.
 arm:
   kinematics_solver: kdl_kinematics_plugin/KDLKinematicsPlugin
   kinematics_solver_search_resolution: 0.005
   kinematics_solver_timeout: 0.5
   kinematics_solver_attempts: 50
-  position_only_ik: true
+  position_only_ik: false

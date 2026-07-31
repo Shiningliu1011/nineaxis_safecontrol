@@ -18,8 +18,10 @@ import mujoco
 import mujoco.viewer
 import numpy as np
 import os
+import re
 import scipy.io
 import tempfile
+from math import sqrt
 
 # === 配置 ===
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -119,12 +121,15 @@ def inject_environment(mjcf_content):
 
 
 def load_trajectory(mat_path, max_points=300):
-    """从 .mat 文件加载末端轨迹, 子采样, mm→m"""
+    """从 .mat 文件加载末端轨迹, 子采样, mm→m
+
+    ``max_points=0`` 返回全部点 (用于圆柱拟合, 避免静止段使拟合退化)。
+    """
     data = scipy.io.loadmat(mat_path)
     ik = data["ik_input"][0, 0]
     pos = ik["position_series"]  # (N, 3) 单位 mm
     n = len(pos)
-    if n > max_points:
+    if max_points > 0 and n > max_points:
         idx = np.linspace(0, n - 1, max_points, dtype=int)
         pos = pos[idx]
     return pos / 1000.0  # mm → m
@@ -175,6 +180,187 @@ def inject_obstacles(mjcf_xml, obstacles):
     return mjcf_xml[:idx] + geoms + mjcf_xml[idx:]
 
 
+# ---------------------------------------------------------------------------
+#  Coordinate-frame axis visualisation
+#  Red = X, Green = Y, Blue = Z.  Each frame is a child body with three
+#  display-only capsule geoms (group 2).
+# ---------------------------------------------------------------------------
+
+FRAME_AXIS_LENGTH = 0.06   # m
+FRAME_AXIS_RADIUS = 0.0025  # m
+FRAME_AXIS_ALPHA = 0.85
+
+
+def _frame_axis_geoms(frame_name, length=None, radius=None, alpha=None, raw=False):
+    """Return MuJoCo XML for three axis capsule geoms.
+
+    When *raw* is False the geoms are wrapped in a child ``body`` element
+    with identity transform.  When *raw* is True only the ``geom`` lines
+    are returned.
+    """
+    if length is None:
+        length = FRAME_AXIS_LENGTH
+    if radius is None:
+        radius = FRAME_AXIS_RADIUS
+    if alpha is None:
+        alpha = FRAME_AXIS_ALPHA
+    indent = "    " if raw else "          "
+    geoms = (
+        f'{indent}<geom name="{frame_name}_axis_x" type="capsule" '
+        f'fromto="0 0 0 {length:.3f} 0 0" size="{radius:.4f}" '
+        f'rgba="1 0.08 0.08 {alpha:.2f}" contype="0" conaffinity="0" group="2"/>\n'
+        f'{indent}<geom name="{frame_name}_axis_y" type="capsule" '
+        f'fromto="0 0 0 0 {length:.3f} 0" size="{radius:.4f}" '
+        f'rgba="0.08 1 0.08 {alpha:.2f}" contype="0" conaffinity="0" group="2"/>\n'
+        f'{indent}<geom name="{frame_name}_axis_z" type="capsule" '
+        f'fromto="0 0 0 0 0 {length:.3f}" size="{radius:.4f}" '
+        f'rgba="0.08 0.25 1 {alpha:.2f}" contype="0" conaffinity="0" group="2"/>\n'
+    )
+    if raw:
+        return geoms
+    return (
+        f'        <body name="{frame_name}_frame_axes" pos="0 0 0" quat="1 0 0 0">\n'
+        f'{geoms}'
+        f'        </body>\n'
+    )
+
+
+def inject_coord_frame_axes(mjcf_xml):
+    """Add axis geoms for the base (world origin) and tool0 (Link9+offset)
+    coordinate frames."""
+
+    # Base frame: insert right after the display_frame opening tag.
+    base_viz = _frame_axis_geoms(
+        "base_link",
+        FRAME_AXIS_LENGTH * 1.5,
+        FRAME_AXIS_RADIUS * 1.2,
+    )
+    display_pattern = re.compile(
+        r'(<body\s[^>]*\bname="display_frame"[^>]*>)'
+    )
+    xml = display_pattern.sub(
+        lambda m: m.group(0) + "\n" + base_viz, mjcf_xml, count=1
+    )
+
+    # Tool0 frame: insert as a child of Link9 at position (0.235, 0, 0).
+    # This matches the URDF tool0_fixed joint origin xyz="0.235 0 0".
+    tool0_viz = (
+        f'        <body name="tool0_frame_axes" pos="0.235 0 0" quat="1 0 0 0">\n'
+    )
+    tool0_viz += _frame_axis_geoms(
+        "tool0", FRAME_AXIS_LENGTH, FRAME_AXIS_RADIUS, raw=True
+    )
+    tool0_viz += "        </body>\n"
+    link9_pattern = re.compile(
+        r'(<body\s[^>]*\bname="Link9"[^>]*>)'
+    )
+    xml = link9_pattern.sub(
+        lambda m: m.group(0) + "\n" + tool0_viz, xml, count=1
+    )
+
+    return xml
+
+
+# ---------------------------------------------------------------------------
+#  Cylinder fitting & surface-normal visualisation
+# ---------------------------------------------------------------------------
+
+def fit_cylinder(points, axis_direction, height_margin_m=0.04):
+    """Fit a circle in the plane perpendicular to *axis_direction*.
+
+    Returns ``(center, axis, radius, height)`` where all values are in the
+    same (Y-up) coordinate frame as the input points.
+    """
+    if len(points) < 3:
+        raise ValueError("Need at least 3 points to fit a cylinder")
+    values = np.asarray(points, dtype=float)
+    axis = np.asarray(axis_direction, dtype=float)
+    axis_len = float(np.linalg.norm(axis))
+    if axis_len < 1e-12:
+        raise ValueError("zero-length axis_direction")
+    axis /= axis_len
+
+    # Orthonormal basis perpendicular to axis
+    helper = np.array([1.0, 0.0, 0.0])
+    if abs(float(np.dot(helper, axis))) > 0.9:
+        helper = np.array([0.0, 0.0, 1.0])
+    u = np.cross(axis, helper)
+    u /= np.linalg.norm(u)
+    v = np.cross(axis, u)
+    v /= np.linalg.norm(v)
+
+    plane_x = values @ u
+    plane_y = values @ v
+    A = np.column_stack((plane_x, plane_y, np.ones(len(values))))
+    target = -(plane_x * plane_x + plane_y * plane_y)
+    coeff, *_ = np.linalg.lstsq(A, target, rcond=None)
+    d_val, e_val, f_val = coeff
+    cx = -0.5 * d_val
+    cy = -0.5 * e_val
+    r_sq = cx * cx + cy * cy - f_val
+    if r_sq <= 0.0:
+        raise ValueError("Cylinder fit produced non-positive radius")
+    radius = sqrt(float(r_sq))
+
+    axial_vals = values @ axis
+    axial_centre = 0.5 * (float(axial_vals.min()) + float(axial_vals.max()))
+    height = float(axial_vals.max() - axial_vals.min()) + 2.0 * height_margin_m
+    center = cx * u + cy * v + axial_centre * axis
+
+    # Error stats
+    radial_dist = np.sqrt((plane_x - cx) ** 2 + (plane_y - cy) ** 2)
+    radial_err = radial_dist - radius
+    rms_err = float(np.sqrt(np.mean(radial_err * radial_err)))
+    max_err = float(np.max(np.abs(radial_err)))
+
+    return dict(
+        center=tuple(float(v) for v in center),
+        axis=tuple(float(v) for v in axis),
+        radius=radius,
+        height=height,
+        rms_error_mm=rms_err * 1000.0,
+        max_error_mm=max_err * 1000.0,
+    )
+
+
+def inject_cylinder_normals(mjcf_xml, points, cylinder, normal_length=0.04, step=15):
+    """Add capsule geoms pointing *toward* the cylinder axis at sampled points.
+
+    The direction matches the tool0 X-axis orientation used by IK (inward
+    radial), since the outward normal is below the robot's reachable workspace.
+    """
+    center = np.asarray(cylinder["center"], dtype=float)
+    axis = np.asarray(cylinder["axis"], dtype=float)
+    geoms = ""
+    for idx in range(0, len(points), step):
+        p = np.asarray(points[idx], dtype=float)
+        rel = p - center
+        axial = axis * float(np.dot(rel, axis))
+        radial = rel - axial
+        rlen = float(np.linalg.norm(radial))
+        if rlen < 1e-12:
+            continue
+        inward = -radial / rlen
+        end = p + inward * normal_length
+        geoms += (
+            f'      <geom name="surface_normal_{idx}" type="capsule" '
+            f'fromto="{p[0]:.6f} {p[1]:.6f} {p[2]:.6f} '
+            f'{end[0]:.6f} {end[1]:.6f} {end[2]:.6f}" '
+            f'size="0.0018" rgba="0.15 0.85 0.15 0.85" '
+            f'contype="0" conaffinity="0" group="2"/>\n'
+        )
+    if not geoms:
+        return mjcf_xml
+    # Insert normals before the last </body> that precedes </worldbody>.
+    # This is the same insertion strategy used by inject_trajectory and
+    # inject_obstacles, ensuring normals stay inside the display_frame body.
+    wb_pos = mjcf_xml.rfind("</worldbody>")
+    body_pos = mjcf_xml.rfind("</body>", 0, wb_pos)
+    if body_pos == -1:
+        return mjcf_xml
+    return mjcf_xml[:body_pos] + geoms + mjcf_xml[body_pos:]
+
+
 def main():
     # Step 1: 用 MuJoCo 加载 URDF 并保存为 MJCF
     mjcf_raw = load_urdf_and_save_mjcf(URDF_PATH, MESH_DIR)
@@ -183,10 +369,16 @@ def main():
     mjcf_xml = inject_environment(mjcf_raw)
 
     # Step 2.5: 注入末端工作曲线
+    traj_pts_offset = []
+    traj_pts_full_offset = []
     traj_path = os.path.join(PROJECT_ROOT, "data", "nurbs", "ik_input.mat")
+    traj_offset = np.array([0.0, 0.343, 1.587])
     if os.path.exists(traj_path):
-        traj_pts = load_trajectory(traj_path, max_points=300)
-        mjcf_xml = inject_trajectory(mjcf_xml, traj_pts, offset=[0.0, 0.343, 1.587])
+        traj_pts_raw = load_trajectory(traj_path, max_points=300)
+        traj_pts_offset = traj_pts_raw + traj_offset
+        mjcf_xml = inject_trajectory(mjcf_xml, traj_pts_raw, offset=[0.0, 0.343, 1.587])
+        # 全部点用于圆柱拟合 (max_points=0), 避免静止段使圆拟合退化
+        traj_pts_full_offset = load_trajectory(traj_path, max_points=0) + traj_offset
 
     # Step 2.6: 注入静态障碍物 (Y-up 坐标)
     # 各 Link 位置: Link3(0,0.343,0.225) Link5(0,0.343,0.793) Link7(0,0.343,0.928)
@@ -199,7 +391,25 @@ def main():
     ]
     mjcf_xml = inject_obstacles(mjcf_xml, obstacles)
 
-    # Step 3: 保存最终 MJCF
+    # Step 2.7: 注入基座 (base_link) 和末端 (tool0) 坐标系轴
+    mjcf_xml = inject_coord_frame_axes(mjcf_xml)
+
+    # Step 2.8: 圆柱面拟合 & 法线方向可视化
+    # 用全部轨迹点拟合圆柱 (静止段使圆拟合退化, 法线方向变成数值噪声)
+    if len(traj_pts_full_offset) > 0:
+        try:
+            cyl = fit_cylinder(traj_pts_full_offset, [0.0, 1.0, 0.0])
+            print(
+                f"圆柱面拟合(全部点): center={cyl['center']}, "
+                f"radius={cyl['radius']:.4f}m, "
+                f"height={cyl['height']:.4f}m, "
+                f"RMS误差={cyl['rms_error_mm']:.3f}mm, "
+                f"最大误差={cyl['max_error_mm']:.3f}mm"
+            )
+            # 法线画在显示轨迹点处, 方向基于正确拟合的圆柱
+            mjcf_xml = inject_cylinder_normals(mjcf_xml, traj_pts_offset, cyl)
+        except ValueError as e:
+            print(f"警告: 圆柱面拟合失败 - {e}")
 
     # Step 3: 保存最终 MJCF
     mjcf_path = os.path.join(PROJECT_ROOT, "output", "ninezzhou_env.xml")
@@ -222,6 +432,8 @@ def main():
     print(f"  刚体数量: {model.nbody}")
     print(f"  重力:     {tuple(model.opt.gravity)} (已禁用)")
     print(f"  坐标系:   Y-up → Z-up (display_frame euler={Y_UP_TO_Z_UP_EULER})")
+    print(f"  显示元素: 红色=X轴 绿色=Y轴 蓝色=Z轴 (base_link / tool0)")
+    print(f"  显示元素: 绿色短线段 = 圆柱面法线方向")
     print(f"\n关节列表:")
     for i in range(model.njnt):
         name = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_JOINT, i)
