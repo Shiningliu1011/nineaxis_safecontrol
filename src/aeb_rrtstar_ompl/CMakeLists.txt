@@ -69,7 +69,7 @@ install(DIRECTORY include/
   DESTINATION include/${PROJECT_NAME}
 )
 
-# ---- Test executable ----
+# ---- Test executables ----
 add_executable(test_aeb_rrtstar src/test_aeb_rrtstar.cpp)
 target_link_libraries(test_aeb_rrtstar aeb_rrtstar_ompl_lib)
 target_include_directories(test_aeb_rrtstar PRIVATE
@@ -77,7 +77,14 @@ target_include_directories(test_aeb_rrtstar PRIVATE
   ${OMPL_INCLUDE_DIRS}
 )
 
-install(TARGETS test_aeb_rrtstar
+add_executable(test_aeb_full src/test_aeb_full.cpp)
+target_link_libraries(test_aeb_full aeb_rrtstar_ompl_lib)
+target_include_directories(test_aeb_full PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${OMPL_INCLUDE_DIRS}
+)
+
+install(TARGETS test_aeb_rrtstar test_aeb_full
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
