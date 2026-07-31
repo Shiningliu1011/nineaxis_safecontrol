@@ -175,3 +175,39 @@ AEB-RRT* Anytime 模式在 2s 预算内：
 3. **自碰撞**：简化模型无法精确检测自碰撞。需依赖 MoveIt2 的 ACM 矩阵。
 4. **C++ 移植成本**：Python 原型到 C++ OMPL 插件的移植需要额外的工程投入。
 5. **OMPL 绑定稳定性**：Python OMPL 绑定存在已知的内存管理问题（nanobind），C++ 实现不存在此问题。
+
+## C++ OMPL 插件实现 (2026-07-31 完成)
+
+C++ 版本已实现并编译通过：
+
+### 构建
+```bash
+colcon build --symlink-install --packages-select aeb_rrtstar_ompl \
+  --base-paths src/aeb_rrtstar_ompl
+```
+
+### 文件
+| 文件 | 说明 |
+|------|------|
+| `src/aeb_rrtstar_ompl/include/aeb_rrtstar_ompl/AEBRRTstar.h` | C++ AEB-RRT* 规划器头文件 |
+| `src/aeb_rrtstar_ompl/src/AEBRRTstar.cpp` | C++ AEB-RRT* 实现 |
+| `src/aeb_rrtstar_ompl/include/aeb_rrtstar_ompl/aeb_rrtstar_planner_manager.h` | MoveIt2 PlannerManager 插件头文件 |
+| `src/aeb_rrtstar_ompl/src/aeb_rrtstar_planner_manager.cpp` | MoveIt2 PlannerManager 实现 |
+| `src/aeb_rrtstar_ompl/CMakeLists.txt` | CMake 构建配置 |
+| `src/aeb_rrtstar_ompl/package.xml` | ROS 2 包清单 |
+| `src/aeb_rrtstar_ompl/aeb_rrtstar_plugin_description.xml` | pluginlib 描述文件 |
+
+### 验证
+- **Faithful 模式**: 编译通过，求解成功，路径状态全部有效
+- **Anytime 模式**: 编译通过，运行时需进一步调试
+- **MoveIt2 插件**: 编译通过，pluginlib 注册完成
+
+### 灰度接入配置
+在 `ompl_planning.yaml` 中已添加 AEB-RRT* 配置项，当前默认仍为 RRTConnect：
+
+```yaml
+# 灰度切换步骤:
+# 1. 将 planning_plugin 改为 aeb_rrtstar_ompl/AEBRRTstarPlannerManager
+# 2. 将 arm.planner_configs 中 AEBRRTstarFaithfulConfigDefault 设为首选
+# 3. 回退: 恢复 planning_plugin 为 ompl_interface/OMPLPlanner
+```
