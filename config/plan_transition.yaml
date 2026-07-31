@@ -1,7 +1,7 @@
 plan_transition:
   ros__parameters:
-    # Safe quick-start: solve/plan only the first point and never command hardware.
-    max_points: 1
+    # Full trajectory with visible (slow) replay.
+    max_points: 50
     point_stride: 1
     use_current_state: true
     planning_pipeline: ompl
@@ -12,6 +12,9 @@ plan_transition:
     acceleration_scale: 0.2
     max_joint_delta: 0.15
     execute_transition: true
-    execute_task_path: false
+    execute_task_path: true
     dry_run: false
-    replay_rate_hz: 5.0
+    replay_rate_hz: 2.0
+    # Orient tool0 X-axis to cylinder surface normal at each waypoint.
+    align_tool_x_to_surface_normal: true
+    cylinder_axis_direction: [0.0, 1.0, 0.0]

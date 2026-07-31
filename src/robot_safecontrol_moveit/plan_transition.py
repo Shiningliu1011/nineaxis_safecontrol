@@ -15,6 +15,7 @@ collision checking, or a motion planner.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from math import sqrt
 from pathlib import Path
 from time import monotonic
 from typing import Sequence
@@ -64,6 +65,8 @@ class PipelineConfig:
     replay_rate_hz: float
     task_lead_time_s: float
     task_time_scale: float
+    align_tool_x_to_surface_normal: bool
+    cylinder_axis_direction: tuple[float, float, float]
 
 
 class TransitionPipelineNode(Node):
@@ -123,6 +126,12 @@ class TransitionPipelineNode(Node):
             replay_rate_hz=float(get("replay_rate_hz").value),
             task_lead_time_s=float(get("task_lead_time_s").value),
             task_time_scale=float(get("task_time_scale").value),
+            align_tool_x_to_surface_normal=bool(
+                get("align_tool_x_to_surface_normal").value
+            ),
+            cylinder_axis_direction=self._float_tuple(
+                "cylinder_axis_direction", 3
+            ),
         )
         if config.max_points < 0:
             raise ValueError("max_points must be zero (all) or positive")
@@ -173,6 +182,11 @@ class TransitionPipelineNode(Node):
         self.declare_parameter("replay_rate_hz", 5.0)
         self.declare_parameter("task_lead_time_s", 0.05)
         self.declare_parameter("task_time_scale", 1.0)
+        # When enabled, every IK waypoint is solved with tool0's X-axis
+        # aligned to the outward radial (surface-normal) direction of the
+        # cylinder fitted to the trajectory points.
+        self.declare_parameter("align_tool_x_to_surface_normal", False)
+        self.declare_parameter("cylinder_axis_direction", [0.0, 1.0, 0.0])
 
     def _float_tuple(self, name: str, expected_length: int) -> tuple[float, ...]:
         values = tuple(float(value) for value in self.get_parameter(name).value)
@@ -320,6 +334,137 @@ def configured_joint_state(
     return state
 
 
+# ---------------------------------------------------------------------------
+#  Surface-normal → quaternion helper
+# ---------------------------------------------------------------------------
+
+
+def _rotation_matrix_to_quaternion_xyzw(
+    matrix: np.ndarray,
+) -> tuple[float, float, float, float]:
+    """Convert a 3×3 rotation matrix to a normalised xyzw quaternion."""
+    m = np.asarray(matrix, dtype=float)
+    trace = float(np.trace(m))
+    if trace > 0.0:
+        s = sqrt(trace + 1.0) * 2.0
+        qw = 0.25 * s
+        qx = (m[2, 1] - m[1, 2]) / s
+        qy = (m[0, 2] - m[2, 0]) / s
+        qz = (m[1, 0] - m[0, 1]) / s
+    elif m[0, 0] > m[1, 1] and m[0, 0] > m[2, 2]:
+        s = sqrt(1.0 + m[0, 0] - m[1, 1] - m[2, 2]) * 2.0
+        qw = (m[2, 1] - m[1, 2]) / s
+        qx = 0.25 * s
+        qy = (m[0, 1] + m[1, 0]) / s
+        qz = (m[0, 2] + m[2, 0]) / s
+    elif m[1, 1] > m[2, 2]:
+        s = sqrt(1.0 + m[1, 1] - m[0, 0] - m[2, 2]) * 2.0
+        qw = (m[0, 2] - m[2, 0]) / s
+        qx = (m[0, 1] + m[1, 0]) / s
+        qy = 0.25 * s
+        qz = (m[1, 2] + m[2, 1]) / s
+    else:
+        s = sqrt(1.0 + m[2, 2] - m[0, 0] - m[1, 1]) * 2.0
+        qw = (m[1, 0] - m[0, 1]) / s
+        qx = (m[0, 2] + m[2, 0]) / s
+        qy = (m[1, 2] + m[2, 1]) / s
+        qz = 0.25 * s
+    # Normalise
+    length = sqrt(qw * qw + qx * qx + qy * qy + qz * qz)
+    return (float(qx / length), float(qy / length), float(qz / length), float(qw / length))
+
+
+def compute_surface_normal_orientations(
+    points: list[tuple[float, float, float]],
+    axis_direction: tuple[float, float, float],
+    *,
+    fit_points: Sequence[Sequence[float]] | None = None,
+) -> list[tuple[float, float, float, float]]:
+    """Return one xyzw quaternion per point, each with X-axis = outward radial
+    (surface normal) of the cylinder whose *axis_direction* passes through the
+    fitted centre.
+
+    The tool frame is:
+      X  ←  surface normal  (radial, orthogonal to cylinder axis)
+      Y  ←  cylinder axis   (axial direction along the cylinder)
+      Z  ←  X × Y           (tangent to the cylinder surface)
+
+    *fit_points* supplies the samples used to fit the cylinder axis centre.
+    Passing the *full* trajectory here is important: the IK waypoints may lie
+    in a near-stationary segment where a least-squares circle fit degenerates
+    (radius → 0) and the implied normal direction becomes numerical noise.
+
+    Note on the sign: the X-axis points *toward* the cylinder axis (inward
+    radial).  The mathematical outward normal points away from the axis, which
+    for this trajectory lies below the robot's reachable workspace — the arm's
+    tool0 cannot point downward, so the inward direction is used instead.
+    """
+    values = np.asarray(points, dtype=float)
+    axis = np.asarray(axis_direction, dtype=float)
+    axis_len = float(np.linalg.norm(axis))
+    if axis_len < 1e-12:
+        raise ValueError("cylinder_axis_direction must be a non-zero 3-vector")
+    axis /= axis_len
+
+    # Fit a cylinder axis centre by projecting the *fit* samples onto the
+    # plane perpendicular to the axis.
+    fit_values = (
+        np.asarray(fit_points, dtype=float)
+        if fit_points is not None
+        else values
+    )
+    if fit_values.ndim != 2 or fit_values.shape[1] != 3 or len(fit_values) < 3:
+        raise ValueError("fit_points must be an (N, 3) array with at least 3 samples")
+
+    helper = np.array([1.0, 0.0, 0.0])
+    if abs(float(np.dot(helper, axis))) > 0.9:
+        helper = np.array([0.0, 0.0, 1.0])
+    u = np.cross(axis, helper)
+    u /= np.linalg.norm(u)
+    v = np.cross(axis, u)
+    v /= np.linalg.norm(v)
+
+    plane_x = fit_values @ u
+    plane_y = fit_values @ v
+    A = np.column_stack((plane_x, plane_y, np.ones(len(fit_values))))
+    rhs = -(plane_x * plane_x + plane_y * plane_y)
+    coeff, *_ = np.linalg.lstsq(A, rhs, rcond=None)
+    d_val, e_val, _f_val = coeff
+    cx = -0.5 * d_val
+    cy = -0.5 * e_val
+
+    # 3-D centre of the cylinder axis
+    axial_vals = fit_values @ axis
+    axial_centre = 0.5 * (float(axial_vals.min()) + float(axial_vals.max()))
+    centre = cx * u + cy * v + axial_centre * axis
+
+    orientations: list[tuple[float, float, float, float]] = []
+    for point in values:
+        rel = point - centre
+        axial = axis * float(np.dot(rel, axis))
+        radial = rel - axial
+        rlen = float(np.linalg.norm(radial))
+        if rlen < 1e-12:
+            # Point lies on the cylinder axis — fall back to identity.
+            orientations.append((0.0, 0.0, 0.0, 1.0))
+            continue
+        # X-axis points toward the cylinder axis (inward radial): the outward
+        # normal would point below the robot's reachable workspace.
+        col_x = -radial / rlen
+
+        # Build orthonormal frame:  cols = (X, Y, Z)
+        col_y = axis  # cylinder axis
+        col_z = np.cross(col_x, col_y)
+        col_z /= np.linalg.norm(col_z)
+        # Re-orthogonalise Y against X and Z
+        col_y = np.cross(col_z, col_x)
+
+        rot = np.column_stack((col_x, col_y, col_z))
+        orientations.append(_rotation_matrix_to_quaternion_xyzw(rot))
+
+    return orientations
+
+
 def run_pipeline(node: TransitionPipelineNode) -> None:
     config = node.configuration()
     node.get_logger().info(
@@ -358,17 +503,41 @@ def run_pipeline(node: TransitionPipelineNode) -> None:
         config.point_stride,
     )
 
+    # Compute per-point orientations when surface-normal alignment is enabled.
+    per_point_orientations: list[tuple[float, float, float, float]] | None = None
+    if config.align_tool_x_to_surface_normal:
+        # Fit the cylinder on the *full* trajectory, not just the selected
+        # waypoints: the waypoints can lie in a near-stationary segment where
+        # the circle fit degenerates and the normal becomes numerical noise.
+        full_positions, _ = load_mat_trajectory(
+            config.trajectory_mat, config.trajectory_offset_m, 0, 1
+        )
+        per_point_orientations = compute_surface_normal_orientations(
+            positions,
+            config.cylinder_axis_direction,
+            fit_points=full_positions,
+        )
+        node.get_logger().info(
+            f"Computed {len(per_point_orientations)} surface-normal-aligned "
+            f"orientation(s); cylinder fitted on {len(full_positions)} full "
+            f"trajectory samples; axis={config.cylinder_axis_direction}."
+        )
+
     ik = ContinuousIK(
         moveit,
         config.joint_names,
         IKOptions(
             tool_link=config.tool_link,
-            orientation_xyzw=config.orientation_xyzw,
+            orientation_xyzw=(
+                per_point_orientations[0]
+                if per_point_orientations
+                else config.orientation_xyzw
+            ),
             max_joint_delta=config.max_joint_delta,
             service_timeout_s=config.ik_service_timeout_s,
         ),
     )
-    ik_path = ik.solve(positions, start_state)
+    ik_path = ik.solve(positions, start_state, orientations=per_point_orientations)
     node.get_logger().info(f"Continuous IK succeeded for {len(ik_path.states)} waypoint(s).")
 
     transition = planner.plan_transition(start_state, ik_path.first_state)

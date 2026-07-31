@@ -104,22 +104,44 @@ class ContinuousIK:
         self,
         positions: Iterable[Sequence[float]],
         seed_state: JointState,
+        *,
+        orientations: Iterable[Sequence[float]] | None = None,
     ) -> IKPath:
         """Solve all positions, using each MoveIt result as the next seed.
 
         The first solution may differ from ``seed_state`` because the separate
         planning stage is responsible for moving the robot to it.  Continuity
         checks therefore begin at the second Cartesian waypoint.
+
+        When *orientations* is supplied it must provide one quaternion
+        (xyzw) per position; each waypoint is then solved with its own
+        target orientation instead of the global default.
         """
 
         previous = self._ordered_state(seed_state)
         solutions: list[JointState] = []
 
+        orientation_list: list[Sequence[float]] | None
+        if orientations is not None:
+            orientation_list = [
+                self._normalise_quaternion(q) for q in orientations
+            ]
+        else:
+            orientation_list = None
+
         for index, raw_position in enumerate(positions):
             position = self._position(raw_position)
+            quat = (
+                self._orientation
+                if orientation_list is None
+                else tuple(
+                    float(v)
+                    for v in orientation_list[min(index, len(orientation_list) - 1)]
+                )
+            )
             solution = self._moveit.compute_ik(
                 position=position,
-                quat_xyzw=self._orientation,
+                quat_xyzw=quat,
                 ik_link_name=self._options.tool_link,
                 start_joint_state=previous,
                 wait_for_server_timeout_sec=self._options.service_timeout_s,

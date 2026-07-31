@@ -9,6 +9,7 @@ repository, then writes the received ``/joint_states`` values to MuJoCo's
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from html import escape
 from math import isfinite, sqrt
@@ -70,20 +71,30 @@ class MuJoCoJointStateViewer(Node):
         )
         show_target_path = bool(self.get_parameter("show_target_path").value)
         target_path: list[tuple[float, float, float]] = []
+        full_path: list[tuple[float, float, float]] = []
         if show_target_path:
-            target_path = self._load_display_path(
-                self._file_parameter("trajectory_mat", self._default_trajectory_mat()),
-                self._float_tuple("trajectory_offset_m", 3),
-                int(self.get_parameter("path_max_points").value),
+            trajectory_mat = self._file_parameter(
+                "trajectory_mat", self._default_trajectory_mat()
+            )
+            trajectory_offset_m = self._float_tuple("trajectory_offset_m", 3)
+            # Load the *full* trajectory once: the cylinder must be fitted on
+            # every sample.  A short (possibly stationary) selection of points
+            # makes the least-squares circle fit degenerate and the normal
+            # direction meaningless.
+            full_path, _ = load_mat_trajectory(
+                trajectory_mat, trajectory_offset_m, max_points=0, point_stride=1
+            )
+            target_path = self._sample_display_path(
+                full_path, int(self.get_parameter("path_max_points").value)
             )
 
         tracking_cylinder: TrackingCylinderSpec | None = None
         if (
-            target_path
+            full_path
             and bool(self.get_parameter("show_tracking_cylinder").value)
         ):
             tracking_cylinder = self._fit_tracking_cylinder(
-                target_path,
+                full_path,
                 self._float_tuple("tracking_cylinder_axis_direction", 3),
                 float(self.get_parameter("tracking_cylinder_height_margin_m").value),
             )
@@ -94,7 +105,7 @@ class MuJoCoJointStateViewer(Node):
                     float(self.get_parameter("path_surface_offset_m").value),
                 )
             self.get_logger().info(
-                "Tracking cylinder fitted in base_link: "
+                "Tracking cylinder fitted on full trajectory in base_link: "
                 f"center={tracking_cylinder.center}, "
                 f"axis={tracking_cylinder.axis_direction}, "
                 f"radius={tracking_cylinder.radius:.6f} m, "
@@ -203,20 +214,28 @@ class MuJoCoJointStateViewer(Node):
             addresses[name] = int(self._model.jnt_qposadr[joint_id])
         return addresses
 
-    def _load_display_path(
-        self,
-        trajectory_mat: Path,
-        offset_m: Sequence[float],
+    @staticmethod
+    def _sample_display_path(
+        points: Sequence[Sequence[float]],
         maximum_points: int,
     ) -> list[tuple[float, float, float]]:
+        """Sub-sample a full trajectory for display (capsule budget)."""
         if maximum_points < 2:
             raise ValueError("path_max_points must be at least two")
-        points, _ = load_mat_trajectory(trajectory_mat, offset_m, max_points=0, point_stride=1)
-        if len(points) <= maximum_points:
-            return points
-        last = len(points) - 1
-        indices = [round(index * last / (maximum_points - 1)) for index in range(maximum_points)]
-        return [points[index] for index in indices]
+        values = list(points)
+        if len(values) <= maximum_points:
+            return [
+                (float(x), float(y), float(z)) for x, y, z in values
+            ]
+        last = len(values) - 1
+        indices = [
+            round(index * last / (maximum_points - 1))
+            for index in range(maximum_points)
+        ]
+        return [
+            (float(values[index][0]), float(values[index][1]), float(values[index][2]))
+            for index in indices
+        ]
 
     @staticmethod
     def _urdf_to_mjcf(urdf_path: Path, mesh_directory: Path) -> str:
@@ -242,7 +261,8 @@ class MuJoCoJointStateViewer(Node):
         obstacles: Iterable[CollisionObjectSpec],
         tracking_cylinder: TrackingCylinderSpec | None = None,
     ) -> str:
-        """Add display-only floor, lighting, path and reviewed MoveIt obstacles."""
+        """Add display-only floor, lighting, path, obstacles, frame axes and
+        cylinder surface normals."""
 
         if "<worldbody>" not in mjcf_xml or "</worldbody>" not in mjcf_xml:
             raise ValueError("MuJoCo conversion did not produce a worldbody")
@@ -260,7 +280,25 @@ class MuJoCoJointStateViewer(Node):
         annotations += MuJoCoJointStateViewer._path_geoms(target_path)
         annotations += MuJoCoJointStateViewer._obstacle_geoms(obstacles)
         result = mjcf_xml.replace("<worldbody>", "<worldbody>" + world_prefix, 1)
-        return result.replace("</worldbody>", annotations + "    </body>\n  </worldbody>", 1)
+        result = result.replace("</worldbody>", annotations + "    </body>\n  </worldbody>", 1)
+
+        # Inject coordinate-frame axis geoms into base_link and tool0.
+        result = MuJoCoJointStateViewer._inject_frame_axes(result)
+
+        # Inject surface-normal indicators along the cylinder surface.
+        if tracking_cylinder is not None:
+            points = list(target_path)
+            geoms = MuJoCoJointStateViewer._surface_normal_geoms(
+                points, tracking_cylinder
+            )
+            if geoms:
+                # Insert before the last </body> that precedes </worldbody>.
+                wb_pos = result.rfind("</worldbody>")
+                body_pos = result.rfind("</body>", 0, wb_pos)
+                if body_pos != -1:
+                    result = result[:body_pos] + geoms + result[body_pos:]
+
+        return result
 
     @staticmethod
     def _fit_tracking_cylinder(
@@ -351,6 +389,138 @@ class MuJoCoJointStateViewer(Node):
             projected = center + axial + radial * (display_radius / radial_length)
             result.append(tuple(float(value) for value in projected))
         return result
+
+    # ------------------------------------------------------------------
+    #  Coordinate-frame axes (display-only, group 2)
+    #  Red = X, Green = Y, Blue = Z.  Each frame is a child body with
+    #  three capsule geoms.
+    # ------------------------------------------------------------------
+
+    _FRAME_AXIS_LENGTH = 0.06  # m
+    _FRAME_AXIS_RADIUS = 0.0025  # m
+    _FRAME_AXIS_ALPHA = 0.85
+
+    @staticmethod
+    def _frame_axis_geoms(
+        frame_name: str,
+        axis_length: float | None = None,
+        axis_radius: float | None = None,
+        alpha: float | None = None,
+        *,
+        raw: bool = False,
+    ) -> str:
+        """Return MuJoCo XML for three axis capsule geoms.
+
+        When *raw* is False the geoms are wrapped in a child ``body`` element
+        with identity transform.  When *raw* is True only the ``geom`` lines
+        are returned (indented for nesting inside a caller-provided body).
+        """
+
+        length = axis_length if axis_length is not None else MuJoCoJointStateViewer._FRAME_AXIS_LENGTH
+        radius = axis_radius if axis_radius is not None else MuJoCoJointStateViewer._FRAME_AXIS_RADIUS
+        a = alpha if alpha is not None else MuJoCoJointStateViewer._FRAME_AXIS_ALPHA
+
+        indent = "    " if raw else "          "
+        geoms = (
+            f'{indent}<geom name="{frame_name}_axis_x" type="capsule" '
+            f'fromto="0 0 0 {length:.3f} 0 0" size="{radius:.4f}" '
+            f'rgba="1 0.08 0.08 {a:.2f}" contype="0" conaffinity="0" group="2"/>\n'
+            f'{indent}<geom name="{frame_name}_axis_y" type="capsule" '
+            f'fromto="0 0 0 0 {length:.3f} 0" size="{radius:.4f}" '
+            f'rgba="0.08 1 0.08 {a:.2f}" contype="0" conaffinity="0" group="2"/>\n'
+            f'{indent}<geom name="{frame_name}_axis_z" type="capsule" '
+            f'fromto="0 0 0 0 0 {length:.3f}" size="{radius:.4f}" '
+            f'rgba="0.08 0.25 1 {a:.2f}" contype="0" conaffinity="0" group="2"/>\n'
+        )
+        if raw:
+            return geoms
+        return (
+            f'        <body name="{frame_name}_frame_axes" pos="0 0 0" quat="1 0 0 0">\n'
+            f'{geoms}'
+            f'        </body>\n'
+        )
+
+    @staticmethod
+    def _inject_frame_axes(mjcf_xml: str) -> str:
+        """Add axis geoms for the base (world origin) and tool0 (Link9+offset)
+        coordinate frames."""
+
+        # Base frame: insert a body right after the display_frame opening tag.
+        # display_frame wraps the robot for Y-up → Z-up conversion, so its
+        # origin is the world origin in URDF coordinates.
+        base_viz = MuJoCoJointStateViewer._frame_axis_geoms(
+            "base_link",
+            MuJoCoJointStateViewer._FRAME_AXIS_LENGTH * 1.5,
+            MuJoCoJointStateViewer._FRAME_AXIS_RADIUS * 1.2,
+        )
+        # Find the display_frame opening tag and insert base frame after it.
+        display_pattern = re.compile(
+            r'(<body\s[^>]*\bname="display_frame"[^>]*>)'
+        )
+        mjcf_xml = display_pattern.sub(
+            lambda m: m.group(0) + "\n" + base_viz, mjcf_xml, count=1
+        )
+
+        # Tool0 frame: insert as a child of Link9 at position (0.235, 0, 0).
+        # This matches the URDF tool0_fixed joint origin xyz="0.235 0 0".
+        tool0_viz = (
+            f'        <body name="tool0_frame_axes" pos="0.235 0 0" quat="1 0 0 0">\n'
+        )
+        tool0_viz += MuJoCoJointStateViewer._frame_axis_geoms(
+            "tool0",
+            MuJoCoJointStateViewer._FRAME_AXIS_LENGTH,
+            MuJoCoJointStateViewer._FRAME_AXIS_RADIUS,
+            raw=True,
+        )
+        tool0_viz += "        </body>\n"
+        link9_pattern = re.compile(
+            r'(<body\s[^>]*\bname="Link9"[^>]*>)'
+        )
+        mjcf_xml = link9_pattern.sub(
+            lambda m: m.group(0) + "\n" + tool0_viz, mjcf_xml, count=1
+        )
+
+        return mjcf_xml
+
+    @staticmethod
+    def _surface_normal_geoms(
+        points: Sequence[tuple[float, float, float]],
+        cylinder: TrackingCylinderSpec,
+        normal_length: float = 0.04,
+        step: int = 12,
+    ) -> str:
+        """Add small capsule geoms showing the cylinder radial direction at
+        sampled path points.  The line points *toward the cylinder axis*
+        (inward radial), matching the tool0 X-axis orientation used by IK.
+
+        ``step`` controls down-sampling so the display is not cluttered.
+        """
+
+        if cylinder is None or len(points) < 2:
+            return ""
+        center = np.asarray(cylinder.center, dtype=float)
+        axis = np.asarray(cylinder.axis_direction, dtype=float)
+        display_radius = cylinder.radius  # geometric cylinder surface
+
+        geoms_parts: list[str] = []
+        for idx in range(0, len(points), step):
+            point = np.asarray(points[idx], dtype=float)
+            rel = point - center
+            axial = axis * float(np.dot(rel, axis))
+            radial = rel - axial
+            radial_len = float(np.linalg.norm(radial))
+            if radial_len < 1e-12:
+                continue
+            inward = -radial / radial_len
+            end = point + inward * normal_length
+            geoms_parts.append(
+                f'      <geom name="surface_normal_{idx}" type="capsule" '
+                f'fromto="{point[0]:.6f} {point[1]:.6f} {point[2]:.6f} '
+                f'{end[0]:.6f} {end[1]:.6f} {end[2]:.6f}" '
+                f'size="0.0018" rgba="0.15 0.85 0.15 0.85" '
+                f'contype="0" conaffinity="0" group="2"/>\n'
+            )
+        return "".join(geoms_parts)
 
     @staticmethod
     def _tracking_cylinder_geom(cylinder: TrackingCylinderSpec | None) -> str:
