@@ -230,7 +230,10 @@ base::PlannerStatus AEBRRTstar::solve(
         return base::PlannerStatus::EXACT_SOLUTION;
     }
 
-    // --- Init trees ---
+    // --- Init trees (pre-reserve to prevent vector reallocation which
+    //     would invalidate Node* pointers stored in the GNAT NN) ---
+    static const size_t TREE_RESERVE = 100000;
+    tree_start_.nodes.reserve(TREE_RESERVE);
     tree_start_.nodes.push_back({start_state, -1, {}, 0.0});
     tree_start_.nn =
         std::make_shared<NearestNeighborsGNATNoThreadSafety<Node *>>();
@@ -240,6 +243,7 @@ base::PlannerStatus AEBRRTstar::solve(
         });
     tree_start_.nn->add(&tree_start_.nodes[0]);
 
+    tree_goal_.nodes.reserve(TREE_RESERVE);
     tree_goal_.nodes.push_back({goal_state, -1, {}, 0.0});
     tree_goal_.nn =
         std::make_shared<NearestNeighborsGNATNoThreadSafety<Node *>>();
