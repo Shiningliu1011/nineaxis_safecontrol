@@ -1,0 +1,11 @@
+<library path="aeb_rrtstar_ompl_plugin">
+  <class name="aeb_rrtstar_ompl/AEBRRTstarPlannerManager"
+         type="aeb_rrtstar_ompl::AEBRRTstarPlannerManager"
+         base_class_type="planning_interface::PlannerManager">
+    <description>
+      AEB-RRT* OMPL Planner Manager.  Provides the standard OMPL planner
+      set plus the AEB-RRT* (Adaptive Extension Bidirectional RRT*)
+      planner for ninezzhou 9-DOF robot arm planning.
+    </description>
+  </class>
+</library>
