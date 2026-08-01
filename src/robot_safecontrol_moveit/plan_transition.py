@@ -168,7 +168,9 @@ class TransitionPipelineNode(Node):
         self.declare_parameter("max_joint_delta", 0.15)
         self.declare_parameter("ik_service_timeout_s", 2.0)
         self.declare_parameter("planning_pipeline", "ompl")
-        self.declare_parameter("planner_id", "RRTConnectkConfigDefault")
+        # AEB-RRT* gray rollout: default planner switched.
+        # Rollback: change back to "RRTConnectkConfigDefault"
+        self.declare_parameter("planner_id", "AEBRRTstarFaithfulConfigDefault")
         self.declare_parameter("planning_time_s", 10.0)
         self.declare_parameter("planning_attempts", 5)
         self.declare_parameter("velocity_scale", 0.2)

@@ -1,8 +1,12 @@
-# Default: standard OMPL planner plugin.
-# For AEB-RRT* gray rollout, change to:
-#   planning_plugin: aeb_rrtstar_ompl/AEBRRTstarPlannerManager
-# and source the aeb_rrtstar_ompl package workspace.
-planning_plugin: ompl_interface/OMPLPlanner
+# AEB-RRT* Gray Rollout — 2026-08-01
+# planning_plugin switched to AEB-RRT* wrapper which registers AEB-RRT*
+# AND delegates all other planners to the standard OMPL interface.
+# RRTConnect retained as fallback.
+#
+# ROLLBACK (one-line):
+#   planning_plugin: ompl_interface/OMPLPlanner
+#   (and move RRTConnectkConfigDefault back to first in arm.planner_configs)
+planning_plugin: aeb_rrtstar_ompl/AEBRRTstarPlannerManager
 request_adapters: >-
   default_planner_request_adapters/AddTimeOptimalParameterization
   default_planner_request_adapters/ResolveConstraintFrames
@@ -13,15 +17,7 @@ request_adapters: >-
 start_state_max_bounds_error: 0.1
 
 planner_configs:
-  # ---- Current default (stable) ----
-  RRTConnectkConfigDefault:
-    type: geometric::RRTConnect
-    range: 0.0
-
-  # ---- AEB-RRT* experimental (gray rollout) ----
-  # To enable, add AEBRRTstarFaithfulConfigDefault to arm.planner_configs
-  # and set it as the first entry.  RRTConnect remains as fallback.
-  # Rollback: remove from arm.planner_configs.
+  # ---- AEB-RRT* (new default) ----
   AEBRRTstarFaithfulConfigDefault:
     type: geometric::AEBRRTstar
     range: 0.3
@@ -34,9 +30,13 @@ planner_configs:
     connect_threshold: 0.6
     stop_on_first_solution: false
 
+  # ---- RRTConnect (stable fallback) ----
+  RRTConnectkConfigDefault:
+    type: geometric::RRTConnect
+    range: 0.0
+
 arm:
   planner_configs:
+    - AEBRRTstarFaithfulConfigDefault
     - RRTConnectkConfigDefault
-    # Uncomment to enable AEB-RRT* (gray rollout):
-    # - AEBRRTstarFaithfulConfigDefault
-    # - AEBRRTstarAnytimeConfigDefault
+    # - AEBRRTstarAnytimeConfigDefault  # enable for anytime optimization
