@@ -44,10 +44,10 @@ import run_real_fcl_benchmark as rfb  # noqa: E402
 # ---------------------------------------------------------------------------
 #  Scenario constants (this benchmark owns the scenario, no YAML)
 # ---------------------------------------------------------------------------
-SWEEP_LENGTH_M = 0.30
+SWEEP_LENGTH_M = 0.50  # ±0.25 m around the link column; clear band starts at |x|≈0.15
 SWEEP_SAMPLES = 10
 SPHERE_RADIUS_M = 0.06
-LATERAL_OFFSETS_M = (0.0, 0.03, 0.06)
+LATERAL_OFFSETS_M = (0.0, 0.10, 0.20)  # on-column -> blocked, partial -> blocked, clear
 SERVICE_TIMEOUT_S = 5.0
 SCENE_SYNC_TIMEOUT_S = 5.0
 POSITION_TOLERANCE_M = 0.01
@@ -195,25 +195,6 @@ def plan_with_states(
     return True, dt, states
 
 
-def tool0_positions(
-    node: Node, moveit, start: JointState, goal: JointState, n_samples: int = 16
-) -> list[tuple[float, float, float]]:
-    """Tool0 positions along the straight-line joint interpolation in base_link."""
-    start_pos = np.asarray(start.position, dtype=float)
-    goal_pos = np.asarray(goal.position, dtype=float)
-    positions: list[tuple[float, float, float]] = []
-    for t in np.linspace(0.0, 1.0, n_samples):
-        state = JointState()
-        state.name = list(start.name)
-        state.position = list(start_pos + t * (goal_pos - start_pos))
-        poses = moveit.compute_fk(joint_state=state, fk_link_names=["tool0"])
-        if not poses:
-            raise RuntimeError(f"compute_fk failed for interpolation t={t:.3f}")
-        pose = poses[0]
-        positions.append((pose.pose.position.x, pose.pose.position.y, pose.pose.position.z))
-    return positions
-
-
 # ---------------------------------------------------------------------------
 #  Result record
 # ---------------------------------------------------------------------------
@@ -233,6 +214,8 @@ class RunRecord:
     obstacle_quaternion_xyzw: tuple[float, float, float, float] = (0.0, 0.0, 0.0, 1.0)
     sweep_t: float | None = None
     lateral_offset_m: float | None = None
+    start_valid: bool | None = None
+    goal_valid: bool | None = None
     notes: str = ""
     extra: dict = field(default_factory=dict)
 
@@ -256,6 +239,8 @@ def record_to_dict(record: RunRecord) -> dict:
         "all_edges_valid": record.all_edges_valid,
         "old_path_now_collides": record.old_path_now_collides,
         "scene_sync_ok": record.scene_sync_ok,
+        "start_valid": record.start_valid,
+        "goal_valid": record.goal_valid,
         "notes": record.notes,
     }
     data.update(record.extra)
@@ -314,18 +299,20 @@ def main() -> int:
     json_path = output_dir / f"run_{run_stamp}.json"
 
     # ------------------------------------------------------------------
-    #  Scenario A — moving obstacle sweep
+    #  Scenario A — moving obstacle sweep (near the arm's joint links)
     # ------------------------------------------------------------------
-    node.get_logger().info("=== Scenario A: moving obstacle sweep ===")
-    tool_path = tool0_positions(node, moveit, start, goal, n_samples=16)
-    corridor_mid = np.asarray(tool_path[len(tool_path) // 2], dtype=float)
-    horizontal = np.asarray(tool_path[-1], dtype=float) - np.asarray(tool_path[0], dtype=float)
-    horizontal[2] = 0.0
-    if np.linalg.norm(horizontal) < 1e-6:
-        horizontal = np.array([1.0, 0.0, 0.0])
-    sweep_dir = horizontal / np.linalg.norm(horizontal)
+    # The arm is a near-vertical column in base_link: every link lies on the
+    # x=0, y≈0.343 line (Link3 z≈0.23–0.44, Link4 z≈0.45–0.66, Link5/6
+    # z≈0.79–1.00, Link7 z≈0.93–1.14), while tool0 is at z≈1.5.  Obstacles
+    # must be placed at LINK height — matching the static obstacles.yaml set —
+    # not at the end-effector height.  Sweep the sphere laterally across the
+    # link column at a mid-link height.
+    node.get_logger().info("=== Scenario A: moving obstacle sweep (link height) ===")
+    link_column = np.array([0.0, 0.343, 0.80], dtype=float)  # mid-link height, on the column
+    sweep_dir = np.array([1.0, 0.0, 0.0])  # lateral (x) sweep across the link column
     node.get_logger().info(
-        f"Corridor midpoint tool0={corridor_mid.round(3)} sweep_dir={sweep_dir.round(3)}"
+        f"Link column x={link_column[0]:.2f} y={link_column[1]:.3f} z={link_column[2]:.2f} "
+        f"sweep_dir={sweep_dir.round(3)}"
     )
 
     def republish_sweep():
@@ -333,17 +320,22 @@ def main() -> int:
             "dyn_sweep", tuple(float(v) for v in sweep_pos), (0.0, 0.0, 0.0, 1.0), "base_link"
         )
 
-    # Initial ADD of the sweep sphere.
+    # Initial ADD of the sweep sphere (parked below the floor until first MOVE).
     moveit.add_collision_sphere(
         "dyn_sweep", radius=SPHERE_RADIUS_M, position=(0.0, 0.0, -5.0),
         quat_xyzw=(0.0, 0.0, 0.0, 1.0), frame_id="base_link",
     )
     for i in range(SWEEP_SAMPLES):
         t = i / (SWEEP_SAMPLES - 1)
-        sweep_pos = corridor_mid + (t - 0.5) * SWEEP_LENGTH_M * sweep_dir
+        # Sweep x across the link column: t=0.5 parks the sphere exactly on the
+        # links (blocks start/goal); edges (t=0,1) sit ~0.15 m off the column.
+        sweep_pos = link_column + (t - 0.5) * SWEEP_LENGTH_M * sweep_dir
         sync_ok = wait_obstacle_pose(
             node, scene_client, "dyn_sweep", sweep_pos, republish=republish_sweep
         )
+        # Record whether the obstacle at this pose blocks the start/goal configs.
+        start_ok = state_valid(node, validity_client, rfb.JOINTS, start.position)
+        goal_ok = state_valid(node, validity_client, rfb.JOINTS, goal.position)
         for key, planner_id in PLANNERS:
             ok, dt, path_states = plan_with_states(moveit, planner_id, goal)
             record = RunRecord(
@@ -356,6 +348,8 @@ def main() -> int:
                 scene_sync_ok=sync_ok,
                 obstacle_position=tuple(float(v) for v in sweep_pos),
                 sweep_t=round(t, 4),
+                start_valid=start_ok,
+                goal_valid=goal_ok,
             )
             # Validate a successful path against the current scene.
             if ok:
@@ -366,10 +360,13 @@ def main() -> int:
                 record.all_edges_valid = all_e
                 if contacts:
                     record.notes = "invalid=" + ";".join(contacts)
+            elif start_ok is False or goal_ok is False:
+                record.notes = "start/goal blocked by obstacle at link height"
             records.append(record)
             print(
                 f"  sweep_t={t:.2f} pos={tuple(round(float(v), 3) for v in sweep_pos)} "
-                f"{key} {'OK' if ok else 'FAIL'} {dt:.3f}s pts={len(path_states)} sync={sync_ok}"
+                f"{key} {'OK' if ok else 'FAIL'} {dt:.3f}s pts={len(path_states)} "
+                f"start={start_ok} goal={goal_ok} sync={sync_ok}"
             )
         # Append incrementally so a crash keeps prior data.
         json_path.write_text(
@@ -392,7 +389,9 @@ def main() -> int:
         return 1
     node.get_logger().info(f"Baseline plan OK {dt:.3f}s states={len(baseline_states)}")
 
-    block = np.asarray(tool0_positions(node, moveit, start, goal, n_samples=17)[8], dtype=float)
+    # Sudden obstacle also appears at LINK height (mid-link column), offset
+    # laterally (y direction) so it can partially clear the links.
+    block = np.array([0.0, 0.343, 0.80], dtype=float)
     lateral_dir = np.array([-sweep_dir[1], sweep_dir[0], 0.0], dtype=float)
     lateral_dir /= np.linalg.norm(lateral_dir)
 
@@ -410,6 +409,8 @@ def main() -> int:
                 quat_xyzw=(0.0, 0.0, 0.0, 1.0), frame_id="base_link",
             ),
         )
+        start_ok = state_valid(node, validity_client, rfb.JOINTS, start.position)
+        goal_ok = state_valid(node, validity_client, rfb.JOINTS, goal.position)
         for key, planner_id in PLANNERS:
             ok, dt, path_states = plan_with_states(moveit, planner_id, goal)
             record = RunRecord(
@@ -422,6 +423,8 @@ def main() -> int:
                 scene_sync_ok=sync_ok,
                 obstacle_position=tuple(float(v) for v in pos),
                 lateral_offset_m=float(offset),
+                start_valid=start_ok,
+                goal_valid=goal_ok,
             )
             # Does the OLD baseline path now collide with the new scene?
             all_s_old, _, contacts_old = check_path_validity(
@@ -441,11 +444,14 @@ def main() -> int:
                 record.all_edges_valid = all_e
                 if contacts:
                     record.notes += "new_invalid=" + ";".join(contacts)
+            if ok is False and (start_ok is False or goal_ok is False):
+                record.notes += "start/goal blocked at link height;"
             records.append(record)
             print(
                 f"  offset={offset:.2f} pos={tuple(round(float(v), 3) for v in pos)} "
                 f"{key} {'OK' if ok else 'FAIL'} {dt:.3f}s pts={len(path_states)} "
-                f"old_collides={record.old_path_now_collides} sync={sync_ok}"
+                f"start={start_ok} goal={goal_ok} old_collides={record.old_path_now_collides} "
+                f"sync={sync_ok}"
             )
         json_path.write_text(
             json.dumps([record_to_dict(r) for r in records], indent=2), encoding="utf-8"
