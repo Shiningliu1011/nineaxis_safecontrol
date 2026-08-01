@@ -23,9 +23,11 @@ import numpy as np
 import mujoco.viewer
 import rclpy
 from ament_index_python.packages import PackageNotFoundError, get_package_share_directory
+from moveit_msgs.msg import CollisionObject
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import JointState
+from shape_msgs.msg import SolidPrimitive
 
 from .motion_planning import CollisionObjectSpec
 from .plan_transition import (
@@ -39,6 +41,28 @@ from .plan_transition import (
 # display-only: it rotates both robot and annotations for MuJoCo's Z-up view,
 # while joint qpos values retain their URDF/MoveIt units and signs unchanged.
 Y_UP_TO_Z_UP_EULER = "1.5707963267948966 0 0"
+# Quaternion (wxyz) for the Y-up->Z-up rotation about X by +90 deg.  Free-joint
+# obstacle slots live at worldbody level (MuJoCo requires free joints at the
+# top level), so base_link poses are rotated by this before writing qpos.
+_Y_UP_TO_Z_UP_QUAT_WXYZ = (0.7071067811865476, 0.7071067811865476, 0.0, 0.0)
+
+# Pre-allocated free-body "slots" used to render live dynamic obstacles
+# (from /collision_object MOVE/ADD) without recompiling the MuJoCo model.
+# Order matters: sphere, box, cylinder.
+DEFAULT_OBSTACLE_SLOT_COUNTS = (8, 4, 4)
+
+# Default geom size per slot type (m): sphere radius; box half-extents; cylinder (radius, half-height).
+_DEFAULT_SLOT_SIZES = {
+    "sphere": (0.05, 0.0, 0.0),
+    "box": (0.05, 0.05, 0.05),
+    "cylinder": (0.05, 0.05, 0.0),
+}
+# Shapes names must match CollisionObject primitive types for size parsing.
+_SLOT_SHAPE_BY_PRIMITIVE = {
+    SolidPrimitive.BOX: "box",
+    SolidPrimitive.SPHERE: "sphere",
+    SolidPrimitive.CYLINDER: "cylinder",
+}
 
 
 @dataclass(frozen=True)
@@ -122,8 +146,14 @@ class MuJoCoJointStateViewer(Node):
             )
 
         raw_mjcf = self._urdf_to_mjcf(urdf_path, mesh_directory)
+        slot_counts = tuple(
+            int(value)
+            for value in self.get_parameter("obstacle_slot_counts").value
+        )
+        if len(slot_counts) != 3:
+            raise ValueError("obstacle_slot_counts must contain exactly three values")
         scene_mjcf = self._inject_display_scene(
-            raw_mjcf, target_path, obstacles, tracking_cylinder
+            raw_mjcf, target_path, obstacles, tracking_cylinder, slot_counts
         )
         self._model = mujoco.MjModel.from_xml_string(scene_mjcf)
         self._model.opt.gravity[:] = 0.0
@@ -132,6 +162,13 @@ class MuJoCoJointStateViewer(Node):
         self._latest_positions: dict[str, float] = {}
         self._received_joint_state = False
 
+        self._dynamic_color = [
+            float(value) for value in self.get_parameter("dynamic_obstacle_color").value
+        ]
+        if len(self._dynamic_color) != 4:
+            raise ValueError("dynamic_obstacle_color must contain four values")
+        self._setup_obstacle_slots(slot_counts)
+
         topic = str(self.get_parameter("joint_state_topic").value)
         self.create_subscription(
             JointState,
@@ -139,6 +176,14 @@ class MuJoCoJointStateViewer(Node):
             self._joint_state_callback,
             qos_profile_sensor_data,
         )
+        if bool(self.get_parameter("show_dynamic_obstacles").value):
+            # Match pymoveit2's default (reliable) QoS so MOVE/ADD are not dropped.
+            self.create_subscription(
+                CollisionObject,
+                "/collision_object",
+                self._collision_object_callback,
+                10,
+            )
         self.get_logger().info(
             f"MuJoCo loaded project model {urdf_path} ({self._model.njnt} joints, "
             f"{self._model.ngeom} geoms); mirroring {topic}."
@@ -168,6 +213,202 @@ class MuJoCoJointStateViewer(Node):
         mujoco.mj_forward(self._model, self._data)
         return True
 
+    # ------------------------------------------------------------------
+    #  Live dynamic obstacle slots (/collision_object → MuJoCo)
+    # ------------------------------------------------------------------
+
+    def _setup_obstacle_slots(self, counts: tuple[int, int, int]) -> None:
+        """Resolve the pre-allocated free-body slots and initialise bookkeeping."""
+        self._obstacle_slots: list[dict] = []
+        self._slot_by_object_id: dict[str, int] = {}
+        self._obstacle_targets: dict[int, dict] = {}
+        for shape, count in zip(("sphere", "box", "cylinder"), counts):
+            for index in range(count):
+                slot_name = f"dyn_slot_{shape}_{index}"
+                joint_id = mujoco.mj_name2id(
+                    self._model, mujoco.mjtObj.mjOBJ_JOINT, f"{slot_name}_joint"
+                )
+                geom_id = mujoco.mj_name2id(
+                    self._model, mujoco.mjtObj.mjOBJ_GEOM, f"{slot_name}_geom"
+                )
+                if joint_id < 0 or geom_id < 0:
+                    raise ValueError(
+                        f"MuJoCo model is missing dynamic obstacle slot {slot_name}"
+                    )
+                self._obstacle_slots.append(
+                    {
+                        "name": slot_name,
+                        "joint_id": joint_id,
+                        "geom_id": geom_id,
+                        "qpos_adr": int(self._model.jnt_qposadr[joint_id]),
+                        "shape": shape,
+                        "claimed": False,
+                    }
+                )
+        self.get_logger().info(
+            f"Pre-allocated {len(self._obstacle_slots)} dynamic obstacle slot(s) "
+            "for /collision_object rendering."
+        )
+
+    def _collision_object_callback(self, message: CollisionObject) -> None:
+        """Track ADD/APPEND/MOVE/REMOVE of collision objects.
+
+        This callback only mutates plain-dict bookkeeping (``_obstacle_targets``);
+        it never touches ``self._model`` / ``self._data`` because it runs outside
+        the viewer lock.  ``apply_latest_obstacles`` writes the pending targets
+        into MuJoCo under ``viewer.lock()`` each frame.
+        """
+        operation = bytes(message.operation)
+        object_id = message.id
+
+        if operation in (CollisionObject.ADD, CollisionObject.APPEND):
+            if not message.primitives:
+                return
+            shape_name = _SLOT_SHAPE_BY_PRIMITIVE.get(message.primitives[0].type)
+            if shape_name is None:
+                self.get_logger().warning(
+                    f"Ignoring {object_id}: unsupported primitive type "
+                    f"{message.primitives[0].type}"
+                )
+                return
+            slot_idx = self._slot_by_object_id.get(object_id)
+            if slot_idx is None:
+                slot_idx = self._claim_slot(shape_name, object_id)
+                if slot_idx is None:
+                    self.get_logger().warning(
+                        f"No free {shape_name} obstacle slot for {object_id}; dropped"
+                    )
+                    return
+            self._set_slot_target(slot_idx, message)
+
+        elif operation == CollisionObject.MOVE:
+            slot_idx = self._slot_by_object_id.get(object_id)
+            if slot_idx is None:
+                self.get_logger().warning(
+                    f"MOVE for unknown object {object_id} ignored"
+                )
+                return
+            self._set_slot_target(slot_idx, message)
+
+        elif operation == CollisionObject.REMOVE:
+            slot_idx = self._slot_by_object_id.pop(object_id, None)
+            if slot_idx is None:
+                return
+            self._obstacle_slots[slot_idx]["claimed"] = False
+            # Park the slot far below the floor; alpha=0 keeps it invisible.
+            # A full target dict is required so apply_latest_obstacles can write
+            # position/quat/size even for a released slot.
+            self._obstacle_targets[slot_idx] = {
+                "position": (0.0, 0.0, -5.0),
+                "quat_wxyz": (1.0, 0.0, 0.0, 0.0),
+                "size": _DEFAULT_SLOT_SIZES[self._obstacle_slots[slot_idx]["shape"]],
+                "alpha": 0.0,
+            }
+
+    def _claim_slot(self, shape_name: str, object_id: str) -> int | None:
+        for index, slot in enumerate(self._obstacle_slots):
+            if not slot["claimed"] and slot["shape"] == shape_name:
+                slot["claimed"] = True
+                self._slot_by_object_id[object_id] = index
+                return index
+        return None
+
+    @staticmethod
+    def _yup_to_zup_world(
+        position: tuple[float, float, float],
+        quat_wxyz: tuple[float, float, float, float],
+    ) -> tuple[tuple[float, float, float], tuple[float, float, float, float]]:
+        """Rotate a base_link pose into world coords for a free-joint slot.
+
+        Free-joint slots live at worldbody level (MuJoCo restriction), so the
+        Y-up→Z-up rotation that ``display_frame`` applies to static annotations
+        must be applied here manually: position by R, quaternion by composition
+        with the rotation quaternion.
+        """
+        x, y, z = position
+        rotated_position = (x, -z, y)
+        rw, rx, ry, rz = _Y_UP_TO_Z_UP_QUAT_WXYZ
+        qw, qx, qy, qz = quat_wxyz
+        # Hamilton product R ⊗ q
+        w = rw * qw - rx * qx - ry * qy - rz * qz
+        i = rw * qx + rx * qw + ry * qz - rz * qy
+        j = rw * qy - rx * qz + ry * qw + rz * qx
+        k = rw * qz + rx * qy - ry * qx + rz * qw
+        return rotated_position, (w, i, j, k)
+
+    def _set_slot_target(self, slot_idx: int, message: CollisionObject) -> None:
+        slot = self._obstacle_slots[slot_idx]
+        position = (
+            message.pose.position.x,
+            message.pose.position.y,
+            message.pose.position.z,
+        )
+        # ROS xyzw → MuJoCo wxyz.
+        orientation = message.pose.orientation
+        quat_wxyz = (
+            orientation.w,
+            orientation.x,
+            orientation.y,
+            orientation.z,
+        )
+        size = _DEFAULT_SLOT_SIZES[slot["shape"]]
+        if message.primitives:
+            primitive = message.primitives[0]
+            if slot["shape"] == "sphere" and len(primitive.dimensions) >= 1:
+                size = (float(primitive.dimensions[0]), 0.0, 0.0)
+            elif slot["shape"] == "box" and len(primitive.dimensions) >= 3:
+                size = (
+                    float(primitive.dimensions[0]) / 2.0,
+                    float(primitive.dimensions[1]) / 2.0,
+                    float(primitive.dimensions[2]) / 2.0,
+                )
+            elif slot["shape"] == "cylinder" and len(primitive.dimensions) >= 2:
+                # SolidPrimitive cylinder dimensions = (height, radius).
+                size = (
+                    float(primitive.dimensions[1]),
+                    float(primitive.dimensions[0]) / 2.0,
+                    0.0,
+                )
+        if message.header.frame_id != "base_link":
+            self.get_logger().warning(
+                f"Obstacle {message.id} in frame '{message.header.frame_id}'; "
+                "rendering as base_link"
+            )
+        world_position, world_quat = MuJoCoJointStateViewer._yup_to_zup_world(
+            position, quat_wxyz
+        )
+        self._obstacle_targets[slot_idx] = {
+            "position": world_position,
+            "quat_wxyz": world_quat,
+            "size": size,
+            "alpha": 1.0,
+        }
+
+    def apply_latest_obstacles(self) -> None:
+        """Write pending dynamic-obstacle targets into MuJoCo (under viewer lock)."""
+        if not self._obstacle_targets:
+            return
+        for slot_idx, target in self._obstacle_targets.items():
+            slot = self._obstacle_slots[slot_idx]
+            # Defensive: never crash the render loop on a partial target.
+            if not all(key in target for key in ("position", "quat_wxyz", "size", "alpha")):
+                continue
+            adr = slot["qpos_adr"]
+            self._data.qpos[adr : adr + 7] = [
+                target["position"][0],
+                target["position"][1],
+                target["position"][2],
+                target["quat_wxyz"][0],
+                target["quat_wxyz"][1],
+                target["quat_wxyz"][2],
+                target["quat_wxyz"][3],
+            ]
+            self._model.geom_size[slot["geom_id"]] = target["size"]
+            self._model.geom_rgba[slot["geom_id"], 0:3] = self._dynamic_color[:3]
+            self._model.geom_rgba[slot["geom_id"], 3] = target["alpha"]
+        self._obstacle_targets.clear()
+        mujoco.mj_forward(self._model, self._data)
+
     def _declare_parameters(self) -> None:
         self.declare_parameter("joint_names", list(DEFAULT_JOINT_NAMES))
         self.declare_parameter("joint_state_topic", "/joint_states")
@@ -190,6 +431,12 @@ class MuJoCoJointStateViewer(Node):
         self.declare_parameter("path_surface_offset_m", 0.002)
         self.declare_parameter("show_obstacles", True)
         self.declare_parameter("obstacles_file", "")
+        # Live dynamic obstacles (from /collision_object) rendered via a
+        # pre-allocated free-body slot pool.  Purely additive: static
+        # obstacles.yaml objects are unaffected.
+        self.declare_parameter("show_dynamic_obstacles", True)
+        self.declare_parameter("dynamic_obstacle_color", [1.0, 0.5, 0.1, 1.0])
+        self.declare_parameter("obstacle_slot_counts", list(DEFAULT_OBSTACLE_SLOT_COUNTS))
 
     def _joint_state_callback(self, message: JointState) -> None:
         positions = dict(zip(message.name, message.position))
@@ -260,6 +507,7 @@ class MuJoCoJointStateViewer(Node):
         target_path: Iterable[tuple[float, float, float]],
         obstacles: Iterable[CollisionObjectSpec],
         tracking_cylinder: TrackingCylinderSpec | None = None,
+        obstacle_slot_counts: tuple[int, int, int] = DEFAULT_OBSTACLE_SLOT_COUNTS,
     ) -> str:
         """Add display-only floor, lighting, path, obstacles, frame axes and
         cylinder surface normals."""
@@ -281,6 +529,12 @@ class MuJoCoJointStateViewer(Node):
         annotations += MuJoCoJointStateViewer._obstacle_geoms(obstacles)
         result = mjcf_xml.replace("<worldbody>", "<worldbody>" + world_prefix, 1)
         result = result.replace("</worldbody>", annotations + "    </body>\n  </worldbody>", 1)
+        # Free joints can only live at the top level (children of worldbody), so
+        # the dynamic-obstacle slots are inserted as siblings of display_frame.
+        # apply_latest_obstacles applies the same Y-up->Z-up rotation manually.
+        slot_geoms = MuJoCoJointStateViewer._obstacle_slot_geoms(obstacle_slot_counts)
+        if slot_geoms:
+            result = result.replace("</worldbody>", slot_geoms + "  </worldbody>", 1)
 
         # Inject coordinate-frame axis geoms into base_link and tool0.
         result = MuJoCoJointStateViewer._inject_frame_axes(result)
@@ -609,6 +863,36 @@ class MuJoCoJointStateViewer(Node):
         return "".join(geoms)
 
     @staticmethod
+    def _obstacle_slot_geoms(counts: tuple[int, int, int]) -> str:
+        """Pre-allocate free-body obstacle slots for live /collision_object updates.
+
+        Each slot is a free body with a single display geom parked far below the
+        floor (invisible, alpha=0) until claimed by a dynamic collision object.
+        Runtime updates only write the slot's freejoint qpos and geom size/rgba,
+        so the MuJoCo model never needs recompiling.
+        """
+        geoms: list[str] = []
+        shapes = ("sphere", "box", "cylinder")
+        for shape, count in zip(shapes, counts):
+            size = _DEFAULT_SLOT_SIZES[shape]
+            for index in range(count):
+                slot_name = f"dyn_slot_{shape}_{index}"
+                size_text = " ".join(f"{value:.6f}" for value in size)
+                geoms.append(
+                    f'      <body name="{slot_name}" pos="0 0 -5" quat="1 0 0 0">\n'
+                    f'        <freejoint name="{slot_name}_joint"/>\n'
+                    # Free bodies require a valid (non-zero) inertial block even
+                    # for display-only geoms.
+                    f'        <inertial pos="0 0 0" mass="0.001" '
+                    f'diaginertia="1e-6 1e-6 1e-6"/>\n'
+                    f'        <geom name="{slot_name}_geom" type="{shape}" '
+                    f'size="{size_text}" rgba="1.0 0.5 0.1 0" group="3" '
+                    f'contype="0" conaffinity="0"/>\n'
+                    f"      </body>\n"
+                )
+        return "".join(geoms)
+
+    @staticmethod
     def _share_file(package_name: str, relative_path: str) -> Path:
         try:
             return Path(get_package_share_directory(package_name)) / relative_path
@@ -669,6 +953,7 @@ def main(args: Sequence[str] | None = None) -> int:
                 rclpy.spin_once(node, timeout_sec=min(period_s, 0.02))
                 with viewer.lock():
                     node.apply_latest_joint_state()
+                    node.apply_latest_obstacles()
                 viewer.sync()
                 remaining_s = period_s - (monotonic() - frame_start)
                 if remaining_s > 0.0:
