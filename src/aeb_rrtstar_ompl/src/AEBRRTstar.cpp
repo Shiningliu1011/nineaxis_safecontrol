@@ -111,10 +111,10 @@ AEBRRTstar::AEBRRTstar(const base::SpaceInformationPtr &si)
     specs_.directed = true;
 
     declareParam<double>("range", this, &AEBRRTstar::setStepSize,
-                         &AEBRRTstar::getStepSize, "0.1:1.0");
+                         &AEBRRTstar::getStepSize, "0.0:10.0");
     declareParam<double>("connect_threshold", this,
                          &AEBRRTstar::setConnectThreshold,
-                         &AEBRRTstar::getConnectThreshold, "0.1:2.0");
+                         &AEBRRTstar::getConnectThreshold, "0.0:20.0");
     declareParam<bool>("stop_on_first_solution", this,
                        &AEBRRTstar::setStopOnFirstSolution,
                        &AEBRRTstar::getStopOnFirstSolution);
@@ -157,63 +157,86 @@ void AEBRRTstar::setup()
     dimension_ = rvs->getDimension();
     if (dimension_ < 1)
         throw Exception("AEBRRTstar: state space dimension must be >= 1");
-    OMPL_INFORM("AEBRRTstar: dim=%u, step=%.3f, cn_thr=%.3f",
-                dimension_, step_size_, connect_threshold_);
 }
 
 // ======================================================================
 base::PlannerStatus AEBRRTstar::solve(
     const base::PlannerTerminationCondition &ptc)
 {
-    clear();
+    // MoveIt2 calls clear() before solve().  Only free our own tree
+    // resources; do NOT reset PlannerInputStates via base::clear().
+    {
+        auto si_tmp = si_;
+        if (si_tmp) {
+            for (auto &n : tree_start_.nodes)
+                if (n.state) si_tmp->freeState(n.state);
+            for (auto &n : tree_goal_.nodes)
+                if (n.state) si_tmp->freeState(n.state);
+        }
+        tree_start_.nodes.clear(); tree_start_.nn.reset();
+        tree_goal_.nodes.clear();  tree_goal_.nn.reset();
+        best_cost_ = std::numeric_limits<double>::infinity();
+        best_path_.reset();
+        motion_checks_ = 0;
+        connect_start_idx_ = -1;
+        connect_goal_idx_ = -1;
+    }
     auto si = si_;
     auto pdef = pdef_;
     if (!si || !pdef)
+    {
+        std::cerr << "AEB_FAIL: CRASH si=" << (si_ ? "OK" : "NULL")
+                  << " pdef=" << (pdef_ ? "OK" : "NULL") << std::endl;
         return base::PlannerStatus::CRASH;
+    }
+
+    // Auto-compute step/threshold from state space extent NOW (all params
+    // from YAML have been applied by MoveIt2 by the time solve() runs).
+    // OMPL convention: range=0 → auto-compute.
+    // Use 5% of extent (~0.51 for ninezzhou) — small enough that stepping
+    // from a boundary goal root stays in bounds.
+    if (step_size_ <= std::numeric_limits<double>::epsilon())
+    {
+        double extent = si_->getStateSpace()->getMaximumExtent();
+        step_size_ = 0.05 * extent;
+    }
+    if (connect_threshold_ <= std::numeric_limits<double>::epsilon())
+    {
+        connect_threshold_ = 2.0 * step_size_;
+    }
+    OMPL_INFORM("AEBRRTstar: eff step=%.3f cn_thr=%.3f",
+                step_size_, connect_threshold_);
 
     base::PlannerInputStates input_states(this);
     if (!input_states.haveMoreStartStates())
+    {
+        std::cerr << "AEB_FAIL: NO START STATES" << std::endl;
         return base::PlannerStatus::INVALID_START;
+    }
 
-    base::State *start_state = si->allocState();
-    si->copyState(start_state, input_states.nextStart());
+    // Use PlannerInputStates::nextStart()/nextGoal() which handle all
+    // goal types (GoalState, GoalSampleableRegion, ConstrainedGoalSampler).
+    // Clone into our own states for tree ownership.
+    base::State *start_state = si->cloneState(input_states.nextStart());
     if (!si->isValid(start_state))
     {
+        std::cerr << "AEB_FAIL: INVALID START" << std::endl;
         si->freeState(start_state);
         return base::PlannerStatus::INVALID_START;
     }
 
-    // Goal: sample if sampleable, otherwise get fixed state
-    auto *goal = pdef->getGoal().get();
-    base::State *goal_state = si->allocState();
-
-    auto *gsr = dynamic_cast<base::GoalSampleableRegion *>(goal);
-    if (gsr)
+    // nextGoal(ptc) samples a valid goal state using OMPL's goal sampler
+    // (which maintains the MoveIt2 RobotState correctly).
+    const base::State *goal_raw = input_states.nextGoal(ptc);
+    if (!goal_raw)
     {
-        if (!gsr->canSample())
-        {
-            si->freeState(start_state);
-            si->freeState(goal_state);
-            return base::PlannerStatus::INVALID_GOAL;
-        }
-        gsr->sampleGoal(goal_state);
+        si->freeState(start_state);
+        return base::PlannerStatus::INVALID_GOAL;
     }
-    else
-    {
-        auto *gs = dynamic_cast<base::GoalState *>(goal);
-        if (gs)
-            si->copyState(goal_state, gs->getState());
-        else
-        {
-            si->freeState(start_state);
-            si->freeState(goal_state);
-            OMPL_ERROR("AEBRRTstar: unsupported goal type");
-            return base::PlannerStatus::UNRECOGNIZED_GOAL_TYPE;
-        }
-    }
-
+    base::State *goal_state = si->cloneState(goal_raw);
     if (!si->isValid(goal_state))
     {
+        std::cerr << "AEB_FAIL: INVALID GOAL" << std::endl;
         si->freeState(start_state);
         si->freeState(goal_state);
         return base::PlannerStatus::INVALID_GOAL;
@@ -233,6 +256,7 @@ base::PlannerStatus AEBRRTstar::solve(
     // --- Init trees (pre-reserve to prevent vector reallocation which
     //     would invalidate Node* pointers stored in the GNAT NN) ---
     static const size_t TREE_RESERVE = 100000;
+
     tree_start_.nodes.reserve(TREE_RESERVE);
     tree_start_.nodes.push_back({start_state, -1, {}, 0.0});
     tree_start_.nn =
@@ -313,7 +337,11 @@ base::PlannerStatus AEBRRTstar::solve(
 
         if (std::max(fail_start, fail_goal) >
                 max_failed_extensions_ && !solved)
+        {
+            std::cerr << "AEB_FAIL: max_failed_extensions reached ("
+                      << fail_start << "/" << fail_goal << ")" << std::endl;
             break;
+        }
     }
 
     if (solved)
@@ -324,6 +352,10 @@ base::PlannerStatus AEBRRTstar::solve(
                                      : best_path_);
         return base::PlannerStatus::EXACT_SOLUTION;
     }
+    std::cerr << "AEB_FAIL: timeout, iter=" << iter
+              << " fail=" << fail_start << "/" << fail_goal
+              << " nodes=" << tree_start_.nodes.size() << "/"
+              << tree_goal_.nodes.size() << std::endl;
     return base::PlannerStatus::TIMEOUT;
 }
 
@@ -375,10 +407,22 @@ std::pair<int, bool> AEBRRTstar::extendTree(
     int idx_near = static_cast<int>(nearest - tree.nodes.data());
 
     base::State *x_new = si->allocState();
+    bool is_goal_tree = (&tree == &tree_goal_);
+
     steer(tree.nodes[idx_near].state, x_sample, step, x_new);
     si->freeState(x_sample);
 
+    // RRTConnect-style motion check: for the goal tree, first verify the
+    // steered state is valid, then check motion (mirrors growTree()).
+    bool valid = is_goal_tree
+        ? (si->isValid(x_new) && si->checkMotion(x_new, tree.nodes[idx_near].state))
+        : si->checkMotion(tree.nodes[idx_near].state, x_new);
     ++motion_checks_;
+    if (!valid)
+    {
+        si->freeState(x_new);
+        return {fail_count + 1, false};
+    }
     if (!si->checkMotion(tree.nodes[idx_near].state, x_new))
     {
         si->freeState(x_new);
@@ -457,8 +501,8 @@ std::pair<int, bool> AEBRRTstar::extendTree(
     {
         int ci = static_cast<int>(
             con_node - other_tree.nodes.data());
-        if (normDist(x_new, other_tree.nodes[ci].state, dim)
-            <= connect_threshold_)
+        double d = normDist(x_new, other_tree.nodes[ci].state, dim);
+        if (d <= connect_threshold_)
         {
             ++motion_checks_;
             if (si->checkMotion(x_new,
@@ -518,42 +562,26 @@ double AEBRRTstar::euclideanDistance(
 // ======================================================================
 void AEBRRTstar::randomSample(base::State *state) const
 {
-    auto *rvs = state_space_->as<base::RealVectorStateSpace>();
-    auto sampler = rvs->allocDefaultStateSampler();
-    sampler->sampleUniform(state);
+    // RRTConnect-style: use si_->allocStateSampler() which returns a
+    // sampler that properly initializes MoveIt2's RobotState in sampled
+    // states (allocDefaultStateSampler() on the raw RealVector space does not).
+    if (!sampler_)
+        sampler_ = si_->allocStateSampler();
+    sampler_->sampleUniform(state);
 }
 
 void AEBRRTstar::steer(const base::State *from, const base::State *to,
                         double step, base::State *result) const
 {
+    // RRTConnect-style steering via the state space's interpolate().
+    // This mirrors ompl::geometric::RRTConnect::growTree().
     double d = si_->distance(from, to);
-    const auto *vf =
-        from->as<base::RealVectorStateSpace::StateType>()->values;
-    const auto *vt =
-        to->as<base::RealVectorStateSpace::StateType>()->values;
-    auto *vr =
-        result->as<base::RealVectorStateSpace::StateType>()->values;
-    if (d <= step)
+    if (d <= step + std::numeric_limits<double>::epsilon())
     {
-        for (unsigned int i = 0; i < dimension_; ++i)
-            vr[i] = vt[i];
+        si_->getStateSpace()->copyState(result, to);
+        return;
     }
-    else
-    {
-        double r = step / d;
-        for (unsigned int i = 0; i < dimension_; ++i)
-        {
-            double diff = vt[i] - vf[i];
-            if (i == J5_INDEX)
-            {
-                if (diff > pi<double>())
-                    diff -= 2.0 * pi<double>();
-                else if (diff < -pi<double>())
-                    diff += 2.0 * pi<double>();
-            }
-            vr[i] = vf[i] + r * diff;
-        }
-    }
+    si_->getStateSpace()->interpolate(from, to, step / d, result);
 }
 
 double AEBRRTstar::neighbourhoodRadius(int n) const
@@ -605,6 +633,7 @@ base::PathPtr AEBRRTstar::aebShortcut(
     if (!pg || pg->getStateCount() < 3) return path;
 
     auto si = si_;
+    auto ss = state_space_;
     std::size_t n = pg->getStateCount();
     std::vector<base::State *> interp;
     for (std::size_t i = 0; i + 1 < n; ++i)
@@ -615,19 +644,9 @@ base::PathPtr AEBRRTstar::aebShortcut(
             double alpha = static_cast<double>(k) /
                            (interp_count_ + 1);
             base::State *s = si->allocState();
-            const auto *vf =
-                pg->getState(i)
-                    ->as<base::RealVectorStateSpace::StateType>()
-                    ->values;
-            const auto *vt =
-                pg->getState(i + 1)
-                    ->as<base::RealVectorStateSpace::StateType>()
-                    ->values;
-            auto *vr =
-                s->as<base::RealVectorStateSpace::StateType>()
-                    ->values;
-            for (unsigned int d = 0; d < dimension_; ++d)
-                vr[d] = vf[d] + alpha * (vt[d] - vf[d]);
+            // interpolate() keeps the MoveIt2 RobotState in sync
+            ss->interpolate(pg->getState(i), pg->getState(i + 1),
+                            alpha, s);
             interp.push_back(s);
         }
     }
