@@ -1,0 +1,8 @@
+[INFO] [1785575515.922078525] [plan_transition]: Pipeline: continuous IK -> MoveIt transition planning -> controlled execution
+[INFO] [1785575515.922602282] [plan_transition]: MAT input: /home/lsn/robot_safecontrol/install/robot_safecontrol_moveit/share/robot_safecontrol_moveit/data/nurbs/ik_input.mat; max_points=50; stride=1
+[INFO] [1785575515.957062966] [plan_transition]: MoveIt PlanningScene contains 4 configured obstacle(s).
+[INFO] [1785575516.019497540] [plan_transition]: Computed 50 surface-normal-aligned orientation(s); cylinder fitted on 14992 full trajectory samples; axis=(0.0, 1.0, 0.0).
+[INFO] [1785575516.199046451] [plan_transition]: Continuous IK succeeded for 50 waypoint(s).
+[INFO] [1785575516.199769464] [plan_transition]: Joint states are available now
+[INFO] [1785575516.218767278] [plan_transition]: MoveIt planned a transition with 64 trajectory point(s).
+[INFO] [1785575516.219093707] [plan_transition]: Planning finished. Execution remains disabled; set execute_transition:=true and dry_run:=false only after reviewing the PlanningScene and controller.
