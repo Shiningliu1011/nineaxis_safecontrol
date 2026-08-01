@@ -270,14 +270,25 @@ class MuJoCoJointStateViewer(Node):
 
         if op_val == 0 or op_val == 2:  # ADD or APPEND
             if not message.primitives:
-                return
-            shape_name = _SLOT_SHAPE_BY_PRIMITIVE.get(message.primitives[0].type)
-            if shape_name is None:
                 self.get_logger().warning(
-                    f"Ignoring {object_id}: unsupported primitive type "
-                    f"{message.primitives[0].type}"
+                    f"ADD/APPEND for {object_id} has no primitives; ignored"
                 )
                 return
+            # SolidPrimitive.type is uint8 — may arrive as int or bytes.
+            prim_type = message.primitives[0].type
+            if isinstance(prim_type, bytes):
+                prim_type = int.from_bytes(prim_type, 'little')
+            else:
+                prim_type = int(prim_type)
+            shape_name = _SLOT_SHAPE_BY_PRIMITIVE.get(prim_type)
+            if shape_name is None:
+                self.get_logger().warning(
+                    f"Ignoring {object_id}: unsupported primitive type {prim_type}"
+                )
+                return
+            self.get_logger().info(
+                f"ADD {object_id} shape={shape_name} -> claiming slot"
+            )
             slot_idx = self._slot_by_object_id.get(object_id)
             if slot_idx is None:
                 slot_idx = self._claim_slot(shape_name, object_id)
@@ -387,6 +398,9 @@ class MuJoCoJointStateViewer(Node):
         """Write pending dynamic-obstacle targets into MuJoCo freejoint qpos."""
         if not self._obstacle_targets:
             return
+        self.get_logger().info(
+            f"Applying {len(self._obstacle_targets)} obstacle target(s)"
+        )
         for slot_idx, target in self._obstacle_targets.items():
             slot = self._obstacle_slots[slot_idx]
             adr = slot["qpos_adr"]
