@@ -123,26 +123,18 @@ sleep 2
 SUB_COUNT=$(ros2 topic info /collision_object 2>/dev/null | grep -c "Subscriber" || echo 0)
 echo "  /collision_object 订阅者: $SUB_COUNT (应为 ≥1)"
 
-# --- 4. 运行动态障碍基准 ---
+# --- 4. 运行完整演示 (过渡规划 + 执行动画 + 动态障碍 + 冗余避障) ---
 echo ""
 echo "============================================================"
-echo "  运行动态障碍基准 (移动扫掠 + 突发障碍, ~2 min)"
+echo "  运行完整演示 (~1 min)"
+echo "    Phase 1: 零位展示"
+echo "    Phase 2: AEB-RRT* 规划零位 -> 首个 IK"
+echo "    Phase 3: 平滑回放过渡轨迹 (机械臂移动)"
+echo "    Phase 4: 橙色球体扫过连杆柱"
+echo "    Phase 5: 冗余自由度避障 (同一末端, 不同关节)"
 echo "============================================================"
 echo ""
-timeout 180 python3 benchmarks/aeb_rrtstar/run_dynamic_obstacles.py 2>&1 | \
-    grep -E "Link column|sweep_t=|offset=|SUMMARY|Total|Saved|start=|goal=" || true
-RESULT_DIR="benchmarks/aeb_rrtstar/dynamic_obstacles"
-LATEST_JSON=$(ls -t "$RESULT_DIR"/*.json 2>/dev/null | head -1)
-echo ""
-echo "  基准结果: $LATEST_JSON"
-
-# --- 5. 运行冗余自由度避障演示 ---
-echo ""
-echo "============================================================"
-echo "  运行冗余自由度避障演示 (~1 min)"
-echo "============================================================"
-echo ""
-python3 benchmarks/aeb_rrtstar/demo_redundant_avoidance.py 2>&1 | \
+python3 benchmarks/aeb_rrtstar/demo_full.py 2>&1 | \
     grep -vE "WARN.*Joint states not available|INFO.*Joint states available|GLFWError" || true
 
 # --- 完成 ---
