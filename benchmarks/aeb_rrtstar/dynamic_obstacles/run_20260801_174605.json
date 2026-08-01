@@ -1,0 +1,808 @@
+[
+  {
+    "scenario": "moving_sweep",
+    "obstacle_id": "dyn_sweep",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "AEBRRTstarFaithfulConfigDefault",
+    "obstacle_position": [
+      -1.8539615127127355e-05,
+      0.22802892488986035,
+      1.496050112733839
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": 0.0,
+    "lateral_offset_m": null,
+    "success": true,
+    "plan_time_s": 0.01831657900038408,
+    "num_path_points": 64,
+    "all_states_valid": true,
+    "all_edges_valid": true,
+    "old_path_now_collides": null,
+    "scene_sync_ok": true,
+    "notes": ""
+  },
+  {
+    "scenario": "moving_sweep",
+    "obstacle_id": "dyn_sweep",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "RRTConnectkConfigDefault",
+    "obstacle_position": [
+      -1.8539615127127355e-05,
+      0.22802892488986035,
+      1.496050112733839
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": 0.0,
+    "lateral_offset_m": null,
+    "success": true,
+    "plan_time_s": 0.02034670300054131,
+    "num_path_points": 64,
+    "all_states_valid": true,
+    "all_edges_valid": true,
+    "old_path_now_collides": null,
+    "scene_sync_ok": true,
+    "notes": ""
+  },
+  {
+    "scenario": "moving_sweep",
+    "obstacle_id": "dyn_sweep",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "AEBRRTstarFaithfulConfigDefault",
+    "obstacle_position": [
+      -1.5268051122072443e-05,
+      0.26136225806264674,
+      1.496050112733839
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": 0.1111,
+    "lateral_offset_m": null,
+    "success": true,
+    "plan_time_s": 0.0268388420008705,
+    "num_path_points": 64,
+    "all_states_valid": true,
+    "all_edges_valid": true,
+    "old_path_now_collides": null,
+    "scene_sync_ok": true,
+    "notes": ""
+  },
+  {
+    "scenario": "moving_sweep",
+    "obstacle_id": "dyn_sweep",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "RRTConnectkConfigDefault",
+    "obstacle_position": [
+      -1.5268051122072443e-05,
+      0.26136225806264674,
+      1.496050112733839
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": 0.1111,
+    "lateral_offset_m": null,
+    "success": true,
+    "plan_time_s": 0.022513693998917006,
+    "num_path_points": 64,
+    "all_states_valid": true,
+    "all_edges_valid": true,
+    "old_path_now_collides": null,
+    "scene_sync_ok": true,
+    "notes": ""
+  },
+  {
+    "scenario": "moving_sweep",
+    "obstacle_id": "dyn_sweep",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "AEBRRTstarFaithfulConfigDefault",
+    "obstacle_position": [
+      -1.199648711701753e-05,
+      0.2946955912354331,
+      1.496050112733839
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": 0.2222,
+    "lateral_offset_m": null,
+    "success": true,
+    "plan_time_s": 0.015788877000886714,
+    "num_path_points": 64,
+    "all_states_valid": true,
+    "all_edges_valid": true,
+    "old_path_now_collides": null,
+    "scene_sync_ok": true,
+    "notes": ""
+  },
+  {
+    "scenario": "moving_sweep",
+    "obstacle_id": "dyn_sweep",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "RRTConnectkConfigDefault",
+    "obstacle_position": [
+      -1.199648711701753e-05,
+      0.2946955912354331,
+      1.496050112733839
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": 0.2222,
+    "lateral_offset_m": null,
+    "success": true,
+    "plan_time_s": 0.02800429199851351,
+    "num_path_points": 64,
+    "all_states_valid": true,
+    "all_edges_valid": true,
+    "old_path_now_collides": null,
+    "scene_sync_ok": true,
+    "notes": ""
+  },
+  {
+    "scenario": "moving_sweep",
+    "obstacle_id": "dyn_sweep",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "AEBRRTstarFaithfulConfigDefault",
+    "obstacle_position": [
+      -8.724923111962617e-06,
+      0.32802892440821946,
+      1.496050112733839
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": 0.3333,
+    "lateral_offset_m": null,
+    "success": false,
+    "plan_time_s": 0.010530719002417754,
+    "num_path_points": 0,
+    "all_states_valid": null,
+    "all_edges_valid": null,
+    "old_path_now_collides": null,
+    "scene_sync_ok": true,
+    "notes": ""
+  },
+  {
+    "scenario": "moving_sweep",
+    "obstacle_id": "dyn_sweep",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "RRTConnectkConfigDefault",
+    "obstacle_position": [
+      -8.724923111962617e-06,
+      0.32802892440821946,
+      1.496050112733839
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": 0.3333,
+    "lateral_offset_m": null,
+    "success": true,
+    "plan_time_s": 0.0249041529968963,
+    "num_path_points": 77,
+    "all_states_valid": true,
+    "all_edges_valid": true,
+    "old_path_now_collides": null,
+    "scene_sync_ok": true,
+    "notes": ""
+  },
+  {
+    "scenario": "moving_sweep",
+    "obstacle_id": "dyn_sweep",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "AEBRRTstarFaithfulConfigDefault",
+    "obstacle_position": [
+      -5.453359106907704e-06,
+      0.3613622575810058,
+      1.496050112733839
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": 0.4444,
+    "lateral_offset_m": null,
+    "success": false,
+    "plan_time_s": 0.01298883499839576,
+    "num_path_points": 0,
+    "all_states_valid": null,
+    "all_edges_valid": null,
+    "old_path_now_collides": null,
+    "scene_sync_ok": true,
+    "notes": ""
+  },
+  {
+    "scenario": "moving_sweep",
+    "obstacle_id": "dyn_sweep",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "RRTConnectkConfigDefault",
+    "obstacle_position": [
+      -5.453359106907704e-06,
+      0.3613622575810058,
+      1.496050112733839
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": 0.4444,
+    "lateral_offset_m": null,
+    "success": false,
+    "plan_time_s": 0.025249817997973878,
+    "num_path_points": 0,
+    "all_states_valid": null,
+    "all_edges_valid": null,
+    "old_path_now_collides": null,
+    "scene_sync_ok": true,
+    "notes": ""
+  },
+  {
+    "scenario": "moving_sweep",
+    "obstacle_id": "dyn_sweep",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "AEBRRTstarFaithfulConfigDefault",
+    "obstacle_position": [
+      -2.18179510185279e-06,
+      0.39469559075379224,
+      1.496050112733839
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": 0.5556,
+    "lateral_offset_m": null,
+    "success": false,
+    "plan_time_s": 0.013761993999651168,
+    "num_path_points": 0,
+    "all_states_valid": null,
+    "all_edges_valid": null,
+    "old_path_now_collides": null,
+    "scene_sync_ok": true,
+    "notes": ""
+  },
+  {
+    "scenario": "moving_sweep",
+    "obstacle_id": "dyn_sweep",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "RRTConnectkConfigDefault",
+    "obstacle_position": [
+      -2.18179510185279e-06,
+      0.39469559075379224,
+      1.496050112733839
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": 0.5556,
+    "lateral_offset_m": null,
+    "success": false,
+    "plan_time_s": 0.01358638300007442,
+    "num_path_points": 0,
+    "all_states_valid": null,
+    "all_edges_valid": null,
+    "old_path_now_collides": null,
+    "scene_sync_ok": true,
+    "notes": ""
+  },
+  {
+    "scenario": "moving_sweep",
+    "obstacle_id": "dyn_sweep",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "AEBRRTstarFaithfulConfigDefault",
+    "obstacle_position": [
+      1.0897689032021212e-06,
+      0.4280289239265786,
+      1.496050112733839
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": 0.6667,
+    "lateral_offset_m": null,
+    "success": false,
+    "plan_time_s": 0.013732321000134107,
+    "num_path_points": 0,
+    "all_states_valid": null,
+    "all_edges_valid": null,
+    "old_path_now_collides": null,
+    "scene_sync_ok": true,
+    "notes": ""
+  },
+  {
+    "scenario": "moving_sweep",
+    "obstacle_id": "dyn_sweep",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "RRTConnectkConfigDefault",
+    "obstacle_position": [
+      1.0897689032021212e-06,
+      0.4280289239265786,
+      1.496050112733839
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": 0.6667,
+    "lateral_offset_m": null,
+    "success": false,
+    "plan_time_s": 0.014038657998753479,
+    "num_path_points": 0,
+    "all_states_valid": null,
+    "all_edges_valid": null,
+    "old_path_now_collides": null,
+    "scene_sync_ok": true,
+    "notes": ""
+  },
+  {
+    "scenario": "moving_sweep",
+    "obstacle_id": "dyn_sweep",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "AEBRRTstarFaithfulConfigDefault",
+    "obstacle_position": [
+      4.361332908257035e-06,
+      0.46136225709936496,
+      1.496050112733839
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": 0.7778,
+    "lateral_offset_m": null,
+    "success": false,
+    "plan_time_s": 0.024155846000212478,
+    "num_path_points": 0,
+    "all_states_valid": null,
+    "all_edges_valid": null,
+    "old_path_now_collides": null,
+    "scene_sync_ok": true,
+    "notes": ""
+  },
+  {
+    "scenario": "moving_sweep",
+    "obstacle_id": "dyn_sweep",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "RRTConnectkConfigDefault",
+    "obstacle_position": [
+      4.361332908257035e-06,
+      0.46136225709936496,
+      1.496050112733839
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": 0.7778,
+    "lateral_offset_m": null,
+    "success": false,
+    "plan_time_s": 0.0129683089980972,
+    "num_path_points": 0,
+    "all_states_valid": null,
+    "all_edges_valid": null,
+    "old_path_now_collides": null,
+    "scene_sync_ok": true,
+    "notes": ""
+  },
+  {
+    "scenario": "moving_sweep",
+    "obstacle_id": "dyn_sweep",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "AEBRRTstarFaithfulConfigDefault",
+    "obstacle_position": [
+      7.632896913311946e-06,
+      0.4946955902721513,
+      1.496050112733839
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": 0.8889,
+    "lateral_offset_m": null,
+    "success": true,
+    "plan_time_s": 0.028612592999706976,
+    "num_path_points": 64,
+    "all_states_valid": true,
+    "all_edges_valid": true,
+    "old_path_now_collides": null,
+    "scene_sync_ok": true,
+    "notes": ""
+  },
+  {
+    "scenario": "moving_sweep",
+    "obstacle_id": "dyn_sweep",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "RRTConnectkConfigDefault",
+    "obstacle_position": [
+      7.632896913311946e-06,
+      0.4946955902721513,
+      1.496050112733839
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": 0.8889,
+    "lateral_offset_m": null,
+    "success": true,
+    "plan_time_s": 0.027551884999411413,
+    "num_path_points": 64,
+    "all_states_valid": true,
+    "all_edges_valid": true,
+    "old_path_now_collides": null,
+    "scene_sync_ok": true,
+    "notes": ""
+  },
+  {
+    "scenario": "moving_sweep",
+    "obstacle_id": "dyn_sweep",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "AEBRRTstarFaithfulConfigDefault",
+    "obstacle_position": [
+      1.090446091836686e-05,
+      0.5280289234449377,
+      1.496050112733839
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": 1.0,
+    "lateral_offset_m": null,
+    "success": true,
+    "plan_time_s": 0.026620915999956196,
+    "num_path_points": 64,
+    "all_states_valid": true,
+    "all_edges_valid": true,
+    "old_path_now_collides": null,
+    "scene_sync_ok": true,
+    "notes": ""
+  },
+  {
+    "scenario": "moving_sweep",
+    "obstacle_id": "dyn_sweep",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "RRTConnectkConfigDefault",
+    "obstacle_position": [
+      1.090446091836686e-05,
+      0.5280289234449377,
+      1.496050112733839
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": 1.0,
+    "lateral_offset_m": null,
+    "success": true,
+    "plan_time_s": 0.02676528300071368,
+    "num_path_points": 64,
+    "all_states_valid": true,
+    "all_edges_valid": true,
+    "old_path_now_collides": null,
+    "scene_sync_ok": true,
+    "notes": ""
+  },
+  {
+    "scenario": "sudden_appear",
+    "obstacle_id": "sudden_sphere",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "AEBRRTstarFaithfulConfigDefault",
+    "obstacle_position": [
+      -4.026232647050733e-06,
+      0.37585612204037205,
+      1.4893953374652042
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": null,
+    "lateral_offset_m": 0.0,
+    "success": false,
+    "plan_time_s": 0.044249138998566195,
+    "num_path_points": 0,
+    "all_states_valid": null,
+    "all_edges_valid": null,
+    "old_path_now_collides": true,
+    "scene_sync_ok": true,
+    "notes": "baseline_invalid;"
+  },
+  {
+    "scenario": "sudden_appear",
+    "obstacle_id": "sudden_sphere",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "RRTConnectkConfigDefault",
+    "obstacle_position": [
+      -4.026232647050733e-06,
+      0.37585612204037205,
+      1.4893953374652042
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": null,
+    "lateral_offset_m": 0.0,
+    "success": false,
+    "plan_time_s": 0.04707129399685073,
+    "num_path_points": 0,
+    "all_states_valid": null,
+    "all_edges_valid": null,
+    "old_path_now_collides": true,
+    "scene_sync_ok": true,
+    "notes": "baseline_invalid;"
+  },
+  {
+    "scenario": "sudden_appear",
+    "obstacle_id": "sudden_sphere",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "AEBRRTstarFaithfulConfigDefault",
+    "obstacle_position": [
+      -0.030004026088154785,
+      0.3758590664479766,
+      1.4893953374652042
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": null,
+    "lateral_offset_m": 0.03,
+    "success": false,
+    "plan_time_s": 0.05723765299990191,
+    "num_path_points": 0,
+    "all_states_valid": null,
+    "all_edges_valid": null,
+    "old_path_now_collides": true,
+    "scene_sync_ok": true,
+    "notes": "baseline_invalid;"
+  },
+  {
+    "scenario": "sudden_appear",
+    "obstacle_id": "sudden_sphere",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "RRTConnectkConfigDefault",
+    "obstacle_position": [
+      -0.030004026088154785,
+      0.3758590664479766,
+      1.4893953374652042
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": null,
+    "lateral_offset_m": 0.03,
+    "success": false,
+    "plan_time_s": 0.05643944300027215,
+    "num_path_points": 0,
+    "all_states_valid": null,
+    "all_edges_valid": null,
+    "old_path_now_collides": true,
+    "scene_sync_ok": true,
+    "notes": "baseline_invalid;"
+  },
+  {
+    "scenario": "sudden_appear",
+    "obstacle_id": "sudden_sphere",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "AEBRRTstarFaithfulConfigDefault",
+    "obstacle_position": [
+      -0.06000402594366252,
+      0.37586201085558113,
+      1.4893953374652042
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": null,
+    "lateral_offset_m": 0.06,
+    "success": true,
+    "plan_time_s": 0.017973437999899033,
+    "num_path_points": 25,
+    "all_states_valid": true,
+    "all_edges_valid": true,
+    "old_path_now_collides": true,
+    "scene_sync_ok": true,
+    "notes": "baseline_invalid;"
+  },
+  {
+    "scenario": "sudden_appear",
+    "obstacle_id": "sudden_sphere",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "RRTConnectkConfigDefault",
+    "obstacle_position": [
+      -0.06000402594366252,
+      0.37586201085558113,
+      1.4893953374652042
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": null,
+    "lateral_offset_m": 0.06,
+    "success": true,
+    "plan_time_s": 0.0535492199996952,
+    "num_path_points": 144,
+    "all_states_valid": true,
+    "all_edges_valid": true,
+    "old_path_now_collides": true,
+    "scene_sync_ok": true,
+    "notes": "baseline_invalid;"
+  }
+]
