@@ -258,7 +258,11 @@ class MuJoCoJointStateViewer(Node):
         the viewer lock.  ``apply_latest_obstacles`` writes the pending targets
         into MuJoCo under ``viewer.lock()`` each frame.
         """
-        operation = bytes(message.operation)
+        # message.operation is a uint8 deserialized as int.
+        # CollisionObject.ADD / MOVE / REMOVE are defined as single-byte
+        # constants (b'\x00' etc.).  bytes(n) constructs n ZERO bytes,
+        # NOT a single byte of value n — use bytes([n]) for the byte.
+        operation = bytes([message.operation])
         object_id = message.id
 
         if operation in (CollisionObject.ADD, CollisionObject.APPEND):
@@ -295,15 +299,7 @@ class MuJoCoJointStateViewer(Node):
             if slot_idx is None:
                 return
             self._obstacle_slots[slot_idx]["claimed"] = False
-            # Park the slot far below the floor; alpha=0 keeps it invisible.
-            # A full target dict is required so apply_latest_obstacles can write
-            # position/quat/size even for a released slot.
-            self._obstacle_targets[slot_idx] = {
-                "position": (0.0, 0.0, -5.0),
-                "quat_wxyz": (1.0, 0.0, 0.0, 0.0),
-                "size": _DEFAULT_SLOT_SIZES[self._obstacle_slots[slot_idx]["shape"]],
-                "alpha": 0.0,
-            }
+            self._obstacle_targets[slot_idx] = {"visible": False}
 
     def _claim_slot(self, shape_name: str, object_id: str) -> int | None:
         for index, slot in enumerate(self._obstacle_slots):
@@ -381,31 +377,34 @@ class MuJoCoJointStateViewer(Node):
             "position": world_position,
             "quat_wxyz": world_quat,
             "size": size,
-            "alpha": 1.0,
+            "visible": True,
         }
 
     def apply_latest_obstacles(self) -> None:
-        """Write pending dynamic-obstacle targets into MuJoCo (under viewer lock)."""
+        """Write pending dynamic-obstacle targets into MuJoCo freejoint qpos."""
         if not self._obstacle_targets:
             return
         for slot_idx, target in self._obstacle_targets.items():
             slot = self._obstacle_slots[slot_idx]
-            # Defensive: never crash the render loop on a partial target.
-            if not all(key in target for key in ("position", "quat_wxyz", "size", "alpha")):
-                continue
             adr = slot["qpos_adr"]
-            self._data.qpos[adr : adr + 7] = [
-                target["position"][0],
-                target["position"][1],
-                target["position"][2],
-                target["quat_wxyz"][0],
-                target["quat_wxyz"][1],
-                target["quat_wxyz"][2],
-                target["quat_wxyz"][3],
-            ]
-            self._model.geom_size[slot["geom_id"]] = target["size"]
-            self._model.geom_rgba[slot["geom_id"], 0:3] = self._dynamic_color[:3]
-            self._model.geom_rgba[slot["geom_id"], 3] = target["alpha"]
+            # Show: move freejoint to world position.  Hide: park below floor.
+            # Model geom_rgba / geom_size runtime writes are NOT picked up by
+            # the MuJoCo 3.x renderer, so we rely on the XML defaults (alpha=1)
+            # and control visibility via qpos alone.
+            if target.get("visible", True):
+                self._data.qpos[adr : adr + 7] = [
+                    target["position"][0],
+                    target["position"][1],
+                    target["position"][2],
+                    target["quat_wxyz"][0],
+                    target["quat_wxyz"][1],
+                    target["quat_wxyz"][2],
+                    target["quat_wxyz"][3],
+                ]
+            else:
+                self._data.qpos[adr : adr + 7] = [
+                    0.0, 0.0, -5.0, 1.0, 0.0, 0.0, 0.0
+                ]
         self._obstacle_targets.clear()
         mujoco.mj_forward(self._model, self._data)
 
@@ -881,12 +880,10 @@ class MuJoCoJointStateViewer(Node):
                 geoms.append(
                     f'      <body name="{slot_name}" pos="0 0 -5" quat="1 0 0 0">\n'
                     f'        <freejoint name="{slot_name}_joint"/>\n'
-                    # Free bodies require a valid (non-zero) inertial block even
-                    # for display-only geoms.
                     f'        <inertial pos="0 0 0" mass="0.001" '
                     f'diaginertia="1e-6 1e-6 1e-6"/>\n'
                     f'        <geom name="{slot_name}_geom" type="{shape}" '
-                    f'size="{size_text}" rgba="1.0 0.5 0.1 0" group="3" '
+                    f'size="{size_text}" rgba="1.0 0.5 0.1 1.0" '
                     f'contype="0" conaffinity="0"/>\n'
                     f"      </body>\n"
                 )
