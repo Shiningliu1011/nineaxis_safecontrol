@@ -4,8 +4,11 @@ plan_transition:
     max_points: 50
     point_stride: 1
     use_current_state: true
+    # planning_pipeline stays "ompl" — the aeb_rrtstar_ompl/AEBRRTstarPlannerManager
+    # plugin replaces ompl_interface/OMPLPlanner in ompl_planning.yaml.
     planning_pipeline: ompl
-    planner_id: RRTConnectkConfigDefault
+    # AEB-RRT* as default; RRTConnectkConfigDefault available as fallback.
+    planner_id: AEBRRTstarFaithfulConfigDefault
     planning_time_s: 10.0
     planning_attempts: 5
     velocity_scale: 0.2

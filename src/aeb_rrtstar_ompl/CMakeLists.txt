@@ -13,6 +13,7 @@ find_package(ompl REQUIRED)
 find_package(moveit_core REQUIRED)
 find_package(moveit_planners_ompl REQUIRED)
 find_package(moveit_ros_planning REQUIRED)
+find_package(ament_index_cpp REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(Boost REQUIRED)
@@ -84,7 +85,25 @@ target_include_directories(test_aeb_full PRIVATE
   ${OMPL_INCLUDE_DIRS}
 )
 
-install(TARGETS test_aeb_rrtstar test_aeb_full
+add_executable(test_plugin_load src/test_plugin_load.cpp)
+target_link_libraries(test_plugin_load aeb_rrtstar_ompl_plugin)
+target_include_directories(test_plugin_load PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${OMPL_INCLUDE_DIRS}
+)
+
+add_executable(test_plugin_init src/test_plugin_init.cpp)
+target_include_directories(test_plugin_init PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${OMPL_INCLUDE_DIRS}
+)
+target_link_libraries(test_plugin_init
+  aeb_rrtstar_ompl_plugin
+  ${moveit_ros_planning_LIBRARIES}
+  ${ament_index_cpp_LIBRARIES}
+)
+
+install(TARGETS test_aeb_rrtstar test_aeb_full test_plugin_load test_plugin_init
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
