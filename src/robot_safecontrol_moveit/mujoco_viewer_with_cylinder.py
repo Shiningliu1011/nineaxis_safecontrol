@@ -258,14 +258,17 @@ class MuJoCoJointStateViewer(Node):
         the viewer lock.  ``apply_latest_obstacles`` writes the pending targets
         into MuJoCo under ``viewer.lock()`` each frame.
         """
-        # message.operation is a uint8 deserialized as int.
-        # CollisionObject.ADD / MOVE / REMOVE are defined as single-byte
-        # constants (b'\x00' etc.).  bytes(n) constructs n ZERO bytes,
-        # NOT a single byte of value n — use bytes([n]) for the byte.
-        operation = bytes([message.operation])
+        # message.operation is uint8; rclpy may deserialize as int (0) or
+        # bytes (b'\x00') depending on the subscriber context.  Normalise to
+        # an int for robust comparison.
+        op_raw = message.operation
+        if isinstance(op_raw, bytes):
+            op_val = int.from_bytes(op_raw, 'little')
+        else:
+            op_val = int(op_raw)
         object_id = message.id
 
-        if operation in (CollisionObject.ADD, CollisionObject.APPEND):
+        if op_val == 0 or op_val == 2:  # ADD or APPEND
             if not message.primitives:
                 return
             shape_name = _SLOT_SHAPE_BY_PRIMITIVE.get(message.primitives[0].type)
@@ -285,7 +288,7 @@ class MuJoCoJointStateViewer(Node):
                     return
             self._set_slot_target(slot_idx, message)
 
-        elif operation == CollisionObject.MOVE:
+        elif op_val == 3:  # MOVE
             slot_idx = self._slot_by_object_id.get(object_id)
             if slot_idx is None:
                 self.get_logger().warning(
@@ -294,7 +297,7 @@ class MuJoCoJointStateViewer(Node):
                 return
             self._set_slot_target(slot_idx, message)
 
-        elif operation == CollisionObject.REMOVE:
+        elif op_val == 1:  # REMOVE
             slot_idx = self._slot_by_object_id.pop(object_id, None)
             if slot_idx is None:
                 return

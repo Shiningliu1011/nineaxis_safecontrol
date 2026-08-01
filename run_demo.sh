@@ -7,7 +7,7 @@
 #   bash run_demo.sh --stop    停止所有组件
 #   bash run_demo.sh --restart 重新启动
 # ===================================================================
-set -euo pipefail
+set -eo pipefail
 
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$PROJECT_DIR"
@@ -150,22 +150,16 @@ echo ""
 echo "============================================="
 echo "  演示全部完成！"
 echo ""
-echo "  查看器窗口应显示:"
-echo "    1. 橙色球体扫过机械臂连杆柱"
-echo "    2. 橙色盒子出现在连杆 x=0 位置"
-echo "    3. 机械臂用不同关节配置到达同一末端位姿"
+echo "  MuJoCo 查看器窗口保持打开，你可以旋转/缩放观察。"
+echo "  关闭查看器窗口即可退出。"
 echo ""
 echo "  停止所有组件:"
-echo "    bash run_demo.sh --stop"
-echo ""
-echo "  日志文件:"
-echo "    MoveIt2: /tmp/demo_bringup.log"
-echo "    查看器:  /tmp/viewer_demo.log"
-echo ""
-echo "  进程 PID:"
-echo "    MoveIt2:   $MOVEIT_PID"
-echo "    查看器:    $VIEWER_PID"
+echo "    bash $PROJECT_DIR/run_demo.sh --stop"
 echo "============================================="
-echo "按 Ctrl+C 停止所有组件..."
-trap "echo '停止中...'; kill $MOVEIT_PID $VIEWER_PID 2>/dev/null; echo '已停止'" EXIT
-wait
+
+# Keep the script alive until the viewer closes, then clean up
+trap "echo '停止中...'; kill $MOVEIT_PID 2>/dev/null; echo '已停止'" EXIT
+wait $VIEWER_PID 2>/dev/null
+echo "查看器已关闭，清理中..."
+kill $MOVEIT_PID 2>/dev/null
+echo "完成"
