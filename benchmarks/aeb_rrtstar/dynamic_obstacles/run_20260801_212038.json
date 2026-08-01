@@ -1,0 +1,860 @@
+[
+  {
+    "scenario": "moving_sweep",
+    "obstacle_id": "dyn_sweep",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "AEBRRTstarFaithfulConfigDefault",
+    "obstacle_position": [
+      -0.25,
+      0.343,
+      0.8
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": 0.0,
+    "lateral_offset_m": null,
+    "success": true,
+    "plan_time_s": 0.02824542400048813,
+    "num_path_points": 64,
+    "all_states_valid": true,
+    "all_edges_valid": true,
+    "old_path_now_collides": null,
+    "scene_sync_ok": true,
+    "start_valid": true,
+    "goal_valid": true,
+    "notes": ""
+  },
+  {
+    "scenario": "moving_sweep",
+    "obstacle_id": "dyn_sweep",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "RRTConnectkConfigDefault",
+    "obstacle_position": [
+      -0.25,
+      0.343,
+      0.8
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": 0.0,
+    "lateral_offset_m": null,
+    "success": true,
+    "plan_time_s": 0.011454362999756995,
+    "num_path_points": 64,
+    "all_states_valid": true,
+    "all_edges_valid": true,
+    "old_path_now_collides": null,
+    "scene_sync_ok": true,
+    "start_valid": true,
+    "goal_valid": true,
+    "notes": ""
+  },
+  {
+    "scenario": "moving_sweep",
+    "obstacle_id": "dyn_sweep",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "AEBRRTstarFaithfulConfigDefault",
+    "obstacle_position": [
+      -0.19444444444444445,
+      0.343,
+      0.8
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": 0.1111,
+    "lateral_offset_m": null,
+    "success": true,
+    "plan_time_s": 0.017273307000323257,
+    "num_path_points": 64,
+    "all_states_valid": true,
+    "all_edges_valid": true,
+    "old_path_now_collides": null,
+    "scene_sync_ok": true,
+    "start_valid": true,
+    "goal_valid": true,
+    "notes": ""
+  },
+  {
+    "scenario": "moving_sweep",
+    "obstacle_id": "dyn_sweep",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "RRTConnectkConfigDefault",
+    "obstacle_position": [
+      -0.19444444444444445,
+      0.343,
+      0.8
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": 0.1111,
+    "lateral_offset_m": null,
+    "success": true,
+    "plan_time_s": 0.030478517999654287,
+    "num_path_points": 64,
+    "all_states_valid": true,
+    "all_edges_valid": true,
+    "old_path_now_collides": null,
+    "scene_sync_ok": true,
+    "start_valid": true,
+    "goal_valid": true,
+    "notes": ""
+  },
+  {
+    "scenario": "moving_sweep",
+    "obstacle_id": "dyn_sweep",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "AEBRRTstarFaithfulConfigDefault",
+    "obstacle_position": [
+      -0.1388888888888889,
+      0.343,
+      0.8
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": 0.2222,
+    "lateral_offset_m": null,
+    "success": true,
+    "plan_time_s": 0.03511682399948768,
+    "num_path_points": 64,
+    "all_states_valid": true,
+    "all_edges_valid": true,
+    "old_path_now_collides": null,
+    "scene_sync_ok": true,
+    "start_valid": true,
+    "goal_valid": true,
+    "notes": ""
+  },
+  {
+    "scenario": "moving_sweep",
+    "obstacle_id": "dyn_sweep",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "RRTConnectkConfigDefault",
+    "obstacle_position": [
+      -0.1388888888888889,
+      0.343,
+      0.8
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": 0.2222,
+    "lateral_offset_m": null,
+    "success": true,
+    "plan_time_s": 0.03820286100017256,
+    "num_path_points": 64,
+    "all_states_valid": true,
+    "all_edges_valid": true,
+    "old_path_now_collides": null,
+    "scene_sync_ok": true,
+    "start_valid": true,
+    "goal_valid": true,
+    "notes": ""
+  },
+  {
+    "scenario": "moving_sweep",
+    "obstacle_id": "dyn_sweep",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "AEBRRTstarFaithfulConfigDefault",
+    "obstacle_position": [
+      -0.08333333333333334,
+      0.343,
+      0.8
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": 0.3333,
+    "lateral_offset_m": null,
+    "success": false,
+    "plan_time_s": 0.09067097200022545,
+    "num_path_points": 0,
+    "all_states_valid": null,
+    "all_edges_valid": null,
+    "old_path_now_collides": null,
+    "scene_sync_ok": true,
+    "start_valid": false,
+    "goal_valid": false,
+    "notes": "start/goal blocked by obstacle at link height"
+  },
+  {
+    "scenario": "moving_sweep",
+    "obstacle_id": "dyn_sweep",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "RRTConnectkConfigDefault",
+    "obstacle_position": [
+      -0.08333333333333334,
+      0.343,
+      0.8
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": 0.3333,
+    "lateral_offset_m": null,
+    "success": false,
+    "plan_time_s": 0.10579982900071627,
+    "num_path_points": 0,
+    "all_states_valid": null,
+    "all_edges_valid": null,
+    "old_path_now_collides": null,
+    "scene_sync_ok": true,
+    "start_valid": false,
+    "goal_valid": false,
+    "notes": "start/goal blocked by obstacle at link height"
+  },
+  {
+    "scenario": "moving_sweep",
+    "obstacle_id": "dyn_sweep",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "AEBRRTstarFaithfulConfigDefault",
+    "obstacle_position": [
+      -0.02777777777777779,
+      0.343,
+      0.8
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": 0.4444,
+    "lateral_offset_m": null,
+    "success": false,
+    "plan_time_s": 0.10599384499982989,
+    "num_path_points": 0,
+    "all_states_valid": null,
+    "all_edges_valid": null,
+    "old_path_now_collides": null,
+    "scene_sync_ok": true,
+    "start_valid": false,
+    "goal_valid": false,
+    "notes": "start/goal blocked by obstacle at link height"
+  },
+  {
+    "scenario": "moving_sweep",
+    "obstacle_id": "dyn_sweep",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "RRTConnectkConfigDefault",
+    "obstacle_position": [
+      -0.02777777777777779,
+      0.343,
+      0.8
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": 0.4444,
+    "lateral_offset_m": null,
+    "success": false,
+    "plan_time_s": 0.0718099859996073,
+    "num_path_points": 0,
+    "all_states_valid": null,
+    "all_edges_valid": null,
+    "old_path_now_collides": null,
+    "scene_sync_ok": true,
+    "start_valid": false,
+    "goal_valid": false,
+    "notes": "start/goal blocked by obstacle at link height"
+  },
+  {
+    "scenario": "moving_sweep",
+    "obstacle_id": "dyn_sweep",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "AEBRRTstarFaithfulConfigDefault",
+    "obstacle_position": [
+      0.02777777777777779,
+      0.343,
+      0.8
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": 0.5556,
+    "lateral_offset_m": null,
+    "success": false,
+    "plan_time_s": 0.10185567400003492,
+    "num_path_points": 0,
+    "all_states_valid": null,
+    "all_edges_valid": null,
+    "old_path_now_collides": null,
+    "scene_sync_ok": true,
+    "start_valid": false,
+    "goal_valid": false,
+    "notes": "start/goal blocked by obstacle at link height"
+  },
+  {
+    "scenario": "moving_sweep",
+    "obstacle_id": "dyn_sweep",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "RRTConnectkConfigDefault",
+    "obstacle_position": [
+      0.02777777777777779,
+      0.343,
+      0.8
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": 0.5556,
+    "lateral_offset_m": null,
+    "success": false,
+    "plan_time_s": 0.1234954169995035,
+    "num_path_points": 0,
+    "all_states_valid": null,
+    "all_edges_valid": null,
+    "old_path_now_collides": null,
+    "scene_sync_ok": true,
+    "start_valid": false,
+    "goal_valid": false,
+    "notes": "start/goal blocked by obstacle at link height"
+  },
+  {
+    "scenario": "moving_sweep",
+    "obstacle_id": "dyn_sweep",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "AEBRRTstarFaithfulConfigDefault",
+    "obstacle_position": [
+      0.08333333333333331,
+      0.343,
+      0.8
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": 0.6667,
+    "lateral_offset_m": null,
+    "success": false,
+    "plan_time_s": 0.07201011799952539,
+    "num_path_points": 0,
+    "all_states_valid": null,
+    "all_edges_valid": null,
+    "old_path_now_collides": null,
+    "scene_sync_ok": true,
+    "start_valid": false,
+    "goal_valid": false,
+    "notes": "start/goal blocked by obstacle at link height"
+  },
+  {
+    "scenario": "moving_sweep",
+    "obstacle_id": "dyn_sweep",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "RRTConnectkConfigDefault",
+    "obstacle_position": [
+      0.08333333333333331,
+      0.343,
+      0.8
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": 0.6667,
+    "lateral_offset_m": null,
+    "success": false,
+    "plan_time_s": 0.12088977300027182,
+    "num_path_points": 0,
+    "all_states_valid": null,
+    "all_edges_valid": null,
+    "old_path_now_collides": null,
+    "scene_sync_ok": true,
+    "start_valid": false,
+    "goal_valid": false,
+    "notes": "start/goal blocked by obstacle at link height"
+  },
+  {
+    "scenario": "moving_sweep",
+    "obstacle_id": "dyn_sweep",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "AEBRRTstarFaithfulConfigDefault",
+    "obstacle_position": [
+      0.1388888888888889,
+      0.343,
+      0.8
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": 0.7778,
+    "lateral_offset_m": null,
+    "success": true,
+    "plan_time_s": 0.038265154999862716,
+    "num_path_points": 64,
+    "all_states_valid": true,
+    "all_edges_valid": true,
+    "old_path_now_collides": null,
+    "scene_sync_ok": true,
+    "start_valid": true,
+    "goal_valid": true,
+    "notes": ""
+  },
+  {
+    "scenario": "moving_sweep",
+    "obstacle_id": "dyn_sweep",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "RRTConnectkConfigDefault",
+    "obstacle_position": [
+      0.1388888888888889,
+      0.343,
+      0.8
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": 0.7778,
+    "lateral_offset_m": null,
+    "success": true,
+    "plan_time_s": 0.027819328000077803,
+    "num_path_points": 64,
+    "all_states_valid": true,
+    "all_edges_valid": true,
+    "old_path_now_collides": null,
+    "scene_sync_ok": true,
+    "start_valid": true,
+    "goal_valid": true,
+    "notes": ""
+  },
+  {
+    "scenario": "moving_sweep",
+    "obstacle_id": "dyn_sweep",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "AEBRRTstarFaithfulConfigDefault",
+    "obstacle_position": [
+      0.19444444444444442,
+      0.343,
+      0.8
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": 0.8889,
+    "lateral_offset_m": null,
+    "success": true,
+    "plan_time_s": 0.017058971000551537,
+    "num_path_points": 64,
+    "all_states_valid": true,
+    "all_edges_valid": true,
+    "old_path_now_collides": null,
+    "scene_sync_ok": true,
+    "start_valid": true,
+    "goal_valid": true,
+    "notes": ""
+  },
+  {
+    "scenario": "moving_sweep",
+    "obstacle_id": "dyn_sweep",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "RRTConnectkConfigDefault",
+    "obstacle_position": [
+      0.19444444444444442,
+      0.343,
+      0.8
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": 0.8889,
+    "lateral_offset_m": null,
+    "success": true,
+    "plan_time_s": 0.04678442099975655,
+    "num_path_points": 64,
+    "all_states_valid": true,
+    "all_edges_valid": true,
+    "old_path_now_collides": null,
+    "scene_sync_ok": true,
+    "start_valid": true,
+    "goal_valid": true,
+    "notes": ""
+  },
+  {
+    "scenario": "moving_sweep",
+    "obstacle_id": "dyn_sweep",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "AEBRRTstarFaithfulConfigDefault",
+    "obstacle_position": [
+      0.25,
+      0.343,
+      0.8
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": 1.0,
+    "lateral_offset_m": null,
+    "success": true,
+    "plan_time_s": 0.028404734999639913,
+    "num_path_points": 64,
+    "all_states_valid": true,
+    "all_edges_valid": true,
+    "old_path_now_collides": null,
+    "scene_sync_ok": true,
+    "start_valid": true,
+    "goal_valid": true,
+    "notes": ""
+  },
+  {
+    "scenario": "moving_sweep",
+    "obstacle_id": "dyn_sweep",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "RRTConnectkConfigDefault",
+    "obstacle_position": [
+      0.25,
+      0.343,
+      0.8
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": 1.0,
+    "lateral_offset_m": null,
+    "success": true,
+    "plan_time_s": 0.02386924500024179,
+    "num_path_points": 64,
+    "all_states_valid": true,
+    "all_edges_valid": true,
+    "old_path_now_collides": null,
+    "scene_sync_ok": true,
+    "start_valid": true,
+    "goal_valid": true,
+    "notes": ""
+  },
+  {
+    "scenario": "sudden_appear",
+    "obstacle_id": "sudden_sphere",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "AEBRRTstarFaithfulConfigDefault",
+    "obstacle_position": [
+      0.0,
+      0.343,
+      0.8
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": null,
+    "lateral_offset_m": 0.0,
+    "success": false,
+    "plan_time_s": 0.07047305000014603,
+    "num_path_points": 0,
+    "all_states_valid": null,
+    "all_edges_valid": null,
+    "old_path_now_collides": true,
+    "scene_sync_ok": true,
+    "start_valid": false,
+    "goal_valid": false,
+    "notes": "baseline_invalid;start/goal blocked at link height;"
+  },
+  {
+    "scenario": "sudden_appear",
+    "obstacle_id": "sudden_sphere",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "RRTConnectkConfigDefault",
+    "obstacle_position": [
+      0.0,
+      0.343,
+      0.8
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": null,
+    "lateral_offset_m": 0.0,
+    "success": false,
+    "plan_time_s": 0.09079039999960514,
+    "num_path_points": 0,
+    "all_states_valid": null,
+    "all_edges_valid": null,
+    "old_path_now_collides": true,
+    "scene_sync_ok": true,
+    "start_valid": false,
+    "goal_valid": false,
+    "notes": "baseline_invalid;start/goal blocked at link height;"
+  },
+  {
+    "scenario": "sudden_appear",
+    "obstacle_id": "sudden_sphere",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "AEBRRTstarFaithfulConfigDefault",
+    "obstacle_position": [
+      0.0,
+      0.44300000000000006,
+      0.8
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": null,
+    "lateral_offset_m": 0.1,
+    "success": false,
+    "plan_time_s": 0.03300509800010332,
+    "num_path_points": 0,
+    "all_states_valid": null,
+    "all_edges_valid": null,
+    "old_path_now_collides": true,
+    "scene_sync_ok": true,
+    "start_valid": false,
+    "goal_valid": false,
+    "notes": "baseline_invalid;start/goal blocked at link height;"
+  },
+  {
+    "scenario": "sudden_appear",
+    "obstacle_id": "sudden_sphere",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "RRTConnectkConfigDefault",
+    "obstacle_position": [
+      0.0,
+      0.44300000000000006,
+      0.8
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": null,
+    "lateral_offset_m": 0.1,
+    "success": false,
+    "plan_time_s": 0.12093241699949431,
+    "num_path_points": 0,
+    "all_states_valid": null,
+    "all_edges_valid": null,
+    "old_path_now_collides": true,
+    "scene_sync_ok": true,
+    "start_valid": false,
+    "goal_valid": false,
+    "notes": "baseline_invalid;start/goal blocked at link height;"
+  },
+  {
+    "scenario": "sudden_appear",
+    "obstacle_id": "sudden_sphere",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "AEBRRTstarFaithfulConfigDefault",
+    "obstacle_position": [
+      0.0,
+      0.543,
+      0.8
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": null,
+    "lateral_offset_m": 0.2,
+    "success": true,
+    "plan_time_s": 0.01965589599967643,
+    "num_path_points": 64,
+    "all_states_valid": true,
+    "all_edges_valid": true,
+    "old_path_now_collides": false,
+    "scene_sync_ok": true,
+    "start_valid": true,
+    "goal_valid": true,
+    "notes": ""
+  },
+  {
+    "scenario": "sudden_appear",
+    "obstacle_id": "sudden_sphere",
+    "shape": "sphere",
+    "size": [
+      0.06
+    ],
+    "frame_id": "base_link",
+    "planner_id": "RRTConnectkConfigDefault",
+    "obstacle_position": [
+      0.0,
+      0.543,
+      0.8
+    ],
+    "obstacle_quaternion_xyzw": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "sweep_t": null,
+    "lateral_offset_m": 0.2,
+    "success": true,
+    "plan_time_s": 0.020927485000356683,
+    "num_path_points": 64,
+    "all_states_valid": true,
+    "all_edges_valid": true,
+    "old_path_now_collides": false,
+    "scene_sync_ok": true,
+    "start_valid": true,
+    "goal_valid": true,
+    "notes": ""
+  }
+]
