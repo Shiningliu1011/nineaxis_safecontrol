@@ -170,8 +170,8 @@ protected:
     unsigned int motion_checks_;
 
     // --- Parameters (with defaults) ---
-    double step_size_{0.3};
-    double connect_threshold_{0.6};
+    double step_size_{0.0};           // 0 = auto-compute in setup()
+    double connect_threshold_{0.0};    // 0 = auto-compute in setup()
     double p_min_{0.1};
     double p_max_{1.0};
     int max_failed_extensions_{500};
@@ -183,6 +183,9 @@ protected:
 
     // --- Random number generator (from OMPL) ---
     ompl::RNG rng_;
+
+    // --- State sampler (cached, RRTConnect-style via si_->allocStateSampler()) ---
+    mutable ompl::base::StateSamplerPtr sampler_;
 };
 
 }  // namespace geometric
