@@ -217,7 +217,18 @@ base::PlannerStatus AEBRRTstar::solve(
     // Use PlannerInputStates::nextStart()/nextGoal() which handle all
     // goal types (GoalState, GoalSampleableRegion, ConstrainedGoalSampler).
     // Clone into our own states for tree ownership.
-    base::State *start_state = si->cloneState(input_states.nextStart());
+    //
+    // NOTE: nextStart() skips start states that fail validity and returns
+    // nullptr when every candidate was invalid (e.g. MoveIt2 passed a
+    // colliding start that FixStartStateCollision could not repair).  Guard
+    // against that before cloning — cloneState(nullptr) segfaults.
+    const base::State *start_raw = input_states.nextStart();
+    if (!start_raw)
+    {
+        std::cerr << "AEB_FAIL: NO VALID START STATES" << std::endl;
+        return base::PlannerStatus::INVALID_START;
+    }
+    base::State *start_state = si->cloneState(start_raw);
     if (!si->isValid(start_state))
     {
         std::cerr << "AEB_FAIL: INVALID START" << std::endl;
@@ -508,8 +519,25 @@ std::pair<int, bool> AEBRRTstar::extendTree(
             if (si->checkMotion(x_new,
                                 other_tree.nodes[ci].state))
             {
-                connect_start_idx_ = new_idx;
-                connect_goal_idx_ = ci;
+                // Store the connection indices in START/GOAL tree terms.
+                // When the goal tree is the one being extended, x_new
+                // (new_idx) lives in the goal tree and con_node (ci) lives
+                // in the start tree; buildPath() expects
+                // connect_start_idx_/connect_goal_idx_ to index into
+                // tree_start_/tree_goal_ respectively.  Swapping them here
+                // would make tracePath() read the wrong tree (or out of
+                // bounds) and segfault — only visible in Anytime mode where
+                // the goal tree is actually grown to completion.
+                if (is_goal_tree)
+                {
+                    connect_start_idx_ = ci;
+                    connect_goal_idx_ = new_idx;
+                }
+                else
+                {
+                    connect_start_idx_ = new_idx;
+                    connect_goal_idx_ = ci;
+                }
                 return {0, true};
             }
         }
