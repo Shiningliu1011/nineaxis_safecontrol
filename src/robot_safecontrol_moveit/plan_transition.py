@@ -15,7 +15,7 @@ collision checking, or a motion planner.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from math import sqrt
+from math import isfinite, sqrt
 from pathlib import Path
 from time import monotonic
 from typing import Sequence
@@ -26,6 +26,7 @@ import scipy.io
 import yaml
 from pymoveit2 import MoveIt2
 from rclpy.node import Node
+from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import JointState
 
 from .continuous_ik import ContinuousIK, IKOptions
@@ -35,6 +36,11 @@ from .motion_planning import (
     PlanningOptions,
 )
 from .trajectory_execution import TrajectoryExecutor
+from .task_target import (
+    compute_first_task_orientation,
+    load_first_task_target,
+    solve_first_task_state,
+)
 
 
 DEFAULT_JOINT_NAMES = ("J1", "J2", "J3", "J4", "J5", "J6", "J7", "J8", "J9")
@@ -54,6 +60,7 @@ class PipelineConfig:
     use_current_state: bool
     start_joint_positions: tuple[float, ...]
     joint_state_timeout_s: float
+    allow_joint_state_fallback: bool
     orientation_xyzw: tuple[float, float, float, float]
     max_joint_delta: float
     ik_service_timeout_s: float
@@ -107,6 +114,9 @@ class TransitionPipelineNode(Node):
             use_current_state=bool(get("use_current_state").value),
             start_joint_positions=start_positions,
             joint_state_timeout_s=float(get("joint_state_timeout_s").value),
+            allow_joint_state_fallback=bool(
+                get("allow_joint_state_fallback").value
+            ),
             orientation_xyzw=self._float_tuple("orientation_xyzw", 4),
             max_joint_delta=float(get("max_joint_delta").value),
             ik_service_timeout_s=float(get("ik_service_timeout_s").value),
@@ -163,25 +173,30 @@ class TransitionPipelineNode(Node):
         self.declare_parameter("use_current_state", True)
         self.declare_parameter("start_joint_positions", [0.0] * len(DEFAULT_JOINT_NAMES))
         self.declare_parameter("joint_state_timeout_s", 5.0)
+        self.declare_parameter("max_joint_state_age_s", 1.0)
+        self.declare_parameter("allow_joint_state_fallback", False)
+        self.declare_parameter("joint_state_topic", "/joint_states")
         # KDL ignores this if config/kinematics.yaml has position_only_ik: true.
         self.declare_parameter("orientation_xyzw", [0.0, 0.0, 0.0, 1.0])
         self.declare_parameter("max_joint_delta", 0.15)
         self.declare_parameter("ik_service_timeout_s", 2.0)
         self.declare_parameter("planning_pipeline", "ompl")
-        # AEB-RRT* gray rollout: default planner switched.
-        # Rollback: change back to "RRTConnectkConfigDefault"
-        self.declare_parameter("planner_id", "AEBRRTstarFaithfulConfigDefault")
+        self.declare_parameter(
+            "planner_id", "AEBRRTstarFaithfulConfigDefault"
+        )
         self.declare_parameter("planning_time_s", 10.0)
-        self.declare_parameter("planning_attempts", 5)
+        self.declare_parameter("planning_attempts", 1)
         self.declare_parameter("velocity_scale", 0.2)
         self.declare_parameter("acceleration_scale", 0.2)
         self.declare_parameter("goal_joint_tolerance", 0.001)
         self.declare_parameter("scene_sync_timeout_s", 5.0)
+        self.declare_parameter("publish_static_obstacles_in_planner", False)
         # Both switches are deliberately opt-in for a real controller.
         self.declare_parameter("execute_transition", False)
         self.declare_parameter("execute_task_path", False)
         self.declare_parameter("dry_run", True)
         self.declare_parameter("replay_rate_hz", 5.0)
+        self.declare_parameter("replay_joint_state_topic", "/joint_states")
         self.declare_parameter("task_lead_time_s", 0.05)
         self.declare_parameter("task_time_scale", 1.0)
         # When enabled, every IK waypoint is solved with tool0's X-axis
@@ -269,7 +284,13 @@ def load_mat_trajectory(
 
 
 def load_collision_objects(path: Path, default_frame: str) -> tuple[CollisionObjectSpec, ...]:
-    """Load primitive PlanningScene objects from a reviewed YAML file."""
+    """Load primitive PlanningScene objects from a reviewed YAML file.
+
+    Validates IDs, shapes, dimensions, positions, quaternions, and frame IDs.
+    """
+
+    EXPECTED_DIMS = {"box": 3, "sphere": 1, "cylinder": 2}
+    VALID_SHAPES = frozenset(EXPECTED_DIMS)
 
     with path.open(encoding="utf-8") as stream:
         document = yaml.safe_load(stream) or {}
@@ -278,25 +299,95 @@ def load_collision_objects(path: Path, default_frame: str) -> tuple[CollisionObj
         raise ValueError("obstacles.yaml must contain an 'obstacles' list")
 
     objects: list[CollisionObjectSpec] = []
+    seen_ids: set[str] = set()
     for entry in entries:
         if not isinstance(entry, dict):
             raise ValueError("Every obstacle entry must be a mapping")
-        try:
-            objects.append(
-                CollisionObjectSpec(
-                    object_id=str(entry["id"]),
-                    shape=str(entry["shape"]),
-                    position=tuple(float(value) for value in entry["position"]),
-                    dimensions=tuple(float(value) for value in entry["dimensions"]),
-                    frame_id=str(entry.get("frame_id", default_frame)),
-                    quaternion_xyzw=tuple(
-                        float(value)
-                        for value in entry.get("quaternion_xyzw", [0.0, 0.0, 0.0, 1.0])
-                    ),
-                )
+
+        object_id = str(entry.get("id", ""))
+        if not object_id:
+            raise ValueError(f"Obstacle entry is missing 'id': {entry}")
+        if object_id in seen_ids:
+            raise ValueError(f"Duplicate obstacle ID: {object_id!r}")
+        seen_ids.add(object_id)
+
+        shape = str(entry.get("shape", ""))
+        if shape not in VALID_SHAPES:
+            raise ValueError(
+                f"Obstacle {object_id!r}: unsupported shape {shape!r}; "
+                f"expected one of {sorted(VALID_SHAPES)}"
             )
+
+        try:
+            position = tuple(float(v) for v in entry["position"])
         except (KeyError, TypeError, ValueError) as error:
-            raise ValueError(f"Invalid collision object entry: {entry}") from error
+            raise ValueError(
+                f"Obstacle {object_id!r}: invalid position: {error}"
+            ) from error
+        if len(position) != 3:
+            raise ValueError(
+                f"Obstacle {object_id!r}: position must have 3 values, "
+                f"got {len(position)}"
+            )
+        if not all(isfinite(v) for v in position):
+            raise ValueError(
+                f"Obstacle {object_id!r}: position contains non-finite values"
+            )
+
+        try:
+            dimensions = tuple(float(v) for v in entry["dimensions"])
+        except (KeyError, TypeError, ValueError) as error:
+            raise ValueError(
+                f"Obstacle {object_id!r}: invalid dimensions: {error}"
+            ) from error
+        expected = EXPECTED_DIMS[shape]
+        if len(dimensions) != expected:
+            raise ValueError(
+                f"Obstacle {object_id!r}: {shape} expects {expected} "
+                f"dimension(s), got {len(dimensions)}"
+            )
+        if not all(v > 0.0 for v in dimensions):
+            raise ValueError(
+                f"Obstacle {object_id!r}: all dimensions must be > 0, "
+                f"got {dimensions}"
+            )
+        if not all(isfinite(v) for v in dimensions):
+            raise ValueError(
+                f"Obstacle {object_id!r}: dimensions contain non-finite values"
+            )
+
+        frame_id = str(entry.get("frame_id", default_frame))
+        if not frame_id:
+            raise ValueError(f"Obstacle {object_id!r}: frame_id must not be empty")
+
+        raw_quat = tuple(
+            float(v) for v in entry.get("quaternion_xyzw", [0.0, 0.0, 0.0, 1.0])
+        )
+        if len(raw_quat) != 4:
+            raise ValueError(
+                f"Obstacle {object_id!r}: quaternion_xyzw must have 4 values"
+            )
+        if not all(isfinite(v) for v in raw_quat):
+            raise ValueError(
+                f"Obstacle {object_id!r}: quaternion contains non-finite values"
+            )
+        norm = sqrt(sum(v * v for v in raw_quat))
+        if norm < 1e-12:
+            raise ValueError(
+                f"Obstacle {object_id!r}: quaternion norm is zero"
+            )
+        quaternion_xyzw = tuple(v / norm for v in raw_quat)
+
+        objects.append(
+            CollisionObjectSpec(
+                object_id=object_id,
+                shape=shape,
+                position=position,
+                dimensions=dimensions,
+                frame_id=frame_id,
+                quaternion_xyzw=quaternion_xyzw,
+            )
+        )
     return tuple(objects)
 
 
@@ -305,24 +396,127 @@ def current_joint_state(
     moveit: MoveIt2,
     joint_names: Sequence[str],
     timeout_s: float,
+    *,
+    topic: str = "/joint_states",
+    max_age_s: float = 1.0,
+    allow_fallback: bool = False,
 ) -> JointState:
-    """Wait for complete feedback from the configured ROS 2 controller."""
+    """Wait for complete joint state feedback from the configured topic.
 
-    deadline = monotonic() + timeout_s
-    while monotonic() < deadline:
-        state = moveit.joint_state
-        if state is not None and all(name in state.name for name in joint_names):
-            positions = dict(zip(state.name, state.position))
-            result = JointState()
-            result.header = state.header
-            result.name = list(joint_names)
-            result.position = [float(positions[name]) for name in joint_names]
-            return result
-        rclpy.spin_once(node, timeout_sec=0.05)
-    raise RuntimeError(
-        "No complete /joint_states feedback received. Start a ros2_control "
-        "JointStateBroadcaster or pass use_current_state:=false explicitly."
+    Creates a short-lived subscription to *topic* with the same QoS the
+    MuJoCo Viewer publisher uses (``qos_profile_sensor_data``, i.e.
+    BEST_EFFORT), so publisher and subscriber are always compatible.
+
+    When *allow_fallback* is False (default) and no state arrives on *topic*,
+    the call raises ``RuntimeError("START_STATE_UNAVAILABLE")`` — it never
+    silently uses MoveIt's internal state monitor, which may hold stale or
+    unrelated data.
+    """
+    names_set = set(joint_names)
+    latest: JointState | None = None
+
+    def _cb(msg: JointState) -> None:
+        nonlocal latest
+        if names_set.issubset(msg.name):
+            latest = msg
+
+    # Use the same QoS as the Viewer publisher so BEST_EFFORT ↔ BEST_EFFORT.
+    sub = node.create_subscription(
+        JointState, topic, _cb, qos_profile_sensor_data
     )
+    try:
+        deadline = monotonic() + timeout_s
+        while monotonic() < deadline:
+            rclpy.spin_once(node, timeout_sec=0.05)
+            candidate = latest
+            if candidate is not None:
+                stamp_sec = (
+                    candidate.header.stamp.sec
+                    + candidate.header.stamp.nanosec * 1e-9
+                )
+                now_sec = node.get_clock().now().nanoseconds * 1e-9
+                age_s = now_sec - stamp_sec
+                if age_s <= max_age_s:
+                    positions = dict(zip(candidate.name, candidate.position))
+                    if len(candidate.position) != len(candidate.name):
+                        raise RuntimeError(
+                            "START_STATE_MALFORMED: position/name length mismatch"
+                        )
+                    result = JointState()
+                    result.header = candidate.header
+                    result.name = list(joint_names)
+                    result.position = [
+                        float(positions[name]) for name in joint_names
+                    ]
+                    if not all(isfinite(float(p)) for p in result.position):
+                        raise RuntimeError(
+                            "START_STATE_NON_FINITE: current joint state "
+                            "contains NaN or Inf values"
+                        )
+                    node.get_logger().info(
+                        f"Planning start state source: {topic}; "
+                        f"age={age_s:.3f}s, "
+                        f"positions={[f'{v:.3f}' for v in result.position]}"
+                    )
+                    return result
+                else:
+                    node.get_logger().warning(
+                        f"Joint state from {topic} is stale "
+                        f"(age={age_s:.3f}s > max_age={max_age_s:.3f}s); "
+                        "waiting for fresher data"
+                    )
+                    latest = None
+
+        # Fallback is DISABLED by default (allow_fallback=False).
+        if not allow_fallback:
+            raise RuntimeError(
+                "START_STATE_UNAVAILABLE: No complete joint state received on "
+                f"{topic} within {timeout_s:.1f}s. Start a JointStateBroadcaster, "
+                "check manual_joint_state_topic, or pass use_current_state:=false."
+            )
+
+        # Only reached when allow_fallback=True — validate fallback thoroughly.
+        state = moveit.joint_state
+        if state is None or not all(name in state.name for name in joint_names):
+            raise RuntimeError(
+                "START_STATE_UNAVAILABLE: No complete joint state on "
+                f"{topic} and MoveIt fallback also unavailable."
+            )
+        positions = dict(zip(state.name, state.position))
+        if len(state.position) != len(state.name):
+            raise RuntimeError(
+                "START_STATE_MALFORMED: fallback position/name length mismatch"
+            )
+        result = JointState()
+        result.header = state.header
+        result.name = list(joint_names)
+        result.position = [float(positions[name]) for name in joint_names]
+        if not all(isfinite(float(p)) for p in result.position):
+            raise RuntimeError(
+                "START_STATE_NON_FINITE: fallback state contains NaN or Inf"
+            )
+        stamp_sec = (
+            result.header.stamp.sec
+            + result.header.stamp.nanosec * 1e-9
+        )
+        if stamp_sec == 0.0:
+            raise RuntimeError(
+                "START_STATE_STALE: fallback state has zero timestamp"
+            )
+        now_sec = node.get_clock().now().nanoseconds * 1e-9
+        age_s = now_sec - stamp_sec
+        if age_s > max_age_s:
+            raise RuntimeError(
+                f"START_STATE_STALE: fallback state age={age_s:.3f}s "
+                f"exceeds max_age={max_age_s:.3f}s"
+            )
+        node.get_logger().warning(
+            "WARNING: start state is using MoveIt fallback, "
+            f"not MuJoCo manual topic {topic}; age={age_s:.3f}s"
+        )
+        return result
+    finally:
+        node.destroy_subscription(sub)
 
 
 def configured_joint_state(
@@ -485,67 +679,148 @@ def run_pipeline(node: TransitionPipelineNode) -> None:
         group_name=config.planning_group,
         ignore_new_calls_while_executing=True,
     )
-    planner = MotionPlanner(node, moveit, config.joint_names, config.planner_options)
-    planner.install_collision_objects(
-        load_collision_objects(config.obstacles_file, config.base_frame),
-        sync_timeout_s=config.scene_sync_timeout_s,
+    planner = MotionPlanner(
+        node,
+        moveit,
+        config.joint_names,
+        config.planner_options,
+        planning_group=config.planning_group,
     )
+
+    obstacle_specs = load_collision_objects(config.obstacles_file, config.base_frame)
+    node.get_logger().info(
+        f"Static obstacles loaded: {len(obstacle_specs)} object(s) — "
+        f"{', '.join(spec.object_id for spec in obstacle_specs)}"
+    )
+    if bool(node.get_parameter("publish_static_obstacles_in_planner").value):
+        node.get_logger().info(
+            "Publishing static obstacles from plan_transition "
+            "(publish_static_obstacles_in_planner=true)"
+        )
+        planner.install_collision_objects(
+            obstacle_specs,
+            sync_timeout_s=config.scene_sync_timeout_s,
+        )
+    else:
+        node.get_logger().info(
+            "Skipping static obstacle publication (handled by "
+            "static_obstacle_publisher node)"
+        )
+        # Still wait for the objects to appear in PlanningScene.
+        planner.wait_for_scene_objects(
+            {spec.object_id for spec in obstacle_specs},
+            timeout_s=config.scene_sync_timeout_s,
+        )
 
     start_state = (
         current_joint_state(
-            node, moveit, config.joint_names, config.joint_state_timeout_s
+            node,
+            moveit,
+            config.joint_names,
+            config.joint_state_timeout_s,
+            topic=str(node.get_parameter("joint_state_topic").value),
+            max_age_s=float(node.get_parameter("max_joint_state_age_s").value),
+            allow_fallback=bool(
+                node.get_parameter("allow_joint_state_fallback").value
+            ),
         )
         if config.use_current_state
         else configured_joint_state(config.joint_names, config.start_joint_positions)
     )
-    positions, source_times_s = load_mat_trajectory(
+    positions, source_times_s = load_first_task_target(
         config.trajectory_mat,
         config.trajectory_offset_m,
         config.max_points,
         config.point_stride,
     )
 
-    # Compute per-point orientations when surface-normal alignment is enabled.
-    per_point_orientations: list[tuple[float, float, float, float]] | None = None
-    if config.align_tool_x_to_surface_normal:
-        # Fit the cylinder on the *full* trajectory, not just the selected
-        # waypoints: the waypoints can lie in a near-stationary segment where
-        # the circle fit degenerates and the normal becomes numerical noise.
-        full_positions, _ = load_mat_trajectory(
-            config.trajectory_mat, config.trajectory_offset_m, 0, 1
-        )
-        per_point_orientations = compute_surface_normal_orientations(
-            positions,
-            config.cylinder_axis_direction,
-            fit_points=full_positions,
-        )
+    # Compute first-target orientation via shared logic (Issue #9).
+    first_quat, per_point_orientations = compute_first_task_orientation(
+        positions,
+        align_tool_x_to_surface_normal=config.align_tool_x_to_surface_normal,
+        cylinder_axis_direction=config.cylinder_axis_direction,
+        orientation_xyzw=config.orientation_xyzw,
+        trajectory_mat=config.trajectory_mat,
+        offset_m=config.trajectory_offset_m,
+    )
+
+    if per_point_orientations:
         node.get_logger().info(
             f"Computed {len(per_point_orientations)} surface-normal-aligned "
-            f"orientation(s); cylinder fitted on {len(full_positions)} full "
-            f"trajectory samples; axis={config.cylinder_axis_direction}."
+            f"orientation(s); cylinder fitted on full trajectory samples; "
+            f"axis={config.cylinder_axis_direction}."
         )
 
+    node.get_logger().info(
+        f"FIRST_TARGET_POSITION={[f'{v:.4f}' for v in positions[0]]}"
+    )
+    node.get_logger().info(
+        f"FIRST_TARGET_ORIENTATION=[{', '.join(f'{v:.6f}' for v in first_quat)}]"
+    )
+
+    # Use ContinuousIK directly so we have access to the full IKPath
+    # (needed for task trajectory execution below).
+    from .continuous_ik import ContinuousIK, IKOptions as CIKOptions
     ik = ContinuousIK(
         moveit,
         config.joint_names,
-        IKOptions(
+        CIKOptions(
             tool_link=config.tool_link,
-            orientation_xyzw=(
-                per_point_orientations[0]
-                if per_point_orientations
-                else config.orientation_xyzw
-            ),
+            orientation_xyzw=first_quat,
+            planning_group=config.planning_group,
+            base_frame=config.base_frame,
             max_joint_delta=config.max_joint_delta,
             service_timeout_s=config.ik_service_timeout_s,
         ),
     )
-    ik_path = ik.solve(positions, start_state, orientations=per_point_orientations)
-    node.get_logger().info(f"Continuous IK succeeded for {len(ik_path.states)} waypoint(s).")
-
-    transition = planner.plan_transition(start_state, ik_path.first_state)
+    # Log IK request before solving.
     node.get_logger().info(
-        f"MoveIt planned a transition with {len(transition.points)} trajectory point(s)."
+        f"IK_REQUEST "
+        f"position=({positions[0][0]:.4f},{positions[0][1]:.4f},"
+        f"{positions[0][2]:.4f}) "
+        f"orientation_xyzw=({first_quat[0]:.6f},{first_quat[1]:.6f},"
+        f"{first_quat[2]:.6f},{first_quat[3]:.6f}) "
+        f"base_frame={config.base_frame} "
+        f"tool_link={config.tool_link} "
+        f"planning_group={config.planning_group} "
+        f"seed_names={list(config.joint_names)} "
+        f"seed_positions=[{', '.join(f'{v:.3f}' for v in start_state.position)}] "
+        f"align_tool_x_to_surface_normal="
+        f"{'true' if per_point_orientations else 'false'}"
     )
+    ik_path = ik.solve(
+        positions,
+        start_state,
+        orientations=per_point_orientations,
+    )
+    first_goal = ik_path.first_state
+    node.get_logger().info(
+        f"Continuous IK succeeded for {len(ik_path.states)} waypoint(s). "
+        f"First IK goal: {[f'{v:.3f}' for v in first_goal.position]}"
+    )
+
+    # Log PlanningScene state before planning.
+    planner.log_scene_inventory()
+
+    plan_start_time = monotonic()
+    try:
+        transition = planner.plan_transition(start_state, first_goal)
+        plan_elapsed = monotonic() - plan_start_time
+        node.get_logger().info(
+            f"TRANSITION_PLANNED: "
+            f"planner={config.planner_options.planner_id}, "
+            f"time={plan_elapsed:.3f}s, "
+            f"points={len(transition.points)}, "
+            f"start={[f'{v:.3f}' for v in start_state.position]}, "
+            f"goal={[f'{v:.3f}' for v in first_goal.position]}"
+        )
+    except Exception:
+        node.get_logger().error(
+            f"TRANSITION_FAILED after {monotonic() - plan_start_time:.3f}s: "
+            f"start={[f'{v:.3f}' for v in start_state.position]}, "
+            f"goal={[f'{v:.3f}' for v in first_goal.position]}"
+        )
+        raise
 
     executor = TrajectoryExecutor(node, moveit, config.joint_names)
     if not config.execute_transition:
@@ -555,10 +830,16 @@ def run_pipeline(node: TransitionPipelineNode) -> None:
         )
         return
 
+    replay_topic = str(node.get_parameter("replay_joint_state_topic").value)
     if config.dry_run:
         executor.execute(transition, dry_run=True, wait=True)
     else:
-        executor.replay(transition, rate_hz=config.replay_rate_hz)
+        executor.replay(
+            transition,
+            topic=replay_topic,
+            rate_hz=config.replay_rate_hz,
+            switch_viewer_to_tracking=True,
+        )
     if not config.execute_task_path:
         node.get_logger().info("Transition execution stage finished.")
         return
@@ -572,7 +853,12 @@ def run_pipeline(node: TransitionPipelineNode) -> None:
     if config.dry_run:
         executor.execute(task_trajectory, dry_run=True, wait=True)
     else:
-        executor.replay(task_trajectory, rate_hz=config.replay_rate_hz)
+        executor.replay(
+            task_trajectory,
+            topic=replay_topic,
+            rate_hz=config.replay_rate_hz,
+            switch_viewer_to_tracking=False,
+        )
     node.get_logger().info("Continuous task trajectory execution stage finished.")
 
 
@@ -585,8 +871,29 @@ def main(args: Sequence[str] | None = None) -> int:
     except KeyboardInterrupt:
         node.get_logger().warning("Pipeline interrupted by user.")
         return 130
+    except FileNotFoundError as error:
+        node.get_logger().error(f"CONFIG_ERROR: {error}")
+        return 1
+    except ValueError as error:
+        node.get_logger().error(f"CONFIG_ERROR: {error}")
+        return 1
+    except RuntimeError as error:
+        msg = str(error)
+        if msg.startswith("START_STATE_"):
+            node.get_logger().error(f"START_STATE_INVALID: {msg}")
+        elif "PlanningScene" in msg:
+            node.get_logger().error(f"SCENE_ERROR: {msg}")
+        elif "IK" in msg or "ik_input" in msg:
+            node.get_logger().error(f"IK_ERROR: {msg}")
+        elif "trajectory" in msg.lower() or "PLANNER" in msg:
+            node.get_logger().error(f"PLANNING_ERROR: {msg}")
+        elif "execute" in msg.lower() or "Execution" in msg:
+            node.get_logger().error(f"EXECUTION_ERROR: {msg}")
+        else:
+            node.get_logger().error(f"PIPELINE_ERROR: {msg}")
+        return 1
     except Exception as error:
-        node.get_logger().error(f"Pipeline failed: {error}")
+        node.get_logger().error(f"UNEXPECTED_ERROR: {error}")
         return 1
     finally:
         node.destroy_node()

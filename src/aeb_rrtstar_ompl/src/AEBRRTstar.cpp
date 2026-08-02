@@ -23,15 +23,11 @@
 #include <ompl/util/RandomNumbers.h>
 #include <ompl/util/Exception.h>
 
-#include <boost/math/constants/constants.hpp>
-
 #include <algorithm>
 #include <cmath>
 #include <limits>
 #include <queue>
 #include <utility>
-
-using boost::math::constants::pi;
 
 namespace ompl
 {
@@ -40,8 +36,7 @@ namespace geometric
 
 namespace
 {
-    // J5 (index 4) has [-π, π] range → wrapping joint
-    const unsigned int J5_INDEX = 4;
+    constexpr double PI = 3.14159265358979323846;
 
     double normDist(const base::State *a, const base::State *b,
                     unsigned int dim)
@@ -54,15 +49,8 @@ namespace
         for (unsigned int i = 0; i < dim; ++i)
         {
             double diff = va[i] - vb[i];
-            if (i == J5_INDEX)
-            {
-                diff = std::fmod(diff + pi<double>(),
-                                 2.0 * pi<double>());
-                if (diff < 0.0) diff += 2.0 * pi<double>();
-                diff -= pi<double>();
-            }
             if (i == 0)
-                diff *= pi<double>() / 0.585;
+                diff *= PI / 0.585;
             sum += diff * diff;
         }
         return std::sqrt(sum);
@@ -79,13 +67,8 @@ namespace
         for (unsigned int i = 0; i < dim; ++i)
         {
             double diff = std::fabs(va[i] - vb[i]);
-            if (i == J5_INDEX)
-            {
-                if (diff > pi<double>())
-                    diff = 2.0 * pi<double>() - diff;
-            }
             if (i == 0)
-                diff *= pi<double>() / 0.585;
+                diff *= PI / 0.585;
             total += diff;
         }
         return total;
@@ -293,6 +276,49 @@ base::PlannerStatus AEBRRTstar::solve(
     int iter = 0;
     auto *opt_obj = pdef->getOptimizationObjective().get();
 
+    // A planner must never report an exact solution whose final state does
+    // not satisfy the OMPL goal.  ProblemDefinition would otherwise retain
+    // it as an approximate candidate, while this planner incorrectly returns
+    // EXACT_SOLUTION.  Keep this check next to every addSolutionPath() call
+    // as a fail-closed guard for future changes to path construction.
+    auto reaches_goal = [pdef](const base::PathPtr &candidate) {
+        const auto *geometric_path =
+            dynamic_cast<const PathGeometric *>(candidate.get());
+        if (!geometric_path || geometric_path->getStateCount() == 0)
+            return false;
+
+        double distance = std::numeric_limits<double>::infinity();
+        const bool satisfied = pdef->getGoal()->isSatisfied(
+            geometric_path->getState(geometric_path->getStateCount() - 1),
+            &distance);
+        if (!satisfied)
+        {
+            OMPL_WARN("AEBRRTstar: rejected non-goal path (goal distance %.6f)",
+                      distance);
+        }
+        return satisfied;
+    };
+
+    // The final path is traversed start -> goal, whereas the goal tree is
+    // grown in the opposite direction.  Validate the assembled geometric
+    // path in that execution direction before handing it to MoveIt.  This is
+    // intentionally independent of the per-extension checks: it catches a
+    // bad bridge, a rewired goal-tree edge, or a future path-assembly change
+    // before MoveIt's trajectory post-processing can turn it into an invalid
+    // motion plan.
+    auto is_valid_path = [](const base::PathPtr &candidate) {
+        const auto *geometric_path =
+            dynamic_cast<const PathGeometric *>(candidate.get());
+        if (!geometric_path || geometric_path->getStateCount() == 0)
+            return false;
+        if (!geometric_path->check())
+        {
+            OMPL_WARN("AEBRRTstar: rejected collision-invalid assembled path");
+            return false;
+        }
+        return true;
+    };
+
     while (!ptc())
     {
         ++iter;
@@ -303,7 +329,7 @@ base::PlannerStatus AEBRRTstar::solve(
         if (conn)
         {
             auto path = buildPath();
-            if (path)
+            if (path && reaches_goal(path) && is_valid_path(path))
             {
                 double c = computePathCost(path);
                 if (stop_on_first_solution_)
@@ -328,7 +354,7 @@ base::PlannerStatus AEBRRTstar::solve(
         if (conn2)
         {
             auto path = buildPath();
-            if (path)
+            if (path && reaches_goal(path) && is_valid_path(path))
             {
                 double c = computePathCost(path);
                 if (stop_on_first_solution_)
@@ -358,9 +384,14 @@ base::PlannerStatus AEBRRTstar::solve(
     if (solved)
     {
         if (!stop_on_first_solution_ && best_path_)
-            pdef->addSolutionPath(
-                enable_aeb_shortcut_ ? aebShortcut(best_path_)
-                                     : best_path_);
+        {
+            auto final_path = enable_aeb_shortcut_
+                ? aebShortcut(best_path_)
+                : best_path_;
+            if (!reaches_goal(final_path) || !is_valid_path(final_path))
+                return base::PlannerStatus::TIMEOUT;
+            pdef->addSolutionPath(final_path);
+        }
         return base::PlannerStatus::EXACT_SOLUTION;
     }
     std::cerr << "AEB_FAIL: timeout, iter=" << iter
@@ -460,7 +491,14 @@ std::pair<int, bool> AEBRRTstar::extendTree(
         if (c < best_cost)
         {
             ++motion_checks_;
-            if (si->checkMotion(tree.nodes[ni].state, x_new))
+            // Goal-tree edges are traversed in reverse when constructing
+            // the executable start->goal path.  Check the same direction
+            // that will be returned to MoveIt, not merely the insertion
+            // direction used while growing the goal tree.
+            const bool edge_valid = is_goal_tree
+                ? si->checkMotion(x_new, tree.nodes[ni].state)
+                : si->checkMotion(tree.nodes[ni].state, x_new);
+            if (edge_valid)
             {
                 best_parent = ni;
                 best_cost = c;
@@ -483,7 +521,12 @@ std::pair<int, bool> AEBRRTstar::extendTree(
         if (via + 1e-12 < tree.nodes[ni].cost)
         {
             ++motion_checks_;
-            if (si->checkMotion(x_new, tree.nodes[ni].state))
+            // See choose-parent above: a goal-tree child is replayed toward
+            // its parent, so validate that reverse direction after rewiring.
+            const bool edge_valid = is_goal_tree
+                ? si->checkMotion(tree.nodes[ni].state, x_new)
+                : si->checkMotion(x_new, tree.nodes[ni].state);
+            if (edge_valid)
             {
                 double delta = via - tree.nodes[ni].cost;
                 int old_p = tree.nodes[ni].parent;
@@ -516,8 +559,13 @@ std::pair<int, bool> AEBRRTstar::extendTree(
         if (d <= connect_threshold_)
         {
             ++motion_checks_;
-            if (si->checkMotion(x_new,
-                                other_tree.nodes[ci].state))
+            const base::State *start_connection = is_goal_tree
+                ? other_tree.nodes[ci].state
+                : x_new;
+            const base::State *goal_connection = is_goal_tree
+                ? x_new
+                : other_tree.nodes[ci].state;
+            if (si->checkMotion(start_connection, goal_connection))
             {
                 // Store the connection indices in START/GOAL tree terms.
                 // When the goal tree is the one being extended, x_new
@@ -555,7 +603,13 @@ base::PathPtr AEBRRTstar::buildPath() const
 
     auto path = std::make_shared<PathGeometric>(si);
     for (auto *s : sc) path->append(s);
-    for (int i = static_cast<int>(gc.size()) - 2; i >= 0; --i)
+    // ``sc`` ends at the start-tree connection state and ``gc`` is ordered
+    // goal-root -> goal-tree connection state.  The verified bridge is
+    // start-connection -> goal-connection, so the latter must be included
+    // before traversing back to the goal root.  Starting at size()-2 dropped
+    // this state; when the goal tree was still just its root it dropped the
+    // goal entirely and produced a trajectory that stopped partway through.
+    for (int i = static_cast<int>(gc.size()) - 1; i >= 0; --i)
         path->append(gc[i]);
     return path;
 }

@@ -1,11 +1,9 @@
-# AEB-RRT* Gray Rollout — 2026-08-01
-# planning_plugin switched to AEB-RRT* wrapper which registers AEB-RRT*
-# AND delegates all other planners to the standard OMPL interface.
-# RRTConnect retained as fallback.
+# MoveIt's OMPL pipeline with the project's AEB-RRT* PlannerManager.
 #
-# ROLLBACK (one-line):
-#   planning_plugin: ompl_interface/OMPLPlanner
-#   (and move RRTConnectkConfigDefault back to first in arm.planner_configs)
+# The plugin delegates PlanningScene collision checking to MoveIt's normal
+# OMPL interface, then registers ``geometric::AEBRRTstarFaithful``.  This
+# means both static and live ``/collision_object`` obstacles are checked by
+# FCL during AEB-RRT* expansion and edge validation.
 planning_plugin: aeb_rrtstar_ompl/AEBRRTstarPlannerManager
 request_adapters: >-
   default_planner_request_adapters/AddTimeOptimalParameterization
@@ -17,20 +15,28 @@ request_adapters: >-
 start_state_max_bounds_error: 0.1
 
 planner_configs:
-  # ---- AEB-RRT* (new default) ----
+  # Production default: paper-faithful AEB-RRT* (stop at the first valid
+  # bidirectional connection).  These are the parameters exported by the
+  # C++ planner through MoveIt's OMPL configuration interface.
   AEBRRTstarFaithfulConfigDefault:
-    type: geometric::AEBRRTstar
-    range: 0.0           # auto-compute from state space extent (~5.6 for ninezzhou)
-    connect_threshold: 0.0  # auto: 2× range
-    stop_on_first_solution: true
-
-  AEBRRTstarAnytimeConfigDefault:
-    type: geometric::AEBRRTstar
+    type: geometric::AEBRRTstarFaithful
+    # Zero asks AEB-RRT* to derive its step and connection threshold from the
+    # actual MoveIt joint-space extent (its safe, adaptive production mode).
     range: 0.0
     connect_threshold: 0.0
-    stop_on_first_solution: false
+    stop_on_first_solution: true
+    # Keep the AEB-generated route intact.  MoveIt's generic simplifier can
+    # replace valid AEB edges with a shortcut that is later rejected by FCL.
+    # MoveIt Humble reads these generic config flags with
+    # boost::lexical_cast<bool>, which accepts 0/1 rather than true/false.
+    simplify_solutions: "0"
+    # Interpolate using the same conservative resolution used for motion
+    # validation before MoveIt time-parameterizes and replays the path.
+    interpolate: "1"
+    longest_valid_segment_fraction: 0.001
 
-  # ---- RRTConnect (stable fallback) ----
+  # Keep an explicit manual fallback available for diagnosis only.  Nothing
+  # in the transition pipeline selects it by default.
   RRTConnectkConfigDefault:
     type: geometric::RRTConnect
     range: 0.0
@@ -39,4 +45,3 @@ arm:
   planner_configs:
     - AEBRRTstarFaithfulConfigDefault
     - RRTConnectkConfigDefault
-    # - AEBRRTstarAnytimeConfigDefault  # enable for anytime optimization
