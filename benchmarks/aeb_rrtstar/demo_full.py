@@ -23,6 +23,8 @@ from pathlib import Path
 import numpy as np
 import rclpy
 import scipy.io
+from builtin_interfaces.msg import Duration
+from controller_manager_msgs.srv import SwitchController
 from moveit_msgs.msg import PlanningSceneComponents
 from moveit_msgs.srv import GetPlanningScene
 from pymoveit2 import MoveIt2
@@ -30,6 +32,39 @@ from rclpy.node import Node
 from sensor_msgs.msg import JointState
 
 JOINTS = ["J1", "J2", "J3", "J4", "J5", "J6", "J7", "J8", "J9"]
+
+
+def _switch_broadcaster(node: Node, *, activate: bool) -> bool:
+    """Pause or resume the JointStateBroadcaster so it doesn't fight replay."""
+    client = node.create_client(
+        SwitchController, "/controller_manager/switch_controller"
+    )
+    if not client.wait_for_service(timeout_sec=1.0):
+        node.get_logger().warning(
+            "controller_manager service not available; cannot pause broadcaster"
+        )
+        return False
+
+    request = SwitchController.Request()
+    if activate:
+        request.activate_controllers = ["joint_state_broadcaster"]
+        request.deactivate_controllers = []
+    else:
+        request.activate_controllers = []
+        request.deactivate_controllers = ["joint_state_broadcaster"]
+    request.strictness = SwitchController.Request.BEST_EFFORT
+    request.timeout = Duration(sec=1)
+
+    future = client.call_async(request)
+    rclpy.spin_until_future_complete(node, future, timeout_sec=2.0)
+    result = future.result()
+    ok = result is not None and result.ok
+    if ok:
+        state = "resumed" if activate else "paused"
+        print(f"  [broadcaster {state}]")
+    else:
+        print(f"  [WARN] Failed to switch broadcaster (activate={activate})")
+    return ok
 
 
 def main() -> int:
@@ -75,7 +110,7 @@ def main() -> int:
 
     def do_plan():
         moveit.pipeline_id = "ompl"; moveit.planner_id = "AEBRRTstarFaithfulConfigDefault"
-        moveit.allowed_planning_time = 5.0; moveit.num_planning_attempts = 1
+        moveit.allowed_planning_time = 5.0; moveit.num_planning_attempts = 3
         moveit.max_velocity = 0.2; moveit.max_acceleration = 0.2
         traj = moveit.plan(joint_positions=ik_goal, joint_names=list(JOINTS), tolerance_joint_position=0.001, start_joint_state=None)
         return traj
@@ -84,17 +119,24 @@ def main() -> int:
         pts = [list(p.positions) for p in traj.points]
         if len(pts) < 2:
             pub(pts[0] if pts else ik_goal); time.sleep(total_s); return
-        frame_s = 1.0 / 30
-        total_frames = int(total_s / frame_s)
-        for f in range(total_frames + 1):
-            t = f / max(total_frames, 1)
-            idx = min(int(t * (len(pts) - 1)), len(pts) - 2)
-            frac = t * (len(pts) - 1) - idx
-            interp = [pts[idx][j] + frac * (pts[idx + 1][j] - pts[idx][j]) for j in range(9)]
-            pub(interp)
-            r.spin_once(node, timeout_sec=0.001)
-            time.sleep(frame_s)
-        pub(pts[-1])
+        # Pause JointStateBroadcaster so it doesn't fight our trajectory
+        # publication with stale zero positions from mock hardware.
+        was_active = _switch_broadcaster(node, activate=False)
+        try:
+            frame_s = 1.0 / 30
+            total_frames = int(total_s / frame_s)
+            for f in range(total_frames + 1):
+                t = f / max(total_frames, 1)
+                idx = min(int(t * (len(pts) - 1)), len(pts) - 2)
+                frac = t * (len(pts) - 1) - idx
+                interp = [pts[idx][j] + frac * (pts[idx + 1][j] - pts[idx][j]) for j in range(9)]
+                pub(interp)
+                r.spin_once(node, timeout_sec=0.001)
+                time.sleep(frame_s)
+            pub(pts[-1])
+        finally:
+            if was_active:
+                _switch_broadcaster(node, activate=True)
 
     # ================================================================
     #  PHASE 1 — Arm at zero, then plan and execute transition
@@ -115,53 +157,7 @@ def main() -> int:
     pub(ik_goal); time.sleep(2)
 
     # ================================================================
-    #  PHASE 2 — Sweep sphere across link column + plan at each position
-    # ================================================================
-    print("\n  >>> 动态障碍扫掠: 球体从左侧扫到右侧，每步重规划")
-    moveit.add_collision_sphere("dyn_sweep", radius=0.07, position=(0., 0., -5.), quat_xyzw=(0., 0., 0., 1.), frame_id="base_link")
-    time.sleep(0.4)
-
-    for x in np.linspace(-0.30, 0.30, 14):
-        pos = (float(x), 0.343, 0.80)
-        # Publish MOVE + re-publish until scene sync
-        for _ in range(8):
-            moveit.move_collision("dyn_sweep", pos, (0., 0., 0., 1.), "base_link")
-            time.sleep(0.1)
-            req = GetPlanningScene.Request(); req.components.components = PlanningSceneComponents.WORLD_OBJECT_GEOMETRY
-            fut = scene_client.call_async(req)
-            t0 = time.monotonic()
-            r.spin_until_future_complete(node, fut, timeout_sec=0.15) or True
-            if fut.done() and fut.result():
-                for obj in fut.result().scene.world.collision_objects:
-                    if obj.id == "dyn_sweep":
-                        if abs(obj.pose.position.x - x) < 0.02: break
-                else: continue; break
-        # Plan
-        traj = do_plan()
-        ok = traj is not None and len(traj.points) > 0 if traj else False
-        pts = len(traj.points) if traj else 0
-
-        if ok and abs(x) > 0.12:
-            # Edge: sphere clear → plan SUCCEEDS, arm moves
-            print(f"    x={x:+6.2f}  畅通 → 规划成功 ({pts}点) 执行中...")
-            replay(traj, 1.5)
-            pub(ik_goal)
-        elif ok:
-            # Just barely clearing
-            print(f"    x={x:+6.2f}  临界 → 规划成功 ({pts}点)")
-            replay(traj, 1.5)
-            pub(ik_goal)
-        else:
-            # Center: sphere on the links → start/goal blocked
-            print(f"    x={x:+6.2f}  阻塞 → 连杆被压，规划正确返回无解")
-            pub(ik_goal)  # hold at last known good position
-            time.sleep(1.0)
-        r.spin_once(node, timeout_sec=0.01)
-
-    moveit.remove_collision_object("dyn_sweep"); time.sleep(0.5)
-
-    # ================================================================
-    #  PHASE 3 — Redundant-DOF: same tool0, different joint config
+    #  PHASE 2 — Redundant-DOF: same tool0, different joint config
     # ================================================================
     print("\n  >>> 冗余自由度演示: 同一末端位姿，两套关节配置")
     seed = JointState(); seed.name = list(JOINTS)

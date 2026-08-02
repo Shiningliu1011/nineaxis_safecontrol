@@ -4,15 +4,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from math import isfinite
-from time import sleep
+from time import monotonic, sleep
 from typing import Sequence
 
 from builtin_interfaces.msg import Duration
 from controller_manager_msgs.srv import SwitchController
-import rclpy
 from pymoveit2 import MoveIt2, MoveIt2State
 from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import JointState
+from std_srvs.srv import SetBool
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 
@@ -42,13 +42,7 @@ class TrajectoryExecutor:
         lead_time_s: float = 0.05,
         time_scale: float = 1.0,
     ) -> JointTrajectory:
-        """Convert MoveIt IK results plus supplied timestamps to a ROS trajectory.
-
-        This does not interpolate or generate an alternative path.  It preserves
-        the input sequence and only shifts it by ``lead_time_s`` so a controller
-        can accept the first point after the action is received.
-        """
-
+        """Convert MoveIt IK results plus supplied timestamps to a ROS trajectory."""
         if len(states) == 0:
             raise ExecutionError("Cannot execute an empty IK path")
         if len(states) != len(source_times_s):
@@ -85,7 +79,6 @@ class TrajectoryExecutor:
         wait: bool = True,
     ) -> ExecutionResult:
         """Submit a MoveIt-planned/timed trajectory only when explicitly enabled."""
-
         self._validate_trajectory(trajectory)
         if dry_run:
             self._node.get_logger().info(
@@ -110,32 +103,32 @@ class TrajectoryExecutor:
         self,
         trajectory: JointTrajectory,
         *,
+        topic: str = "/joint_states",
         rate_hz: float = 30.0,
+        switch_viewer_to_tracking: bool = False,
     ) -> ExecutionResult:
-        """Publish trajectory points directly to /joint_states for visualization.
+        """Publish trajectory points directly for visualization.
 
-        This bypasses the MoveIt execution pipeline and mock ros2_control
-        hardware, publishing each trajectory point as a JointState message
-        at the specified rate.  Use this when the goal is visual feedback
-        (e.g. MuJoCo viewer) rather than hardware execution.
-
-        The JointStateBroadcaster is paused during replay so that its
-        zero-position messages do not override the trajectory.
+        When *switch_viewer_to_tracking* is True, the Viewer mode is switched
+        BEFORE any replay publisher is created.  Failure to switch raises
+        ``ExecutionError`` and no trajectory is published (Issue #7).
         """
-
         self._validate_trajectory(trajectory)
+
+        # Issue #7: switch first, fail before creating publisher.
+        if switch_viewer_to_tracking:
+            self._switch_viewer_to_tracking()  # raises on failure
 
         # Pause the JointStateBroadcaster so it doesn't publish zero positions.
         broadcaster_was_active = self._switch_broadcaster(activate=False)
 
         pub = self._node.create_publisher(
-            JointState, "/joint_states", qos_profile_sensor_data
+            JointState, topic, qos_profile_sensor_data
         )
-        # Allow the publisher to connect to subscribers.
         sleep(0.3)
 
         self._node.get_logger().info(
-            f"Replaying {len(trajectory.points)} trajectory points to /joint_states "
+            f"Replaying {len(trajectory.points)} trajectory points to {topic} "
             f"at {rate_hz} Hz"
         )
 
@@ -155,19 +148,42 @@ class TrajectoryExecutor:
         finally:
             self._node.get_logger().info("Replay complete.")
             self._node.destroy_publisher(pub)
-            # Restore the broadcaster if it was active before.
             if broadcaster_was_active:
                 self._switch_broadcaster(activate=True)
 
         return ExecutionResult(submitted=True, completed=True, succeeded=True)
 
-    def _switch_broadcaster(self, *, activate: bool) -> bool:
-        """Activate or deactivate the JointStateBroadcaster.
+    def _switch_viewer_to_tracking(self) -> None:
+        """Switch Viewer to ROS tracking mode. Raises ExecutionError on failure.
 
-        Returns True if the service call succeeded and the broadcaster was
-        in the expected state, False on any error (caller should treat as
-        best-effort).
+        Issue #3: uses non-spin polling.  Issue #7: raises instead of returning False.
         """
+        client = self._node.create_client(SetBool, "set_mujoco_manual_mode")
+        try:
+            if not client.wait_for_service(timeout_sec=2.0):
+                raise ExecutionError(
+                    "VIEWER_TRACKING_SWITCH_FAILED: /set_mujoco_manual_mode unavailable"
+                )
+            request = SetBool.Request()
+            request.data = False  # False = ROS tracking mode
+            future = client.call_async(request)
+            deadline = monotonic() + 2.0
+            while not future.done() and monotonic() < deadline:
+                sleep(0.01)
+            if not future.done():
+                raise ExecutionError("VIEWER_TRACKING_SWITCH_FAILED: timeout")
+            result = future.result()
+            if result is not None and result.success:
+                self._node.get_logger().info("VIEWER_TRACKING_ENABLED")
+                return
+            raise ExecutionError("VIEWER_TRACKING_SWITCH_FAILED")
+        finally:
+            # A persistent planning server may replay many requests; don't
+            # accumulate short-lived service clients.
+            self._node.destroy_client(client)
+
+    def _switch_broadcaster(self, *, activate: bool) -> bool:
+        """Activate or deactivate the JointStateBroadcaster (non-spin)."""
         client = self._node.create_client(
             SwitchController, "/controller_manager/switch_controller"
         )
@@ -188,7 +204,12 @@ class TrajectoryExecutor:
         request.timeout = Duration(sec=1)
 
         future = client.call_async(request)
-        rclpy.spin_until_future_complete(self._node, future, timeout_sec=2.0)
+        deadline = monotonic() + 2.0
+        while not future.done() and monotonic() < deadline:
+            sleep(0.01)
+        if not future.done():
+            self._node.get_logger().warning("Failed to switch JointStateBroadcaster: timeout")
+            return False
         result = future.result()
         if result is not None and result.ok:
             state = "resumed" if activate else "paused"
@@ -199,7 +220,6 @@ class TrajectoryExecutor:
 
     def stop(self) -> None:
         """Request cancellation of a currently executing MoveIt trajectory."""
-
         if self._moveit.query_state() == MoveIt2State.EXECUTING:
             self._moveit.cancel_execution()
 
@@ -226,9 +246,6 @@ class TrajectoryExecutor:
             ):
                 raise ExecutionError(f"Trajectory point {index} has invalid positions")
             point_time = self._seconds(point.time_from_start)
-            # MoveIt commonly emits the first waypoint at t=0.  That is a
-            # valid JointTrajectory convention; only later points must be
-            # strictly later and no point may be negative.
             if point_time < 0.0 or (
                 previous_time is not None and point_time <= previous_time
             ):

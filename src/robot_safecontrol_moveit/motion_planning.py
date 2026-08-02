@@ -9,12 +9,12 @@ PlanningScene perform those jobs.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from time import monotonic
+from math import isfinite
+from time import monotonic, sleep
 from typing import Iterable, Sequence
 
-import rclpy
-from moveit_msgs.msg import PlanningSceneComponents
-from moveit_msgs.srv import GetPlanningScene
+from moveit_msgs.msg import PlanningSceneComponents, RobotState
+from moveit_msgs.srv import GetPlanningScene, GetStateValidity
 from pymoveit2 import MoveIt2
 from sensor_msgs.msg import JointState
 from trajectory_msgs.msg import JointTrajectory
@@ -24,12 +24,20 @@ class PlanningError(RuntimeError):
     """MoveIt could not create or validate a transition trajectory."""
 
 
+class StateValidityError(PlanningError):
+    """The start or goal state failed MoveIt's collision/limit checks."""
+
+
 @dataclass(frozen=True)
 class PlanningOptions:
     pipeline_id: str = "ompl"
-    planner_id: str = "RRTConnectkConfigDefault"
+    planner_id: str = "AEBRRTstarFaithfulConfigDefault"
     planning_time_s: float = 10.0
-    planning_attempts: int = 5
+    # Use one AEB-RRT* instance per request.  More than one causes MoveIt's
+    # ParallelPlan/PathHybridization layer to combine concurrent candidates,
+    # which is neither needed by the faithful AEB mode nor desirable for a
+    # deterministic transition replay.
+    planning_attempts: int = 1
     velocity_scale: float = 0.2
     acceleration_scale: float = 0.2
     goal_joint_tolerance: float = 1e-3
@@ -60,19 +68,18 @@ class MotionPlanner:
         moveit: MoveIt2,
         joint_names: Sequence[str],
         options: PlanningOptions,
+        planning_group: str = "arm",
     ):
         self._node = node
         self._moveit = moveit
         self._joint_names = tuple(joint_names)
         self._options = options
-        # ``pymoveit2.update_planning_scene()`` uses the synchronous
-        # ``Client.call()`` API.  That API requires a separate executor thread
-        # and otherwise blocks a single-threaded pipeline before it can spin.
-        # Keep the MoveIt client for planning/execution, but query the standard
-        # MoveIt PlanningScene service asynchronously so this module owns its
-        # timeout and remains usable from this Python entry point.
+        self._planning_group = str(planning_group)
         self._planning_scene_client = node.create_client(
             GetPlanningScene, "get_planning_scene"
+        )
+        self._state_validity_client = node.create_client(
+            GetStateValidity, "check_state_validity"
         )
         self._validate_options()
         self._configure_moveit()
@@ -83,7 +90,6 @@ class MotionPlanner:
         sync_timeout_s: float = 5.0,
     ) -> None:
         """Publish configured obstacles and verify that MoveIt received them."""
-
         objects = tuple(objects)
         if not objects:
             return
@@ -101,11 +107,6 @@ class MotionPlanner:
         scene_request.components.components = PlanningSceneComponents.WORLD_OBJECT_GEOMETRY
         while monotonic() < deadline:
             now = monotonic()
-            # CollisionObject uses a normal ROS topic.  A publisher created
-            # just before this call may not yet have discovered move_group's
-            # subscription, so a one-shot publish can be lost on first
-            # startup.  Re-publish the same ADD objects at a modest rate until
-            # MoveIt confirms that all IDs are present.
             if now >= next_publish_time:
                 for item in objects:
                     self._publish_collision_object(item)
@@ -116,14 +117,9 @@ class MotionPlanner:
                 timeout_sec=min(0.2, remaining_s)
             ):
                 future = self._planning_scene_client.call_async(scene_request)
-                response_wait_s = deadline - monotonic()
-                if response_wait_s <= 0.0:
-                    break
-                rclpy.spin_until_future_complete(
-                    self._node,
-                    future,
-                    timeout_sec=min(0.2, response_wait_s),
-                )
+                response_deadline = monotonic() + min(0.5, remaining_s)
+                while not future.done() and monotonic() < response_deadline:
+                    sleep(0.01)
                 if not future.done():
                     continue
                 response = future.result()
@@ -147,7 +143,6 @@ class MotionPlanner:
 
     def _publish_collision_object(self, item: CollisionObjectSpec) -> None:
         """Forward one reviewed primitive to MoveIt's PlanningScene topic."""
-
         if item.shape == "box":
             self._moveit.add_collision_box(
                 id=item.object_id,
@@ -173,8 +168,67 @@ class MotionPlanner:
                 quat_xyzw=item.quaternion_xyzw,
                 frame_id=item.frame_id,
             )
-        else:  # Covered by _validate_collision_object; retained for type safety.
+        else:
             raise PlanningError(f"Unsupported collision shape: {item.shape}")
+
+    def validate_state(
+        self,
+        state: JointState,
+        *,
+        label: str = "state",
+    ) -> None:
+        """Check a joint state against MoveIt's collision and limit validity.
+
+        Calls ``/check_state_validity`` and raises ``StateValidityError``
+        with a specific prefix if invalid.  Uses non-spin polling (Issue #3).
+        """
+        ordered = self._ordered_state(state)
+        if not self._state_validity_client.wait_for_service(timeout_sec=2.0):
+            raise PlanningError(
+                f"STATE_VALIDITY_SERVICE_UNAVAILABLE: cannot validate {label}"
+            )
+
+        request = GetStateValidity.Request()
+        request.robot_state = RobotState()
+        request.robot_state.joint_state = ordered
+        # ``pymoveit2.MoveIt2`` keeps its group name private. Retain the
+        # configured value ourselves rather than depending on a non-existent
+        # public attribute, so state validation always reaches MoveIt.
+        request.group_name = self._planning_group
+
+        future = self._state_validity_client.call_async(request)
+        deadline = monotonic() + 3.0
+        while not future.done() and monotonic() < deadline:
+            sleep(0.01)
+        if not future.done():
+            raise PlanningError(
+                f"STATE_VALIDITY_TIMEOUT: {label} validation timed out"
+            )
+
+        response = future.result()
+        if response is None:
+            raise PlanningError(
+                f"STATE_VALIDITY_NO_RESPONSE: {label} validation returned null"
+            )
+
+        if not response.valid:
+            contacts = []
+            for contact in response.contacts:
+                contacts.append(
+                    f"{contact.contact_body_1}-{contact.contact_body_2}"
+                )
+            contact_info = (
+                f" contacts=[{', '.join(contacts)}]" if contacts else ""
+            )
+            # Issue #8: use safe classification — don't use joint names as link names.
+            # Report START_STATE_COLLISION or GOAL_STATE_COLLISION with contact bodies.
+            detail = f"{label.upper()}_INVALID"
+            raise StateValidityError(
+                f"{label.upper()}_COLLISION: {label} is invalid"
+                f"{contact_info}"
+            )
+
+        self._node.get_logger().info(f"{label.upper()}_VALID")
 
     def plan_transition(
         self,
@@ -182,26 +236,175 @@ class MotionPlanner:
         goal_state: JointState,
     ) -> JointTrajectory:
         """Ask MoveIt/OMPL for a collision-free start-to-first-IK trajectory."""
-
         start = self._ordered_state(start_state)
         goal = self._ordered_state(goal_state)
-        trajectory = self._moveit.plan(
+
+        self.validate_state(start, label="START_STATE")
+        self.validate_state(goal, label="GOAL_STATE")
+
+        # ``MoveIt2.plan()`` spins its node internally.  This planner runs
+        # inside the persistent server's MultiThreadedExecutor, so use the
+        # asynchronous request and let that executor service the future.
+        future = self._moveit.plan_async(
             joint_positions=list(goal.position),
             joint_names=list(self._joint_names),
             tolerance_joint_position=self._options.goal_joint_tolerance,
             start_joint_state=start,
         )
+        if future is None:
+            raise PlanningError(
+                "PLANNER_SERVICE_UNAVAILABLE: MoveIt did not accept the planning request"
+            )
+
+        deadline = monotonic() + self._options.planning_time_s + 3.0
+        while not future.done() and monotonic() < deadline:
+            sleep(0.01)
+        if not future.done():
+            raise PlanningError(
+                "PLANNER_TIMEOUT: /plan_kinematic_path did not respond before the deadline"
+            )
+
+        try:
+            trajectory = self._moveit.get_trajectory(future)
+        except Exception as exc:
+            raise PlanningError(f"PLANNER_FAILED: {exc}") from exc
         if trajectory is None or not trajectory.points:
             raise PlanningError(
-                "MoveIt returned no transition trajectory. Check the PlanningScene, "
-                "joint state, collision objects, and planner configuration."
+                "PLANNER_FAILED: MoveIt returned no transition trajectory. "
+                "Check the PlanningScene, joint state, collision objects, "
+                "and planner configuration."
             )
         if tuple(trajectory.joint_names) != self._joint_names:
             raise PlanningError(
                 "MoveIt returned a trajectory with unexpected joint order: "
                 f"{list(trajectory.joint_names)}"
             )
+        MotionPlanner._validate_trajectory_goal(self, trajectory, goal)
         return trajectory
+
+    def _validate_trajectory_goal(
+        self,
+        trajectory: JointTrajectory,
+        goal: JointState,
+    ) -> None:
+        """Reject a nominally-successful plan that does not end at its goal.
+
+        MoveIt normally enforces this contract, but treating a partial or
+        approximate path as executable would make the MuJoCo replay stop
+        short of the first task waypoint.  The C++ AEB planner makes the same
+        check before returning an exact solution; this is an independent
+        client-side safety boundary.
+        """
+        final_positions = tuple(float(value) for value in trajectory.points[-1].positions)
+        expected_positions = tuple(float(value) for value in goal.position)
+        expected_count = len(self._joint_names)
+        if (
+            len(final_positions) != expected_count
+            or len(expected_positions) != expected_count
+        ):
+            raise PlanningError(
+                "PLANNER_GOAL_MISMATCH: trajectory endpoint has an unexpected "
+                f"joint count (got {len(final_positions)}, expected {expected_count})"
+            )
+
+        errors = [
+            abs(actual - expected)
+            for actual, expected in zip(final_positions, expected_positions)
+        ]
+        if not all(isfinite(error) for error in errors):
+            raise PlanningError(
+                "PLANNER_GOAL_MISMATCH: trajectory endpoint contains a non-finite "
+                "joint position"
+            )
+
+        tolerance = self._options.goal_joint_tolerance
+        if max(errors, default=0.0) > tolerance:
+            detail = ", ".join(
+                f"{name}:error={error:.6f}"
+                for name, error in zip(self._joint_names, errors)
+                if error > tolerance
+            )
+            raise PlanningError(
+                "PLANNER_GOAL_MISMATCH: trajectory endpoint does not reach the "
+                f"requested IK goal within {tolerance:.6f} rad ({detail})"
+            )
+
+    def wait_for_scene_objects(
+        self,
+        expected_ids: set[str],
+        timeout_s: float = 5.0,
+    ) -> None:
+        """Wait until PlanningScene contains the expected object IDs (non-spin)."""
+        if not expected_ids:
+            return
+        deadline = monotonic() + timeout_s
+        scene_request = GetPlanningScene.Request()
+        scene_request.components.components = (
+            PlanningSceneComponents.WORLD_OBJECT_GEOMETRY
+        )
+        while monotonic() < deadline:
+            remaining_s = deadline - monotonic()
+            if not self._planning_scene_client.wait_for_service(
+                timeout_sec=min(0.5, remaining_s)
+            ):
+                continue
+            future = self._planning_scene_client.call_async(scene_request)
+            while not future.done() and monotonic() < deadline:
+                sleep(0.01)
+            if not future.done():
+                continue
+            response = future.result()
+            if response is None:
+                continue
+            received_ids = {
+                obj.id for obj in response.scene.world.collision_objects
+            }
+            missing = expected_ids - received_ids
+            if not missing:
+                self._node.get_logger().info(
+                    f"PlanningScene contains all {len(expected_ids)} expected "
+                    f"obstacle(s)."
+                )
+                return
+            self._node.get_logger().info(
+                f"Waiting for {len(missing)} obstacle(s) in PlanningScene: "
+                f"{sorted(missing)}"
+            )
+        raise PlanningError(
+            "SCENE_NOT_SYNCED: PlanningScene is missing expected obstacles "
+            f"after {timeout_s:.1f}s: {sorted(expected_ids - received_ids)}"
+        )
+
+    def log_scene_inventory(self) -> None:
+        """Log the current PlanningScene collision object inventory."""
+        scene_request = GetPlanningScene.Request()
+        scene_request.components.components = (
+            PlanningSceneComponents.WORLD_OBJECT_GEOMETRY
+        )
+        if not self._planning_scene_client.wait_for_service(timeout_sec=1.0):
+            self._node.get_logger().warning(
+                "Cannot query PlanningScene; service not available"
+            )
+            return
+        future = self._planning_scene_client.call_async(scene_request)
+        deadline = monotonic() + 1.0
+        while not future.done() and monotonic() < deadline:
+            sleep(0.01)
+        if not future.done():
+            self._node.get_logger().warning("PlanningScene query timed out")
+            return
+        response = future.result()
+        if response is None:
+            self._node.get_logger().warning("PlanningScene query returned no response")
+            return
+        scene = response.scene
+        object_ids = [
+            obj.id for obj in scene.world.collision_objects
+        ]
+        self._node.get_logger().info(
+            f"PlanningScene inventory: {len(object_ids)} object(s) — "
+            f"{sorted(object_ids) if object_ids else '(empty)'}"
+        )
 
     def _configure_moveit(self) -> None:
         self._moveit.pipeline_id = self._options.pipeline_id

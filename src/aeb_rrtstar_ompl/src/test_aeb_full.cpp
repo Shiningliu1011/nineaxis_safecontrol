@@ -138,6 +138,44 @@ static bool validatePath(const ompl::geometric::PathGeometric &path,
     return true;
 }
 
+// This setup forces the first start-tree extension to connect directly to
+// the goal-tree root.  It protects against dropping that root/connection
+// state while assembling the bidirectional path.
+static void test_firstConnectionIncludesGoal()
+{
+    TEST("First connection path includes the goal-tree root");
+    auto si = makeSI(false);
+    double direct_goal[NINEZZHOU_DIM] = {0.0, 0.9, 0.0, 0.0, 0.0,
+                                          0.0, 0.0, 0.0, 0.0};
+    auto pdef = makeProblem(si, zeros, direct_goal);
+    {
+        auto planner = std::make_shared<ompl::geometric::AEBRRTstar>(si);
+        planner->setStepSize(0.3);
+        planner->setConnectThreshold(0.4);
+        planner->setPMin(0.0);
+        planner->setPMax(0.0);
+        planner->setStopOnFirstSolution(true);
+        planner->setProblemDefinition(pdef);
+        planner->setup();
+
+        const auto status = planner->solve(
+            ompl::base::timedPlannerTerminationCondition(1.0));
+        CHECK(status == ompl::base::PlannerStatus::EXACT_SOLUTION);
+        CHECK(pdef->hasExactSolution());
+        auto path = std::dynamic_pointer_cast<ompl::geometric::PathGeometric>(
+            pdef->getSolutionPath());
+        CHECK(path != nullptr);
+        CHECK(path->getStateCount() == 3);
+        CHECK(pdef->getGoal()->isSatisfied(
+            path->getState(path->getStateCount() - 1)));
+        CHECK(validatePath(*path, si));
+        planner->clear();
+    }
+    pdef.reset();
+    si.reset();
+    PASS();
+}
+
 // ======================================================================
 //  Test: p_a adaptive probability
 // ======================================================================
@@ -408,12 +446,14 @@ static void test_solveRegression()
     PASS();
 }
 
-static void test_deterministic()
+static void test_repeatedSolutionsReachGoal()
 {
-    TEST("Fixed seed produces deterministic result");
-    // Note: AEB-RRT* uses ompl::RNG which is internally seeded by OMPL.
-    // We test that three runs produce paths with the same number of states.
+    TEST("Repeated no-collision solves reach the goal");
+    // AEB-RRT* is randomized, so a correct path need not have the same
+    // number of intermediate states across runs.  Its invariant is that the
+    // terminal state satisfies the requested goal every time.
     std::vector<std::size_t> state_counts;
+    std::vector<bool> reaches_goal;
     for (int run = 0; run < 3; ++run)
     {
         auto si = makeSI(false);
@@ -428,11 +468,16 @@ static void test_deterministic()
         planner->solve(ptc);
         auto path = std::dynamic_pointer_cast<ompl::geometric::PathGeometric>(
             pdef->getSolutionPath());
+        CHECK(path != nullptr);
         state_counts.push_back(path->getStateCount());
+        reaches_goal.push_back(pdef->getGoal()->isSatisfied(
+            path->getState(path->getStateCount() - 1)));
         planner->clear();
     }
-    // Without collision, path should always be 2 states (direct connection)
-    CHECK(state_counts[0] == 2);
+    CHECK(std::all_of(state_counts.begin(), state_counts.end(),
+                      [](std::size_t count) { return count >= 2; }));
+    CHECK(std::all_of(reaches_goal.begin(), reaches_goal.end(),
+                      [](bool reached) { return reached; }));
     PASS();
 }
 
@@ -539,8 +584,9 @@ int main()
     test_plannerName();
 
     std::cout << "\n--- Planner Solve Tests (no collision) ---" << std::endl;
+    test_firstConnectionIncludesGoal();
     test_solveFaithfulNoObstacles();
-    test_deterministic();
+    test_repeatedSolutionsReachGoal();
     test_plannerData();
 
     std::cout << "\n--- Planner Solve Tests (WITH collision) ---" << std::endl;

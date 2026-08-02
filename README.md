@@ -59,18 +59,37 @@ python3 src/plan_transition.py
 ### ROS2 节点
 
 ```bash
-# 编译
-colcon build --symlink-install
+# 编译 Python 闭环包和 C++ AEB-RRT* MoveIt 插件。
+# 注意：这里不能只运行普通的 `colcon build`，因为插件位于嵌套包。
+bash build_aeb_moveit.sh
 source install/setup.bash
 
-# 启动 MoveIt + MuJoCo 可视化
-ros2 launch robot_safecontrol_moveit mujoco_viewer.launch.py
-
-# 启动过渡路径规划节点
-ros2 launch robot_safecontrol_moveit plan_transition.launch.py
+# 启动完整闭环（M 进入手动模式，调整关节后按 T）。
+bash run_demo.sh
 ```
 
 依赖: ROS2 Humble, MoveIt2, pymoveit2
+
+最终闭环默认使用 `AEBRRTstarFaithfulConfigDefault`。AEB-RRT* 由 MoveIt
+PlanningScene/FCL 做状态与路径碰撞检查，因此 `/collision_object` 上的动态
+障碍物会同时影响 IK、状态合法性与规划，而不仅是 MuJoCo 中的可视化对象。
+
+每次修改 AEB 的 C++ 代码后，都要重新执行 `bash build_aeb_moveit.sh`，再重启
+整个 launch（直接运行 `bash run_demo.sh` 即可）。运行中的 `move_group` 不会自动
+加载新编译的 `.so` 插件。
+
+完成构建和最终 launch 后，可在另一终端用下面的自检命令验证动态障碍物链路：
+
+```bash
+source /opt/ros/humble/setup.bash
+source install/setup.bash
+ros2 run robot_safecontrol_moveit dynamic_obstacle_probe
+```
+
+它会依次发布动态障碍物的 ADD、MOVE、REMOVE，查询 `/get_planning_scene`，并
+确认 `/check_state_validity` 从有效变为无效、再恢复有效；无论成功或失败都会
+清理自己的测试物体。完整无 GUI 回归测试仍可运行
+`launch_test tests/test_aeb_dynamic_obstacle_runtime.py`。
 
 ## 坐标系
 
