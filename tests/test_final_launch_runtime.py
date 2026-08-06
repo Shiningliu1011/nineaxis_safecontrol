@@ -47,7 +47,6 @@ _TEST_DOMAIN_ID = 72 + (os.getpid() % 20)
 _CORE_NODES = (
     "/robot_state_publisher",
     "/transition_planning_server",
-    "/static_obstacle_publisher",
 )
 _MOVEIT_SERVICES = (
     ("/compute_ik", GetPositionIK),

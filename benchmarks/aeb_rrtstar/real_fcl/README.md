@@ -9,7 +9,7 @@ The earlier C++ test suite (`test_aeb_full.cpp`, `ninezzhou_collision.h`) valida
 the AEB-RRT* algorithm against a **simplified** link-geometry collision model.
 This directory records the validation against the **real MoveIt2 FCL** collision
 environment (the `aeb_rrtstar_ompl/AEBRRTstarPlannerManager` plugin running inside
-`move_group`, with the actual URDF links + configured PlanningScene obstacles).
+`move_group`, with the actual URDF links for collision checking).
 
 ## Environment
 
@@ -17,7 +17,6 @@ environment (the `aeb_rrtstar_ompl/AEBRRTstarPlannerManager` plugin running insi
 - `ros2 launch models/ninezzhou_moveit_config/launch/demo.launch.py`
   (move_group, mock ros2_control, joint_state_broadcaster, arm_trajectory_controller)
 - `planning_plugin: aeb_rrtstar_ompl/AEBRRTstarPlannerManager`
-- PlanningScene: 4 configured obstacles (`config/obstacles.yaml`)
 
 ## End-to-end pipeline (real config, planning only)
 
@@ -27,7 +26,6 @@ environment (the `aeb_rrtstar_ompl/AEBRRTstarPlannerManager` plugin running insi
 Raw log: `validate_final.log`
 
 ```
-MoveIt PlanningScene contains 4 configured obstacle(s).
 Computed 50 surface-normal-aligned orientation(s); cylinder fitted on 14992 full trajectory samples
 Continuous IK succeeded for 50 waypoint(s).
 MoveIt planned a transition with 64 trajectory point(s).   <- AEB-RRT* via real FCL

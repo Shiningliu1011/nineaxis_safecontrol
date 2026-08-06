@@ -50,8 +50,6 @@ setup(
             "plan_transition = robot_safecontrol_moveit.plan_transition:main",
             "mujoco_viewer = robot_safecontrol_moveit.mujoco_viewer_with_cylinder:main",
             "mujoco_joint_state_viewer = robot_safecontrol_moveit.mujoco_viewer_with_cylinder:main",
-            "static_obstacle_publisher = robot_safecontrol_moveit.obstacle_publisher:main",
-            "dynamic_obstacle_probe = robot_safecontrol_moveit.dynamic_obstacle_probe:main",
             "transition_planning_server = robot_safecontrol_moveit.transition_planning_server:main",
         ],
     },

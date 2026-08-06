@@ -37,7 +37,6 @@ def _make_share_directory() -> tempfile.TemporaryDirectory[str]:
     config = Path(temporary.name) / "config"
     config.mkdir()
     (config / "mujoco_transition_runtime.yaml").touch()
-    (config / "obstacles.yaml").touch()
     return temporary
 
 
@@ -140,16 +139,6 @@ class TestFinalLaunchDescription(unittest.TestCase):
             identities.count(
                 (
                     "robot_safecontrol_moveit",
-                    "static_obstacle_publisher",
-                    "static_obstacle_publisher",
-                )
-            ),
-            1,
-        )
-        self.assertEqual(
-            identities.count(
-                (
-                    "robot_safecontrol_moveit",
                     "mujoco_viewer",
                     "mujoco_joint_state_viewer",
                 )
@@ -194,26 +183,6 @@ class TestFinalLaunchDescription(unittest.TestCase):
                 )]
             ),
         )
-
-    def test_static_publisher_action_receives_retained_topic(self) -> None:
-        description = self._description()
-        publisher = next(
-            node
-            for node in _all_nodes(description.entities)
-            if _node_identity(node)
-            == (
-                "robot_safecontrol_moveit",
-                "static_obstacle_publisher",
-                "static_obstacle_publisher",
-            )
-        )
-
-        parameters = _node_parameters(publisher)
-        self.assertEqual(
-            parameters["static_collision_object_topic"],
-            "/static_collision_object",
-        )
-        self.assertEqual(parameters["default_frame_id"], "base_link")
 
 
 class TestViewerOnlyLaunchDescription(unittest.TestCase):

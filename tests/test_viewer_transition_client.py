@@ -17,8 +17,6 @@ from std_srvs.srv import Trigger  # noqa: E402
 _viewer_module = importlib.import_module(
     "robot_safecontrol_moveit.mujoco_viewer_with_cylinder"
 )
-DYNAMIC_COLLISION_OBJECT_TOPIC = _viewer_module.DYNAMIC_COLLISION_OBJECT_TOPIC
-STATIC_COLLISION_OBJECT_TOPIC = _viewer_module.STATIC_COLLISION_OBJECT_TOPIC
 MuJoCoJointStateViewer = _viewer_module.MuJoCoJointStateViewer
 
 
@@ -176,28 +174,6 @@ class TestViewerTransitionClient(unittest.TestCase):
         self.assertEqual(client.requests, [])
         self.assertIsNone(viewer._transition_future)
         self.assertEqual(viewer.logger.records[0][0], "error")
-
-
-class TestViewerObstacleTopicParameters(unittest.TestCase):
-    """The production parameter declaration exposes both QoS endpoints."""
-
-    def test_collision_topics_have_distinct_defaults(self) -> None:
-        recorder = _ParameterRecorder()
-
-        MuJoCoJointStateViewer._declare_parameters(recorder)
-
-        self.assertEqual(
-            recorder.parameters["static_collision_object_topic"],
-            STATIC_COLLISION_OBJECT_TOPIC,
-        )
-        self.assertEqual(
-            recorder.parameters["collision_object_topic"],
-            DYNAMIC_COLLISION_OBJECT_TOPIC,
-        )
-        self.assertNotEqual(
-            recorder.parameters["static_collision_object_topic"],
-            recorder.parameters["collision_object_topic"],
-        )
 
 
 if __name__ == "__main__":

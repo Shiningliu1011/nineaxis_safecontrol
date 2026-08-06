@@ -23,7 +23,6 @@ from typing import Sequence
 import numpy as np
 import rclpy
 import scipy.io
-import yaml
 from pymoveit2 import MoveIt2
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
@@ -31,7 +30,6 @@ from sensor_msgs.msg import JointState
 
 from .continuous_ik import ContinuousIK, IKOptions
 from .motion_planning import (
-    CollisionObjectSpec,
     MotionPlanner,
     PlanningOptions,
 )
@@ -54,7 +52,6 @@ class PipelineConfig:
     tool_link: str
     trajectory_mat: Path
     trajectory_offset_m: tuple[float, float, float]
-    obstacles_file: Path
     max_points: int
     point_stride: int
     use_current_state: bool
@@ -65,7 +62,6 @@ class PipelineConfig:
     max_joint_delta: float
     ik_service_timeout_s: float
     planner_options: PlanningOptions
-    scene_sync_timeout_s: float
     execute_transition: bool
     execute_task_path: bool
     dry_run: bool
@@ -90,9 +86,6 @@ class TransitionPipelineNode(Node):
             raise ValueError("joint_names must not be empty")
 
         trajectory_mat = self._path_parameter("trajectory_mat", self._default_mat_path())
-        obstacles_file = self._path_parameter(
-            "obstacles_file", self._default_obstacles_path()
-        )
         start_positions = tuple(
             float(value) for value in get("start_joint_positions").value
         )
@@ -108,7 +101,6 @@ class TransitionPipelineNode(Node):
             tool_link=str(get("tool_link").value),
             trajectory_mat=trajectory_mat,
             trajectory_offset_m=self._float_tuple("trajectory_offset_m", 3),
-            obstacles_file=obstacles_file,
             max_points=int(get("max_points").value),
             point_stride=int(get("point_stride").value),
             use_current_state=bool(get("use_current_state").value),
@@ -129,7 +121,6 @@ class TransitionPipelineNode(Node):
                 acceleration_scale=float(get("acceleration_scale").value),
                 goal_joint_tolerance=float(get("goal_joint_tolerance").value),
             ),
-            scene_sync_timeout_s=float(get("scene_sync_timeout_s").value),
             execute_transition=bool(get("execute_transition").value),
             execute_task_path=bool(get("execute_task_path").value),
             dry_run=bool(get("dry_run").value),
@@ -149,8 +140,6 @@ class TransitionPipelineNode(Node):
             raise ValueError("point_stride must be at least one")
         if config.joint_state_timeout_s <= 0.0:
             raise ValueError("joint_state_timeout_s must be positive")
-        if config.scene_sync_timeout_s <= 0.0:
-            raise ValueError("scene_sync_timeout_s must be positive")
         if config.execute_task_path and not config.execute_transition:
             raise ValueError(
                 "execute_task_path requires execute_transition=true so the robot first "
@@ -166,7 +155,6 @@ class TransitionPipelineNode(Node):
         # Empty path values select package/source-tree defaults at runtime.
         self.declare_parameter("trajectory_mat", "")
         self.declare_parameter("trajectory_offset_m", [0.0, 0.343, 1.587])
-        self.declare_parameter("obstacles_file", "")
         # One point is the safe quick-start; zero requests the full MAT sequence.
         self.declare_parameter("max_points", 1)
         self.declare_parameter("point_stride", 1)
@@ -189,8 +177,6 @@ class TransitionPipelineNode(Node):
         self.declare_parameter("velocity_scale", 0.2)
         self.declare_parameter("acceleration_scale", 0.2)
         self.declare_parameter("goal_joint_tolerance", 0.001)
-        self.declare_parameter("scene_sync_timeout_s", 5.0)
-        self.declare_parameter("publish_static_obstacles_in_planner", False)
         # Both switches are deliberately opt-in for a real controller.
         self.declare_parameter("execute_transition", False)
         self.declare_parameter("execute_task_path", False)
@@ -226,10 +212,6 @@ class TransitionPipelineNode(Node):
         installed = self._installed_share_file("data/nurbs/ik_input.mat")
         return installed if installed.is_file() else self._source_root() / "data/nurbs/ik_input.mat"
 
-    def _default_obstacles_path(self) -> Path:
-        installed = self._installed_share_file("config/obstacles.yaml")
-        return installed if installed.is_file() else self._source_root() / "config/obstacles.yaml"
-
     @staticmethod
     def _installed_share_file(relative_path: str) -> Path:
         try:
@@ -249,7 +231,7 @@ def load_mat_trajectory(
     """Load the MAT position path in ``base_link`` coordinates.
 
     The legacy MuJoCo-only Y-up→Z-up conversion is intentionally absent.  The
-    URDF, MoveIt PlanningScene, obstacle YAML, and this calibration offset all
+    URDF, MoveIt PlanningScene, and this calibration offset all
     use the same ``base_link`` coordinates.
     """
 
@@ -281,114 +263,6 @@ def load_mat_trajectory(
         [tuple(float(value) for value in point) for point in positions_m],
         [float(value) for value in selected_times],
     )
-
-
-def load_collision_objects(path: Path, default_frame: str) -> tuple[CollisionObjectSpec, ...]:
-    """Load primitive PlanningScene objects from a reviewed YAML file.
-
-    Validates IDs, shapes, dimensions, positions, quaternions, and frame IDs.
-    """
-
-    EXPECTED_DIMS = {"box": 3, "sphere": 1, "cylinder": 2}
-    VALID_SHAPES = frozenset(EXPECTED_DIMS)
-
-    with path.open(encoding="utf-8") as stream:
-        document = yaml.safe_load(stream) or {}
-    entries = document.get("obstacles", [])
-    if not isinstance(entries, list):
-        raise ValueError("obstacles.yaml must contain an 'obstacles' list")
-
-    objects: list[CollisionObjectSpec] = []
-    seen_ids: set[str] = set()
-    for entry in entries:
-        if not isinstance(entry, dict):
-            raise ValueError("Every obstacle entry must be a mapping")
-
-        object_id = str(entry.get("id", ""))
-        if not object_id:
-            raise ValueError(f"Obstacle entry is missing 'id': {entry}")
-        if object_id in seen_ids:
-            raise ValueError(f"Duplicate obstacle ID: {object_id!r}")
-        seen_ids.add(object_id)
-
-        shape = str(entry.get("shape", ""))
-        if shape not in VALID_SHAPES:
-            raise ValueError(
-                f"Obstacle {object_id!r}: unsupported shape {shape!r}; "
-                f"expected one of {sorted(VALID_SHAPES)}"
-            )
-
-        try:
-            position = tuple(float(v) for v in entry["position"])
-        except (KeyError, TypeError, ValueError) as error:
-            raise ValueError(
-                f"Obstacle {object_id!r}: invalid position: {error}"
-            ) from error
-        if len(position) != 3:
-            raise ValueError(
-                f"Obstacle {object_id!r}: position must have 3 values, "
-                f"got {len(position)}"
-            )
-        if not all(isfinite(v) for v in position):
-            raise ValueError(
-                f"Obstacle {object_id!r}: position contains non-finite values"
-            )
-
-        try:
-            dimensions = tuple(float(v) for v in entry["dimensions"])
-        except (KeyError, TypeError, ValueError) as error:
-            raise ValueError(
-                f"Obstacle {object_id!r}: invalid dimensions: {error}"
-            ) from error
-        expected = EXPECTED_DIMS[shape]
-        if len(dimensions) != expected:
-            raise ValueError(
-                f"Obstacle {object_id!r}: {shape} expects {expected} "
-                f"dimension(s), got {len(dimensions)}"
-            )
-        if not all(v > 0.0 for v in dimensions):
-            raise ValueError(
-                f"Obstacle {object_id!r}: all dimensions must be > 0, "
-                f"got {dimensions}"
-            )
-        if not all(isfinite(v) for v in dimensions):
-            raise ValueError(
-                f"Obstacle {object_id!r}: dimensions contain non-finite values"
-            )
-
-        frame_id = str(entry.get("frame_id", default_frame))
-        if not frame_id:
-            raise ValueError(f"Obstacle {object_id!r}: frame_id must not be empty")
-
-        raw_quat = tuple(
-            float(v) for v in entry.get("quaternion_xyzw", [0.0, 0.0, 0.0, 1.0])
-        )
-        if len(raw_quat) != 4:
-            raise ValueError(
-                f"Obstacle {object_id!r}: quaternion_xyzw must have 4 values"
-            )
-        if not all(isfinite(v) for v in raw_quat):
-            raise ValueError(
-                f"Obstacle {object_id!r}: quaternion contains non-finite values"
-            )
-        norm = sqrt(sum(v * v for v in raw_quat))
-        if norm < 1e-12:
-            raise ValueError(
-                f"Obstacle {object_id!r}: quaternion norm is zero"
-            )
-        quaternion_xyzw = tuple(v / norm for v in raw_quat)
-
-        objects.append(
-            CollisionObjectSpec(
-                object_id=object_id,
-                shape=shape,
-                position=position,
-                dimensions=dimensions,
-                frame_id=frame_id,
-                quaternion_xyzw=quaternion_xyzw,
-            )
-        )
-    return tuple(objects)
 
 
 def current_joint_state(
@@ -687,31 +561,6 @@ def run_pipeline(node: TransitionPipelineNode) -> None:
         planning_group=config.planning_group,
     )
 
-    obstacle_specs = load_collision_objects(config.obstacles_file, config.base_frame)
-    node.get_logger().info(
-        f"Static obstacles loaded: {len(obstacle_specs)} object(s) — "
-        f"{', '.join(spec.object_id for spec in obstacle_specs)}"
-    )
-    if bool(node.get_parameter("publish_static_obstacles_in_planner").value):
-        node.get_logger().info(
-            "Publishing static obstacles from plan_transition "
-            "(publish_static_obstacles_in_planner=true)"
-        )
-        planner.install_collision_objects(
-            obstacle_specs,
-            sync_timeout_s=config.scene_sync_timeout_s,
-        )
-    else:
-        node.get_logger().info(
-            "Skipping static obstacle publication (handled by "
-            "static_obstacle_publisher node)"
-        )
-        # Still wait for the objects to appear in PlanningScene.
-        planner.wait_for_scene_objects(
-            {spec.object_id for spec in obstacle_specs},
-            timeout_s=config.scene_sync_timeout_s,
-        )
-
     start_state = (
         current_joint_state(
             node,
@@ -798,9 +647,6 @@ def run_pipeline(node: TransitionPipelineNode) -> None:
         f"Continuous IK succeeded for {len(ik_path.states)} waypoint(s). "
         f"First IK goal: {[f'{v:.3f}' for v in first_goal.position]}"
     )
-
-    # Log PlanningScene state before planning.
-    planner.log_scene_inventory()
 
     plan_start_time = monotonic()
     try:

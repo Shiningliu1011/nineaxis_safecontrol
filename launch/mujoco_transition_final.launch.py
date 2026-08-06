@@ -28,13 +28,9 @@ def generate_launch_description() -> LaunchDescription:
     # --- Runtime config for our own nodes ----------------------------------
     runtime_yaml = str(share_dir / "config" / "mujoco_transition_runtime.yaml")
 
-    # --- Obstacles YAML for static_obstacle_publisher ----------------------
-    obstacles_yaml = str(share_dir / "config" / "obstacles.yaml")
-
     # --- Validate required config files exist ------------------------------
     for path_str, label in [
         (runtime_yaml, "runtime YAML"),
-        (obstacles_yaml, "obstacles YAML"),
     ]:
         if not Path(path_str).is_file():
             raise FileNotFoundError(
@@ -92,24 +88,7 @@ def generate_launch_description() -> LaunchDescription:
                 ],
             ),
 
-            # 3. Static obstacle publisher. Static and dynamic objects use
-            # separate topics/QoS contracts; the planning server applies the
-            # retained static registry to MoveIt.
-            Node(
-                package="robot_safecontrol_moveit",
-                executable="static_obstacle_publisher",
-                name="static_obstacle_publisher",
-                output="screen",
-                parameters=[
-                    {
-                        "obstacles_file": obstacles_yaml,
-                        "static_collision_object_topic": "/static_collision_object",
-                        "default_frame_id": "base_link",
-                    }
-                ],
-            ),
-
-            # 4. Transition planning server (persistent, multi-threaded)
+            # 3. Transition planning server (persistent, multi-threaded)
             Node(
                 package="robot_safecontrol_moveit",
                 executable="transition_planning_server",

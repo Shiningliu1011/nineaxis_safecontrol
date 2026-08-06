@@ -11,10 +11,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from math import isfinite
 from time import monotonic, sleep
-from typing import Iterable, Sequence
+from typing import Sequence
 
-from moveit_msgs.msg import PlanningSceneComponents, RobotState
-from moveit_msgs.srv import GetPlanningScene, GetStateValidity
+from moveit_msgs.msg import RobotState
+from moveit_msgs.srv import GetStateValidity
 from pymoveit2 import MoveIt2
 from sensor_msgs.msg import JointState
 from trajectory_msgs.msg import JointTrajectory
@@ -43,24 +43,8 @@ class PlanningOptions:
     goal_joint_tolerance: float = 1e-3
 
 
-@dataclass(frozen=True)
-class CollisionObjectSpec:
-    """A primitive collision object expressed in a MoveIt planning frame.
-
-    Sizes are full dimensions: ``box=(x, y, z)``, ``sphere=(radius,)`` and
-    ``cylinder=(height, radius)``.
-    """
-
-    object_id: str
-    shape: str
-    position: tuple[float, float, float]
-    dimensions: tuple[float, ...]
-    frame_id: str
-    quaternion_xyzw: tuple[float, float, float, float] = (0.0, 0.0, 0.0, 1.0)
-
-
 class MotionPlanner:
-    """Owns MoveIt planning parameters and PlanningScene obstacle updates."""
+    """Owns MoveIt planning parameters and collision-aware state validation."""
 
     def __init__(
         self,
@@ -75,101 +59,11 @@ class MotionPlanner:
         self._joint_names = tuple(joint_names)
         self._options = options
         self._planning_group = str(planning_group)
-        self._planning_scene_client = node.create_client(
-            GetPlanningScene, "get_planning_scene"
-        )
         self._state_validity_client = node.create_client(
             GetStateValidity, "check_state_validity"
         )
         self._validate_options()
         self._configure_moveit()
-
-    def install_collision_objects(
-        self,
-        objects: Iterable[CollisionObjectSpec],
-        sync_timeout_s: float = 5.0,
-    ) -> None:
-        """Publish configured obstacles and verify that MoveIt received them."""
-        objects = tuple(objects)
-        if not objects:
-            return
-        if sync_timeout_s <= 0.0:
-            raise ValueError("sync_timeout_s must be positive")
-
-        expected_ids: set[str] = set()
-        for item in objects:
-            self._validate_collision_object(item)
-            expected_ids.add(item.object_id)
-
-        deadline = monotonic() + sync_timeout_s
-        next_publish_time = 0.0
-        scene_request = GetPlanningScene.Request()
-        scene_request.components.components = PlanningSceneComponents.WORLD_OBJECT_GEOMETRY
-        while monotonic() < deadline:
-            now = monotonic()
-            if now >= next_publish_time:
-                for item in objects:
-                    self._publish_collision_object(item)
-                next_publish_time = now + 0.2
-
-            remaining_s = deadline - monotonic()
-            if self._planning_scene_client.wait_for_service(
-                timeout_sec=min(0.2, remaining_s)
-            ):
-                future = self._planning_scene_client.call_async(scene_request)
-                response_deadline = monotonic() + min(0.5, remaining_s)
-                while not future.done() and monotonic() < response_deadline:
-                    sleep(0.01)
-                if not future.done():
-                    continue
-                response = future.result()
-                if response is None:
-                    continue
-                scene = response.scene
-                received_ids = {
-                    collision_object.id
-                    for collision_object in scene.world.collision_objects
-                }
-                if expected_ids.issubset(received_ids):
-                    self._node.get_logger().info(
-                        f"MoveIt PlanningScene contains {len(expected_ids)} configured obstacle(s)."
-                    )
-                    return
-
-        raise PlanningError(
-            "Timed out waiting for MoveIt PlanningScene to receive collision objects: "
-            f"{sorted(expected_ids)}"
-        )
-
-    def _publish_collision_object(self, item: CollisionObjectSpec) -> None:
-        """Forward one reviewed primitive to MoveIt's PlanningScene topic."""
-        if item.shape == "box":
-            self._moveit.add_collision_box(
-                id=item.object_id,
-                size=item.dimensions,
-                position=item.position,
-                quat_xyzw=item.quaternion_xyzw,
-                frame_id=item.frame_id,
-            )
-        elif item.shape == "sphere":
-            self._moveit.add_collision_sphere(
-                id=item.object_id,
-                radius=item.dimensions[0],
-                position=item.position,
-                quat_xyzw=item.quaternion_xyzw,
-                frame_id=item.frame_id,
-            )
-        elif item.shape == "cylinder":
-            self._moveit.add_collision_cylinder(
-                id=item.object_id,
-                height=item.dimensions[0],
-                radius=item.dimensions[1],
-                position=item.position,
-                quat_xyzw=item.quaternion_xyzw,
-                frame_id=item.frame_id,
-            )
-        else:
-            raise PlanningError(f"Unsupported collision shape: {item.shape}")
 
     def validate_state(
         self,
@@ -329,83 +223,6 @@ class MotionPlanner:
                 f"requested IK goal within {tolerance:.6f} rad ({detail})"
             )
 
-    def wait_for_scene_objects(
-        self,
-        expected_ids: set[str],
-        timeout_s: float = 5.0,
-    ) -> None:
-        """Wait until PlanningScene contains the expected object IDs (non-spin)."""
-        if not expected_ids:
-            return
-        deadline = monotonic() + timeout_s
-        scene_request = GetPlanningScene.Request()
-        scene_request.components.components = (
-            PlanningSceneComponents.WORLD_OBJECT_GEOMETRY
-        )
-        while monotonic() < deadline:
-            remaining_s = deadline - monotonic()
-            if not self._planning_scene_client.wait_for_service(
-                timeout_sec=min(0.5, remaining_s)
-            ):
-                continue
-            future = self._planning_scene_client.call_async(scene_request)
-            while not future.done() and monotonic() < deadline:
-                sleep(0.01)
-            if not future.done():
-                continue
-            response = future.result()
-            if response is None:
-                continue
-            received_ids = {
-                obj.id for obj in response.scene.world.collision_objects
-            }
-            missing = expected_ids - received_ids
-            if not missing:
-                self._node.get_logger().info(
-                    f"PlanningScene contains all {len(expected_ids)} expected "
-                    f"obstacle(s)."
-                )
-                return
-            self._node.get_logger().info(
-                f"Waiting for {len(missing)} obstacle(s) in PlanningScene: "
-                f"{sorted(missing)}"
-            )
-        raise PlanningError(
-            "SCENE_NOT_SYNCED: PlanningScene is missing expected obstacles "
-            f"after {timeout_s:.1f}s: {sorted(expected_ids - received_ids)}"
-        )
-
-    def log_scene_inventory(self) -> None:
-        """Log the current PlanningScene collision object inventory."""
-        scene_request = GetPlanningScene.Request()
-        scene_request.components.components = (
-            PlanningSceneComponents.WORLD_OBJECT_GEOMETRY
-        )
-        if not self._planning_scene_client.wait_for_service(timeout_sec=1.0):
-            self._node.get_logger().warning(
-                "Cannot query PlanningScene; service not available"
-            )
-            return
-        future = self._planning_scene_client.call_async(scene_request)
-        deadline = monotonic() + 1.0
-        while not future.done() and monotonic() < deadline:
-            sleep(0.01)
-        if not future.done():
-            self._node.get_logger().warning("PlanningScene query timed out")
-            return
-        response = future.result()
-        if response is None:
-            self._node.get_logger().warning("PlanningScene query returned no response")
-            return
-        scene = response.scene
-        object_ids = [
-            obj.id for obj in scene.world.collision_objects
-        ]
-        self._node.get_logger().info(
-            f"PlanningScene inventory: {len(object_ids)} object(s) — "
-            f"{sorted(object_ids) if object_ids else '(empty)'}"
-        )
-
     def _configure_moveit(self) -> None:
         self._moveit.pipeline_id = self._options.pipeline_id
         self._moveit.planner_id = self._options.planner_id
@@ -441,22 +258,3 @@ class MotionPlanner:
         result.name = list(self._joint_names)
         result.position = [float(positions[name]) for name in self._joint_names]
         return result
-
-    @staticmethod
-    def _validate_collision_object(item: CollisionObjectSpec) -> None:
-        expected_dimensions = {"box": 3, "sphere": 1, "cylinder": 2}
-        if item.shape not in expected_dimensions:
-            raise ValueError(
-                f"Collision object {item.object_id!r} has unsupported shape {item.shape!r}"
-            )
-        if not item.object_id or not item.frame_id:
-            raise ValueError("Collision objects require non-empty id and frame_id")
-        if len(item.position) != 3 or len(item.quaternion_xyzw) != 4:
-            raise ValueError(f"Collision object {item.object_id!r} has invalid pose")
-        if len(item.dimensions) != expected_dimensions[item.shape] or any(
-            value <= 0.0 for value in item.dimensions
-        ):
-            raise ValueError(
-                f"Collision object {item.object_id!r} has invalid dimensions "
-                f"for {item.shape}: {item.dimensions}"
-            )
