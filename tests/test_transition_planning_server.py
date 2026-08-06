@@ -1,10 +1,9 @@
 """Tests for transition planning server logic (no ROS node required).
 
 Covers: success codes, result mode validation, error code formatting,
-ObstacleRegistry REMOVE tracking, scene object validation, quaternion equivalence.
+fail-closed state handling, and non-spin execution patterns.
 """
 
-import math
 import sys
 import unittest
 from pathlib import Path
@@ -92,157 +91,6 @@ class TestResultFormatting(unittest.TestCase):
         parts = dict(p.split("=", 1) for p in result.split("|") if "=" in p)
         self.assertEqual(parts["error_code"], "TRANSITION_REPLAYED")
         self.assertEqual(parts["trajectory_points"], "10")
-
-
-class TestObstacleRegistry(unittest.TestCase):
-    """Test the ObstacleRegistry ADD/MOVE/REMOVE and pending_removals."""
-
-    def setUp(self):
-        from robot_safecontrol_moveit.transition_planning_server import (
-            ObstacleRegistry,
-        )
-        from moveit_msgs.msg import CollisionObject
-        from geometry_msgs.msg import Pose
-        from shape_msgs.msg import SolidPrimitive
-
-        self.registry = ObstacleRegistry()
-        self.CollisionObject = CollisionObject
-        self.Pose = Pose
-        self.SolidPrimitive = SolidPrimitive
-
-    def _make_add_msg(self, oid: str, shape_type: int, dims, pos, quat):
-        from builtin_interfaces.msg import Time as HeaderTime
-        msg = self.CollisionObject()
-        msg.id = oid
-        msg.operation = self.CollisionObject.ADD
-        msg.header.frame_id = "base_link"
-        msg.pose = self.Pose()
-        msg.pose.position.x = float(pos[0])
-        msg.pose.position.y = float(pos[1])
-        msg.pose.position.z = float(pos[2])
-        msg.pose.orientation.x = float(quat[0])
-        msg.pose.orientation.y = float(quat[1])
-        msg.pose.orientation.z = float(quat[2])
-        msg.pose.orientation.w = float(quat[3])
-        prim = self.SolidPrimitive()
-        prim.type = shape_type
-        prim.dimensions = [float(d) for d in dims]
-        msg.primitives = [prim]
-        return msg
-
-    def _make_remove_msg(self, oid: str):
-        msg = self.CollisionObject()
-        msg.id = oid
-        msg.operation = self.CollisionObject.REMOVE
-        return msg
-
-    def test_add_object(self):
-        msg = self._make_add_msg("box1", self.SolidPrimitive.BOX,
-                                  [0.1, 0.2, 0.3], [1.0, 0.0, 0.5],
-                                  [0.0, 0.0, 0.0, 1.0])
-        self.registry.apply(msg)
-        active = self.registry.active_objects()
-        self.assertEqual(len(active), 1)
-        self.assertEqual(active[0].object_id, "box1")
-        self.assertEqual(active[0].shape, "box")
-
-    def test_remove_object(self):
-        msg = self._make_add_msg("box1", self.SolidPrimitive.BOX,
-                                  [0.1, 0.2, 0.3], [1.0, 0.0, 0.5],
-                                  [0.0, 0.0, 0.0, 1.0])
-        self.registry.apply(msg)
-        self.registry.apply(self._make_remove_msg("box1"))
-        active = self.registry.active_objects()
-        self.assertEqual(len(active), 0)
-
-    def test_remove_pending_tracking(self):
-        """Issue #10.4: REMOVE adds to pending_removals."""
-        msg = self._make_add_msg("box1", self.SolidPrimitive.BOX,
-                                  [0.1, 0.2, 0.3], [1.0, 0.0, 0.5],
-                                  [0.0, 0.0, 0.0, 1.0])
-        self.registry.apply(msg)
-        self.registry.apply(self._make_remove_msg("box1"))
-        self.assertIn("box1", self.registry.pending_removals)
-
-    def test_revision_increments(self):
-        r1 = self.registry.revision
-        msg = self._make_add_msg("box1", self.SolidPrimitive.BOX,
-                                  [0.1, 0.2, 0.3], [1.0, 0.0, 0.5],
-                                  [0.0, 0.0, 0.0, 1.0])
-        self.registry.apply(msg)
-        self.assertGreater(self.registry.revision, r1)
-
-    def test_move_without_primitive_preserves_shape(self):
-        """Issue #11.4: MOVE without primitive keeps existing shape/size."""
-        msg_add = self._make_add_msg("obj1", self.SolidPrimitive.BOX,
-                                      [0.1, 0.2, 0.3], [1.0, 0.0, 0.5],
-                                      [0.0, 0.0, 0.0, 1.0])
-        self.registry.apply(msg_add)
-
-        from moveit_msgs.msg import CollisionObject
-        msg_move = CollisionObject()
-        msg_move.id = "obj1"
-        msg_move.operation = CollisionObject.MOVE
-        msg_move.header.frame_id = "base_link"
-        msg_move.pose = self.Pose()
-        msg_move.pose.position.x = 2.0
-        msg_move.pose.position.y = 0.0
-        msg_move.pose.position.z = 1.0
-        msg_move.pose.orientation.x = 0.0
-        msg_move.pose.orientation.y = 0.0
-        msg_move.pose.orientation.z = 0.0
-        msg_move.pose.orientation.w = 1.0
-        self.registry.apply(msg_move)
-
-        active = self.registry.active_objects()
-        self.assertEqual(len(active), 1)
-        self.assertEqual(active[0].shape, "box")
-        self.assertEqual(active[0].dimensions, (0.1, 0.2, 0.3))
-        self.assertEqual(active[0].position[0], 2.0)
-
-
-class TestQuaternionEquivalence(unittest.TestCase):
-    """Issue #10.3: q and -q are the same rotation."""
-
-    def test_identity_diff_zero(self):
-        q = (0.0, 0.0, 0.0, 1.0)
-        diff1 = math.sqrt(sum((a - b) ** 2 for a, b in zip(q, q)))
-        diff2 = math.sqrt(sum((a + b) ** 2 for a, b in zip(q, q)))
-        self.assertLess(min(diff1, diff2), 1e-9)
-
-    def test_negated_quaternion_is_same_rotation(self):
-        q1 = (0.0, 0.0, 0.7071068, 0.7071068)  # 90 deg around Z
-        q2 = (0.0, 0.0, -0.7071068, -0.7071068)  # negated
-        diff1 = math.sqrt(sum((a - b) ** 2 for a, b in zip(q1, q2)))
-        diff2 = math.sqrt(sum((a + b) ** 2 for a, b in zip(q1, q2)))
-        self.assertLess(min(diff1, diff2), 1e-9)
-
-    def test_different_quaternions_differ(self):
-        q1 = (0.0, 0.0, 0.0, 1.0)
-        q2 = (0.7071068, 0.0, 0.0, 0.7071068)  # 90 deg around X
-        diff1 = math.sqrt(sum((a - b) ** 2 for a, b in zip(q1, q2)))
-        diff2 = math.sqrt(sum((a + b) ** 2 for a, b in zip(q1, q2)))
-        self.assertGreater(min(diff1, diff2), 0.1)
-
-
-class TestSceneObjectValidation(unittest.TestCase):
-    """Issue #10: complete scene content validation."""
-
-    def test_validate_primitive_type(self):
-        """Primitive type must match expected shape."""
-        shape_map = {1: "box", 2: "sphere", 3: "cylinder"}
-        self.assertEqual(shape_map.get(1), "box")
-        self.assertEqual(shape_map.get(2), "sphere")
-        self.assertEqual(shape_map.get(3), "cylinder")
-        # Unknown type not mapped.
-        self.assertIsNone(shape_map.get(99))
-
-    def test_validate_dimensions_count(self):
-        """Each shape has an expected dimension count."""
-        expected = {"box": 3, "sphere": 1, "cylinder": 2}
-        self.assertEqual(expected["box"], 3)
-        self.assertEqual(expected["sphere"], 1)
-        self.assertEqual(expected["cylinder"], 2)
 
 
 class TestFailClosed(unittest.TestCase):

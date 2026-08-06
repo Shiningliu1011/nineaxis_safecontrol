@@ -96,10 +96,6 @@ class _PipelineServer:
         "joint_state_timeout_s": 1.0,
         "max_joint_state_age_s": 0.5,
         "allow_joint_state_fallback": False,
-        "scene_sync_timeout_s": 1.0,
-        "scene_position_tolerance_m": 0.001,
-        "scene_dimension_tolerance_m": 0.001,
-        "scene_orientation_tolerance": 0.001,
         "trajectory_mat": "",
         "trajectory_offset_m": (0.0, 0.0, 0.0),
         "max_points": 1,
@@ -114,7 +110,7 @@ class _PipelineServer:
         "replay_rate_hz": 30.0,
     }
 
-    def __init__(self, events: list[str], *, scene_result=(True, "")) -> None:
+    def __init__(self, events: list[str]) -> None:
         self.events = events
         self._parameters = dict(self._DEFAULT_PARAMETERS)
         self._logger = _Logger()
@@ -126,7 +122,6 @@ class _PipelineServer:
         self._planner = _PipelinePlanner(events)
         self._executor = object()
         self._start_state = _joint_state()
-        self._scene_result = scene_result
 
     def get_parameter(self, name: str) -> SimpleNamespace:
         return SimpleNamespace(value=self._parameters[name])
@@ -141,10 +136,6 @@ class _PipelineServer:
     def _wait_for_joint_state(self, *args, **kwargs) -> JointState:
         self.events.append("fresh_state")
         return self._start_state
-
-    def _synchronize_scene(self, *args, **kwargs) -> tuple[bool, str]:
-        self.events.append("scene")
-        return self._scene_result
 
 
 class TestTransitionPlanningPipeline(unittest.TestCase):
@@ -197,7 +188,6 @@ class TestTransitionPlanningPipeline(unittest.TestCase):
             [
                 "services",
                 "fresh_state",
-                "scene",
                 "target",
                 "orientation",
                 "ik",
@@ -206,23 +196,6 @@ class TestTransitionPlanningPipeline(unittest.TestCase):
                 "plan",
             ],
         )
-
-    def test_scene_sync_failure_returns_before_target_or_ik(self):
-        events: list[str] = []
-        fake_server = _PipelineServer(
-            events, scene_result=(False, "SCENE_OBJECT_POSE_MISMATCH")
-        )
-
-        def forbidden_ik(**kwargs):
-            events.append("ik")
-            raise AssertionError("IK must not run after scene synchronization fails")
-
-        patches = self._patched_task_helpers(events, forbidden_ik)
-        with patches[0], patches[1], patches[2], patches[3]:
-            result = TransitionPlanningServer._execute_plan(fake_server)
-
-        self.assertEqual(_result_code(result), "SCENE_OBJECT_POSE_MISMATCH")
-        self.assertEqual(events, ["services", "fresh_state", "scene"])
 
     def test_ik_service_exception_is_returned_as_its_structured_status(self):
         events: list[str] = []

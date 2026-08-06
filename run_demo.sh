@@ -17,7 +17,6 @@ cd "$PROJECT_DIR"
 echo "清理旧进程..."
 pkill -INT -f transition_planning_server 2>/dev/null || true
 pkill -INT -f mujoco_joint_state_viewer 2>/dev/null || true
-pkill -INT -f static_obstacle_publisher 2>/dev/null || true
 pkill -INT -f move_group 2>/dev/null || true
 pkill -INT -f robot_state_publisher 2>/dev/null || true
 pkill -INT -f mujoco_viewer 2>/dev/null || true

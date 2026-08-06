@@ -11,21 +11,13 @@ mujoco_joint_state_viewer:
     joint_state_topic: /mujoco_joint_states
     manual_joint_state_topic: /mujoco_joint_states
     manual_joint_state_publish_rate_hz: 20.0
-    static_collision_object_topic: /static_collision_object
-    collision_object_topic: /collision_object
-    show_obstacles: true
-    show_dynamic_obstacles: true
     show_target_path: true
     show_tracking_cylinder: true
-    dynamic_obstacle_color: [1.0, 0.5, 0.1, 1.0]
-    obstacle_slot_counts: [16, 16, 8]
 
 transition_planning_server:
   ros__parameters:
     joint_state_topic: /mujoco_joint_states
     replay_joint_state_topic: /mujoco_joint_states
-    static_collision_object_topic: /static_collision_object
-    collision_object_topic: /collision_object
     allow_joint_state_fallback: false
     joint_state_timeout_s: 3.0
     max_joint_state_age_s: 1.0
@@ -53,12 +45,3 @@ transition_planning_server:
     transition_result_mode: joint_state_replay
     replay_rate_hz: 30.0
 
-    scene_sync_timeout_s: 3.0
-    scene_position_tolerance_m: 0.001
-    scene_dimension_tolerance_m: 0.001
-    scene_orientation_tolerance: 0.001
-
-static_obstacle_publisher:
-  ros__parameters:
-    static_collision_object_topic: /static_collision_object
-    default_frame_id: base_link
