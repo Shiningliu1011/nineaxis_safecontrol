@@ -47,7 +47,10 @@ def test_frozen_qp_core_matches_the_production_candidate_with_rate_slacks():
     assert P.shape == (11, 11)
     assert A.shape == (0, 11)
     assert G.shape[1] == 11
-    assert G.shape[0] > 97
+    # M2/M7 row topology: 18 joint limits + 14 self-collision pairs + 10 OBB
+    # obstacle rows + 1 singularity CBF, then 18 velocity-box rows and the
+    # rate-slack augmentation (9 lower + 9 upper + 2 non-negativity).
+    assert G.shape[0] == 18 + 14 + 10 + 1 + 18 + 9 + 9 + 2
 
     core_result = _block(loop.solve_frozen_qp_problem(problem))
     loop.step(q, u_nom, u_safe_prev=u_previous)

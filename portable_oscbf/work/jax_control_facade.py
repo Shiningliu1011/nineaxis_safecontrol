@@ -446,7 +446,9 @@ class JaxControlLoop:
             raise RuntimeError('init_cbf() must complete before freeze_qp_problem()')
         if self._qp_core_fn is None:
             raise RuntimeError(
-                'frozen QP benchmarking is unavailable when CBF relaxation is enabled')
+                'frozen QP benchmarking is unavailable in the default '
+                'elastic-QP mode; enable rate limiting to audit the hard '
+                'rate-slack QP')
         (obs_pos, obs_radii, obs_enabled, obs_d_safe, obs_vel,
          obs_radius_dot, obs_alpha, u_safe_prev) = self._normalise_obstacle_inputs(
             obs_pos, obs_radii, obs_enabled, obs_d_safe, obs_vel,
@@ -474,7 +476,9 @@ class JaxControlLoop:
         """
         if self._qp_core_fn is None:
             raise RuntimeError(
-                'frozen QP benchmarking is unavailable when CBF relaxation is enabled')
+                'frozen QP benchmarking is unavailable in the default '
+                'elastic-QP mode; enable rate limiting to audit the hard '
+                'rate-slack QP')
         return self._qp_core_fn(*problem)
 
     def tracking_step(self, *, q: np.ndarray, task_pos: np.ndarray,

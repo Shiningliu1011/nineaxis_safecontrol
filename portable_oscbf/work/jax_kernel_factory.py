@@ -13,6 +13,7 @@ from typing import Callable
 
 import jax
 import jax.numpy as jnp
+from qpax import solve_qp as qpax_solve_qp
 
 from work.jax_barrier_terms import (
     aggregate_dynamic_obstacle_terms,
@@ -77,6 +78,15 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
     smooth_min_temperature = controller_config.smooth_min_temperature
     rate_limit = (jnp.asarray(rate_limit_du_max)
                   if enable_rate_limit else None)
+
+    # Soft rate limiting is a hard-CBF mode: its augmented problem keeps the
+    # CBF and velocity-box rows hard and only relaxes the rate-of-change rows
+    # through the two shared slacks (see config/nineaxis.yaml soft_rate_limit).
+    # The M7 elastic solver (cbf.qp_solver == solve_qp_elastic when
+    # relax_cbf=True) has neither the equality-aware signature nor the
+    # per-row penalty semantics this formulation needs, so the rate-limited
+    # path always uses the hard qpax solver below.  The default (non-rate
+    # limited) control loop remains the M7 elastic QP.
 
     if task_mode not in (TASK_MODE_POSE_6D, TASK_MODE_TOOL_AXIS_5D):
         raise ValueError(f'unsupported task_mode: {task_mode!r}')
@@ -257,7 +267,7 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
 
         if enable_rate_limit:
             n_controls = cbf.m
-            x_qp, slack_qp, dual_qp, equality_dual_qp, converged, qp_iterations = cbf.qp_solver(
+            x_qp, slack_qp, dual_qp, equality_dual_qp, converged, qp_iterations = qpax_solve_qp(
                 P_solve, q_solve, A_solve, b_solve, G_solve, h_solve,
                 solver_tol=cbf.solver_tol)
             terminal_health = terminal_qp_health(
@@ -275,6 +285,7 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
                 jnp.max(jnp.abs(u_candidate - u_safe_prev) - rate_limit),
                 jnp.asarray(0.0))
             dual_max = jnp.max(jnp.abs(dual_qp))
+            delta_slack = jnp.asarray(0.0)
             terminal_kkt_residual = terminal_health.kkt_residual
             terminal_kkt_accepted = terminal_health.accepted
         elif cbf.relax_cbf:
@@ -307,12 +318,14 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
             terminal_kkt_accepted = terminal_health.accepted
 
         u_finite = jnp.all(jnp.isfinite(u_candidate))
-        if cbf.relax_cbf:
+        if cbf.relax_cbf and not enable_rate_limit:
             # Elastic QP (M7): a negative barrier is softened by the slack
             # instead of triggering a controlled stop; delta_slack is the
             # diagnostic.  Only convergence and finiteness gate the command.
             qp_ok = u_finite & solver_accepted
         else:
+            # Rate-limited mode keeps the documented hard-CBF gate: the two
+            # shared slacks relax only u - u_safe_prev, never the barrier.
             h_ok = jnp.all(h_vals >= -1e-3)
             qp_ok = u_finite & h_ok & solver_accepted
         q_next, u_safe = apply_qp_health_gate(
@@ -340,7 +353,7 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
 
     def qp_core_step(P, q_qp, A, b, G, h_qp):
         """Run upstream cbfpy/qpax on preassembled fixed-shape matrices."""
-        return cbf.qp_solver(
+        return qpax_solve_qp(
             P, q_qp, A, b, G, h_qp, solver_tol=cbf.solver_tol)
 
     def solve_step(q, u_des, obs_pos, obs_radii, obs_enabled, obs_d_safe,
@@ -688,6 +701,8 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
         task_hessian=jax.jit(task_hessian_from_q),
         path_tracking=path_tracking,
         qp_problem=jax.jit(qp_problem_step),
-        qp_core=(None if cbf.relax_cbf else jax.jit(qp_core_step)),
+        qp_core=(
+            None if (cbf.relax_cbf and not enable_rate_limit)
+            else jax.jit(qp_core_step)),
         path_modules=path_modules,
     )

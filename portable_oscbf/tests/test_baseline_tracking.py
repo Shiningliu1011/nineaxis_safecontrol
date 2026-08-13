@@ -125,6 +125,10 @@ def _run_baseline() -> tuple[dict, float, float]:
         "initial_q": initial_q,
         "per_step_ms_steady": np.asarray(per_step_ms),
         "first_call_s": np.asarray(first_call_s),
+        # Semantic tag for downstream gates (M6): the M5 hard-QP baseline and
+        # the post-M7 elastic-QP baseline must never be compared against each
+        # other.  Bump this string whenever the controller semantics change.
+        "semantics": np.asarray("m7_elastic_qp_v1"),
     }
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     np.savez(OUTPUT_PATH, **arrays)

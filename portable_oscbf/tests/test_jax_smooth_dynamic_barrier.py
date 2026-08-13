@@ -38,12 +38,22 @@ def test_smooth_dynamic_barrier_has_one_conservative_row_per_robot_sphere():
     )
 
     obstacle_h = h[config.obstacle_h_start:config.obstacle_h_stop]
-    expected_first_min = min(
-        0.08 - collision_data[0, 3],
-        0.14 - collision_data[0, 3],
+    # The M2/M7 obstacle kernel aggregates to one conservative row per OBB
+    # link, not per mesh-envelope collision sphere.  Compare the soft-min of
+    # the first link against the exact per-slot DCOL clearances feeding it.
+    assert config.num_obstacle_constraints == config.num_obb_links
+    assert obstacle_h.shape == (config.num_obstacle_constraints,)
+
+    from work.jax_barrier_terms import compute_dcol_obstacle_clearance
+    h_obs, _ = compute_dcol_obstacle_clearance(
+        q,
+        jnp.asarray(obs_pos, dtype=q.dtype),
+        jnp.asarray(obs_radii, dtype=q.dtype),
+        jnp.zeros(MAX_JAX_OBSTACLES, dtype=q.dtype),        # obs_d_safe
+        jnp.zeros((MAX_JAX_OBSTACLES, 3), dtype=q.dtype),   # obs_vel
+        jnp.zeros(MAX_JAX_OBSTACLES, dtype=q.dtype),        # obs_radius_dot
     )
-    assert config.num_obstacle_constraints == config.num_robot_collision_spheres
-    assert obstacle_h.shape == (config.num_robot_collision_spheres,)
+    expected_first_min = float(jnp.min(h_obs[0, :2]))
     # soft-min is intentionally no larger than the exact minimum, so it is
     # conservative when a tracked primitive enters or leaves a slot.
     assert float(obstacle_h[0]) <= expected_first_min + 1.0e-6
