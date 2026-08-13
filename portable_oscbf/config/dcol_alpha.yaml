@@ -1,0 +1,98 @@
+schema_version: 1
+generated_by: portable_oscbf/scripts/calibrate_dcol_alpha.py
+basis: synthetic FCL near-contact data (0.005-0.05 m), not hardware
+d_safe_collision_m: 0.03
+alpha_min: 5.0
+alpha_max: 30.0
+safety_factor: 2.0
+formula: alpha = clip(safety_factor * v_95 / d_safe, 5.0, 30.0)
+sampling:
+  global: 20000
+  local_per_pair: 300
+  min_samples_per_pair: 15
+  perturb_sigma: 0.03
+pairs:
+- i: 0
+  j: 4
+  alpha: 5.0
+  samples: 0
+  rms_m: 0.0
+  v_max_m_s: 0.0
+- i: 0
+  j: 5
+  alpha: 5.0
+  samples: 0
+  rms_m: 0.0
+  v_max_m_s: 0.0
+- i: 0
+  j: 7
+  alpha: 30.0
+  samples: 15
+  rms_m: 0.0
+  v_max_m_s: 1.852434
+- i: 0
+  j: 8
+  alpha: 30.0
+  samples: 15
+  rms_m: 0.0
+  v_max_m_s: 3.532127
+- i: 0
+  j: 9
+  alpha: 30.0
+  samples: 15
+  rms_m: 0.0
+  v_max_m_s: 4.723505
+- i: 1
+  j: 5
+  alpha: 30.0
+  samples: 15
+  rms_m: 0.0
+  v_max_m_s: 2.019407
+- i: 1
+  j: 7
+  alpha: 30.0
+  samples: 15
+  rms_m: 0.0
+  v_max_m_s: 2.666133
+- i: 1
+  j: 8
+  alpha: 30.0
+  samples: 15
+  rms_m: 0.0
+  v_max_m_s: 1.988247
+- i: 1
+  j: 9
+  alpha: 30.0
+  samples: 15
+  rms_m: 0.0
+  v_max_m_s: 3.037206
+- i: 2
+  j: 7
+  alpha: 5.0
+  samples: 0
+  rms_m: 0.0
+  v_max_m_s: 0.0
+- i: 2
+  j: 8
+  alpha: 30.0
+  samples: 15
+  rms_m: 0.0
+  v_max_m_s: 0.808863
+- i: 2
+  j: 9
+  alpha: 30.0
+  samples: 15
+  rms_m: 0.0
+  v_max_m_s: 3.206752
+- i: 3
+  j: 8
+  alpha: 5.0
+  samples: 0
+  rms_m: 0.0
+  v_max_m_s: 0.0
+- i: 3
+  j: 9
+  alpha: 20.4359
+  samples: 15
+  rms_m: 0.0
+  v_max_m_s: 0.306538

@@ -51,6 +51,8 @@ setup(
             "mujoco_viewer = robot_safecontrol_moveit.mujoco_viewer_with_cylinder:main",
             "mujoco_joint_state_viewer = robot_safecontrol_moveit.mujoco_viewer_with_cylinder:main",
             "transition_planning_server = robot_safecontrol_moveit.transition_planning_server:main",
+            "perception_bridge = robot_safecontrol_moveit.perception_bridge:main",
+            "perception_demo = robot_safecontrol_moveit.perception_demo:main",
         ],
     },
 )
