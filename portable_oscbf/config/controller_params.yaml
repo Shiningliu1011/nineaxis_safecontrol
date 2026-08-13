@@ -1,0 +1,33 @@
+control:
+  dt: 0.005
+  mode: torque
+
+task_tracking:
+  kp: [25.0, 25.0, 25.0]
+  kd: [10.0, 10.0, 10.0]
+  weight: [20.0, 20.0, 20.0]
+
+nullspace:
+  k: 2.0
+  d: 1.2
+  weight: 0.2
+
+cbf:
+  joint_limit:
+    k0: 25.0
+    k1: 10.0
+  obstacle:
+    k0: 30.0
+    k1: 12.0
+  self_collision:
+    k0: 20.0
+    k1: 8.0
+  activation_distance: 0.45
+  safety_margin: 0.08
+  slack_weight: 10000.0
+
+qp:
+  torque_weight: 0.001
+  dynamics_penalty: 100.0
+  max_projection_iterations: 8
+

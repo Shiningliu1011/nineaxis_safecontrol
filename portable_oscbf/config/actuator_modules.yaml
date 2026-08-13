@@ -1,0 +1,120 @@
+# Actuator module reference data for robot_oscbf.
+# These values are hardware references and the single source of truth for the
+# current simulation/shadow velocity profile.  J1 remains simulation-only
+# until its linear transmission and braking capability are measured.
+
+joint_module_mapping:
+  J1:
+    joint_type: prismatic
+    module: B06-PA-36-G
+    note: "Requires linear transmission ratio before deriving m/s or N limits."
+  J2:
+    joint_type: revolute
+    module: B25-PD-36-G
+  J3:
+    joint_type: revolute
+    module: B25-PD-36-G
+  J4:
+    joint_type: revolute
+    module: B25-PD-36-G
+  J5:
+    joint_type: revolute
+    module: B25-PD-36-G
+  J6:
+    joint_type: revolute
+    module: B25-PD-36-G
+  J7:
+    joint_type: revolute
+    module: B06-PA-36-G
+  J8:
+    joint_type: revolute
+    module: B06-PA-36-G
+  J9:
+    joint_type: revolute
+    module: B06-PA-36-G
+
+modules:
+  B25-PD-36-G:
+    gear_ratio: "1:36"
+    input_voltage_v: [24, 36]
+    max_no_load_speed_rpm_at_36v: 46
+    rated_speed_rpm_at_36v: 40
+    rated_current_a: 3.2
+    rated_torque_nm_at_36v: 25
+    peak_current_a: 4.5
+    peak_torque_nm: 81
+    speed_constant_rpm_per_v: 33
+    torque_constant_nm_per_a: 0.30
+    rotor_inertia_g_cm2: 2670
+    motor_size_mm: [98, 58]
+    motor_weight_g: 900
+    ambient_temperature_c: [-20, 55]
+    gear_backlash_arcmin: 15
+    gear_type: planetary
+    communication_interfaces: [CAN, UART, pulse_control]
+    max_node_count: 63
+    can_baud_rate: "250K-1M"
+    torque_correction_coefficient: 1.0
+    derived:
+      rated_speed_rad_s: 4.1887902048
+      max_no_load_speed_rad_s: 4.8171087355
+      rated_speed_deg_s: 240.0
+      max_no_load_speed_deg_s: 276.0
+
+  B06-PA-36-G:
+    gear_ratio: "1:36"
+    input_voltage_v: [12, 36]
+    max_no_load_speed_rpm_at_36v: 71
+    rated_speed_rpm_at_36v: 50
+    rated_current_a: 3
+    rated_torque_nm: 6
+    peak_current_a: 12
+    peak_torque_nm_at_36v: 28
+    speed_constant_rpm_per_v: 2.5
+    torque_constant_nm_per_a: 1.50
+    rotor_inertia_g_cm2: 7.83
+    motor_size_mm: [55, 55]
+    motor_weight_g: 332.5
+    ambient_temperature_c: [-20, 50]
+    gear_backlash_arcmin: "<6"
+    gear_type: planetary
+    communication_interfaces: [CAN, UART, pulse_control]
+    max_node_count: 63
+    can_baud_rate: "250K-1M"
+    torque_correction_coefficient: 1.0125
+    derived:
+      rated_speed_rad_s: 5.2359877560
+      max_no_load_speed_rad_s: 7.4351026130
+      rated_speed_deg_s: 300.0
+      max_no_load_speed_deg_s: 426.0
+
+# The controller reads this section through work/actuator_limits.py.  Rotary
+# velocity limits are derived from the rated output speed, not copied into
+# individual controller modules.  Acceleration values remain simulation
+# assumptions until reflected inertia, payload and driver current limits are
+# calibrated on hardware.
+control_limit_profile:
+  schema_version: 1
+  rated_speed_safety_factor: 0.70
+  J1:
+    simulation_velocity_limit_m_s: 0.50
+    simulation_acceleration_limit_m_s2: 5.0
+    hardware_validated: false
+    note: "Linear transmission ratio/screw lead is missing; never use this as a hardware limit."
+  revolute_simulation_acceleration_limit_rad_s2: 31.4
+
+constraint_notes:
+  legacy_python_dq_max:
+    J1_m_s: 0.5
+    J2_to_J9_rad_s: 3.14
+    note: "Historical value only. Runtime limits are derived from control_limit_profile."
+  cpp_conservative_dq_max:
+    J1_m_s: 0.30
+    J2_to_J9_rad_s: 1.5
+  required_before_hardware_enforcement:
+    - J1 linear transmission ratio or screw lead
+    - joint-side reflected inertia
+    - controller current limit behavior
+    - CAN control period and measured latency
+    - payload and link mass properties
+    - thermal derating curve

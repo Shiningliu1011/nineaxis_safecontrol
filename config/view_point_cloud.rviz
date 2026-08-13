@@ -1,0 +1,62 @@
+# RViz2 config: view the perception bridge's world-frame point cloud.
+# Launch:  rviz2 -d config/view_point_cloud.rviz
+# Fixed Frame = base_link.  The bridge applies the (placeholder) static
+# camera->base_link transform in code, so /perception/cloud_world is already
+# in world coordinates.  To view the raw coloured camera cloud instead, set
+# Fixed Frame = camera_color_optical_frame and subscribe /camera/depth_registered/points.
+Panels:
+  - Class: rviz_common/Displays
+    Name: Displays
+    Property Tree Widget:
+      Splitter Ratio: 0.5
+    Tree Height: 600
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Class: rviz_default_plugins/Grid
+      Enabled: true
+      Name: Grid
+      Plane Cell Count: 24
+      Plane Cell Size: 0.2
+      Plane: XY
+      Reference Frame: <Fixed Frame>
+    - Class: rviz_default_plugins/PointCloud2
+      Enabled: true
+      Name: perception/cloud_world
+      Topic:
+        Value: /perception/cloud_world
+        Reliability Policy: Best Effort
+      Style: Points
+      Size (Pixels): 3
+      Size (m): 0.03
+      Use Fixed Frame: true
+      Use rainbow: false
+      Color Transformer: FlatColor
+      Color: 255; 180; 60
+      Alpha: 1.0
+    - Class: rviz_default_plugins/TF
+      Enabled: true
+      Name: TF
+      Show Names: false
+  Enabled: true
+  Global Options:
+    Background Color: 40; 40; 40
+    Fixed Frame: base_link
+    Frame Rate: 30
+  Name: root
+  Views:
+    Current:
+      Class: rviz_default_plugins/Orbit
+      Distance: 2.5
+      Focal Point:
+        X: 0.0
+        Y: 0.0
+        Z: 1.0
+      Name: Current View
+      Pitch: -0.5
+      Yaw: 0.8
+  Window Geometry:
+    Displays:
+      collapsed: false
+    Height: 820
+    Width: 1240

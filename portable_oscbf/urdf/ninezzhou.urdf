@@ -1,0 +1,569 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This URDF was automatically created by SolidWorks to URDF Exporter! Originally created by Stephen Brawner (brawner@gmail.com) 
+     Commit Version: 1.6.0-4-g7f85cfe  Build Version: 1.6.7995.38578
+     For more information, please see http://wiki.ros.org/sw_urdf_exporter -->
+<robot
+  name="ninezzhou">
+  <link
+    name="base_link">
+    <inertial>
+      <origin
+        xyz="8.833E-07 -0.022451 0.13248"
+        rpy="0 0 0" />
+      <mass
+        value="1.9915" />
+      <inertia
+        ixx="0.064264"
+        ixy="5.1919E-08"
+        ixz="3.3811E-07"
+        iyy="0.066864"
+        iyz="4.0018E-07"
+        izz="0.0033029" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://ninezzhou/meshes/base_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://ninezzhou/meshes/base_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <link
+    name="Link1">
+    <inertial>
+      <origin
+        xyz="-6.0224E-06 0.17977 -0.082131"
+        rpy="0 0 0" />
+      <mass
+        value="2.345" />
+      <inertia
+        ixx="0.0053455"
+        ixy="-2.1605E-07"
+        ixz="-4.4956E-08"
+        iyy="0.0057695"
+        iyz="-7.6605E-06"
+        izz="0.0039918" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://ninezzhou/meshes/Link1.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://ninezzhou/meshes/Link1.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="J1"
+    type="prismatic">
+    <origin
+      xyz="0 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="Link1" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="0"
+      upper="0.585"
+      effort="1000"
+      velocity="0.2" />
+  </joint>
+  <link
+    name="Link2">
+    <inertial>
+      <origin
+        xyz="0.09648 -3.2241E-17 -0.0023159"
+        rpy="0 0 0" />
+      <mass
+        value="0.63753" />
+      <inertia
+        ixx="0.00042969"
+        ixy="2.3346E-20"
+        ixz="4.7078E-19"
+        iyy="0.0030796"
+        iyz="2.3426E-21"
+        izz="0.0031941" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://ninezzhou/meshes/Link2.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://ninezzhou/meshes/Link2.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="J2"
+    type="revolute">
+    <origin
+      xyz="0 0.343 0"
+      rpy="1.5708 -1.5708 0" />
+    <parent
+      link="Link1" />
+    <child
+      link="Link2" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-1.5708"
+      upper="1.5708"
+      effort="50"
+      velocity="1.5" />
+  </joint>
+  <link
+    name="Link3">
+    <inertial>
+      <origin
+        xyz="0.093879 -6.9551E-06 -0.0013695"
+        rpy="0 0 0" />
+      <mass
+        value="1.1649" />
+      <inertia
+        ixx="0.0014842"
+        ixy="3.1825E-08"
+        ixz="1.196E-06"
+        iyy="0.0015497"
+        iyz="2.6138E-07"
+        izz="0.0023387" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://ninezzhou/meshes/Link3.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://ninezzhou/meshes/Link3.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="J3"
+    type="revolute">
+    <origin
+      xyz="0.225 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="Link2" />
+    <child
+      link="Link3" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-1.5708"
+      upper="1.5708"
+      effort="50"
+      velocity="1.5" />
+  </joint>
+  <link
+    name="Link4">
+    <inertial>
+      <origin
+        xyz="-9.9056E-06 -0.075057 -0.0041094"
+        rpy="0 0 0" />
+      <mass
+        value="0.76702" />
+      <inertia
+        ixx="0.0013405"
+        ixy="-4.4896E-08"
+        ixz="2.6021E-07"
+        iyy="0.0011867"
+        iyz="-1.1458E-06"
+        izz="0.0015242" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://ninezzhou/meshes/Link4.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://ninezzhou/meshes/Link4.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="J4"
+    type="revolute">
+    <origin
+      xyz="0.225 0 0"
+      rpy="0 0 1.5708" />
+    <parent
+      link="Link3" />
+    <child
+      link="Link4" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-1.5708"
+      upper="1.5708"
+      effort="50"
+      velocity="1.5" />
+  </joint>
+  <link
+    name="Link5">
+    <inertial>
+      <origin
+        xyz="-0.00013574 -0.0006423 -0.098981"
+        rpy="0 0 0" />
+      <mass
+        value="0.6604" />
+      <inertia
+        ixx="0.00074971"
+        ixy="-4.3063E-08"
+        ixz="1.1953E-06"
+        iyy="0.00098038"
+        iyz="-2.5766E-07"
+        izz="0.00066467" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://ninezzhou/meshes/Link5.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://ninezzhou/meshes/Link5.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="J5"
+    type="revolute">
+    <origin
+      xyz="0 -0.343 0"
+      rpy="-1.5708 0 -3.1416" />
+    <parent
+      link="Link4" />
+    <child
+      link="Link5" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-3.1416"
+      upper="3.1416"
+      effort="50"
+      velocity="1.5" />
+  </joint>
+  <link
+    name="Link6">
+    <inertial>
+      <origin
+        xyz="0.040361 -7.8404E-05 -0.0059401"
+        rpy="0 0 0" />
+      <mass
+        value="0.36425" />
+      <inertia
+        ixx="0.00027329"
+        ixy="4.0992E-08"
+        ixz="1.1795E-06"
+        iyy="0.00039516"
+        iyz="2.5972E-07"
+        izz="0.00047226" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://ninezzhou/meshes/Link6.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://ninezzhou/meshes/Link6.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="J6"
+    type="revolute">
+    <origin
+      xyz="0 0 0"
+      rpy="1.5708 -1.5708 0" />
+    <parent
+      link="Link5" />
+    <child
+      link="Link6" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-1.48353"
+      upper="1.48353"
+      effort="50"
+      velocity="1.5" />
+  </joint>
+  <link
+    name="Link7">
+    <inertial>
+      <origin
+        xyz="0.048909 -0.00045484 0.00070527"
+        rpy="0 0 0" />
+      <mass
+        value="0.39888" />
+      <inertia
+        ixx="0.00037624"
+        ixy="-6.4763E-10"
+        ixz="7.9692E-10"
+        iyy="0.00047675"
+        iyz="-6.9764E-10"
+        izz="0.00048176" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://ninezzhou/meshes/Link7.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://ninezzhou/meshes/Link7.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="J7"
+    type="revolute">
+    <origin
+      xyz="0.135 0 0"
+      rpy="-1.5708 0 0" />
+    <parent
+      link="Link6" />
+    <child
+      link="Link7" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-1.48353"
+      upper="1.48353"
+      effort="50"
+      velocity="1.5" />
+  </joint>
+  <link
+    name="Link8">
+    <inertial>
+      <origin
+        xyz="0.022866 -0.01035 -0.0030007"
+        rpy="0 0 0" />
+      <mass
+        value="0.14715" />
+      <inertia
+        ixx="6.3857E-05"
+        ixy="1.7782E-05"
+        ixz="-2.1328E-09"
+        iyy="0.00010917"
+        iyz="1.1293E-09"
+        izz="0.00013469" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://ninezzhou/meshes/Link8.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://ninezzhou/meshes/Link8.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="J8"
+    type="revolute">
+    <origin
+      xyz="0.11 0 0"
+      rpy="1.5708 0 0" />
+    <parent
+      link="Link7" />
+    <child
+      link="Link8" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-1.48353"
+      upper="1.48353"
+      effort="50"
+      velocity="1.5" />
+  </joint>
+  <link
+    name="Link9">
+    <inertial>
+      <origin
+        xyz="0.049301 -5.8905E-05 -0.029388"
+        rpy="0 0 0" />
+      <mass
+        value="0.033614" />
+      <inertia
+        ixx="1.0422E-05"
+        ixy="3.3885E-08"
+        ixz="-5.9283E-06"
+        iyy="3.3129E-05"
+        iyz="8.8462E-09"
+        izz="2.9576E-05" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://ninezzhou/meshes/Link9.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://ninezzhou/meshes/Link9.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="J9"
+    type="revolute">
+    <origin
+      xyz="0.114 0 0"
+      rpy="-1.5708 0 0" />
+    <parent
+      link="Link8" />
+    <child
+      link="Link9" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-1.48353"
+      upper="1.48353"
+      effort="50"
+      velocity="1.5" />
+  </joint>
+</robot>

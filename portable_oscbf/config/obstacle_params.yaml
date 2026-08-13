@@ -1,0 +1,30 @@
+obstacles:
+  - name: sphere_0
+    type: sphere
+    center: [1.1, 0.2, 0.15]
+    radius: 0.18
+    safety_margin: 0.08
+
+point_cloud_collision:
+  enabled: true
+  # 注意: 驱动 depth_registration:=true 时, 彩色对齐点云 frame 是
+  # camera_color_optical_frame (不是 camera_depth_optical_frame)。
+  input_frame: camera_color_optical_frame
+  # 世界系 = 机械臂 base_link (占位)。相机→base_link 的 4x4 变换由
+  # camera_to_world_static 提供 (标定后换成 TF + use_tf: true)。
+  world_frame: base_link
+  # 驱动只发布 depth/points 与 depth_registered/points (彩色对齐), 无 depth/color/points。
+  source_topic: /camera/depth_registered/points
+  lidar_topic_example: /points
+  voxel_size: 0.03
+  max_points: 5000
+  point_radius: 0.01
+  safety_margin: 0.08
+
+# ESDF 栅格范围 (world_frame = base_link 系)。
+# 必须覆盖机械臂全身碰撞球体 (基座球心 z≈-0.26, 轨迹扫掠 x±0.53, y 0~0.57,
+# z -0.3~1.54), 否则采样越界返回 OUT_OF_GRID_DISTANCE=-1 → CBF 约束永远违反
+# → 进给率被限到 0。shape = (55, 35, 88) @ voxel 0.03。
+workspace:
+  min: [-0.9, -0.2, -0.6]
+  max: [ 0.9,  0.8,  2.0]

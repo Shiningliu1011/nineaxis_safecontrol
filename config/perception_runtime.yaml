@@ -1,0 +1,50 @@
+# Runtime configuration for the perception bridge + MuJoCo sim demo.
+#
+# Launch the camera first:
+#   ros2 launch orbbec_camera gemini_330_series.launch.py \
+#       depth_width:=640 depth_height:=480 depth_fps:=30 \
+#       color_width:=640 color_height:=480 color_fps:=30 \
+#       depth_registration:=true enable_colored_point_cloud:=true
+#
+# Then:
+#   ros2 run robot_safecontrol_moveit perception_bridge
+#   ros2 run robot_safecontrol_moveit perception_demo
+#
+# World frame is base_link.  The camera->base_link 4x4 is provided by
+# camera_to_world_static (placeholder; replace with real TF + use_tf:true after
+# mounting calibration).  Keep workspace/voxel consistent with
+# portable_oscbf/config/obstacle_params.yaml so the ESDF grid shape matches.
+
+perception_bridge:
+  ros__parameters:
+    source_topic: /camera/depth_registered/points
+    input_frame: camera_color_optical_frame
+    world_frame: base_link
+    use_tf: false
+    # camera->base_link: bx=cz, by=-cx, bz=-cy, t=[-0.9, 0.4, 1.7]
+    camera_to_world_static: [0.0, 0.0, 1.0, -0.9, -1.0, 0.0, 0.0, 0.4, 0.0, -1.0, 0.0, 1.7, 0.0, 0.0, 0.0, 1.0]
+    voxel_size: 0.03
+    max_points: 5000
+    point_radius: 0.01
+    safety_margin: 0.08
+    workspace_min: [-0.9, -0.2, -0.6]
+    workspace_max: [0.9, 0.8, 2.0]
+    sdf_far_distance: 10.0
+    static_occupancy_frames: 8
+    cluster_max_tracks: 8
+    cluster_min_points: 4
+    cluster_association_max_dist_m: 0.5
+    publish_cloud_rate_hz: 5.0
+    publish_esdf_rate_hz: 10.0
+    publish_collision_rate_hz: 5.0
+    collision_object_prefix: camera_cluster
+
+perception_demo:
+  ros__parameters:
+    control_dt_s: 0.002
+    render_hz: 60.0
+    sdf_margin: 0.08
+    trajectory_mat: ""
+    joint_names: [J1, J2, J3, J4, J5, J6, J7, J8, J9]
+    # Obstacle slots default: disabled until the first /perception/tracks frame.
+    enable_dynamic_slots: true

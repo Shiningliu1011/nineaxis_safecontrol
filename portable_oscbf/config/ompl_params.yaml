@@ -1,0 +1,13 @@
+planner:
+  type: RRTConnect
+  solve_time: 2.0
+  range: 0.25
+  simplify: true
+
+fallback_planner:
+  interpolation_steps: 80
+
+state_validity:
+  require_collision_free: true
+  minimum_distance: 0.05
+

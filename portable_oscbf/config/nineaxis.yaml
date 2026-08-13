@@ -1,0 +1,218 @@
+# nineaxis.yaml — 九轴机械臂机器人特定参数
+# 所有 Python 仿真模块从这里加载配置，换机械臂只需替换此文件 + URDF。
+
+# ============================================================
+# 基本参数
+# ============================================================
+dof: 9
+urdf_path: assets/ninezzhouURDF/urdf/ninezzhou.urdf
+mesh_dir: assets/ninezzhouURDF/meshes
+
+joint_names: ["J1", "J2", "J3", "J4", "J5", "J6", "J7", "J8", "J9"]
+
+# Link 名称 (不含 world/base_link，用于碰撞体命名)
+link_names: ["Link1", "Link2", "Link3", "Link4", "Link5", "Link6", "Link7", "Link8", "Link9", "ee_link"]
+
+# ============================================================
+# 关节限位
+# ============================================================
+joint_limits:
+  # 位置限位 (J1: m, J2-J9: rad)
+  q_min: [0.0, -1.5708, -1.5708, -1.5708, -3.1416, -1.48353, -1.48353, -1.48353, -1.48353]
+  q_max: [0.585, 1.5708, 1.5708, 1.5708, 3.1416, 1.48353, 1.48353, 1.48353, 1.48353]
+  # 速度和加速度限值不放在本文件，运行时唯一来源是
+  # config/actuator_modules.yaml -> ActuatorLimitProfile。
+
+# ============================================================
+# 碰撞几何 (FCL 基元参数)
+# ============================================================
+collision:
+  # 关节球体半径 (覆盖关节机构, m)
+  joint_radii:
+    Link2: 0.080
+    Link3: 0.075
+    Link4: 0.075
+    Link5: 0.070
+    Link7: 0.065
+    Link8: 0.060
+    Link9: 0.055
+    ee_link: 0.040
+
+  # 连杆胶囊体 [from, to, radius, length]
+  capsule_defs:
+    - ["Link2", "Link3", 0.065, 0.225]
+    - ["Link3", "Link4", 0.055, 0.225]
+    - ["Link4", "Link5", 0.065, 0.343]
+    - ["Link5", "Link7", 0.065, 0.135]
+    - ["Link7", "Link8", 0.040, 0.110]
+    - ["Link8", "Link9", 0.060, 0.114]
+    - ["Link9", "ee_link", 0.025, 0.235]
+
+  # base_link Box 包围盒
+  base_box:
+    size: [0.160, 0.140, 0.900]
+    center: [0.000, 0.006, 0.113]
+
+  # Link1 Box 包围盒
+  link1_box:
+    size: [0.160, 0.430, 0.260]
+    center: [0.000, 0.189, -0.061]
+
+  # 碰撞体名 → link_idx 映射 (用于 point_jacobian)
+  body_link_idx:
+    joint_base_link: 0
+    joint_Link2: 2
+    joint_Link3: 3
+    joint_Link4: 4
+    joint_Link5: 5
+    joint_Link7: 7
+    joint_Link8: 8
+    joint_Link9: 9
+    joint_ee_link: 9
+    capsule_base_link_Link2: 1
+    capsule_Link2_Link3: 2
+    capsule_Link3_Link4: 3
+    capsule_Link4_Link5: 4
+    capsule_Link5_Link7: 5
+    capsule_Link7_Link8: 7
+    capsule_Link8_Link9: 8
+    capsule_Link9_ee_link: 9
+
+  # 碰撞分组 (相邻组跳过检测)
+  skip_groups:
+    - [0, 1]  # base_box ↔ link1_box+joint_Link2
+    - [1, 2]  # link1_box+joint_Link2 ↔ joint_Link3
+    - [2, 3]  # joint_Link3 ↔ joint_Link4
+    - [3, 4]  # joint_Link4 ↔ joint_Link5
+    - [4, 5]  # joint_Link5 ↔ joint_Link7
+    - [5, 6]  # joint_Link7 ↔ joint_Link8
+    - [6, 7]  # joint_Link8 ↔ joint_Link9
+    - [7, 8]  # joint_Link9 ↔ joint_ee_link
+
+# ============================================================
+# 运动学 / 工作空间
+# ============================================================
+kinematics:
+  # Link9 → ee_link 固定偏移 (URDF, m)
+  ee_offset: 0.235
+  ee_parent_link: Link9
+
+  # 轨迹对齐旋转矩阵 (raw XYZ → 垂直面, 蝴蝶曲线在机械臂正前方)
+  # raw X → world X (水平), raw Y → world Y (垂直), raw Z → world Z (朝前)
+  trajectory_align_rotation:
+    - [1.0, 0.0, 0.0]
+    - [0.0, 1.0, 0.0]
+    - [0.0, 0.0, 1.0]
+
+  # 工作空间安全中心 (ee X 朝前 IK 验证, 轨迹在机械臂正前方垂直面)
+  # 基于零位时刻末端位置: X=0, Y=0.343, Z=1.387
+  ee_center: [0.0, 0.343, 1.387]
+
+  # 固定姿态模式下的末端旋转矩阵 (ee X 朝前, 即世界坐标系 +Z 方向)
+  # 注意: np.array 直接加载, 每行是矩阵的一行
+  # EE X-axis = fixed_R[:, 0] = [0, 0, 1] (世界 +Z, 朝前)
+  # EE Y-axis = fixed_R[:, 1] = [-1, 0, 0] (世界 -X)
+  # EE Z-axis = fixed_R[:, 2] = [0, -1, 0] (世界 -Y, 朝下)
+  fixed_orientation:
+    - [0, -1, 0]
+    - [0, 0, -1]
+    - [1, 0, 0]
+
+# ============================================================
+# 控制器参数
+# ============================================================
+controller:
+  kp_pos_fixed: 60.0         # 固定姿态模式位置增益
+  kp_pos_non_fixed: 120.0    # 非固定姿态模式位置增益
+  kp_orient_fixed: 10.0      # 固定姿态模式姿态增益
+  kp_orient_non_fixed: 10.0  # 非固定姿态模式姿态增益
+  kp_joint: 0.45             # 零空间回中增益
+  nullspace_speed_limit: 0.18
+  # 工具 X 轴保持为 fixed_orientation[:, 0] 时，绕 X 轴滚转的参考上限。
+  # 圆柱蝴蝶曲线的 X 轴为世界 +Z（朝前），不是朝下。
+  orientation_roll_max_rate_rad_s: 0.5
+  orientation_roll_max_accel_rad_s2: 25.0
+  alpha_joint_limit: 5.0     # 关节限位 CBF 增益
+  joint_limit_activation: 0.08
+  self_collision_gradient_min_norm: 1.0e-5
+  self_collision_rate_cap: 0.15
+  damping: 1.0e-3            # 阻尼伪逆系数
+
+# ============================================================
+# 弧长路径跟随（单位: m, m/s, s）
+# ============================================================
+# 这些是仿真/影子模式的控制配置，不替代实机执行器和制动标定。
+path_following:
+  projection_half_window_segments: 96
+  max_projection_speed_m_s: 0.12
+  # Forward reference lead.  After the post-integration projection fix the
+  # discrete timing lag is gone, so the lead only needs to keep the reference
+  # slightly ahead of the projection.  0.01 mm is well within the 0.1 mm
+  # acceptance gate while avoiding zero-lead edge cases.
+  reference_lead_m: 0.00001
+  cross_track_stop_m: 0.001
+  # Virtual path-reference braking only: v^2 = 2*a*remaining_arc_length.
+  # It prevents the terminal reference feed from stepping straight to zero;
+  # it is not a substitute for measured actuator braking validation.
+  endpoint_braking_deceleration_m_s2: 0.05
+  endpoint_settle_s: 0.5
+  # Tool-axis angular speed limit: ell_dot <= max_tool_axis_speed / ||omega_per_m||.
+  # Prevents large angular velocity commands at wrist reversals where
+  # omega_per_m is large but Cartesian arc length is small.
+  maximum_tool_axis_speed_rad_s: 0.15
+  # Maximum per-cycle reference feedrate change (m/s).  Smooths the reference
+  # feed at segment boundaries without post-hoc output filtering.
+  maximum_reference_feedrate_step_m_s: 0.005
+
+# ============================================================
+# S-curve 驱动器模拟 (QP 输出后平滑, 不影响 QP 精度)
+# ============================================================
+driver_simulator:
+  enabled: true         # 默认开启 (状态切换 S-curve 平滑)
+  jerk_time: 0.08       # jerk 时间常数 (s), j_max = ddq_max / jerk_time
+  kp: 80.0              # 速度环比例增益
+
+# ============================================================
+# 圆柱面蝴蝶曲线演示参数
+# ============================================================
+cylinder_demo:
+  radius_m: 0.300
+  curve_height_m: 0.200
+  center_y_m: 0.343
+  # 前表面中心 Z（机器人一侧曲面中心，不是几何轴线 Z）
+  center_z_m: 1.600
+  # 几何轴线中心 = [0, center_y_m, center_z_m + radius_m]
+  # = [0, 0.343, 1.900]
+  orientation_mode: tool_forward_tangent_limited
+  roll_max_rate_rad_s: 0.5
+  roll_max_accel_rad_s2: 25.0
+  tool_axis_speed_limit_rad_s: 0.15
+
+# ============================================================
+# 动态障碍物 CBF 参数
+# ============================================================
+dynamic_obstacles:
+  cbf_alpha: 1.5
+  d_safe: 0.08
+  activation: 0.20
+
+# ============================================================
+# QP 稳定化 (temporal proximal term + rate constraint)
+# ============================================================
+# 目标: 消除 CBF 约束 active ↔ inactive 切换引起的 u_safe 跳变。
+# 原理: 在 QP 目标中加入 λ/2 ||W_u (u - u_safe_prev)||²,
+#        惩罚当前 u 偏离上一帧 u_safe, 使解跨时刻连续。
+qp_stabilization:
+  temporal_proximal:
+    enabled: true
+    lambda: 2.0e-1           # 时序近端项权重
+    wu_mode: "uniform"       # "uniform" = 全 1, "per_joint" = 按 dq_max 缩放
+  ema_filter:
+    enabled: false           # EMA 对跳变改善有限, 且可能引入相位滞后
+    alpha: 0.8               # EMA 平滑系数 (0=完全平滑, 1=无滤波)
+  soft_rate_limit:
+    enabled: true            # 仅放松速度变化率；人体/环境 CBF 保持硬约束
+    # du_max = ActuatorLimitProfile.ddq_max * control_dt * acceleration_scale
+    # 当前加速度仅用于仿真/影子审查，尚不是实机批准参数。
+    acceleration_scale: 1.0
+    slack_penalty: 1.0e3
