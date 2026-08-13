@@ -23,6 +23,11 @@ from work.path_following import PathFollowingConfig
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CURRENT_TRAJECTORY = REPO_ROOT / "data" / "nurbs" / "ik_input.mat"
 BASELINE_PATH = REPO_ROOT / "output" / "baseline_tracking.npz"
+EVIDENCE_PATH = REPO_ROOT / "output" / "oscbf_m8_nullspace.md"
+
+# Cross-test measurement log consumed by the final evidence writer.  Keys are
+# the AC8 metrics; each stage test fills the entries it owns.
+_EVIDENCE: dict = {}
 
 
 def _random_qs(robot, count=24):
@@ -49,6 +54,7 @@ def test_gradient_matches_finite_difference(robot, policy):
     # autodiff reference; plain 1e-6 two-point differences hit ~1e-4 on
     # high-curvature (near-singular) samples.
     h = 3e-5
+    max_relative = 0.0
     for q in _random_qs(robot, count=4):
         analytic = np.asarray(policy.gradient(
             jax.numpy.asarray(q), robot.ee_jacobian))
@@ -69,8 +75,10 @@ def test_gradient_matches_finite_difference(robot, policy):
             relative = np.max(
                 np.abs(analytic[significant] - finite[significant])
                 / np.abs(analytic[significant]))
+            max_relative = max(max_relative, float(relative))
             assert relative < 1e-4, (
                 f"gradient relative error {relative:.2e} at q={q}")
+    _EVIDENCE["fd_max_relative_error"] = max_relative
 
 
 def test_nullspace_velocity_leaves_task_space(robot, policy):
@@ -98,6 +106,7 @@ def test_nullspace_velocity_leaves_task_space(robot, policy):
         # Global scaling must respect the weighted speed cap.
         assert np.linalg.norm(qdot_null) <= 0.25 + 1e-9
     assert max_leakage < 1e-2, f"task leakage {max_leakage:.3e}"
+    _EVIDENCE["max_leakage"] = max_leakage
 
 
 def test_fixed_endpoint_manipulability_increases(robot, policy):
@@ -142,6 +151,10 @@ def test_fixed_endpoint_manipulability_increases(robot, policy):
     assert mean_last <= mean_first * 1.05 + 1e-6, (
         f"projected gradient norm did not decrease: "
         f"{mean_first:.4f} -> {mean_last:.4f}")
+    _EVIDENCE["phi_start"] = float(phi_start)
+    _EVIDENCE["phi_end"] = float(phi_end)
+    _EVIDENCE["projected_grad_first"] = mean_first
+    _EVIDENCE["projected_grad_last"] = mean_last
     print(f"phi {phi_start:.6f} -> {phi_end:.6f}, "
           f"|N^T g| {mean_first:.4f} -> {mean_last:.4f}")
 
@@ -178,6 +191,46 @@ def test_task_error_not_worse_than_baseline(robot, policy):
     assert current_orient <= baseline_orient * 1.2 + 1e-6, (
         f"orientation error degraded: {current_orient:.6f} "
         f"vs {baseline_orient:.6f}")
+    _EVIDENCE["baseline_pos_err"] = float(baseline_pos)
+    _EVIDENCE["baseline_orient_err"] = float(baseline_orient)
+    _EVIDENCE["nullspace_pos_err"] = float(current_pos)
+    _EVIDENCE["nullspace_orient_err"] = float(current_orient)
+    _EVIDENCE["pos_err_ratio"] = float(current_pos / max(baseline_pos, 1e-12))
+    _EVIDENCE["orient_err_ratio"] = float(
+        current_orient / max(baseline_orient, 1e-12))
+
+
+def test_z_write_m8_evidence_report():
+    """AC8 evidence artifact: trend records for the null-space strategy."""
+    required = {
+        "fd_max_relative_error", "max_leakage", "phi_start", "phi_end",
+        "projected_grad_first", "projected_grad_last",
+        "baseline_pos_err", "baseline_orient_err",
+        "nullspace_pos_err", "nullspace_orient_err",
+        "pos_err_ratio", "orient_err_ratio",
+    }
+    missing = sorted(required - set(_EVIDENCE))
+    assert not missing, f"missing M8 evidence entries: {missing}"
+
+    EVIDENCE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    EVIDENCE_PATH.write_text(
+        "# M8 可操作度零空间证据\n\n"
+        "策略: `ManipulabilityGradientPolicy`"
+        "（k_m=0.15，v_N,max=0.25，l_c=0.4，ε=1e-6，"
+        "激活关闭 ρ=1，低通 β=0.2，整体缩放 s_v）\n"
+        f"- AC8.1 梯度有限差分对照最大相对误差: "
+        f"{_EVIDENCE['fd_max_relative_error']:.3e}（阈值 < 1e-4）\n"
+        f"- AC8.2 零空间残差 ‖J·qdot_N‖ 最大: "
+        f"{_EVIDENCE['max_leakage']:.3e}（阻尼伪逆数值水平）\n"
+        f"- AC8.3 固定末端 2000 步: φ "
+        f"{_EVIDENCE['phi_start']:.6f} → {_EVIDENCE['phi_end']:.6f}；"
+        f"‖Nᵀg‖ {_EVIDENCE['projected_grad_first']:.4f} → "
+        f"{_EVIDENCE['projected_grad_last']:.4f}\n"
+        f"- AC8.4 末端误差劣化: 位置 "
+        f"{_EVIDENCE['pos_err_ratio']:.3f}×、姿态 "
+        f"{_EVIDENCE['orient_err_ratio']:.3f}×（阈值 < 1.2×）\n",
+        encoding="utf-8",
+    )
 
 
 if __name__ == "__main__":

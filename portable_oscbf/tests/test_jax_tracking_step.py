@@ -11,7 +11,9 @@ def test_tracking_step_runs_nominal_osc_and_qp_in_one_jitted_entry_point():
 
     loop = JaxControlLoop(dt=0.002, temporal_lambda=0.2)
     loop.init_cbf()
-    assert loop._config.num_obstacle_constraints == loop._config.num_robot_collision_spheres
+    # The M2/M7 collision model carries one aggregated obstacle row per OBB
+    # link, independent of the 32 mesh-conservative ESDF envelope spheres.
+    assert loop._config.num_obstacle_constraints == loop._config.num_obb_links
     # The all-zero folded configuration violates the model's self-collision
     # barrier.  Use the verified tracking start configuration instead.
     q = np.array([
@@ -53,8 +55,11 @@ def test_tracking_step_runs_nominal_osc_and_qp_in_one_jitted_entry_point():
     assert loop.last_qp_active_count >= 0
     assert loop.last_qp_iterations >= 0
     assert loop.last_qp_primal_residual >= 0.0
-    assert loop.last_qp_terminal_kkt_residual >= 0.0
-    assert loop.last_qp_terminal_kkt_accepted
+    # M7 elastic QP has no hard terminal-KKT health pass; the telemetry slots
+    # are deliberately NaN/False in this mode (the hard path is exercised by
+    # test_jax_frozen_qp_problem with rate limiting enabled).
+    assert np.isnan(loop.last_qp_terminal_kkt_residual)
+    assert not loop.last_qp_terminal_kkt_accepted
     assert loop.last_qp_dual_max >= 0.0
     # 预热必须覆盖真实的 Python/NumPy 调用约定。否则第一帧控制会在
     # 500 Hz 热路径里重新编译，产生秒级速度命令空窗。
