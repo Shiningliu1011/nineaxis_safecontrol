@@ -1,0 +1,11 @@
+# oscbf_plant node parameters (G3: jerk-limited actuator stand-in).
+/**:
+  ros__parameters:
+    command_topic: /oscbf_command
+    state_topic: /mujoco_joint_states
+    joint_names: ["J1", "J2", "J3", "J4", "J5", "J6", "J7", "J8", "J9"]
+    publish_frequency_hz: 100.0
+    jerk_time: 0.08
+    position_gain: 80.0
+    portable_oscbf_root: ""        # default: <share>/portable_oscbf
+    start_position: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]

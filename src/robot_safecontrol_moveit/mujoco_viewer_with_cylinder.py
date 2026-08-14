@@ -28,8 +28,8 @@ from sensor_msgs.msg import JointState
 
 from .plan_transition import (
     DEFAULT_JOINT_NAMES,
-    load_mat_trajectory,
 )
+from .oscbf_trajectory import load_calibrated_path
 
 
 # The project URDF is authored in the legacy Y-up convention.  The wrapper is
@@ -73,14 +73,18 @@ class MuJoCoJointStateViewer(Node):
             trajectory_mat = self._file_parameter(
                 "trajectory_mat", self._default_trajectory_mat()
             )
-            trajectory_offset_m = self._float_tuple("trajectory_offset_m", 3)
             # Load the *full* trajectory once: the cylinder must be fitted on
             # every sample.  A short (possibly stationary) selection of points
             # makes the least-squares circle fit degenerate and the normal
-            # direction meaningless.
-            full_path, _ = load_mat_trajectory(
-                trajectory_mat, trajectory_offset_m, max_points=0, point_stride=1
-            )
+            # direction meaningless.  The calibrated transform keeps the
+            # displayed curve identical to the one the OSCBF controller
+            # tracks (no more ~22 cm Z-offset between them).
+            full_path = [
+                tuple(float(value) for value in point)
+                for point in load_calibrated_path(
+                    trajectory_mat, max_points=0, point_stride=1
+                )
+            ]
             target_path = self._sample_display_path(
                 full_path, int(self.get_parameter("path_max_points").value)
             )
@@ -362,6 +366,8 @@ class MuJoCoJointStateViewer(Node):
         self.declare_parameter("mesh_directory", "")
         self.declare_parameter("show_target_path", True)
         self.declare_parameter("trajectory_mat", "")
+        # Legacy display offset; superseded by the calibrated transform in
+        # ``oscbf_trajectory``.  Kept declared so old parameter files still load.
         self.declare_parameter("trajectory_offset_m", [0.0, 0.343, 1.587])
         self.declare_parameter("path_max_points", 300)
         # The trajectory data uses the project URDF/MoveIt Y-up coordinates.
