@@ -25,9 +25,13 @@
     temporal_lambda: 0.2
     enable_x64: true
     solver_tol: 0.001
-    use_nullspace_policy: true
+    # Deployed default: joint-midpoint null space (validated end-to-end).
+    # The manipulability-gradient policy (M8) can drive joints toward their
+    # limits on the butterfly loops and trip the joint-limit CBF feedrate
+    # cap; it remains available as an opt-in pending limit-aware
+    # regularisation.
+    use_nullspace_policy: false
     reference_lead_m: 0.005
     wait_for_start: false
     telemetry_period_s: 1.0
-    loopback_guard_epsilon: 1.0e-9
     perf_report_path: output/oscbf_m10_perf.md
