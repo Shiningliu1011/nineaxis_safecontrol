@@ -138,7 +138,7 @@ def test_fixed_endpoint_manipulability_increases(robot, policy):
         result = loop.tracking_step(
             q=q, task_pos=task_pos, task_vel=np.zeros(3),
             task_rot=task_rot, task_omega=np.zeros(3),
-            kp_pos=50.0, kp_orient=10.0, kp_joint=0.45, q_des=q,
+            kp_pos=60.0, kp_orient=10.0, kp_joint=0.45, q_des=q,
             nullspace_speed_limit=0.18, damping=1e-3)
         q = np.asarray(result[0])
 
@@ -177,7 +177,7 @@ def test_task_error_not_worse_than_baseline(robot, policy):
     errors = []
     for _ in range(3000):
         result = loop.path_tracking_step(
-            q=q, path_state=path_state, kp_pos=50.0, kp_orient=10.0,
+            q=q, path_state=path_state, kp_pos=60.0, kp_orient=10.0,
             kp_joint=0.45, q_des=q, nullspace_speed_limit=0.18,
             damping=1e-3)
         path_state = result.path_state

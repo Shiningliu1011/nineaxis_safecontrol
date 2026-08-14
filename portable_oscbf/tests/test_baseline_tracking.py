@@ -83,7 +83,7 @@ def _run_baseline() -> tuple[dict, float, float]:
     q = initial_q.copy()
     path_state = loop.initial_path_state()
     common = dict(
-        kp_pos=50.0,
+        kp_pos=60.0,
         kp_orient=10.0,
         kp_joint=0.45,
         q_des=initial_q,
@@ -128,7 +128,7 @@ def _run_baseline() -> tuple[dict, float, float]:
         # Semantic tag for downstream gates (M6): the M5 hard-QP baseline and
         # the post-M7 elastic-QP baseline must never be compared against each
         # other.  Bump this string whenever the controller semantics change.
-        "semantics": np.asarray("m7_elastic_qp_v1"),
+        "semantics": np.asarray("m7_elastic_qp_v2"),
     }
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     np.savez(OUTPUT_PATH, **arrays)

@@ -32,7 +32,7 @@ BASELINE_PATH = REPO_ROOT / "output" / "baseline_tracking.npz"
 
 def _control_kwargs(q):
     return dict(
-        kp_pos=50.0, kp_orient=10.0, kp_joint=0.45, q_des=q,
+        kp_pos=60.0, kp_orient=10.0, kp_joint=0.45, q_des=q,
         nullspace_speed_limit=0.18, damping=1e-3,
         u_safe_prev=np.zeros(9))
 

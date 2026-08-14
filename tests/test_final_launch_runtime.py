@@ -30,8 +30,11 @@ from moveit_msgs.srv import (
 )
 import pytest
 import rclpy
+import numpy as np
 from rclpy.context import Context
 from rclpy.executors import SingleThreadedExecutor
+from rclpy.qos import qos_profile_sensor_data
+from sensor_msgs.msg import JointState
 
 
 _PACKAGE_NAME = "robot_safecontrol_moveit"
@@ -47,6 +50,7 @@ _TEST_DOMAIN_ID = 72 + (os.getpid() % 20)
 _CORE_NODES = (
     "/robot_state_publisher",
     "/transition_planning_server",
+    "/oscbf_controller",
 )
 _MOVEIT_SERVICES = (
     ("/compute_ik", GetPositionIK),
@@ -188,6 +192,66 @@ class TestFinalLaunchRuntime(unittest.TestCase):
             "/mujoco_joint_state_viewer",
             counts,
             "The Viewer must not start in the headless runtime test",
+        )
+
+    def test_oscbf_controller_closes_the_safe_loop(self) -> None:
+        """M11 e2e: the launched controller publishes a valid safe state."""
+        received = []
+
+        def _on_state(message: JointState) -> None:
+            received.append(message)
+
+        self._node.create_subscription(
+            JointState,
+            "/mujoco_joint_states",
+            _on_state,
+            qos_profile_sensor_data,
+        )
+        plant_pub = self._node.create_publisher(
+            JointState, "/mujoco_joint_states", qos_profile_sensor_data
+        )
+
+        plant = JointState()
+        plant.name = ["J1", "J2", "J3", "J4", "J5", "J6", "J7", "J8", "J9"]
+        plant.position = [
+            0.2303562, 0.1112539, 1.0167209, -0.6810303, -1.8294025,
+            -0.4664294, 0.4743473, -1.0429228, 0.0289233,
+        ]
+        plant.position[0] += 0.01
+        plant_positions = np.asarray(plant.position, dtype=float)
+
+        # The controller needs its JIT warm-up plus a control tick; the
+        # deadline is generous because the launched graph shares the CPU.
+        deadline = time.monotonic() + 360.0
+        output = None
+        while time.monotonic() < deadline:
+            plant_pub.publish(plant)
+            self._executor.spin_once(timeout_sec=0.5)
+            for message in received:
+                positions = np.asarray(message.position, dtype=float)
+                if positions.shape == (9,) and np.max(
+                    np.abs(positions - plant_positions)
+                ) > 1e-6:
+                    output = message
+                    break
+            if output is not None:
+                break
+
+        self.assertIsNotNone(
+            output, "no safe state received from oscbf_controller"
+        )
+        assert output.name == ["J1", "J2", "J3", "J4", "J5",
+                               "J6", "J7", "J8", "J9"]
+        positions = np.asarray(output.position, dtype=float)
+        assert np.all(np.isfinite(positions))
+
+        log_dir = Path(__file__).resolve().parents[1] / "output"
+        log_dir.mkdir(parents=True, exist_ok=True)
+        (log_dir / "oscbf_m11_e2e.log").write_text(
+            "M11 end-to-end: oscbf_controller published a valid 9-joint "
+            f"safe state on /mujoco_joint_states (q0={positions[0]:.6f} m) "
+            "in the headless launch.\n",
+            encoding="utf-8",
         )
 
 

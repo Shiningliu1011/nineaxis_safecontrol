@@ -1,0 +1,383 @@
+"""OSCBF safe-control ROS 2 node (M10).
+
+The node is deliberately independent of MoveIt: it loads the repository
+trajectory, runs the pure-JAX OSCBF control kernel, and publishes the safe
+joint state back onto the MuJoCo joint-state stream.  The ``portable_oscbf``
+source tree is shipped in the package share directory; the node adds it (and
+the vendored ``dpax``) to ``sys.path`` before importing ``work``.
+"""
+
+from __future__ import annotations
+
+import math
+import sys
+import time
+from pathlib import Path
+from typing import List, Optional, Sequence
+
+import numpy as np
+import rclpy
+from ament_index_python.packages import (
+    PackageNotFoundError,
+    get_package_share_directory,
+)
+from rclpy.node import Node
+from rclpy.qos import qos_profile_sensor_data
+from sensor_msgs.msg import JointState
+
+
+def _default_share_dir() -> Path:
+    """Installed share directory, or the repository root in source trees."""
+    try:
+        return Path(get_package_share_directory("robot_safecontrol_moveit"))
+    except PackageNotFoundError:
+        return Path.cwd()
+
+
+class OscbfController(Node):
+    """Run the JAX OSCBF kernel on the MuJoCo joint-state stream."""
+
+    def __init__(
+        self,
+        *,
+        node_name: str = "oscbf_controller",
+        parameter_overrides: Optional[List] = None,
+        context=None,
+    ) -> None:
+        super().__init__(
+            node_name,
+            context=context,
+            parameter_overrides=parameter_overrides,
+        )
+        self._declare_parameters()
+        self._resolve_empty_path_parameters()
+        self._validate_parameters()
+        self._step_durations: List[float] = []
+        self._qp_fail_count = 0
+        self._last_published: Optional[np.ndarray] = None
+        self._latest_q: Optional[np.ndarray] = None
+        self._received_any_state = False
+        self._log_throttle = 0.0
+
+        portable_root = Path(
+            str(self.get_parameter("portable_oscbf_root").value)
+        )
+        self._bootstrap_portable(portable_root)
+        self._build_controller(portable_root)
+
+        joint_state_topic = str(
+            self.get_parameter("joint_state_topic").value
+        )
+        publish_topic = str(
+            self.get_parameter("publish_joint_state_topic").value
+        )
+        # Same QoS as the MuJoCo viewer, which owns the joint-state stream.
+        self.create_subscription(
+            JointState,
+            joint_state_topic,
+            self._joint_state_callback,
+            qos_profile_sensor_data,
+        )
+        self._publisher = self.create_publisher(
+            JointState, publish_topic, qos_profile_sensor_data
+        )
+        period_s = 1.0 / float(
+            self.get_parameter("publish_frequency_hz").value
+        )
+        self._timer = self.create_timer(period_s, self._control_tick)
+        self.get_logger().info(
+            "oscbf_controller ready: trajectory="
+            f"{self.get_parameter('trajectory_mat').value}, "
+            f"subscribe={joint_state_topic}, publish={publish_topic} @ "
+            f"{float(self.get_parameter('publish_frequency_hz').value):.1f} Hz"
+        )
+
+    # ------------------------------------------------------------------
+    # Parameter handling
+    # ------------------------------------------------------------------
+
+    def _declare_parameters(self) -> None:
+        share_dir = _default_share_dir()
+        default_portable_root = share_dir / "portable_oscbf"
+        defaults = {
+            "dt": 0.002,
+            "publish_frequency_hz": 100.0,
+            "trajectory_mat": str(share_dir / "data" / "nurbs" / "ik_input.mat"),
+            "portable_oscbf_root": str(default_portable_root),
+            "portable_config_yaml": str(
+                default_portable_root / "config" / "nineaxis.yaml"
+            ),
+            "joint_names": ["J1", "J2", "J3", "J4", "J5", "J6", "J7", "J8", "J9"],
+            "joint_state_topic": "/mujoco_joint_states",
+            "publish_joint_state_topic": "/mujoco_joint_states",
+            "kp_pos": 60.0,
+            "kp_orient": 10.0,
+            "kp_joint": 0.45,
+            "nullspace_speed_limit": 0.18,
+            "damping": 1e-3,
+            "w_pos": 20.0,
+            "w_orient": 10.0,
+            "w_joint": 0.1,
+            "temporal_lambda": 0.2,
+            "enable_x64": True,
+            "solver_tol": 1e-3,
+            "use_nullspace_policy": True,
+            "loopback_guard_epsilon": 1e-9,
+            "perf_report_path": "output/oscbf_m10_perf.md",
+        }
+        for name, value in defaults.items():
+            self.declare_parameter(name, value)
+        self._default_parameters = defaults
+
+    def _resolve_empty_path_parameters(self) -> None:
+        """Empty path overrides fall back to the computed defaults."""
+        for name in (
+            "trajectory_mat",
+            "portable_oscbf_root",
+            "portable_config_yaml",
+        ):
+            value = str(self.get_parameter(name).value)
+            if not value:
+                default = self._default_parameters[name]
+                self.set_parameters([rclpy.parameter.Parameter(
+                    name, rclpy.parameter.Parameter.Type.STRING, default
+                )])
+
+    def _validate_parameters(self) -> None:
+        dt = float(self.get_parameter("dt").value)
+        frequency_hz = float(self.get_parameter("publish_frequency_hz").value)
+        if not 0.0 < dt <= 0.1:
+            raise ValueError(f"dt must be in (0, 0.1], got {dt}")
+        if not 1.0 <= frequency_hz <= 1000.0:
+            raise ValueError(
+                f"publish_frequency_hz must be in [1, 1000], got {frequency_hz}"
+            )
+        for name in ("kp_pos", "kp_orient", "kp_joint", "nullspace_speed_limit",
+                     "w_pos", "w_orient", "w_joint"):
+            value = float(self.get_parameter(name).value)
+            if not math.isfinite(value) or value <= 0.0:
+                raise ValueError(f"{name} must be positive, got {value}")
+        damping = float(self.get_parameter("damping").value)
+        solver_tol = float(self.get_parameter("solver_tol").value)
+        if not math.isfinite(damping) or damping <= 0.0:
+            raise ValueError(f"damping must be positive, got {damping}")
+        if not 0.0 < solver_tol < 1.0:
+            raise ValueError(f"solver_tol must be in (0, 1), got {solver_tol}")
+        joint_names = [
+            str(name) for name in self.get_parameter("joint_names").value
+        ]
+        if len(joint_names) != 9 or len(set(joint_names)) != 9:
+            raise ValueError(
+                "joint_names must contain exactly 9 unique joint names"
+            )
+        trajectory_mat = Path(str(self.get_parameter("trajectory_mat").value))
+        if not trajectory_mat.is_file():
+            raise FileNotFoundError(
+                f"trajectory_mat not found: {trajectory_mat}"
+            )
+
+    # ------------------------------------------------------------------
+    # Controller construction
+    # ------------------------------------------------------------------
+
+    def _bootstrap_portable(self, portable_root: Path) -> None:
+        """Make ``work`` and the vendored ``dpax`` importable."""
+        work_dir = portable_root / "work"
+        vendor_dpax = portable_root / "vendor" / "dpax"
+        if not (work_dir / "__init__.py").is_file():
+            raise FileNotFoundError(
+                f"portable_oscbf/work not found under {portable_root}; "
+                "set the portable_oscbf_root parameter"
+            )
+        # ``work`` itself must be on the path too: several work modules still
+        # import siblings by their bare top-level name (``from path_following
+        # import PathGeometry``), matching the portable test conftest.
+        for entry in (portable_root, work_dir, vendor_dpax):
+            text = str(entry)
+            if text not in sys.path:
+                sys.path.insert(0, text)
+
+    def _build_controller(self, portable_root: Path) -> None:
+        from work.ik_data_loader import load_repository_trajectory
+        from work.jax_control_facade import JaxControlLoop
+        from work.nineaxis_manipulator_jax import NineaxisManipulatorJAX
+        from work.nullspace_policy import ManipulabilityGradientPolicy
+        from work.path_following import PathFollowingConfig
+
+        self.get_logger().info("Loading repository trajectory ...")
+        trajectory_mat = str(self.get_parameter("trajectory_mat").value)
+        config_yaml = str(self.get_parameter("portable_config_yaml").value)
+        trajectory = load_repository_trajectory(
+            trajectory_mat, config_yaml_path=config_yaml
+        )
+        geometry = trajectory.path_geometry()
+
+        policy = None
+        if bool(self.get_parameter("use_nullspace_policy").value):
+            robot = NineaxisManipulatorJAX()
+            policy = ManipulabilityGradientPolicy(robot)
+
+        self._loop = JaxControlLoop(
+            dt=float(self.get_parameter("dt").value),
+            w_pos=float(self.get_parameter("w_pos").value),
+            w_orient=float(self.get_parameter("w_orient").value),
+            w_joint=float(self.get_parameter("w_joint").value),
+            temporal_lambda=float(self.get_parameter("temporal_lambda").value),
+            enable_x64=bool(self.get_parameter("enable_x64").value),
+            solver_tol=float(self.get_parameter("solver_tol").value),
+            nullspace_policy=policy,
+        )
+        self._loop.configure_path(geometry, PathFollowingConfig())
+        self.get_logger().info("Warming up the JAX control kernel ...")
+        self._loop.init_cbf()
+        self.get_logger().info("JAX control kernel warm-up complete")
+        self._path_state = self._loop.initial_path_state()
+        self._joint_names = [
+            str(name) for name in self.get_parameter("joint_names").value
+        ]
+        self._limits = (
+            np.asarray(self._loop.robot.joint_lower_limits, dtype=float),
+            np.asarray(self._loop.robot.joint_upper_limits, dtype=float),
+        )
+
+    # ------------------------------------------------------------------
+    # Control loop
+    # ------------------------------------------------------------------
+
+    def _extract_positions(self, message: JointState) -> Optional[np.ndarray]:
+        if len(message.position) == 9 and not message.name:
+            return np.asarray(message.position, dtype=float)
+        if set(message.name) != set(self._joint_names):
+            return None
+        order = {name: index for index, name in enumerate(message.name)}
+        positions = np.asarray(
+            [message.position[order[name]] for name in self._joint_names],
+            dtype=float,
+        )
+        return positions
+
+    def _joint_state_callback(self, message: JointState) -> None:
+        positions = self._extract_positions(message)
+        if positions is None or not np.all(np.isfinite(positions)):
+            return
+        if self._last_published is not None and np.allclose(
+            positions,
+            self._last_published,
+            atol=float(self.get_parameter("loopback_guard_epsilon").value),
+        ):
+            # Our own echo on the shared stream; ignore it.
+            return
+        self._received_any_state = True
+        self._latest_q = positions
+
+    def step_once(self, q: np.ndarray) -> dict:
+        """Advance the control kernel by one step (pure method for tests)."""
+        result = self._loop.path_tracking_step(
+            q=np.asarray(q, dtype=float),
+            path_state=self._path_state,
+            kp_pos=float(self.get_parameter("kp_pos").value),
+            kp_orient=float(self.get_parameter("kp_orient").value),
+            kp_joint=float(self.get_parameter("kp_joint").value),
+            q_des=np.asarray(q, dtype=float),
+            nullspace_speed_limit=float(
+                self.get_parameter("nullspace_speed_limit").value
+            ),
+            damping=float(self.get_parameter("damping").value),
+        )
+        self._path_state = np.asarray(result.path_state, dtype=float)
+        return {
+            "q_next": np.asarray(result.q_next, dtype=float),
+            "u_safe": np.asarray(result.u_safe, dtype=float),
+            "err_6d": np.asarray(result.err_6d, dtype=float),
+            "qp_ok": bool(result.qp_ok),
+            "min_obs_dist": float(result.min_obs_dist),
+            "delta_slack": float(result.delta_slack),
+        }
+
+    def _control_tick(self) -> None:
+        if self._latest_q is None:
+            now = time.monotonic()
+            if now - self._log_throttle > 5.0 and not self._received_any_state:
+                self.get_logger().warn(
+                    "waiting for joint states on "
+                    f"{self.get_parameter('joint_state_topic').value}"
+                )
+                self._log_throttle = now
+            return
+
+        start = time.perf_counter()
+        step = self.step_once(self._latest_q)
+        duration_ms = (time.perf_counter() - start) * 1000.0
+        self._step_durations.append(duration_ms)
+        self._latest_q = None
+
+        q_next = step["q_next"]
+        lower, upper = self._limits
+        valid = np.all(np.isfinite(q_next)) and np.all(q_next >= lower - 1e-9) \
+            and np.all(q_next <= upper + 1e-9)
+        if not valid:
+            self.get_logger().error(
+                f"discarding invalid safe state: {q_next.tolist()}"
+            )
+            return
+        if not step["qp_ok"]:
+            self._qp_fail_count += 1
+            self.get_logger().warn(
+                f"QP failed at step {len(self._step_durations)}; "
+                "holding current state"
+            )
+
+        message = JointState()
+        message.header.stamp = self.get_clock().now().to_msg()
+        message.name = list(self._joint_names)
+        message.position = [float(value) for value in q_next]
+        self._publisher.publish(message)
+        self._last_published = q_next
+
+    def write_perf_report(self) -> None:
+        """Write the M10 performance evidence file (p95 step latency)."""
+        report_path = Path(str(self.get_parameter("perf_report_path").value))
+        if not report_path.is_absolute():
+            report_path = Path.cwd() / report_path
+        report_path.parent.mkdir(parents=True, exist_ok=True)
+        if self._step_durations:
+            p95 = float(np.percentile(self._step_durations, 95))
+            p50 = float(np.percentile(self._step_durations, 50))
+            maximum = float(np.max(self._step_durations))
+        else:
+            p95 = p50 = maximum = float("nan")
+        report_path.write_text(
+            "# M10 oscbf_controller 性能证据\n\n"
+            f"- 控制频率: {self.get_parameter('publish_frequency_hz').value} Hz\n"
+            f"- 步数: {len(self._step_durations)}\n"
+            f"- `path_tracking_step` 延迟 p50: {p50:.3f} ms\n"
+            f"- `path_tracking_step` 延迟 p95: {p95:.3f} ms（阈值 < 10 ms）\n"
+            f"- 单步最大: {maximum:.3f} ms\n"
+            f"- QP 失败次数: {self._qp_fail_count}\n",
+            encoding="utf-8",
+        )
+        if rclpy.ok():
+            self.get_logger().info(f"wrote performance report to {report_path}")
+
+
+def main(args: Optional[Sequence[str]] = None) -> None:
+    rclpy.init(args=args)
+    node = OscbfController()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        node.write_perf_report()
+        node.destroy_node()
+        if rclpy.ok():
+            try:
+                rclpy.shutdown()
+            except Exception:
+                # The launch framework may have already shut the context down
+                # on SIGINT; the controller itself has exited cleanly.
+                pass
+
+
+if __name__ == "__main__":
+    main()
