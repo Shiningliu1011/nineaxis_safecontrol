@@ -117,3 +117,58 @@ def test_viewer_constructs_with_calibrated_path():
         node.destroy_node()
     finally:
         rclpy.shutdown(context=context)
+
+
+def test_surface_normal_orientation_points_toward_cylinder_centre():
+    from work.ik_data_loader import load_repository_trajectory
+
+    trajectory = load_repository_trajectory(str(MAT_PATH))
+    trajectory.set_surface_normal_orientation([0.0, 1.0, 0.0])
+    frames = trajectory._R_des_series
+    positions = trajectory._pos_world
+    axis = np.array([0.0, 1.0, 0.0])
+    centre = trajectory._fit_surface_axis_point(axis)
+
+    for index in range(0, len(frames), 200):
+        rotation = frames[index]
+        x_axis = rotation[:, 0]
+        y_axis = rotation[:, 1]
+        assert abs(float(np.linalg.det(rotation)) - 1.0) < 1e-9
+        assert abs(float(np.dot(x_axis, axis))) < 1e-9, (
+            "tool X-axis is not perpendicular to the cylinder surface"
+        )
+        assert float(np.linalg.norm(y_axis - axis)) < 1e-9, (
+            "tool Y-axis is not aligned with the cylinder axis"
+        )
+        relative = positions[index] - centre
+        radial = relative - axis * float(np.dot(relative, axis))
+        if float(np.linalg.norm(radial)) > 1e-6:
+            assert float(np.dot(x_axis, radial)) < 0.0, (
+                "tool X-axis does not point toward the cylinder centre"
+            )
+
+
+def test_surface_normal_matches_fitted_cylinder_not_origin_axis():
+    """The butterfly cylinder centre is offset from the origin axis.
+
+    At the path start the fitted inward normal is +Z (toward the cylinder
+    centre at z ~= 1.637 m), while an origin-centred axis would wrongly give
+    -Z.  The controller must use the fitted centre or the transition handoff
+    lands 180 degrees flipped from the tracking reference.
+    """
+    from work.ik_data_loader import load_repository_trajectory
+
+    trajectory = load_repository_trajectory(str(MAT_PATH))
+    trajectory.set_surface_normal_orientation([0.0, 1.0, 0.0])
+    start_x = trajectory._R_des_series[0][:, 0]
+    assert float(np.dot(start_x, np.array([0.0, 0.0, 1.0]))) > 0.9, (
+        f"start X must point toward the offset cylinder centre, got {start_x}"
+    )
+    # Every sample must point from the surface toward the fitted axis line.
+    centre = trajectory._fit_surface_axis_point(np.array([0.0, 1.0, 0.0]))
+    for index in range(0, len(trajectory._R_des_series), 500):
+        point = trajectory._pos_world[index]
+        relative = point - centre
+        radial = relative - np.array([0.0, 1.0, 0.0]) * float(relative[1])
+        if float(np.linalg.norm(radial)) > 1e-6:
+            assert float(np.dot(trajectory._R_des_series[index][:, 0], radial)) < 0.0

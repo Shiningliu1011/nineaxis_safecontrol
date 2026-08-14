@@ -53,6 +53,7 @@ def _path_start_configuration() -> np.ndarray:
     trajectory = load_repository_trajectory(
         str(REPO_ROOT / "data" / "nurbs" / "ik_input.mat")
     )
+    trajectory.set_surface_normal_orientation([0.0, 1.0, 0.0])
     return _work_start_configuration(trajectory)
 
 
@@ -190,6 +191,8 @@ def test_zero_transition_then_tracking(closed_loop):
             time.sleep(0.1)
         snapshot = controller.progress_snapshot()
         assert snapshot["ready"] and snapshot["steps"] >= 200
+        assert np.isfinite(snapshot["pos_error_m"])
+        assert np.isfinite(snapshot["orient_error_rad"])
         assert snapshot["source_time_s"] > 0.5, (
             f"reference stuck at source_time={snapshot['source_time_s']:.3f}s"
         )

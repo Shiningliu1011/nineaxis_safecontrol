@@ -40,6 +40,7 @@ from work.safety_snapshot import sample_distance_field_jax
 from work.tool_axis_task import (
     TASK_MODE_POSE_6D,
     TASK_MODE_TOOL_AXIS_5D,
+    rotation_error_rotvec_jax,
     task_error_5d_jax,
     task_error_report_6d_jax,
     task_jacobian_5d_jax,
@@ -141,10 +142,7 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
                 task_jacobian_5d_jax(full_jacobian, ee_rot, task_rot),
             )
         pos_err = ee_pos - task_pos
-        rot_err = -0.5 * (
-            jnp.cross(ee_rot[:, 0], task_rot[:, 0])
-            + jnp.cross(ee_rot[:, 1], task_rot[:, 1])
-            + jnp.cross(ee_rot[:, 2], task_rot[:, 2]))
+        rot_err = rotation_error_rotvec_jax(ee_rot, task_rot)
         task_error = jnp.concatenate([pos_err, rot_err])
         return task_error, task_error, full_jacobian
 

@@ -25,6 +25,40 @@ from work.task_mode_contract import (
 TOOL_AXIS_INDEX = 0
 
 
+def rotation_error_rotvec(current_rotation: np.ndarray,
+                          desired_rotation: np.ndarray) -> np.ndarray:
+    """Exact world-frame rotation-vector error from current to desired frame.
+
+    Returns ``-log(R_des @ R_cur^T)`` (the small-angle limit equals the
+    classic ``-0.5 * sum(cross(cols))`` formulation).  Unlike that first-order
+    form it is *not* blind at a 180-degree orientation offset: the cross-sum
+    vanishes for every half-turn rotation (a whole manifold of spurious zero
+    equilibria), while this exact metric reports the full ``pi`` magnitude so
+    the feedback can actually converge from a flipped handoff pose.
+    """
+    current = np.asarray(current_rotation, dtype=float)
+    desired = np.asarray(desired_rotation, dtype=float)
+    relative = desired @ current.T
+    cos_angle = float(np.clip(0.5 * (np.trace(relative) - 1.0), -1.0, 1.0))
+    angle = float(np.arccos(cos_angle))
+    skew_vee = np.array([
+        relative[2, 1] - relative[1, 2],
+        relative[0, 2] - relative[2, 0],
+        relative[1, 0] - relative[0, 1],
+    ])
+    sin_angle = 0.5 * float(np.linalg.norm(skew_vee))
+    if sin_angle > 1.0e-9:
+        axis = skew_vee / (2.0 * sin_angle)
+    else:
+        # angle near 0 or pi.  At pi the skew part vanishes; recover the
+        # axis from the symmetric part n n^T = 0.5 * (R + I).
+        nn_t = 0.5 * (relative + np.eye(3))
+        column_norms = np.linalg.norm(nn_t, axis=0)
+        best = int(np.argmax(column_norms))
+        axis = nn_t[:, best] / max(float(column_norms[best]), 1.0e-12)
+    return -(angle * axis)
+
+
 def skew_matrix(vector: np.ndarray) -> np.ndarray:
     """Return ``[vector]_x`` such that ``[v]_x @ w == cross(v, w)``."""
     value = np.asarray(vector, dtype=float).reshape(3)
@@ -161,6 +195,30 @@ def tool_axis_error_2d_jax(current_rotation: jnp.ndarray,
     current_axis, _ = _tool_axis_and_basis_jax(current_rotation, tool_axis_index)
     desired_axis, basis = _tool_axis_and_basis_jax(desired_rotation, tool_axis_index)
     return basis.T @ jnp.cross(desired_axis, current_axis)
+
+
+def rotation_error_rotvec_jax(current_rotation: jnp.ndarray,
+                              desired_rotation: jnp.ndarray) -> jnp.ndarray:
+    """JAX mirror of :func:`rotation_error_rotvec` (no 180-degree blind spot)."""
+    relative = desired_rotation @ current_rotation.T
+    cos_angle = jnp.clip(0.5 * (jnp.trace(relative) - 1.0), -1.0, 1.0)
+    angle = jnp.arccos(cos_angle)
+    skew_vee = jnp.array([
+        relative[2, 1] - relative[1, 2],
+        relative[0, 2] - relative[2, 0],
+        relative[1, 0] - relative[0, 1],
+    ])
+    sin_angle = 0.5 * jnp.linalg.norm(skew_vee)
+    nn_t = 0.5 * (relative + jnp.eye(3))
+    column_norms = jnp.linalg.norm(nn_t, axis=0)
+    best = jnp.argmax(column_norms)
+    axis_pi = nn_t[:, best] / jnp.maximum(column_norms[best], 1.0e-12)
+    axis = jnp.where(
+        sin_angle > 1.0e-9,
+        skew_vee / jnp.maximum(2.0 * sin_angle, 1.0e-12),
+        axis_pi,
+    )
+    return -(angle * axis)
 
 
 def tool_axis_jacobian_2d_jax(current_rotation: jnp.ndarray,
