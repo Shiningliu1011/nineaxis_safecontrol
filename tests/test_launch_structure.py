@@ -155,6 +155,16 @@ class TestFinalLaunchDescription(unittest.TestCase):
             ),
             1,
         )
+        self.assertEqual(
+            identities.count(
+                (
+                    "robot_safecontrol_moveit",
+                    "oscbf_plant",
+                    "oscbf_plant",
+                )
+            ),
+            1,
+        )
         self.assertNotIn(
             ("robot_safecontrol_moveit", "plan_transition", "plan_transition"),
             identities,
@@ -175,6 +185,12 @@ class TestFinalLaunchDescription(unittest.TestCase):
         }
         self.assertIn("start_oscbf_controller", arguments)
         self.assertEqual(arguments["start_oscbf_controller"], "true")
+        self.assertIn("start_oscbf_plant", arguments)
+        self.assertEqual(arguments["start_oscbf_plant"], "false")
+        self.assertIn("oscbf_wait_for_start", arguments)
+        self.assertEqual(arguments["oscbf_wait_for_start"], "false")
+        self.assertIn("transition_replay_topic", arguments)
+        self.assertEqual(arguments["transition_replay_topic"], "/mujoco_joint_states")
 
     def test_move_group_rsp_and_server_share_mujoco_joint_state_remap(self) -> None:
         description = self._description()

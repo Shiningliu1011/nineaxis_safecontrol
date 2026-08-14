@@ -65,14 +65,23 @@ python3 src/plan_transition.py
 bash build_aeb_moveit.sh
 source install/setup.bash
 
-# 启动完整闭环（M 进入手动模式，调整关节后按 T）。
+# 启动完整闭环：零位 → MoveIt 过渡 → OSCBF 跟踪蝴蝶轨迹（按 T 触发过渡，
+# 回放结束后控制器自动接管 /oscbf_command 并跟踪到轨迹终点）。
 bash run_demo.sh
+
+# 经典 MoveIt 演示（M 进入手动模式，调整关节后按 T 触发过渡规划）：
+MOVEIT_DEMO=1 bash run_demo.sh
 ```
 
 依赖: ROS2 Humble, MoveIt2, pymoveit2
 
 最终闭环默认使用 `AEBRRTstarFaithfulConfigDefault`。AEB-RRT* 由 MoveIt
 PlanningScene/FCL 做状态与路径碰撞检查。
+
+话题约定：OSCBF 控制器订阅植物状态 `/mujoco_joint_states`，把安全命令发布到
+`/oscbf_command`；`oscbf_plant` 节点把命令经 jerk 限幅积分后作为植物状态发回
+`/mujoco_joint_states`。查看器、过渡服务器、控制器共用同一套校准轨迹变换
+（`oscbf_trajectory.py`），保证 tool0 与显示的蝴蝶曲线重合。
 
 每次修改 AEB 的 C++ 代码后，都要重新执行 `bash build_aeb_moveit.sh`，再重启
 整个 launch（直接运行 `bash run_demo.sh` 即可）。运行中的 `move_group` 不会自动

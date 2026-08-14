@@ -203,7 +203,7 @@ class TestFinalLaunchRuntime(unittest.TestCase):
 
         self._node.create_subscription(
             JointState,
-            "/mujoco_joint_states",
+            "/oscbf_command",
             _on_state,
             qos_profile_sensor_data,
         )
@@ -249,7 +249,7 @@ class TestFinalLaunchRuntime(unittest.TestCase):
         log_dir.mkdir(parents=True, exist_ok=True)
         (log_dir / "oscbf_m11_e2e.log").write_text(
             "M11 end-to-end: oscbf_controller published a valid 9-joint "
-            f"safe state on /mujoco_joint_states (q0={positions[0]:.6f} m) "
+            f"safe command on /oscbf_command (q0={positions[0]:.6f} m) "
             "in the headless launch.\n",
             encoding="utf-8",
         )

@@ -13,7 +13,7 @@
     portable_config_yaml: ""               # default: <portable_oscbf_root>/config/nineaxis.yaml
     joint_names: ["J1", "J2", "J3", "J4", "J5", "J6", "J7", "J8", "J9"]
     joint_state_topic: /mujoco_joint_states
-    publish_joint_state_topic: /mujoco_joint_states
+    publish_joint_state_topic: /oscbf_command
     kp_pos: 60.0
     kp_orient: 10.0
     kp_joint: 0.45
@@ -26,5 +26,7 @@
     enable_x64: true
     solver_tol: 0.001
     use_nullspace_policy: true
+    wait_for_start: false
+    telemetry_period_s: 1.0
     loopback_guard_epsilon: 1.0e-9
     perf_report_path: output/oscbf_m10_perf.md

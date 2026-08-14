@@ -168,9 +168,22 @@ def load_first_task_target(
 ) -> tuple[list[tuple[float, float, float]], list[float]]:
     """Load trajectory positions and times used for first-target IK.
 
+    ``offset_m`` is retained for call-site compatibility but is ignored: the
+    first target must sit exactly on the OSCBF controller's calibrated path.
+
     Returns (positions, times).
     """
-    return load_mat_trajectory(trajectory_mat, offset_m, max_points, point_stride)
+    from .oscbf_trajectory import load_calibrated_path_with_times
+
+    positions, times = load_calibrated_path_with_times(
+        trajectory_mat,
+        max_points=max_points,
+        point_stride=point_stride,
+    )
+    return (
+        [tuple(float(value) for value in point) for point in positions],
+        [float(value) for value in times],
+    )
 
 
 def compute_first_task_orientation(
@@ -189,8 +202,10 @@ def compute_first_task_orientation(
     per_point: list[tuple[float, float, float, float]] | None = None
     if align_tool_x_to_surface_normal:
         if trajectory_mat is not None and trajectory_mat.is_file():
-            full_positions, _ = load_mat_trajectory(
-                trajectory_mat, offset_m, 0, 1
+            from .oscbf_trajectory import load_calibrated_path
+
+            full_positions = load_calibrated_path(
+                trajectory_mat, max_points=0, point_stride=1
             )
         else:
             full_positions = positions

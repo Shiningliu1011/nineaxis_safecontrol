@@ -21,6 +21,7 @@ pkill -INT -f move_group 2>/dev/null || true
 pkill -INT -f robot_state_publisher 2>/dev/null || true
 pkill -INT -f mujoco_viewer 2>/dev/null || true
 pkill -INT -f oscbf_controller 2>/dev/null || true
+pkill -INT -f oscbf_plant 2>/dev/null || true
 sleep 2
 echo "  清理完成"
 
@@ -45,13 +46,21 @@ fi
 echo "  OK"
 
 echo ""
-echo "=== 启动完整系统 ==="
-echo "  move_group(AEB-RRT*) + robot_state_publisher + planning server"
-echo "  + OSCBF controller + Viewer"
-echo ""
-echo "  按 M → 调整关节 → 按 T 触发规划"
-echo "  OSCBF 控制器默认开启：JAX 预热完成后接管 /mujoco_joint_states 安全状态；"
-echo "  用 start_oscbf_controller:=false 可只跑 MoveIt 规划链路。"
+echo "=== 启动系统 ==="
+if [ "${MOVEIT_DEMO:-0}" = "1" ]; then
+  echo "  MoveIt 演示模式：move_group(AEB-RRT*) + Viewer"
+  echo "  按 M → 调整关节 → 按 T 触发过渡规划"
+  echo ""
+  exec ros2 launch robot_safecontrol_moveit mujoco_transition_final.launch.py \
+      start_oscbf_controller:=false start_oscbf_plant:=false
+fi
+
+echo "  全流程模式：零位 → MoveIt 过渡 → OSCBF 跟踪蝴蝶轨迹"
+echo "  move_group(AEB-RRT*) + 过渡服务器 + 被控对象 + OSCBF 控制器 + Viewer"
+echo "  按 T 触发过渡；过渡回放结束后控制器自动接管并跟踪到轨迹终点。"
+echo "  （回退到经典 M/T 演示：MOVEIT_DEMO=1 bash run_demo.sh）"
 echo ""
 
-exec ros2 launch robot_safecontrol_moveit mujoco_transition_final.launch.py
+exec ros2 launch robot_safecontrol_moveit mujoco_transition_final.launch.py \
+    start_oscbf_plant:=true oscbf_wait_for_start:=true \
+    transition_replay_topic:=/transition_replay_viz

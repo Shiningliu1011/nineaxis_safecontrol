@@ -2,9 +2,10 @@
 
 The node is deliberately independent of MoveIt: it loads the repository
 trajectory, runs the pure-JAX OSCBF control kernel, and publishes the safe
-joint state back onto the MuJoCo joint-state stream.  The ``portable_oscbf``
-source tree is shipped in the package share directory; the node adds it (and
-the vendored ``dpax``) to ``sys.path`` before importing ``work``.
+joint command onto the dedicated command stream (``/oscbf_command``), separate
+from the plant state stream it subscribes to.  The ``portable_oscbf`` source
+tree is shipped in the package share directory; the node adds it (and the
+vendored ``dpax``) to ``sys.path`` before importing ``work``.
 """
 
 from __future__ import annotations
@@ -22,8 +23,15 @@ from ament_index_python.packages import (
     get_package_share_directory,
 )
 from rclpy.node import Node
-from rclpy.qos import qos_profile_sensor_data
+from rclpy.qos import (
+    DurabilityPolicy,
+    HistoryPolicy,
+    QoSProfile,
+    ReliabilityPolicy,
+    qos_profile_sensor_data,
+)
 from sensor_msgs.msg import JointState
+from std_srvs.srv import Trigger
 
 
 def _default_share_dir() -> Path:
@@ -32,6 +40,20 @@ def _default_share_dir() -> Path:
         return Path(get_package_share_directory("robot_safecontrol_moveit"))
     except PackageNotFoundError:
         return Path.cwd()
+
+
+def _state_subscription_qos() -> QoSProfile:
+    """BEST_EFFORT with a deeper queue than ``sensor_data`` (depth 5).
+
+    At 100 Hz with bursts from the plant the default depth overflows and the
+    executor falls behind, which showed up as long-run p95 latency > 10 ms.
+    """
+    return QoSProfile(
+        history=HistoryPolicy.KEEP_LAST,
+        depth=20,
+        reliability=ReliabilityPolicy.BEST_EFFORT,
+        durability=DurabilityPolicy.VOLATILE,
+    )
 
 
 class OscbfController(Node):
@@ -57,6 +79,13 @@ class OscbfController(Node):
         self._last_published: Optional[np.ndarray] = None
         self._latest_q: Optional[np.ndarray] = None
         self._received_any_state = False
+        self._last_state_time: Optional[float] = None
+        self._last_result = None
+        self._trajectory_duration_s = 30.0
+        self._completion_logged = False
+        self._tracking_started = not bool(
+            self.get_parameter("wait_for_start").value
+        )
         self._log_throttle = 0.0
 
         portable_root = Path(
@@ -76,7 +105,7 @@ class OscbfController(Node):
             JointState,
             joint_state_topic,
             self._joint_state_callback,
-            qos_profile_sensor_data,
+            _state_subscription_qos(),
         )
         self._publisher = self.create_publisher(
             JointState, publish_topic, qos_profile_sensor_data
@@ -85,11 +114,20 @@ class OscbfController(Node):
             self.get_parameter("publish_frequency_hz").value
         )
         self._timer = self.create_timer(period_s, self._control_tick)
+        self._telemetry_timer = self.create_timer(1.0, self._telemetry_tick)
+        if not self._tracking_started:
+            self._start_service = self.create_service(
+                Trigger, "/oscbf_controller/start_tracking",
+                self._start_tracking_callback,
+            )
+        else:
+            self._start_service = None
         self.get_logger().info(
             "oscbf_controller ready: trajectory="
             f"{self.get_parameter('trajectory_mat').value}, "
             f"subscribe={joint_state_topic}, publish={publish_topic} @ "
-            f"{float(self.get_parameter('publish_frequency_hz').value):.1f} Hz"
+            f"{float(self.get_parameter('publish_frequency_hz').value):.1f} Hz, "
+            f"tracking={'auto-start' if self._tracking_started else 'waiting for /oscbf_controller/start_tracking'}"
         )
 
     # ------------------------------------------------------------------
@@ -109,7 +147,7 @@ class OscbfController(Node):
             ),
             "joint_names": ["J1", "J2", "J3", "J4", "J5", "J6", "J7", "J8", "J9"],
             "joint_state_topic": "/mujoco_joint_states",
-            "publish_joint_state_topic": "/mujoco_joint_states",
+            "publish_joint_state_topic": "/oscbf_command",
             "kp_pos": 60.0,
             "kp_orient": 10.0,
             "kp_joint": 0.45,
@@ -122,6 +160,8 @@ class OscbfController(Node):
             "enable_x64": True,
             "solver_tol": 1e-3,
             "use_nullspace_policy": True,
+            "wait_for_start": False,
+            "telemetry_period_s": 1.0,
             "loopback_guard_epsilon": 1e-9,
             "perf_report_path": "output/oscbf_m10_perf.md",
         }
@@ -210,6 +250,9 @@ class OscbfController(Node):
         trajectory = load_repository_trajectory(
             trajectory_mat, config_yaml_path=config_yaml
         )
+        self._trajectory_duration_s = float(
+            trajectory.num_points * trajectory.Ts
+        )
         geometry = trajectory.path_geometry()
 
         policy = None
@@ -269,6 +312,7 @@ class OscbfController(Node):
             return
         self._received_any_state = True
         self._latest_q = positions
+        self._last_state_time = time.monotonic()
 
     def step_once(self, q: np.ndarray) -> dict:
         """Advance the control kernel by one step (pure method for tests)."""
@@ -285,6 +329,7 @@ class OscbfController(Node):
             damping=float(self.get_parameter("damping").value),
         )
         self._path_state = np.asarray(result.path_state, dtype=float)
+        self._last_result = result
         return {
             "q_next": np.asarray(result.q_next, dtype=float),
             "u_safe": np.asarray(result.u_safe, dtype=float),
@@ -295,14 +340,7 @@ class OscbfController(Node):
         }
 
     def _control_tick(self) -> None:
-        if self._latest_q is None:
-            now = time.monotonic()
-            if now - self._log_throttle > 5.0 and not self._received_any_state:
-                self.get_logger().warn(
-                    "waiting for joint states on "
-                    f"{self.get_parameter('joint_state_topic').value}"
-                )
-                self._log_throttle = now
+        if not self._tracking_started or self._latest_q is None:
             return
 
         start = time.perf_counter()
@@ -333,6 +371,97 @@ class OscbfController(Node):
         message.position = [float(value) for value in q_next]
         self._publisher.publish(message)
         self._last_published = q_next
+
+    def progress_snapshot(self) -> dict:
+        """One-shot progress/latency snapshot for logs, tests and tooling."""
+        durations = self._step_durations
+        result = self._last_result
+        if result is None:
+            return {
+                "tracking_started": self._tracking_started,
+                "steps": 0,
+                "ready": False,
+                "qp_fail_count": self._qp_fail_count,
+            }
+        source_time = float(result.reference_source_time_s)
+        if durations:
+            p50 = float(np.percentile(durations, 50))
+            p95 = float(np.percentile(durations, 95))
+            maximum = float(np.max(durations))
+        else:
+            p50 = p95 = maximum = float("nan")
+        return {
+            "tracking_started": self._tracking_started,
+            "steps": len(durations),
+            "ready": True,
+            "source_time_s": source_time,
+            "trajectory_duration_s": self._trajectory_duration_s,
+            "arc_fraction": min(
+                max(source_time / self._trajectory_duration_s, 0.0), 1.0
+            ),
+            "cross_track_error_m": float(result.cross_track_error_m),
+            "feedrate_m_s": float(result.feedrate_m_s),
+            "limiting_reason_code": int(result.limiting_reason_code),
+            "at_endpoint": bool(result.reference_at_endpoint),
+            "qp_ok": bool(result.qp_ok),
+            "delta_slack": float(result.delta_slack),
+            "latency_p50_ms": p50,
+            "latency_p95_ms": p95,
+            "latency_max_ms": maximum,
+            "qp_fail_count": self._qp_fail_count,
+        }
+
+    def _telemetry_tick(self) -> None:
+        now = time.monotonic()
+        if self._last_state_time is None:
+            self.get_logger().warn(
+                "waiting for joint states on "
+                f"{self.get_parameter('joint_state_topic').value}"
+            )
+            return
+        if now - self._last_state_time > 5.0:
+            self.get_logger().warn(
+                f"joint-state stream stalled for {now - self._last_state_time:.0f}s"
+            )
+        snapshot = self.progress_snapshot()
+        if not snapshot.get("ready"):
+            return
+        self.get_logger().info(
+            "progress "
+            f"source_time={snapshot['source_time_s']:.2f}/"
+            f"{snapshot['trajectory_duration_s']:.1f}s "
+            f"arc={snapshot['arc_fraction']*100:.1f}% "
+            f"cross_track={snapshot['cross_track_error_m']*1000:.3f}mm "
+            f"feedrate={snapshot['feedrate_m_s']:.4f}m/s "
+            f"limit={snapshot['limiting_reason_code']} "
+            f"qp_ok={snapshot['qp_ok']} slack={snapshot['delta_slack']:.2e} "
+            f"latency p50/p95/max="
+            f"{snapshot['latency_p50_ms']:.2f}/"
+            f"{snapshot['latency_p95_ms']:.2f}/"
+            f"{snapshot['latency_max_ms']:.2f}ms "
+            f"qp_fail={snapshot['qp_fail_count']}"
+        )
+        if snapshot["at_endpoint"] and not self._completion_logged:
+            self.get_logger().info(
+                f"TRAJECTORY_COMPLETE: {self._trajectory_duration_s:.1f}s "
+                f"tracked in {snapshot['steps']} steps"
+            )
+            self._completion_logged = True
+
+    def _start_tracking_callback(self, request, response):
+        if not self._tracking_started:
+            self._tracking_started = True
+            self._path_state = self._loop.initial_path_state()
+            self.get_logger().info(
+                "TRACKING_STARTED: beginning path tracking from the current "
+                "plant state"
+            )
+            response.success = True
+            response.message = "TRACKING_STARTED"
+        else:
+            response.success = True
+            response.message = "ALREADY_TRACKING"
+        return response
 
     def write_perf_report(self) -> None:
         """Write the M10 performance evidence file (p95 step latency)."""

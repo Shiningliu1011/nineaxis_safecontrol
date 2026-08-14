@@ -44,4 +44,7 @@ transition_planning_server:
     # Must be one of: plan_only, joint_state_replay, moveit_execute
     transition_result_mode: joint_state_replay
     replay_rate_hz: 30.0
-
+    # Full OSCBF flow: the replay also drives the actuator plant, and the
+    # controller is told to start tracking once the transition completes.
+    oscbf_command_topic: /oscbf_command
+    notify_oscbf_start: true

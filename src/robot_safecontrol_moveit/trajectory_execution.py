@@ -106,8 +106,11 @@ class TrajectoryExecutor:
         topic: str = "/joint_states",
         rate_hz: float = 30.0,
         switch_viewer_to_tracking: bool = False,
+        command_topic: str | None = None,
     ) -> ExecutionResult:
-        """Publish trajectory points directly for visualization.
+        """Publish trajectory points for visualization and, optionally, as
+        actuator commands on ``command_topic`` (the OSCBF plant follows the
+        same replayed transition before the controller takes over).
 
         When *switch_viewer_to_tracking* is True, the Viewer mode is switched
         BEFORE any replay publisher is created.  Failure to switch raises
@@ -125,6 +128,11 @@ class TrajectoryExecutor:
         pub = self._node.create_publisher(
             JointState, topic, qos_profile_sensor_data
         )
+        command_pub = None
+        if command_topic:
+            command_pub = self._node.create_publisher(
+                JointState, command_topic, qos_profile_sensor_data
+            )
         sleep(0.3)
 
         self._node.get_logger().info(
@@ -140,6 +148,8 @@ class TrajectoryExecutor:
                 msg.name = list(trajectory.joint_names)
                 msg.position = [float(v) for v in point.positions]
                 pub.publish(msg)
+                if command_pub is not None:
+                    command_pub.publish(msg)
                 if index % 10 == 0 or index == len(trajectory.points) - 1:
                     self._node.get_logger().info(
                         f"  Point {index + 1}/{len(trajectory.points)}"
@@ -148,6 +158,8 @@ class TrajectoryExecutor:
         finally:
             self._node.get_logger().info("Replay complete.")
             self._node.destroy_publisher(pub)
+            if command_pub is not None:
+                self._node.destroy_publisher(command_pub)
             if broadcaster_was_active:
                 self._switch_broadcaster(activate=True)
 

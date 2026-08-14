@@ -99,6 +99,31 @@ def _format_result(error_code: str, trajectory_points: int, planning_time_s: flo
     return "|".join(parts)
 
 
+def notify_oscbf_start(
+    node: Node,
+    service_name: str,
+    *,
+    timeout_s: float = 2.0,
+) -> str:
+    """Tell the OSCBF controller to begin tracking; return its response code."""
+    client = node.create_client(Trigger, service_name)
+    try:
+        if not client.wait_for_service(timeout_sec=timeout_s):
+            return "START_SERVICE_UNAVAILABLE"
+        future = client.call_async(Trigger.Request())
+        deadline = monotonic() + timeout_s
+        while not future.done() and monotonic() < deadline:
+            sleep(0.01)
+        if not future.done():
+            return "START_SERVICE_TIMEOUT"
+        result = future.result()
+        if result is not None and result.success:
+            return result.message
+        return "START_SERVICE_FAILED"
+    finally:
+        node.destroy_client(client)
+
+
 # ---------------------------------------------------------------------------
 # Planning server node
 # ---------------------------------------------------------------------------
@@ -198,6 +223,11 @@ class TransitionPlanningServer(Node):
         self.declare_parameter("transition_result_mode", "plan_only")
         self.declare_parameter("replay_joint_state_topic", "/mujoco_joint_states")
         self.declare_parameter("replay_rate_hz", 30.0)
+        self.declare_parameter("oscbf_command_topic", "")
+        self.declare_parameter("notify_oscbf_start", False)
+        self.declare_parameter(
+            "oscbf_start_service", "/oscbf_controller/start_tracking"
+        )
         self.declare_parameter("orientation_xyzw", [0.0, 0.0, 0.0, 1.0])
         self.declare_parameter("max_joint_delta", 0.15)
         self.declare_parameter("ik_service_timeout_s", 2.0)
@@ -392,11 +422,15 @@ class TransitionPlanningServer(Node):
             # Switch Viewer to tracking mode (Issue #7: fail on switch error).
             self.get_logger().info("Switching Viewer to ROS tracking for replay...")
             try:
+                command_topic = (
+                    str(self.get_parameter("oscbf_command_topic").value) or None
+                )
                 self._executor.replay(
                     transition,
                     topic=str(self.get_parameter("replay_joint_state_topic").value),
                     rate_hz=float(self.get_parameter("replay_rate_hz").value),
                     switch_viewer_to_tracking=True,
+                    command_topic=command_topic,
                 )
             except ExecutionError as e:
                 error_code = str(e).split(":", 1)[0]
@@ -407,6 +441,12 @@ class TransitionPlanningServer(Node):
                     f"detail={e}",
                 )
             self.get_logger().info("TRANSITION_REPLAYED")
+            if bool(self.get_parameter("notify_oscbf_start").value):
+                code = notify_oscbf_start(
+                    self,
+                    str(self.get_parameter("oscbf_start_service").value),
+                )
+                self.get_logger().info(f"OSCBF_START_NOTIFY_RESULT={code}")
             return _format_result("TRANSITION_REPLAYED", len(transition.points), elapsed)
 
         if mode == "moveit_execute":

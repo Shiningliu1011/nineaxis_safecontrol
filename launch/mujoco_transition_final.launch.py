@@ -45,6 +45,18 @@ def generate_launch_description() -> LaunchDescription:
             # The OSCBF controller closes the loop on the MuJoCo joint-state
             # stream; disable it only for MoveIt-only demos or CI.
             DeclareLaunchArgument("start_oscbf_controller", default_value="true"),
+            # Jerk-limited actuator plant (closed-loop OSCBF flow).  Off for
+            # the interactive M/T MoveIt demo, where manual mode owns the
+            # joint-state stream.
+            DeclareLaunchArgument("start_oscbf_plant", default_value="false"),
+            # With the plant on, the controller must wait for the transition
+            # replay to finish before it takes over the command stream.
+            DeclareLaunchArgument("oscbf_wait_for_start", default_value="false"),
+            # In the full OSCBF flow the plant owns /mujoco_joint_states, so
+            # the replayed transition becomes a display-only stream there.
+            DeclareLaunchArgument(
+                "transition_replay_topic", default_value="/mujoco_joint_states"
+            ),
             # Log startup info.
             LogInfo(
                 msg=f"Starting unified MoveIt transition demo. "
@@ -97,7 +109,13 @@ def generate_launch_description() -> LaunchDescription:
                 executable="transition_planning_server",
                 name="transition_planning_server",
                 output="screen",
-                parameters=[runtime_yaml],
+                parameters=[
+                    runtime_yaml,
+                    {
+                        "replay_joint_state_topic":
+                            LaunchConfiguration("transition_replay_topic"),
+                    },
+                ],
                 # pymoveit2 creates its state monitor on the hosting node;
                 # keep that internal subscription on the same MuJoCo stream.
                 remappings=[
@@ -118,6 +136,22 @@ def generate_launch_description() -> LaunchDescription:
                 ),
                 parameters=[
                     str(share_dir / "config" / "oscbf_controller.yaml"),
+                    {
+                        "wait_for_start":
+                            LaunchConfiguration("oscbf_wait_for_start"),
+                    },
+                ],
+            ),
+
+            # 4b. Jerk-limited actuator stand-in for the closed-loop demo.
+            Node(
+                package="robot_safecontrol_moveit",
+                executable="oscbf_plant",
+                name="oscbf_plant",
+                output="screen",
+                condition=IfCondition(LaunchConfiguration("start_oscbf_plant")),
+                parameters=[
+                    str(share_dir / "config" / "oscbf_plant.yaml"),
                 ],
             ),
 
