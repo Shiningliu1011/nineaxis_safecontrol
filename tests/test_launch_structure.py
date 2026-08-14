@@ -191,6 +191,10 @@ class TestFinalLaunchDescription(unittest.TestCase):
         self.assertEqual(arguments["oscbf_wait_for_start"], "false")
         self.assertIn("transition_replay_topic", arguments)
         self.assertEqual(arguments["transition_replay_topic"], "/mujoco_joint_states")
+        self.assertIn("oscbf_randomize_start", arguments)
+        self.assertEqual(arguments["oscbf_randomize_start"], "false")
+        self.assertIn("auto_plan_once", arguments)
+        self.assertEqual(arguments["auto_plan_once"], "true")
 
     def test_move_group_rsp_and_server_share_mujoco_joint_state_remap(self) -> None:
         description = self._description()

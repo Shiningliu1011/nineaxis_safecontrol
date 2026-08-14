@@ -101,3 +101,23 @@ def test_plant_publishes_continuously_without_command(plant_fixture):
     assert len(received) > 50, (
         f"plant did not publish continuously: {len(received)} messages in 2s"
     )
+
+
+def test_randomized_start_and_resample_stay_within_limits(plant_fixture):
+    from std_srvs.srv import Trigger
+
+    node = plant_fixture["node"]
+    node._start_rng = np.random.default_rng(7)
+    margin = 0.05
+    first = node._sample_start_pose()
+    assert np.all(first >= node._q_min + margin - 1e-12)
+    assert np.all(first <= node._q_max - margin + 1e-12)
+
+    response = Trigger.Response()
+    node._randomize_callback(Trigger.Request(), response)
+    assert response.success
+    assert np.any(np.abs(node.state - first) > 1e-6), (
+        "randomize service must resample a different pose"
+    )
+    assert np.all(node.state >= node._q_min + margin - 1e-12)
+    assert np.all(node.state <= node._q_max - margin + 1e-12)

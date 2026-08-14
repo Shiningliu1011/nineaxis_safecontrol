@@ -15,6 +15,102 @@ if str(_src) not in sys.path:
     sys.path.insert(0, str(_src))
 
 
+class _Param:
+    def __init__(self, value):
+        self.value = value
+
+
+class _FakeLogger:
+    def __init__(self, lines):
+        self._lines = lines
+
+    def info(self, message):
+        self._lines.append(("info", message))
+
+    def warn(self, message):
+        self._lines.append(("warn", message))
+
+    def error(self, message):
+        self._lines.append(("error", message))
+
+
+class _AutoPlanServer:
+    """Minimal harness for the auto-plan orchestration logic."""
+
+    def __init__(self, attempts: int, succeed_after: int):
+        self._planning = False
+        self._auto_plan_done = False
+        self._auto_plan_attempt = 0
+        self._calls = 0
+        self._succeed_after = succeed_after
+        self._params = {
+            "auto_plan_attempts": _Param(attempts),
+            "oscbf_plant_randomize_service": _Param("/oscbf_plant/randomize"),
+        }
+        self._logs = []
+        self._logger = _FakeLogger(self._logs)
+
+    def get_parameter(self, name):
+        return self._params[name]
+
+    def get_logger(self):
+        return self._logger
+
+    def _plan_callback(self, request, response):
+        self._calls += 1
+        response.success = self._calls >= self._succeed_after
+        response.message = "TRANSITION_REPLAYED" if response.success else "START_STATE_IN_COLLISION"
+
+    def _randomize_plant_start(self):
+        return "RANDOMIZED"
+
+    def _check_moveit_services(self):
+        return True, ""
+
+    def _oscbf_start_service_ready(self):
+        return True
+
+
+class _SettleServer:
+    """Harness for the plant-settle wait before the tracking handoff."""
+
+    def __init__(self, deliver_state: bool):
+        from sensor_msgs.msg import JointState
+        from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
+
+        self._joint_names = tuple(f"J{i}" for i in range(1, 10))
+        self._deliver_state = deliver_state
+        self._logs = []
+        self._logger = _FakeLogger(self._logs)
+        self._subscription_cb = None
+
+        self.transition = JointTrajectory()
+        self.transition.joint_names = list(self._joint_names)
+        point = JointTrajectoryPoint()
+        point.positions = [0.25] * 9
+        self.transition.points.append(point)
+        self.message = JointState()
+        self.message.name = list(self._joint_names)
+        self.message.position = [0.25] * 9
+
+    def get_parameter(self, name):
+        return _Param("/mujoco_joint_states")
+
+    def get_logger(self):
+        return self._logger
+
+    def create_subscription(self, message_type, topic, callback, qos_profile):
+        self._subscription_cb = callback
+        return object()
+
+    def destroy_subscription(self, subscription):
+        pass
+
+    def deliver(self):
+        if self._deliver_state:
+            self._subscription_cb(self.message)
+
+
 class TestSuccessCodes(unittest.TestCase):
     """Issue #6: all success codes recognised."""
 
@@ -43,6 +139,90 @@ class TestSuccessCodes(unittest.TestCase):
     def test_success_check(self):
         code = "TRANSITION_REPLAYED"
         self.assertTrue(code in self.SUCCESS_CODES)
+
+
+class TestAutoPlanOrchestration(unittest.TestCase):
+    """Autonomous transition: plan once, retry with a resampled start."""
+
+    @staticmethod
+    def _tick(server):
+        from robot_safecontrol_moveit.transition_planning_server import (
+            TransitionPlanningServer,
+        )
+
+        TransitionPlanningServer._auto_plan_tick(server)
+
+    def test_auto_plan_succeeds_on_first_attempt(self):
+        server = _AutoPlanServer(attempts=3, succeed_after=1)
+        self._tick(server)
+        self.assertTrue(server._auto_plan_done)
+        self.assertEqual(server._auto_plan_attempt, 1)
+        self.assertEqual(server._calls, 1)
+        self.assertIn(
+            ("info", "AUTO_PLAN_SUCCEEDED (attempt 1)"),
+            server._logs,
+        )
+
+    def test_auto_plan_retries_then_reports_failure(self):
+        server = _AutoPlanServer(attempts=2, succeed_after=99)
+        self._tick(server)
+        self.assertFalse(server._auto_plan_done)
+        self._tick(server)
+        self.assertTrue(server._auto_plan_done)
+        self.assertEqual(server._calls, 2)
+        self.assertTrue(
+            any(
+                level == "warn" and "AUTO_PLAN_RETRY 1/2" in message
+                for level, message in server._logs
+            )
+        )
+        self.assertTrue(
+            any(
+                level == "error" and "AUTO_PLAN_FAILED after 2 attempts" in message
+                for level, message in server._logs
+            )
+        )
+
+
+class TestPlantSettleBeforeHandoff(unittest.TestCase):
+    @staticmethod
+    def _call(server, timeout_s):
+        from robot_safecontrol_moveit.transition_planning_server import (
+            TransitionPlanningServer,
+        )
+
+        TransitionPlanningServer._wait_for_plant_settle(
+            server, server.transition, timeout_s=timeout_s, tolerance=0.01
+        )
+
+    def test_settle_returns_when_plant_converges(self):
+        import threading
+        import time
+
+        server = _SettleServer(deliver_state=True)
+        thread = threading.Thread(
+            target=lambda: (time.sleep(0.1), server.deliver()),
+            daemon=True,
+        )
+        thread.start()
+        self._call(server, timeout_s=2.0)
+        thread.join(timeout=1.0)
+        self.assertTrue(
+            any(
+                level == "info" and "PLANT_SETTLED" in message
+                for level, message in server._logs
+            )
+        )
+
+    def test_settle_times_out_gracefully(self):
+        server = _SettleServer(deliver_state=False)
+        self._call(server, timeout_s=0.2)
+        self.assertTrue(
+            any(
+                level == "warn" and "PLANT_SETTLE_TIMEOUT" in message
+                for level, message in server._logs
+            )
+        )
 
 
 class TestResultModeValidation(unittest.TestCase):

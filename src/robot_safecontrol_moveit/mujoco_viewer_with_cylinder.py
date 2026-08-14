@@ -53,8 +53,18 @@ class TrackingCylinderSpec:
 class MuJoCoJointStateViewer(Node):
     """A passive MuJoCo view of the project arm driven by ``/joint_states``."""
 
-    def __init__(self) -> None:
-        super().__init__("mujoco_joint_state_viewer")
+    def __init__(
+        self,
+        *,
+        node_name: str = "mujoco_joint_state_viewer",
+        parameter_overrides=None,
+        context=None,
+    ) -> None:
+        super().__init__(
+            node_name,
+            context=context,
+            parameter_overrides=parameter_overrides,
+        )
         self._declare_parameters()
 
         joint_names = tuple(str(name) for name in self.get_parameter("joint_names").value)
@@ -130,22 +140,6 @@ class MuJoCoJointStateViewer(Node):
         self._joint_limits = self._read_joint_limits(joint_names)
         self._latest_positions: dict[str, float] = {}
         self._received_joint_state = False
-        self._manual_mode = False
-        self.selected_joint: int = -1  # -1 = none selected
-
-        # Create the manual-joint-state publisher at init time (never lazily).
-        manual_topic = str(self.get_parameter("manual_joint_state_topic").value)
-        self._manual_pose_pub = self.create_publisher(
-            JointState, manual_topic, qos_profile_sensor_data
-        )
-        self._manual_publish_rate_hz = float(
-            self.get_parameter("manual_joint_state_publish_rate_hz").value
-        )
-        if self._manual_publish_rate_hz <= 0.0:
-            raise ValueError(
-                "manual_joint_state_publish_rate_hz must be positive"
-            )
-        self._manual_publish_timer = None  # created when entering manual mode
 
         topic = str(self.get_parameter("joint_state_topic").value)
         self.create_subscription(
@@ -154,22 +148,6 @@ class MuJoCoJointStateViewer(Node):
             self._joint_state_callback,
             qos_profile_sensor_data,
         )
-        # Viewer mode-control service so plan_transition can switch the
-        # Viewer to ROS-tracking mode before replay.
-        from std_srvs.srv import SetBool
-
-        self._mode_service = self.create_service(
-            SetBool, "set_mujoco_manual_mode", self._mode_service_callback
-        )
-
-        # Transition planning client (T key triggers /plan_transition_once).
-        from std_srvs.srv import Trigger
-
-        self._transition_client = self.create_client(
-            Trigger, "/plan_transition_once"
-        )
-        self._transition_future = None
-        self._transition_status: str = ""
 
         self.get_logger().info(
             f"MuJoCo loaded project model {urdf_path} ({self._model.njnt} joints, "
@@ -192,171 +170,13 @@ class MuJoCoJointStateViewer(Node):
 
     def apply_latest_joint_state(self) -> bool:
         """Copy the latest complete joint state to MuJoCo and run forward
-        kinematics.  Skipped when manual mode is active so the user's
-        slider adjustments are not overwritten by ROS."""
+        kinematics.  The viewer is display-only and always mirrors ROS."""
         if not self._received_joint_state:
-            return False
-        if self._manual_mode:
             return False
         for name, qpos_address in self._qpos_addresses.items():
             self._data.qpos[qpos_address] = self._latest_positions[name]
         mujoco.mj_forward(self._model, self._data)
         return True
-
-    @property
-    def manual_mode(self) -> bool:
-        return self._manual_mode
-
-    def toggle_manual_mode(self) -> bool:
-        """Toggle between ROS-tracking and manual-joint-adjustment mode.
-
-        When switching to manual mode the current ROS joint state is applied
-        once as a starting point.  Returns the new mode (True = manual).
-        """
-        self._manual_mode = not self._manual_mode
-        if self._manual_mode:
-            # Seed the arm at the last known ROS pose.
-            if self._received_joint_state:
-                for name, qpos_address in self._qpos_addresses.items():
-                    self._data.qpos[qpos_address] = self._latest_positions[name]
-                mujoco.mj_forward(self._model, self._data)
-            # Start continuous manual joint state publishing.
-            period_s = 1.0 / self._manual_publish_rate_hz
-            self._manual_publish_timer = self.create_timer(
-                period_s, self._manual_publish_timer_callback
-            )
-            self.get_logger().info(
-                f"Manual mode ON — publishing to "
-                f"{self.get_parameter('manual_joint_state_topic').value} "
-                f"at {self._manual_publish_rate_hz:.1f} Hz; "
-                f"drag joint sliders, press P to publish pose"
-            )
-        else:
-            if self._manual_publish_timer is not None:
-                self.destroy_timer(self._manual_publish_timer)
-                self._manual_publish_timer = None
-            self.get_logger().info("Manual mode OFF — tracking /joint_states")
-        return self._manual_mode
-
-    def _mode_service_callback(self, request, response):
-        """Service callback: set manual mode via ROS (for replay閉環)."""
-        desired = request.data  # True = manual, False = ROS tracking
-        if desired and not self._manual_mode:
-            self.toggle_manual_mode()
-            response.success = True
-            response.message = "Switched to manual mode"
-        elif not desired and self._manual_mode:
-            self.toggle_manual_mode()
-            response.success = True
-            response.message = "Switched to ROS tracking mode"
-        else:
-            response.success = True
-            response.message = f"Already in {'manual' if desired else 'ROS tracking'} mode"
-        return response
-
-    def request_transition_plan(self) -> None:
-        """Send an async planning request to /plan_transition_once.
-
-        Called from the T key handler.  Non-blocking — the result is polled
-        each frame in ``process_transition_result()``.
-        """
-        if not self._manual_mode:
-            self._transition_status = "Enter manual mode before planning"
-            self.get_logger().warning(self._transition_status)
-            return
-
-        if self._transition_future is not None and not self._transition_future.done():
-            self._transition_status = "Planning already running"
-            self.get_logger().warning(self._transition_status)
-            return
-
-        # Force-publish latest pose so the server reads fresh data.
-        self.publish_current_qpos()
-
-        if not self._transition_client.service_is_ready():
-            self._transition_status = "Transition planning service unavailable"
-            self.get_logger().error(self._transition_status)
-            return
-
-        from std_srvs.srv import Trigger
-        request = Trigger.Request()
-        self._transition_future = self._transition_client.call_async(request)
-        self._transition_status = "TRANSITION_REQUEST_SENT"
-        self.get_logger().info(self._transition_status)
-
-    def process_transition_result(self) -> None:
-        """Check async planning future and update status overlay.
-
-        Called each frame from the main loop (inside viewer.lock).
-        """
-        if self._transition_future is None:
-            return
-        if not self._transition_future.done():
-            return
-
-        result = self._transition_future.result()
-        self._transition_future = None
-        if result is None:
-            self._transition_status = "Planning failed: no response"
-            self.get_logger().error(self._transition_status)
-            return
-
-        if result.success:
-            # Parse error_code from the pipe-delimited message.
-            msg = result.message
-            parts = dict(p.split("=", 1) for p in msg.split("|") if "=" in p)
-            code = parts.get("error_code", "UNKNOWN")
-            pts = parts.get("trajectory_points", "?")
-            t = parts.get("planning_time", "?")
-            self._transition_status = f"{code} ({pts} pts, {t}s)"
-            self.get_logger().info(
-                f"TRANSITION_PLANNED: code={code}, points={pts}, time={t}s"
-            )
-        else:
-            msg = result.message
-            code = msg.split("|")[0].split("=", 1)[-1] if "|" in msg else msg
-            self._transition_status = f"Planning failed: {code}"
-            self.get_logger().error(f"TRANSITION_FAILED: {msg}")
-
-    def publish_current_qpos(self) -> None:
-        """Read the current MuJoCo qpos and force-publish it immediately.
-
-        Call this from the main thread (inside viewer.lock) to snapshot the
-        user's manually-adjusted pose so that ``plan_transition`` /
-        ``use_current_state:=true`` can pick it up.  The continuous timer
-        publishes the same data at the configured rate; this method forces one
-        immediate publish with log output.
-        """
-        self._publish_manual_joint_state(log_values=True)
-
-    def _publish_manual_joint_state(self, *, log_values: bool = False) -> None:
-        """Publish current MuJoCo qpos to the manual joint state topic."""
-        values: list[float] = []
-        for name in self._joint_names:
-            adr = self._qpos_addresses[name]
-            values.append(float(self._data.qpos[adr]))
-        if not all(isfinite(v) for v in values):
-            self.get_logger().warning(
-                "Manual joint state contains non-finite values; skipping publish"
-            )
-            return
-        msg = JointState()
-        msg.header.stamp = self.get_clock().now().to_msg()
-        msg.name = list(self._joint_names)
-        msg.position = values
-        self._manual_pose_pub.publish(msg)
-        self._latest_positions = dict(zip(self._joint_names, values))
-        self._received_joint_state = True
-        if log_values:
-            self.get_logger().info(
-                f"Published manual pose: {[f'{v:.3f}' for v in values]}"
-            )
-
-    def _manual_publish_timer_callback(self) -> None:
-        """Timer callback: continuously publish current MuJoCo qpos."""
-        if not self._manual_mode:
-            return
-        self._publish_manual_joint_state(log_values=False)
 
     def _declare_parameters(self) -> None:
         self.declare_parameter("joint_names", list(DEFAULT_JOINT_NAMES))
@@ -384,10 +204,6 @@ class MuJoCoJointStateViewer(Node):
         # Lift the red display line very slightly above the transparent surface
         # to avoid z-fighting. This changes visualization only, not IK input.
         self.declare_parameter("path_surface_offset_m", 0.002)
-        self.declare_parameter("manual_joint_state_publish_rate_hz", 20.0)
-        self.declare_parameter("manual_joint_state_topic", "/mujoco_joint_states")
-        # Issue #5: t_key_execute_transition / t_key_replay_transition removed.
-        # Planning behaviour is controlled by transition_result_mode on the server.
 
     def _joint_state_callback(self, message: JointState) -> None:
         positions = dict(zip(message.name, message.position))
@@ -452,24 +268,6 @@ class MuJoCoJointStateViewer(Node):
             else:
                 limits[name] = (-float("inf"), float("inf"))
         return limits
-
-    def _clamp_joint(self, name: str, value: float) -> float:
-        """Clamp a joint value to its MuJoCo/URDF limits.
-
-        Logs a message when clamping occurs; never crashes.
-        """
-        low, high = self._joint_limits.get(name, (-float("inf"), float("inf")))
-        clamped = max(low, min(high, value))
-        if not isfinite(clamped):
-            self.get_logger().warning(
-                f"Joint {name}: value {value} clamped to non-finite; using 0.0"
-            )
-            return 0.0
-        if clamped != value:
-            self.get_logger().info(
-                f"Joint {name}: {value:.3f} clamped to [{low:.3f}, {high:.3f}]"
-            )
-        return clamped
 
     @staticmethod
     def _sample_display_path(
@@ -912,134 +710,9 @@ class MuJoCoJointStateViewer(Node):
         return values
 
 
-def _make_key_callback(node: MuJoCoJointStateViewer):
-    """Return a GLFW key callback for manual joint control and planning.
-
-    Keyboard controls
-    -----------------
-    1-9          select joint (J1 … J9)
-    Up / = / +   increase selected joint by 0.05 rad  (0.02 m for J1 prismatic)
-    Down / - / _ decrease selected joint
-    M            toggle Manual / ROS-tracking mode
-    P            force-publish current MuJoCo qpos to manual_joint_state_topic
-    T            request the closed-loop transition plan
-    R            reset selected joint to zero (clamped to limits)
-    Z            reset ALL joints to zero (clamped to limits)
-
-    In manual mode the joint state is published continuously at
-    ``manual_joint_state_publish_rate_hz`` (default 20 Hz).
-    """
-
-    from mujoco.glfw import glfw
-
-    DELTA = 0.05       # rad for revolute joints
-    DELTA_PRISMATIC = 0.02  # m for J1
-
-    def _on_key(keycode: int) -> None:
-        try:
-            if glfw.KEY_1 <= keycode <= glfw.KEY_9:
-                idx = keycode - glfw.KEY_1
-                node.selected_joint = idx
-                name = node._joint_names[idx]
-                val = float(node._data.qpos[node._qpos_addresses[name]])
-                node.get_logger().info(
-                    f"Selected J{idx + 1} (current = {val:.3f})"
-                )
-                return
-
-            if keycode in (glfw.KEY_M,):
-                node.toggle_manual_mode()
-                return
-
-            if keycode in (glfw.KEY_P,):
-                if node.manual_mode:
-                    node.publish_current_qpos()
-                    manual_topic = node.get_parameter(
-                        "manual_joint_state_topic"
-                    ).value
-                    node.get_logger().info(
-                        f"Pose published to {manual_topic}. "
-                        "Press T to request the transition."
-                    )
-                else:
-                    node.get_logger().info(
-                        "Press M first to enter manual mode, then P to publish"
-                    )
-                return
-
-            if keycode in (glfw.KEY_T,):
-                if node.manual_mode:
-                    node.request_transition_plan()
-                else:
-                    node._transition_status = (
-                        "Press M first to enter manual mode"
-                    )
-                    node.get_logger().info(node._transition_status)
-                return
-
-            if keycode in (glfw.KEY_R,):
-                if node.manual_mode and node.selected_joint >= 0:
-                    name = node._joint_names[node.selected_joint]
-                    adr = node._qpos_addresses[name]
-                    node._data.qpos[adr] = node._clamp_joint(name, 0.0)
-                    mujoco.mj_forward(node._model, node._data)
-                    node.get_logger().info(f"Reset J{node.selected_joint + 1} to 0")
-                return
-
-            if keycode in (glfw.KEY_Z,):
-                if node.manual_mode:
-                    for name in node._joint_names:
-                        adr = node._qpos_addresses[name]
-                        node._data.qpos[adr] = node._clamp_joint(name, 0.0)
-                    mujoco.mj_forward(node._model, node._data)
-                    node.get_logger().info("Reset all joints to 0")
-                return
-
-            # Joint adjustment (only in manual mode)
-            if node.manual_mode and node.selected_joint >= 0:
-                delta = (
-                    DELTA_PRISMATIC
-                    if node.selected_joint == 0
-                    else DELTA
-                )
-                name = node._joint_names[node.selected_joint]
-                adr = node._qpos_addresses[name]
-
-                if keycode in (glfw.KEY_UP, glfw.KEY_EQUAL, glfw.KEY_KP_ADD):
-                    new_val = float(node._data.qpos[adr]) + delta
-                    node._data.qpos[adr] = node._clamp_joint(name, new_val)
-                    mujoco.mj_forward(node._model, node._data)
-                    node.get_logger().info(
-                        f"J{node.selected_joint + 1} += {delta:.2f} → "
-                        f"{node._data.qpos[adr]:.3f}"
-                    )
-                elif keycode in (
-                    glfw.KEY_DOWN, glfw.KEY_MINUS, glfw.KEY_KP_SUBTRACT,
-                ):
-                    new_val = float(node._data.qpos[adr]) - delta
-                    node._data.qpos[adr] = node._clamp_joint(name, new_val)
-                    mujoco.mj_forward(node._model, node._data)
-                    node.get_logger().info(
-                        f"J{node.selected_joint + 1} -= {delta:.2f} → "
-                        f"{node._data.qpos[adr]:.3f}"
-                    )
-        except Exception:
-            node.get_logger().error(
-                f"Key callback failed for key {keycode}", exc_info=True
-            )
-
-    return _on_key
-
-
 def _overlay_text(node: MuJoCoJointStateViewer) -> str:
     """Single-line status string rendered in the MuJoCo left panel."""
-    if node.manual_mode:
-        status = node._transition_status or "T = request transition"
-        return (
-            f"MANUAL | {status} | M = tracking"
-        )
-    status = node._transition_status or "Press M, adjust joints, then press T"
-    return f"ROS tracking | {status}"
+    return "ROS tracking (display-only)"
 
 
 def main(args: Sequence[str] | None = None) -> int:
@@ -1052,18 +725,16 @@ def main(args: Sequence[str] | None = None) -> int:
         rate_hz = node.viewer_rate_hz()
         period_s = 1.0 / rate_hz
         node.get_logger().info(
-            "MuJoCo viewer ready. Press M, adjust joints, then press T."
+            "MuJoCo viewer ready (display-only, mirrors ROS joint states)."
         )
-        key_cb = _make_key_callback(node)
         with mujoco.viewer.launch_passive(
-            node.model, node.data, key_callback=key_cb,
+            node.model, node.data,
         ) as viewer:
             while rclpy.ok() and viewer.is_running():
                 frame_start = monotonic()
                 rclpy.spin_once(node, timeout_sec=min(period_s, 0.02))
                 with viewer.lock():
                     node.apply_latest_joint_state()
-                    node.process_transition_result()
                 viewer.sync()
                 remaining_s = period_s - (monotonic() - frame_start)
                 if remaining_s > 0.0:

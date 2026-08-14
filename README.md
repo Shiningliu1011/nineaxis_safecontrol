@@ -65,12 +65,10 @@ python3 src/plan_transition.py
 bash build_aeb_moveit.sh
 source install/setup.bash
 
-# 启动完整闭环：零位 → MoveIt 过渡 → OSCBF 跟踪蝴蝶轨迹（按 T 触发过渡，
-# 回放结束后控制器自动接管 /oscbf_command 并跟踪到轨迹终点）。
+# 启动全自动闭环：机械臂每次从随机工作位姿出发，自动规划无碰撞过渡到
+# 轨迹起点，回放结束后 OSCBF 控制器接管 /oscbf_command 并跟踪蝴蝶轨迹到
+# 终点。全程无需键盘。
 bash run_demo.sh
-
-# 经典 MoveIt 演示（M 进入手动模式，调整关节后按 T 触发过渡规划）：
-MOVEIT_DEMO=1 bash run_demo.sh
 ```
 
 依赖: ROS2 Humble, MoveIt2, pymoveit2

@@ -11,6 +11,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import os
 import numpy as np
 from scipy.spatial import cKDTree
 
@@ -84,3 +85,35 @@ def test_viewer_display_samples_lie_on_controller_path():
     assert float(np.max(distances)) < 1e-3, (
         "viewer display samples drift off the controlled path"
     )
+
+
+def test_viewer_constructs_with_calibrated_path():
+    """Regression gate: the display-only viewer must build without a display.
+
+    This caught a real crash where the calibrated loader imported ``work``
+    before adding ``portable_oscbf`` to ``sys.path``.
+    """
+    import rclpy
+    from rclpy.context import Context
+
+    context = Context()
+    rclpy.init(context=context, domain_id=170 + (os.getpid() % 20))
+    try:
+        from robot_safecontrol_moveit.mujoco_viewer_with_cylinder import (
+            MuJoCoJointStateViewer,
+        )
+
+        node = MuJoCoJointStateViewer(
+            node_name="viewer_construct_probe",
+            context=context,
+            parameter_overrides=[
+                rclpy.parameter.Parameter(
+                    "trajectory_mat", value=str(MAT_PATH)
+                ),
+            ],
+        )
+        assert node.model is not None
+        assert node._received_joint_state is False
+        node.destroy_node()
+    finally:
+        rclpy.shutdown(context=context)

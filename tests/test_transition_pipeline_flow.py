@@ -26,7 +26,6 @@ from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from robot_safecontrol_moveit.continuous_ik import IKServiceUnavailable
 from robot_safecontrol_moveit.motion_planning import StateValidityError
 from robot_safecontrol_moveit.trajectory_execution import (
-    ExecutionError,
     TrajectoryExecutor,
 )
 from robot_safecontrol_moveit.transition_planning_server import (
@@ -306,20 +305,6 @@ def _trajectory(joint_names=("J2", "J1")) -> JointTrajectory:
 
 
 class TestTrajectoryReplay(unittest.TestCase):
-    def test_tracking_switch_failure_happens_before_publisher_creation(self):
-        node = _ReplayNode()
-        executor = TrajectoryExecutor(node, _ReplayMoveIt(), ("J2", "J1"))
-
-        with self.assertRaises(ExecutionError) as raised:
-            executor.replay(_trajectory(), switch_viewer_to_tracking=True)
-
-        self.assertIn("VIEWER_TRACKING_SWITCH_FAILED", str(raised.exception))
-        self.assertEqual(node.events[0], "client:set_mujoco_manual_mode")
-        self.assertFalse(
-            any(event.startswith("publisher:") for event in node.events)
-        )
-        self.assertIsNone(node.publisher)
-
     def test_replay_publishes_points_in_the_trajectory_joint_order(self):
         node = _ReplayNode()
         executor = TrajectoryExecutor(node, _ReplayMoveIt(), ("J2", "J1"))

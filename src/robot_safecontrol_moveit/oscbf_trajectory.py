@@ -52,10 +52,10 @@ def trajectory_to_base_transform(
     """4x4 ``T_traj_to_base`` matching the OSCBF controller exactly."""
     import yaml
 
-    from work.ik_data_loader import reference_trajectory_transform
-
     portable_root = default_portable_root()
     bootstrap_portable(portable_root)
+    from work.ik_data_loader import reference_trajectory_transform
+
     if config_yaml_path is None:
         config_yaml_path = portable_root / "config" / "nineaxis.yaml"
     with open(config_yaml_path, encoding="utf-8") as stream:

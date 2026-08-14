@@ -16,6 +16,7 @@ from __future__ import annotations
 import os
 from math import isfinite
 
+import numpy as np
 import rclpy
 from pathlib import Path
 from time import monotonic, sleep
@@ -186,6 +187,21 @@ class TransitionPlanningServer(Node):
             GetMotionPlan, "plan_kinematic_path"
         )
 
+        # Autonomous experiment mode: plan one transition from the current
+        # (possibly randomised) plant pose with no keyboard interaction.
+        self._auto_plan_attempt = 0
+        self._auto_plan_done = False
+        if bool(self.get_parameter("auto_plan_once").value):
+            # Reentrant group: the auto-plan callback blocks while waiting for
+            # joint states / service replies, and must not stall the default
+            # group's subscription and client callbacks (same pattern as the
+            # /plan_transition_once service).
+            self.create_timer(
+                1.0,
+                self._auto_plan_tick,
+                callback_group=ReentrantCallbackGroup(),
+            )
+
         self.get_logger().info(
             f"TRANSITION_SERVER_STARTED pid={os.getpid()} "
             f"config=mujoco_transition_runtime.yaml"
@@ -194,6 +210,128 @@ class TransitionPlanningServer(Node):
         self.get_logger().info(
             "Transition planning server ready on /plan_transition_once"
         )
+
+    def _auto_plan_tick(self) -> None:
+        """Autonomously trigger one transition plan and retry on failure."""
+        if self._auto_plan_done or self._planning:
+            return
+        # Don't burn attempts on startup races: wait until MoveIt is actually
+        # reachable before counting a plan failure.
+        services_ok, _detail = self._check_moveit_services()
+        if not services_ok:
+            return
+        # The controller only publishes its start service after JIT warm-up
+        # (~2-4 min).  Wait for it so the post-replay handoff cannot be lost.
+        if not self._oscbf_start_service_ready():
+            return
+        self._auto_plan_attempt += 1
+        request = Trigger.Request()
+        response = Trigger.Response()
+        self._plan_callback(request, response)
+        if response.success:
+            self._auto_plan_done = True
+            self.get_logger().info(
+                f"AUTO_PLAN_SUCCEEDED (attempt {self._auto_plan_attempt})"
+            )
+            return
+        attempts = int(self.get_parameter("auto_plan_attempts").value)
+        if self._auto_plan_attempt >= attempts:
+            self._auto_plan_done = True
+            self.get_logger().error(
+                f"AUTO_PLAN_FAILED after {attempts} attempts: "
+                f"{response.message}"
+            )
+            return
+        plant_code = self._randomize_plant_start()
+        self.get_logger().warn(
+            f"AUTO_PLAN_RETRY {self._auto_plan_attempt}/{attempts}: "
+            f"{response.message}; plant={plant_code}"
+        )
+
+    def _oscbf_start_service_ready(self) -> bool:
+        """True when the controller's start service is discoverable."""
+        if not bool(self.get_parameter("notify_oscbf_start").value):
+            return True
+        service = str(self.get_parameter("oscbf_start_service").value)
+        client = self.create_client(Trigger, service)
+        try:
+            return client.service_is_ready()
+        finally:
+            self.destroy_client(client)
+
+    def _randomize_plant_start(self) -> str:
+        """Ask the plant to resample its start pose for the next attempt."""
+        service = str(
+            self.get_parameter("oscbf_plant_randomize_service").value
+        )
+        client = self.create_client(Trigger, service)
+        try:
+            if not client.wait_for_service(timeout_sec=2.0):
+                return "PLANT_RANDOMIZE_UNAVAILABLE"
+            future = client.call_async(Trigger.Request())
+            deadline = monotonic() + 2.0
+            while not future.done() and monotonic() < deadline:
+                sleep(0.01)
+            if not future.done():
+                return "PLANT_RANDOMIZE_TIMEOUT"
+            result = future.result()
+            if result is not None and result.success:
+                return result.message
+            return "PLANT_RANDOMIZE_FAILED"
+        finally:
+            self.destroy_client(client)
+
+    def _wait_for_plant_settle(
+        self,
+        transition,
+        *,
+        timeout_s: float = 5.0,
+        tolerance: float = 0.01,
+    ) -> None:
+        """Wait until the plant converges to the final replayed waypoint.
+
+        The actuator plant follows commands with a first-order lag, so
+        notifying the controller immediately after the last replay point
+        hands it a plant state that is still tens of centimetres short of the
+        path start.  That transient previously drove the null-space policy
+        into a self-collision barrier and stalled tracking.
+        """
+        from threading import Event
+
+        target = np.asarray(transition.points[-1].positions, dtype=float)
+        names_set = set(self._joint_names)
+        latest = []
+        received = Event()
+
+        def _cb(message: JointState) -> None:
+            if names_set.issubset(message.name):
+                positions = dict(zip(message.name, message.position))
+                latest.append(np.asarray(
+                    [positions[name] for name in self._joint_names],
+                    dtype=float,
+                ))
+                received.set()
+
+        topic = str(self.get_parameter("joint_state_topic").value)
+        sub = self.create_subscription(
+            JointState, topic, _cb, qos_profile_sensor_data
+        )
+        try:
+            deadline = monotonic() + timeout_s
+            while monotonic() < deadline:
+                received.wait(0.05)
+                received.clear()
+                if latest and np.max(np.abs(latest[-1] - target)) < tolerance:
+                    self.get_logger().info(
+                        "PLANT_SETTLED: "
+                        f"max|q-target|={float(np.max(np.abs(latest[-1] - target))):.4f}"
+                    )
+                    return
+            self.get_logger().warn(
+                "PLANT_SETTLE_TIMEOUT: starting tracking anyway"
+            )
+        finally:
+            self.destroy_subscription(sub)
 
     def _declare_parameters(self) -> None:
         self.declare_parameter("joint_names", list(DEFAULT_JOINT_NAMES))
@@ -227,6 +365,11 @@ class TransitionPlanningServer(Node):
         self.declare_parameter("notify_oscbf_start", False)
         self.declare_parameter(
             "oscbf_start_service", "/oscbf_controller/start_tracking"
+        )
+        self.declare_parameter("auto_plan_once", False)
+        self.declare_parameter("auto_plan_attempts", 5)
+        self.declare_parameter(
+            "oscbf_plant_randomize_service", "/oscbf_plant/randomize"
         )
         self.declare_parameter("orientation_xyzw", [0.0, 0.0, 0.0, 1.0])
         self.declare_parameter("max_joint_delta", 0.15)
@@ -429,7 +572,6 @@ class TransitionPlanningServer(Node):
                     transition,
                     topic=str(self.get_parameter("replay_joint_state_topic").value),
                     rate_hz=float(self.get_parameter("replay_rate_hz").value),
-                    switch_viewer_to_tracking=True,
                     command_topic=command_topic,
                 )
             except ExecutionError as e:
@@ -442,6 +584,7 @@ class TransitionPlanningServer(Node):
                 )
             self.get_logger().info("TRANSITION_REPLAYED")
             if bool(self.get_parameter("notify_oscbf_start").value):
+                self._wait_for_plant_settle(transition)
                 code = notify_oscbf_start(
                     self,
                     str(self.get_parameter("oscbf_start_service").value),

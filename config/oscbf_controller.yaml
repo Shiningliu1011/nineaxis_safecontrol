@@ -26,6 +26,7 @@
     enable_x64: true
     solver_tol: 0.001
     use_nullspace_policy: true
+    reference_lead_m: 0.005
     wait_for_start: false
     telemetry_period_s: 1.0
     loopback_guard_epsilon: 1.0e-9

@@ -9,3 +9,6 @@
     position_gain: 80.0
     portable_oscbf_root: ""        # default: <share>/portable_oscbf
     start_position: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    randomize_start: false         # true: sample a random workspace pose
+    start_seed: 0
+    start_margin: 0.05
