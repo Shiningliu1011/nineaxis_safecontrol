@@ -37,6 +37,19 @@ setup(
             f"share/{package_name}/models/ninezzhou_moveit_config/config",
             _glob_models("ninezzhou_moveit_config/config/*"),
         ),
+        # Portable OSCBF control core shipped for the oscbf_controller node.
+        (
+            f"share/{package_name}/portable_oscbf/work",
+            glob("portable_oscbf/work/*.py"),
+        ),
+        (
+            f"share/{package_name}/portable_oscbf/config",
+            glob("portable_oscbf/config/*.yaml"),
+        ),
+        (
+            f"share/{package_name}/portable_oscbf/vendor/dpax/dpax",
+            glob("portable_oscbf/vendor/dpax/dpax/*.py"),
+        ),
     ],
     install_requires=["setuptools"],
     tests_require=["pytest"],
@@ -53,6 +66,7 @@ setup(
             "transition_planning_server = robot_safecontrol_moveit.transition_planning_server:main",
             "perception_bridge = robot_safecontrol_moveit.perception_bridge:main",
             "perception_demo = robot_safecontrol_moveit.perception_demo:main",
+            "oscbf_controller = robot_safecontrol_moveit.oscbf_controller:main",
         ],
     },
 )

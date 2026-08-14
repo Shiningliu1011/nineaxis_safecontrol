@@ -145,6 +145,16 @@ class TestFinalLaunchDescription(unittest.TestCase):
             ),
             1,
         )
+        self.assertEqual(
+            identities.count(
+                (
+                    "robot_safecontrol_moveit",
+                    "oscbf_controller",
+                    "oscbf_controller",
+                )
+            ),
+            1,
+        )
         self.assertNotIn(
             ("robot_safecontrol_moveit", "plan_transition", "plan_transition"),
             identities,
@@ -155,6 +165,16 @@ class TestFinalLaunchDescription(unittest.TestCase):
                 for action in description.entities
             )
         )
+
+    def test_start_oscbf_controller_argument_defaults_to_true(self) -> None:
+        description = self._description()
+        arguments = {
+            action.name: _render(action.default_value)
+            for action in description.entities
+            if hasattr(action, "name") and hasattr(action, "default_value")
+        }
+        self.assertIn("start_oscbf_controller", arguments)
+        self.assertEqual(arguments["start_oscbf_controller"], "true")
 
     def test_move_group_rsp_and_server_share_mujoco_joint_state_remap(self) -> None:
         description = self._description()

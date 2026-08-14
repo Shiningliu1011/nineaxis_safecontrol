@@ -401,7 +401,7 @@ QP 编码:  G·u ≤ α·h + dh/dt        (G_row = -∇hᵀ)
 |------|-----|------|
 | `projection_half_window_segments` | 96 | 弧长投影半窗 |
 | `max_projection_speed_m_s` | 0.12 | 投影最大速度 |
-| `reference_lead_m` | 1e-4 (0.1mm) | 参考超前量 |
+| `reference_lead_m` | 1e-5 (0.01mm) | 参考超前量（投影后积分修正后，离散时序滞后已消除，0.01mm 足以让参考点略超前于投影并低于 0.1mm 验收门） |
 | `cross_track_stop_m` | 1e-3 | 横向误差停车阈值 |
 | `endpoint_braking_deceleration_m_s2` | 0.05 | 终点虚拟制动 |
 | `maximum_tool_axis_speed_rad_s` | 0.15 | 工具轴角速度上限（防腕部反向点跳变） |

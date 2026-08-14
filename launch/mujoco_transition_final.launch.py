@@ -42,6 +42,9 @@ def generate_launch_description() -> LaunchDescription:
             # Defaults to the full interactive demo. The opt-out exists only
             # for headless launch tests; users need not pass this argument.
             DeclareLaunchArgument("start_viewer", default_value="true"),
+            # The OSCBF controller closes the loop on the MuJoCo joint-state
+            # stream; disable it only for MoveIt-only demos or CI.
+            DeclareLaunchArgument("start_oscbf_controller", default_value="true"),
             # Log startup info.
             LogInfo(
                 msg=f"Starting unified MoveIt transition demo. "
@@ -99,6 +102,22 @@ def generate_launch_description() -> LaunchDescription:
                 # keep that internal subscription on the same MuJoCo stream.
                 remappings=[
                     ("joint_states", "/mujoco_joint_states"),
+                ],
+            ),
+
+            # 4. OSCBF safe controller (JAX kernel, no MoveIt dependency).
+            #    It consumes /mujoco_joint_states and publishes the safe
+            #    state back onto the same stream after its JIT warm-up.
+            Node(
+                package="robot_safecontrol_moveit",
+                executable="oscbf_controller",
+                name="oscbf_controller",
+                output="screen",
+                condition=IfCondition(
+                    LaunchConfiguration("start_oscbf_controller")
+                ),
+                parameters=[
+                    str(share_dir / "config" / "oscbf_controller.yaml"),
                 ],
             ),
 

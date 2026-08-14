@@ -1,0 +1,30 @@
+# oscbf_controller node parameters (M10).
+#
+# All values shown here are also declared as node defaults, so the node can
+# start without this file; launch supplies overrides such as the installed
+# portable_oscbf location.  The trajectory path and portable config default
+# to the package share directory at runtime.
+/**:
+  ros__parameters:
+    dt: 0.002
+    publish_frequency_hz: 100.0
+    trajectory_mat: ""                     # default: <share>/data/nurbs/ik_input.mat
+    portable_oscbf_root: ""                # default: <share>/portable_oscbf
+    portable_config_yaml: ""               # default: <portable_oscbf_root>/config/nineaxis.yaml
+    joint_names: ["J1", "J2", "J3", "J4", "J5", "J6", "J7", "J8", "J9"]
+    joint_state_topic: /mujoco_joint_states
+    publish_joint_state_topic: /mujoco_joint_states
+    kp_pos: 60.0
+    kp_orient: 10.0
+    kp_joint: 0.45
+    nullspace_speed_limit: 0.18
+    damping: 0.001
+    w_pos: 20.0
+    w_orient: 10.0
+    w_joint: 0.1
+    temporal_lambda: 0.2
+    enable_x64: true
+    solver_tol: 0.001
+    use_nullspace_policy: true
+    loopback_guard_epsilon: 1.0e-9
+    perf_report_path: output/oscbf_m10_perf.md

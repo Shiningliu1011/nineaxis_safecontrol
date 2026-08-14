@@ -20,6 +20,7 @@ pkill -INT -f mujoco_joint_state_viewer 2>/dev/null || true
 pkill -INT -f move_group 2>/dev/null || true
 pkill -INT -f robot_state_publisher 2>/dev/null || true
 pkill -INT -f mujoco_viewer 2>/dev/null || true
+pkill -INT -f oscbf_controller 2>/dev/null || true
 sleep 2
 echo "  清理完成"
 
@@ -45,9 +46,12 @@ echo "  OK"
 
 echo ""
 echo "=== 启动完整系统 ==="
-echo "  move_group(AEB-RRT*) + robot_state_publisher + planning server + Viewer"
+echo "  move_group(AEB-RRT*) + robot_state_publisher + planning server"
+echo "  + OSCBF controller + Viewer"
 echo ""
 echo "  按 M → 调整关节 → 按 T 触发规划"
+echo "  OSCBF 控制器默认开启：JAX 预热完成后接管 /mujoco_joint_states 安全状态；"
+echo "  用 start_oscbf_controller:=false 可只跑 MoveIt 规划链路。"
 echo ""
 
 exec ros2 launch robot_safecontrol_moveit mujoco_transition_final.launch.py
