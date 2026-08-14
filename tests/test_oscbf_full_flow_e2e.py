@@ -196,6 +196,23 @@ def test_zero_transition_then_tracking(closed_loop):
         assert np.linalg.norm(plant.state - before) > 0.005, (
             "plant did not track after the handoff"
         )
+        # Regression gate: a perfectly-converged plant publishes exactly the
+        # command state over and over.  There must be no echo filtering on the
+        # state topic (commands and states are separate streams).
+        state_pub = probe.create_publisher(
+            JointState, _STATE_TOPIC, qos_profile_sensor_data
+        )
+        converged = JointState()
+        converged.name = ["J1", "J2", "J3", "J4", "J5", "J6", "J7", "J8", "J9"]
+        converged.position = [float(value) for value in plant.state]
+        steps_before = len(controller._step_durations)
+        deadline = time.monotonic() + 3.0
+        while time.monotonic() < deadline:
+            state_pub.publish(converged)
+            time.sleep(0.02)
+        assert len(controller._step_durations) > steps_before, (
+            "controller stalled on a converged (exact) plant state"
+        )
         client_node.destroy_node()
     finally:
         executor.remove_node(probe)

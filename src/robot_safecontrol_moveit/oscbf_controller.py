@@ -76,7 +76,6 @@ class OscbfController(Node):
         self._validate_parameters()
         self._step_durations: List[float] = []
         self._qp_fail_count = 0
-        self._last_published: Optional[np.ndarray] = None
         self._latest_q: Optional[np.ndarray] = None
         self._received_any_state = False
         self._last_state_time: Optional[float] = None
@@ -159,11 +158,10 @@ class OscbfController(Node):
             "temporal_lambda": 0.2,
             "enable_x64": True,
             "solver_tol": 1e-3,
-            "use_nullspace_policy": True,
+            "use_nullspace_policy": False,
             "reference_lead_m": 0.005,
             "wait_for_start": False,
             "telemetry_period_s": 1.0,
-            "loopback_guard_epsilon": 1e-9,
             "perf_report_path": "output/oscbf_m10_perf.md",
         }
         for name, value in defaults.items():
@@ -311,13 +309,6 @@ class OscbfController(Node):
         positions = self._extract_positions(message)
         if positions is None or not np.all(np.isfinite(positions)):
             return
-        if self._last_published is not None and np.allclose(
-            positions,
-            self._last_published,
-            atol=float(self.get_parameter("loopback_guard_epsilon").value),
-        ):
-            # Our own echo on the shared stream; ignore it.
-            return
         self._received_any_state = True
         self._latest_q = positions
         self._last_state_time = time.monotonic()
@@ -378,7 +369,6 @@ class OscbfController(Node):
         message.name = list(self._joint_names)
         message.position = [float(value) for value in q_next]
         self._publisher.publish(message)
-        self._last_published = q_next
 
     def progress_snapshot(self) -> dict:
         """One-shot progress/latency snapshot for logs, tests and tooling."""
