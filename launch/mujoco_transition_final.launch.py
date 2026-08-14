@@ -57,6 +57,11 @@ def generate_launch_description() -> LaunchDescription:
             DeclareLaunchArgument(
                 "transition_replay_topic", default_value="/mujoco_joint_states"
             ),
+            # Autonomous experiment: the plant samples a random workspace
+            # start pose on every launch.
+            DeclareLaunchArgument("oscbf_randomize_start", default_value="false"),
+            # Trigger the transition plan automatically on startup.
+            DeclareLaunchArgument("auto_plan_once", default_value="true"),
             # Log startup info.
             LogInfo(
                 msg=f"Starting unified MoveIt transition demo. "
@@ -114,6 +119,8 @@ def generate_launch_description() -> LaunchDescription:
                     {
                         "replay_joint_state_topic":
                             LaunchConfiguration("transition_replay_topic"),
+                        "auto_plan_once":
+                            LaunchConfiguration("auto_plan_once"),
                     },
                 ],
                 # pymoveit2 creates its state monitor on the hosting node;
@@ -152,6 +159,10 @@ def generate_launch_description() -> LaunchDescription:
                 condition=IfCondition(LaunchConfiguration("start_oscbf_plant")),
                 parameters=[
                     str(share_dir / "config" / "oscbf_plant.yaml"),
+                    {
+                        "randomize_start":
+                            LaunchConfiguration("oscbf_randomize_start"),
+                    },
                 ],
             ),
 

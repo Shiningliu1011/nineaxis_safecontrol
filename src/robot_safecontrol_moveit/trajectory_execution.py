@@ -12,7 +12,6 @@ from controller_manager_msgs.srv import SwitchController
 from pymoveit2 import MoveIt2, MoveIt2State
 from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import JointState
-from std_srvs.srv import SetBool
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 
@@ -105,22 +104,13 @@ class TrajectoryExecutor:
         *,
         topic: str = "/joint_states",
         rate_hz: float = 30.0,
-        switch_viewer_to_tracking: bool = False,
         command_topic: str | None = None,
     ) -> ExecutionResult:
         """Publish trajectory points for visualization and, optionally, as
         actuator commands on ``command_topic`` (the OSCBF plant follows the
         same replayed transition before the controller takes over).
-
-        When *switch_viewer_to_tracking* is True, the Viewer mode is switched
-        BEFORE any replay publisher is created.  Failure to switch raises
-        ``ExecutionError`` and no trajectory is published (Issue #7).
         """
         self._validate_trajectory(trajectory)
-
-        # Issue #7: switch first, fail before creating publisher.
-        if switch_viewer_to_tracking:
-            self._switch_viewer_to_tracking()  # raises on failure
 
         # Pause the JointStateBroadcaster so it doesn't publish zero positions.
         broadcaster_was_active = self._switch_broadcaster(activate=False)
@@ -164,35 +154,6 @@ class TrajectoryExecutor:
                 self._switch_broadcaster(activate=True)
 
         return ExecutionResult(submitted=True, completed=True, succeeded=True)
-
-    def _switch_viewer_to_tracking(self) -> None:
-        """Switch Viewer to ROS tracking mode. Raises ExecutionError on failure.
-
-        Issue #3: uses non-spin polling.  Issue #7: raises instead of returning False.
-        """
-        client = self._node.create_client(SetBool, "set_mujoco_manual_mode")
-        try:
-            if not client.wait_for_service(timeout_sec=2.0):
-                raise ExecutionError(
-                    "VIEWER_TRACKING_SWITCH_FAILED: /set_mujoco_manual_mode unavailable"
-                )
-            request = SetBool.Request()
-            request.data = False  # False = ROS tracking mode
-            future = client.call_async(request)
-            deadline = monotonic() + 2.0
-            while not future.done() and monotonic() < deadline:
-                sleep(0.01)
-            if not future.done():
-                raise ExecutionError("VIEWER_TRACKING_SWITCH_FAILED: timeout")
-            result = future.result()
-            if result is not None and result.success:
-                self._node.get_logger().info("VIEWER_TRACKING_ENABLED")
-                return
-            raise ExecutionError("VIEWER_TRACKING_SWITCH_FAILED")
-        finally:
-            # A persistent planning server may replay many requests; don't
-            # accumulate short-lived service clients.
-            self._node.destroy_client(client)
 
     def _switch_broadcaster(self, *, activate: bool) -> bool:
         """Activate or deactivate the JointStateBroadcaster (non-spin)."""

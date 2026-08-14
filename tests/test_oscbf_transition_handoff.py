@@ -70,7 +70,6 @@ def test_replay_dual_publishes_state_and_command():
             "trajectory": _trajectory(),
             "topic": "/mujoco_joint_states",
             "rate_hz": 100.0,
-            "switch_viewer_to_tracking": False,
             "command_topic": "/oscbf_command",
         },
         daemon=True,

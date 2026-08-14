@@ -69,15 +69,29 @@ class OscbfPlant(Node):
         self._joint_names = [
             str(name) for name in self.get_parameter("joint_names").value
         ]
+        self._start_rng = np.random.default_rng(
+            int(self.get_parameter("start_seed").value)
+        )
         start = [
             float(value) for value in self.get_parameter("start_position").value
         ]
         if len(start) != 9:
             raise ValueError("start_position must contain exactly 9 values")
-        self._q = np.clip(np.asarray(start, dtype=float), self._q_min, self._q_max)
+        if bool(self.get_parameter("randomize_start").value):
+            self._q = self._sample_start_pose()
+        else:
+            self._q = np.clip(
+                np.asarray(start, dtype=float), self._q_min, self._q_max
+            )
         self._target: Optional[np.ndarray] = None
         self._commands_received = 0
         self._last_command_time = None
+
+        from std_srvs.srv import Trigger
+
+        self._randomize_service = self.create_service(
+            Trigger, "/oscbf_plant/randomize", self._randomize_callback
+        )
 
         self.create_subscription(
             JointState,
@@ -100,8 +114,31 @@ class OscbfPlant(Node):
             "oscbf_plant ready: "
             f"command={self.get_parameter('command_topic').value}, "
             f"state={self.get_parameter('state_topic').value} @ "
-            f"{self._frequency_hz:.1f} Hz"
+            f"{self._frequency_hz:.1f} Hz, start="
+            f"{[round(float(v), 3) for v in self._q]}"
         )
+
+    def _sample_start_pose(self) -> np.ndarray:
+        """Uniformly sample a pose inside the joint limits (margin applied)."""
+        margin = float(self.get_parameter("start_margin").value)
+        lower = self._q_min + margin
+        upper = self._q_max - margin
+        # The persistent generator advances on every sample, so retries land
+        # on different poses instead of repeating the seeded pose.
+        return np.asarray(self._start_rng.uniform(lower, upper), dtype=float)
+
+    def _randomize_callback(self, request, response):
+        self._q = self._sample_start_pose()
+        self._target = None
+        self._driver.reset()
+        response.success = True
+        response.message = "RANDOMIZED: " + ",".join(
+            f"{float(value):.4f}" for value in self._q
+        )
+        self.get_logger().info(
+            f"plant start pose randomised: {[round(float(v), 3) for v in self._q]}"
+        )
+        return response
 
     def _declare_parameters(self) -> Path:
         share_dir = Path()
@@ -122,6 +159,9 @@ class OscbfPlant(Node):
             "position_gain": 80.0,
             "portable_oscbf_root": str(share_dir / "portable_oscbf"),
             "start_position": [0.0] * 9,
+            "randomize_start": False,
+            "start_seed": 0,
+            "start_margin": 0.05,
         }
         for name, value in defaults.items():
             self.declare_parameter(name, value)
@@ -131,6 +171,8 @@ class OscbfPlant(Node):
             raise ValueError("jerk_time must be positive")
         if float(self.get_parameter("position_gain").value) <= 0.0:
             raise ValueError("position_gain must be positive")
+        if float(self.get_parameter("start_margin").value) < 0.0:
+            raise ValueError("start_margin must be non-negative")
         return share_dir
 
     def _extract_positions(self, message: JointState) -> Optional[np.ndarray]:

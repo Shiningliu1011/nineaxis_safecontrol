@@ -1,6 +1,6 @@
 #!/bin/bash
 # ===================================================================
-# 一键启动：MoveIt2 + MuJoCo 查看器 + 过渡规划
+# 一键启动：任意起始位姿 → 自动过渡 → OSCBF 跟踪蝴蝶轨迹
 #
 # 用法:
 #   bash run_demo.sh
@@ -46,21 +46,13 @@ fi
 echo "  OK"
 
 echo ""
-echo "=== 启动系统 ==="
-if [ "${MOVEIT_DEMO:-0}" = "1" ]; then
-  echo "  MoveIt 演示模式：move_group(AEB-RRT*) + Viewer"
-  echo "  按 M → 调整关节 → 按 T 触发过渡规划"
-  echo ""
-  exec ros2 launch robot_safecontrol_moveit mujoco_transition_final.launch.py \
-      start_oscbf_controller:=false start_oscbf_plant:=false
-fi
-
-echo "  全流程模式：零位 → MoveIt 过渡 → OSCBF 跟踪蝴蝶轨迹"
+echo "=== 启动全自动流程 ==="
 echo "  move_group(AEB-RRT*) + 过渡服务器 + 被控对象 + OSCBF 控制器 + Viewer"
-echo "  按 T 触发过渡；过渡回放结束后控制器自动接管并跟踪到轨迹终点。"
-echo "  （回退到经典 M/T 演示：MOVEIT_DEMO=1 bash run_demo.sh）"
+echo "  机械臂每次从随机工作位姿出发，自动规划无碰撞过渡到轨迹起点，"
+echo "  回放完成后 OSCBF 控制器接管并跟踪蝴蝶轨迹到终点。全程无需键盘。"
 echo ""
 
 exec ros2 launch robot_safecontrol_moveit mujoco_transition_final.launch.py \
     start_oscbf_plant:=true oscbf_wait_for_start:=true \
+    oscbf_randomize_start:=true \
     transition_replay_topic:=/transition_replay_viz

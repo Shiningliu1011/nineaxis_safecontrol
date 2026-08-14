@@ -91,7 +91,10 @@ def generate_test_description() -> LaunchDescription:
         [
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(str(_final_launch_path())),
-                launch_arguments={"start_viewer": "false"}.items(),
+                launch_arguments={
+                    "start_viewer": "false",
+                    "auto_plan_once": "false",
+                }.items(),
             ),
             launch_testing.actions.ReadyToTest(),
         ]

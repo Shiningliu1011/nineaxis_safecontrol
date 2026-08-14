@@ -160,6 +160,7 @@ class OscbfController(Node):
             "enable_x64": True,
             "solver_tol": 1e-3,
             "use_nullspace_policy": True,
+            "reference_lead_m": 0.005,
             "wait_for_start": False,
             "telemetry_period_s": 1.0,
             "loopback_guard_epsilon": 1e-9,
@@ -270,7 +271,14 @@ class OscbfController(Node):
             solver_tol=float(self.get_parameter("solver_tol").value),
             nullspace_policy=policy,
         )
-        self._loop.configure_path(geometry, PathFollowingConfig())
+        self._loop.configure_path(
+            geometry,
+            PathFollowingConfig(
+                reference_lead_m=float(
+                    self.get_parameter("reference_lead_m").value
+                )
+            ),
+        )
         self.get_logger().info("Warming up the JAX control kernel ...")
         self._loop.init_cbf()
         self.get_logger().info("JAX control kernel warm-up complete")

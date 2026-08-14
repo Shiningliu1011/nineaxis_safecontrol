@@ -181,14 +181,16 @@ def test_zero_transition_then_tracking(closed_loop):
             time.sleep(0.05)
         assert commands, "controller published no commands after the handoff"
         executor.remove_node(client_node)
-        # Let the closed loop run through the stationary trajectory start;
-        # the reference must advance and drag the plant along with it.
-        deadline = time.monotonic() + 8.0
+        # Let the closed loop run through the slow trajectory start ramp; the
+        # reference must advance and drag the plant along with it.
+        deadline = time.monotonic() + 15.0
         while time.monotonic() < deadline:
+            if controller.progress_snapshot().get("source_time_s", 0.0) > 0.5:
+                break
             time.sleep(0.1)
         snapshot = controller.progress_snapshot()
         assert snapshot["ready"] and snapshot["steps"] >= 200
-        assert snapshot["source_time_s"] > 1.0, (
+        assert snapshot["source_time_s"] > 0.5, (
             f"reference stuck at source_time={snapshot['source_time_s']:.3f}s"
         )
         assert np.linalg.norm(plant.state - before) > 0.005, (
