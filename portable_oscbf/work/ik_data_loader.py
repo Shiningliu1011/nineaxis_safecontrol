@@ -12,7 +12,7 @@ import numpy as np
 from scipy.spatial.transform import Rotation as R, Slerp
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Optional, Sequence, Tuple
 
 
 def reference_trajectory_transform(
@@ -374,6 +374,88 @@ class IKTrajectoryData:
         # whenever the public orientation mode changes.
         self._path_geometry = None
         return self
+
+    def set_surface_normal_orientation(
+        self, axis_direction: Sequence[float],
+        axis_point: Optional[Sequence[float]] = None,
+    ) -> None:
+        """Point the tool X-axis at the cylinder centre along the whole path.
+
+        Frame convention (matches ``compute_surface_normal_orientations``):
+        X = inward radial, perpendicular to the cylinder surface and pointing
+        toward the cylinder axis; Y = cylinder axis; Z = X x Y (tangent).
+        The outward normal is deliberately not used: it points below the
+        reachable workspace of this arm.
+
+        ``axis_point`` is one point on the cylinder axis.  When omitted it is
+        fitted from the trajectory itself (a least-squares circle in the
+        plane normal to ``axis_direction``), which is how the transition
+        planner and the MuJoCo viewer locate the same cylinder.  Assuming the
+        axis passes through the origin gives a wrong inward normal whenever
+        the cylinder centre is offset (the butterfly cylinder is offset by
+        roughly +0.27 m in Z), so callers should normally leave it unset.
+        """
+        axis = np.asarray(axis_direction, dtype=float).ravel()
+        axis_len = float(np.linalg.norm(axis))
+        if axis_len < 1e-12:
+            raise ValueError("axis_direction must be a non-zero 3-vector")
+        axis = axis / axis_len
+        if axis_point is None:
+            centre = self._fit_surface_axis_point(axis)
+        else:
+            centre = np.asarray(axis_point, dtype=float).ravel()
+            if centre.shape != (3,):
+                raise ValueError("axis_point must be a 3-vector")
+
+        frames = np.zeros((self.num_points, 3, 3))
+        for index, point in enumerate(self._pos_world):
+            relative = point - centre
+            axial = axis * float(np.dot(relative, axis))
+            radial = relative - axial
+            radial_len = float(np.linalg.norm(radial))
+            if radial_len < 1e-12:
+                frames[index] = np.eye(3)
+                continue
+            x_axis = -radial / radial_len       # toward the centre line
+            y_axis = axis.copy()                # cylinder axis
+            z_axis = np.cross(x_axis, y_axis)
+            z_axis /= np.linalg.norm(z_axis)
+            y_axis = np.cross(z_axis, x_axis)   # re-orthogonalise
+            frames[index] = np.column_stack((x_axis, y_axis, z_axis))
+
+        self.orientation_mode = "surface_normal"
+        self._R_des_series = frames
+        self._omega_series = self._compute_angular_velocity()
+        self._path_geometry = None
+
+    def _fit_surface_axis_point(self, axis: np.ndarray) -> np.ndarray:
+        """Fit one point on the cylinder axis from the loaded world points.
+
+        Mirrors ``task_target.compute_surface_normal_orientations`` and the
+        MuJoCo viewer's cylinder fit so every consumer agrees on the same
+        cylinder centre.  Returns a point ``c`` such that
+        ``c + t * axis`` is the fitted axis line.
+        """
+        points = np.asarray(self._pos_world, dtype=float)
+        helper = np.array([1.0, 0.0, 0.0])
+        if abs(float(np.dot(helper, axis))) > 0.9:
+            helper = np.array([0.0, 0.0, 1.0])
+        u = np.cross(axis, helper)
+        u /= np.linalg.norm(u)
+        v = np.cross(axis, u)
+        v /= np.linalg.norm(v)
+
+        plane_x = points @ u
+        plane_y = points @ v
+        design = np.column_stack((plane_x, plane_y, np.ones(points.shape[0])))
+        rhs = -(plane_x * plane_x + plane_y * plane_y)
+        coeff, *_ = np.linalg.lstsq(design, rhs, rcond=None)
+        centre_u = -0.5 * coeff[0]
+        centre_v = -0.5 * coeff[1]
+
+        axial_values = points @ axis
+        axial_centre = 0.5 * (float(axial_values.min()) + float(axial_values.max()))
+        return centre_u * u + centre_v * v + axial_centre * axis
 
     def _compute_frenet_frames(self) -> np.ndarray:
         """

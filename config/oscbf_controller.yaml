@@ -25,13 +25,25 @@
     temporal_lambda: 0.2
     enable_x64: true
     solver_tol: 0.001
-    # Deployed default: joint-midpoint null space (validated end-to-end).
+    # Roll-free tool-axis task: track Cartesian position plus the direction of
+    # the tool X axis (pointing at the cylinder centre).  Rotation about the
+    # X axis stays free, which keeps the wrist away from joint-limit corners
+    # on the butterfly loops; a full 6-D pose constraint deadlocks there.
+    task_mode: tool_axis_5d
+    # Null-space posture.  The deployed default keeps the null-space velocity
+    # at zero (q_des tracks the measured state): the 5-D task leaves enough
+    # redundancy that the butterfly can complete without extra reconfiguration.
     # The manipulability-gradient policy (M8) can drive joints toward their
     # limits on the butterfly loops and trip the joint-limit CBF feedrate
     # cap; it remains available as an opt-in pending limit-aware
     # regularisation.
     use_nullspace_policy: false
     reference_lead_m: 0.005
+    orientation_mode: surface_normal
+    cylinder_axis_direction: [0.0, 1.0, 0.0]
+    # One point on the cylinder axis.  Omitted here = fit from the trajectory
+    # itself (same convention as the transition planner and MuJoCo viewer).
+    # To pin an explicit axis point, set e.g. cylinder_center: [-0.0001, 0.0, 1.637]
     wait_for_start: false
     telemetry_period_s: 1.0
     perf_report_path: output/oscbf_m10_perf.md

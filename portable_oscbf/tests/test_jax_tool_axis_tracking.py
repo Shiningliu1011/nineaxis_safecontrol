@@ -5,6 +5,56 @@ from scipy.spatial.transform import Rotation
 
 from work.jax_control_facade import JaxControlLoop
 from work.path_following import PathFollowingConfig, PathGeometry
+from work.tool_axis_task import rotation_error_rotvec, rotation_error_rotvec_jax
+
+
+def test_rotation_error_rotvec_has_no_180_degree_blind_spot():
+    identity = np.eye(3)
+    flipped = np.array([
+        [1.0, 0.0, 0.0],
+        [0.0, -1.0, 0.0],
+        [0.0, 0.0, -1.0],
+    ])  # 180 degrees about world X
+
+    error = rotation_error_rotvec(identity, flipped)
+    assert abs(float(np.linalg.norm(error)) - np.pi) < 1.0e-9, (
+        f"exact 180-degree offset must report pi, got {np.linalg.norm(error)}"
+    )
+    # The legacy cross-sum formula is exactly zero at a half turn, which is
+    # what made a flipped transition handoff invisible to the controller.
+    legacy = -0.5 * (
+        np.cross(identity[:, 0], flipped[:, 0])
+        + np.cross(identity[:, 1], flipped[:, 1])
+        + np.cross(identity[:, 2], flipped[:, 2])
+    )
+    assert float(np.linalg.norm(legacy)) < 1.0e-12
+
+    import jax.numpy as jnp
+
+    jax_error = rotation_error_rotvec_jax(
+        jnp.asarray(identity), jnp.asarray(flipped)
+    )
+    # This test module runs with the default x32 JAX mode.
+    assert abs(float(np.asarray(jnp.linalg.norm(jax_error))) - np.pi) < 1.0e-3
+
+
+def test_rotation_error_rotvec_matches_cross_sum_for_small_angles():
+    import jax.numpy as jnp
+
+    desired = Rotation.from_rotvec(np.array([0.02, -0.01, 0.015])).as_matrix()
+    identity = np.eye(3)
+    exact = rotation_error_rotvec(identity, desired)
+    legacy = -0.5 * (
+        np.cross(identity[:, 0], desired[:, 0])
+        + np.cross(identity[:, 1], desired[:, 1])
+        + np.cross(identity[:, 2], desired[:, 2])
+    )
+    np.testing.assert_allclose(exact, legacy, atol=2.0e-4)
+
+    exact_jax = rotation_error_rotvec_jax(
+        jnp.asarray(identity), jnp.asarray(desired)
+    )
+    np.testing.assert_allclose(np.asarray(exact_jax), exact, atol=1.0e-3)
 
 
 def test_tool_axis_mode_ignores_pure_roll_in_tracking_error_and_nominal_command():

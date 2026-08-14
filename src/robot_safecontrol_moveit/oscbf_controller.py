@@ -158,8 +158,12 @@ class OscbfController(Node):
             "temporal_lambda": 0.2,
             "enable_x64": True,
             "solver_tol": 1e-3,
+            "task_mode": "tool_axis_5d",
             "use_nullspace_policy": False,
             "reference_lead_m": 0.005,
+            "orientation_mode": "surface_normal",
+            "cylinder_axis_direction": [0.0, 1.0, 0.0],
+            "cylinder_center": [],
             "wait_for_start": False,
             "telemetry_period_s": 1.0,
             "perf_report_path": "output/oscbf_m10_perf.md",
@@ -209,6 +213,16 @@ class OscbfController(Node):
             raise ValueError(
                 "joint_names must contain exactly 9 unique joint names"
             )
+        cylinder_center = list(self.get_parameter("cylinder_center").value)
+        if cylinder_center and len(cylinder_center) != 3:
+            raise ValueError(
+                f"cylinder_center must be empty or a 3-vector, got {cylinder_center}"
+            )
+        task_mode = str(self.get_parameter("task_mode").value)
+        if task_mode not in ("pose6d", "tool_axis_5d"):
+            raise ValueError(
+                f"task_mode must be 'pose6d' or 'tool_axis_5d', got {task_mode!r}"
+            )
         trajectory_mat = Path(str(self.get_parameter("trajectory_mat").value))
         if not trajectory_mat.is_file():
             raise FileNotFoundError(
@@ -252,6 +266,23 @@ class OscbfController(Node):
         self._trajectory_duration_s = float(
             trajectory.num_points * trajectory.Ts
         )
+        orientation_mode = str(
+            self.get_parameter("orientation_mode").value
+        )
+        if orientation_mode == "surface_normal":
+            center = list(self.get_parameter("cylinder_center").value)
+            axis_point = (
+                None if len(center) == 0 else center
+            )
+            trajectory.set_surface_normal_orientation(
+                self.get_parameter("cylinder_axis_direction").value,
+                axis_point=axis_point,
+            )
+        elif orientation_mode != "fixed":
+            raise ValueError(
+                "orientation_mode must be 'fixed' or 'surface_normal', "
+                f"got {orientation_mode!r}"
+            )
         geometry = trajectory.path_geometry()
 
         policy = None
@@ -267,6 +298,7 @@ class OscbfController(Node):
             temporal_lambda=float(self.get_parameter("temporal_lambda").value),
             enable_x64=bool(self.get_parameter("enable_x64").value),
             solver_tol=float(self.get_parameter("solver_tol").value),
+            task_mode=str(self.get_parameter("task_mode").value),
             nullspace_policy=policy,
         )
         self._loop.configure_path(
@@ -392,6 +424,9 @@ class OscbfController(Node):
             "tracking_started": self._tracking_started,
             "steps": len(durations),
             "ready": True,
+            "err_6d": np.asarray(result.err_6d, dtype=float),
+            "pos_error_m": float(np.linalg.norm(result.err_6d[:3])),
+            "orient_error_rad": float(np.linalg.norm(result.err_6d[3:])),
             "source_time_s": source_time,
             "trajectory_duration_s": self._trajectory_duration_s,
             "arc_fraction": min(
@@ -429,6 +464,8 @@ class OscbfController(Node):
             f"source_time={snapshot['source_time_s']:.2f}/"
             f"{snapshot['trajectory_duration_s']:.1f}s "
             f"arc={snapshot['arc_fraction']*100:.1f}% "
+            f"pos_err={snapshot['pos_error_m']*1000:.3f}mm "
+            f"orient_err={snapshot['orient_error_rad']*180/np.pi:.4f}deg "
             f"cross_track={snapshot['cross_track_error_m']*1000:.3f}mm "
             f"feedrate={snapshot['feedrate_m_s']:.4f}m/s "
             f"limit={snapshot['limiting_reason_code']} "
