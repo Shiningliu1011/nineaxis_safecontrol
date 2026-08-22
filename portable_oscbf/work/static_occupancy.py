@@ -14,10 +14,7 @@ from typing import Tuple
 
 import numpy as np
 
-try:
-    from safety_snapshot import SafetyGridSpec
-except ImportError:  # 包式导入回退
-    from work.safety_snapshot import SafetyGridSpec
+from work.safety_snapshot import SafetyGridSpec
 
 
 class StaticOccupancyTracker:

@@ -6,7 +6,7 @@ import pytest
 
 def test_jax_solver_tolerance_is_forwarded_to_cbf_config():
     pytest.importorskip("cbfpy")
-    from work.jax_control_loop import JaxControlLoop
+    from work.jax_control_facade import JaxControlLoop
     from work.nineaxis_manipulator_jax import NineaxisManipulatorJAX
     from work.oscbf_velocity_config import NineaxisOSCBFVelocityConfig
 
@@ -19,7 +19,7 @@ def test_jax_solver_tolerance_is_forwarded_to_cbf_config():
 
 
 def test_jax_solver_tolerance_must_be_positive():
-    from work.jax_control_loop import JaxControlLoop
+    from work.jax_control_facade import JaxControlLoop
 
     with pytest.raises(ValueError, match="solver_tol"):
         JaxControlLoop(solver_tol=0.0)

@@ -76,7 +76,7 @@ def test_collect_obstacle_arrays_updates_dynamic_state_and_keeps_cbf_metadata():
 
 def test_jax_dynamic_time_term_tightens_an_approaching_obstacle_constraint():
     """障碍物朝机器人接近时，dh_dt 必须使 CBF 上界更严格。"""
-    from work.jax_control_loop import compute_obstacle_time_terms
+    from work.jax_barrier_terms import compute_obstacle_time_terms
 
     center_deltas = jnp.array([[[0.20, 0.0, 0.0]]])
     radius_dot = jnp.array([0.10])
@@ -92,7 +92,7 @@ def test_jax_dynamic_time_term_tightens_an_approaching_obstacle_constraint():
 
 def test_jax_obstacle_clearance_uses_the_same_safety_margin_as_the_cbf():
     """dyn_min 必须等于 CBF 约束使用的 h，而不是接触面净距离。"""
-    from work.jax_control_loop import compute_obstacle_clearance
+    from work.jax_barrier_terms import compute_obstacle_clearance
 
     clearance = compute_obstacle_clearance(
         jnp.array([[[0.20, 0.0, 0.0]]]),
@@ -106,7 +106,7 @@ def test_jax_obstacle_clearance_uses_the_same_safety_margin_as_the_cbf():
 
 def test_jax_qp_bound_combines_per_obstacle_alpha_and_time_derivative():
     """JAX QP 障碍物行必须是 alpha*h + dh_dt，而非统一的 10*h。"""
-    from work.jax_control_loop import apply_dynamic_obstacle_cbf_terms
+    from work.jax_barrier_terms import apply_dynamic_obstacle_cbf_terms
 
     base_h = jnp.array([0.30, 7.0])  # 第 0 行原本是 10 * 0.03。
     clearance = jnp.array([[0.03]])

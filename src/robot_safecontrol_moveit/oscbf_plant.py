@@ -15,11 +15,15 @@ from typing import List, Optional
 import numpy as np
 import rclpy
 from rclpy.node import Node
-from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy, HistoryPolicy
 from sensor_msgs.msg import JointState
 
-from .oscbf_controller import _state_subscription_qos
 from .oscbf_trajectory import bootstrap_portable, default_portable_root
+from .robot_spec import DEFAULT_JOINT_NAMES
+from .ros_conventions import (
+    JOINT_STATE_TOPIC,
+    OSCBF_COMMAND_TOPIC,
+    state_stream_qos,
+)
 
 
 class OscbfPlant(Node):
@@ -97,17 +101,12 @@ class OscbfPlant(Node):
             JointState,
             str(self.get_parameter("command_topic").value),
             self._on_command,
-            _state_subscription_qos(),
+            state_stream_qos(),
         )
         self._state_pub = self.create_publisher(
             JointState,
             str(self.get_parameter("state_topic").value),
-            QoSProfile(
-                history=HistoryPolicy.KEEP_LAST,
-                depth=20,
-                reliability=ReliabilityPolicy.BEST_EFFORT,
-                durability=DurabilityPolicy.VOLATILE,
-            ),
+            state_stream_qos(),
         )
         self.create_timer(dt_plant, self._tick)
         self.get_logger().info(
@@ -151,9 +150,9 @@ class OscbfPlant(Node):
         except Exception:
             share_dir = Path(__file__).resolve().parents[2]
         defaults = {
-            "command_topic": "/oscbf_command",
-            "state_topic": "/mujoco_joint_states",
-            "joint_names": ["J1", "J2", "J3", "J4", "J5", "J6", "J7", "J8", "J9"],
+            "command_topic": OSCBF_COMMAND_TOPIC,
+            "state_topic": JOINT_STATE_TOPIC,
+            "joint_names": list(DEFAULT_JOINT_NAMES),
             "publish_frequency_hz": 100.0,
             "jerk_time": 0.08,
             "position_gain": 80.0,

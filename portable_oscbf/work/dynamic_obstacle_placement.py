@@ -7,7 +7,7 @@ from typing import Iterable, List, Sequence, Tuple
 import fcl
 import numpy as np
 
-from point_cloud_obstacles import FCLPointCloudCollision
+from work.point_cloud_obstacles import FCLPointCloudCollision
 
 
 DEFAULT_DYNAMIC_TARGET_H = 0.04

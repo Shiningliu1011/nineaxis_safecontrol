@@ -12,7 +12,7 @@ pytestmark = pytest.mark.skip(
 
 def test_jax_rate_limit_uses_fixed_slack_without_changing_cbf_qp_shape():
     pytest.importorskip("cbfpy")
-    from work.jax_control_loop import JaxControlLoop, MAX_JAX_OBSTACLES
+    from work.jax_control_facade import JaxControlLoop, MAX_JAX_OBSTACLES
 
     du_max = np.full(9, 0.01)
     loop = JaxControlLoop(
@@ -56,7 +56,7 @@ def test_jax_rate_limit_uses_fixed_slack_without_changing_cbf_qp_shape():
 def test_solver_slack_is_not_classified_as_a_rate_relaxation():
     """An inactive rate row must not stop solely from qpax centrality."""
     from newaxis.control_safety_state import TRACKING, classify_control_safety_state
-    from work.jax_control_loop import JaxControlLoop
+    from work.jax_control_facade import JaxControlLoop
 
     loop = JaxControlLoop(rate_limit_du_max=np.full(9, 0.01))
     loop._update_qp_diagnostics(

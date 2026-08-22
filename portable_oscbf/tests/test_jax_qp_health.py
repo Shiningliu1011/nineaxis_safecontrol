@@ -17,7 +17,7 @@ pytestmark = pytest.mark.skip(
 def test_jax_health_gate_never_integrates_an_unconverged_qp_candidate():
     import jax.numpy as jnp
 
-    from work.jax_control_loop import apply_qp_health_gate
+    from work.jax_barrier_terms import apply_qp_health_gate
 
     q = jnp.array([0.2, -0.1])
     candidate = jnp.array([3.0, -4.0])

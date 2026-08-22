@@ -16,6 +16,14 @@ _Avoid_: 过渡状态机、pipeline orchestrator
 过渡回放结束、安全控制器接管命令流的时刻。交接前后圆柱拟合与轨迹变换口径必须一致，否则姿态会差 180°。
 _Avoid_: handoff moment、接管点
 
+**状态流**:
+被控对象与查看器发布、控制器订阅的关节状态话题流（BEST_EFFORT、深度 20），约定统一在共享模块中。
+_Avoid_: joint-state topic、传感器流
+
+**命令流**:
+控制器发布、被控对象订阅的安全命令话题流，与状态流分离。
+_Avoid_: command topic、控制流
+
 **控制内核**:
 纯 JAX 的 OSCBF 安全控制计算核心（OSC + CBF + QP + 积分），无 ROS 依赖，节点只能经其 facade 访问。
 _Avoid_: portable_oscbf 库、内核包

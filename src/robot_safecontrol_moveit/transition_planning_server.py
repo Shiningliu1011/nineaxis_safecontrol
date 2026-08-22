@@ -39,6 +39,7 @@ from std_srvs.srv import Trigger
 
 from .motion_planning import MotionPlanner, PlanningOptions
 from .robot_spec import DEFAULT_JOINT_NAMES
+from .ros_conventions import JOINT_STATE_TOPIC
 from .task_target import solve_first_task_state
 from .trajectory_execution import TrajectoryExecutor
 from .transition_executor import (
@@ -320,7 +321,7 @@ class TransitionPlanningServer(Node):
         self.declare_parameter("trajectory_offset_m", [0.0, 0.343, 1.587])
         self.declare_parameter("max_points", 1)
         self.declare_parameter("point_stride", 1)
-        self.declare_parameter("joint_state_topic", "/mujoco_joint_states")
+        self.declare_parameter("joint_state_topic", JOINT_STATE_TOPIC)
         self.declare_parameter("joint_state_timeout_s", 3.0)
         self.declare_parameter("max_joint_state_age_s", 1.0)
         self.declare_parameter("allow_joint_state_fallback", False)
@@ -337,7 +338,7 @@ class TransitionPlanningServer(Node):
         self.declare_parameter("acceleration_scale", 0.2)
         self.declare_parameter("goal_joint_tolerance", 0.001)
         self.declare_parameter("transition_result_mode", "plan_only")
-        self.declare_parameter("replay_joint_state_topic", "/mujoco_joint_states")
+        self.declare_parameter("replay_joint_state_topic", JOINT_STATE_TOPIC)
         self.declare_parameter("replay_rate_hz", 30.0)
         self.declare_parameter("oscbf_command_topic", "")
         self.declare_parameter("notify_oscbf_start", False)

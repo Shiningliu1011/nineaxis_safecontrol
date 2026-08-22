@@ -11,7 +11,6 @@ vendored ``dpax``) to ``sys.path`` before importing ``work``.
 from __future__ import annotations
 
 import math
-import sys
 import time
 from pathlib import Path
 from typing import List, Optional, Sequence
@@ -23,15 +22,17 @@ from ament_index_python.packages import (
     get_package_share_directory,
 )
 from rclpy.node import Node
-from rclpy.qos import (
-    DurabilityPolicy,
-    HistoryPolicy,
-    QoSProfile,
-    ReliabilityPolicy,
-    qos_profile_sensor_data,
-)
+from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import JointState
 from std_srvs.srv import Trigger
+
+from .oscbf_trajectory import bootstrap_portable
+from .robot_spec import DEFAULT_JOINT_NAMES
+from .ros_conventions import (
+    JOINT_STATE_TOPIC,
+    OSCBF_COMMAND_TOPIC,
+    state_stream_qos,
+)
 
 
 def _default_share_dir() -> Path:
@@ -40,20 +41,6 @@ def _default_share_dir() -> Path:
         return Path(get_package_share_directory("robot_safecontrol_moveit"))
     except PackageNotFoundError:
         return Path.cwd()
-
-
-def _state_subscription_qos() -> QoSProfile:
-    """BEST_EFFORT with a deeper queue than ``sensor_data`` (depth 5).
-
-    At 100 Hz with bursts from the plant the default depth overflows and the
-    executor falls behind, which showed up as long-run p95 latency > 10 ms.
-    """
-    return QoSProfile(
-        history=HistoryPolicy.KEEP_LAST,
-        depth=20,
-        reliability=ReliabilityPolicy.BEST_EFFORT,
-        durability=DurabilityPolicy.VOLATILE,
-    )
 
 
 class OscbfController(Node):
@@ -90,7 +77,7 @@ class OscbfController(Node):
         portable_root = Path(
             str(self.get_parameter("portable_oscbf_root").value)
         )
-        self._bootstrap_portable(portable_root)
+        bootstrap_portable(portable_root)
         self._build_controller(portable_root)
 
         joint_state_topic = str(
@@ -104,7 +91,7 @@ class OscbfController(Node):
             JointState,
             joint_state_topic,
             self._joint_state_callback,
-            _state_subscription_qos(),
+            state_stream_qos(),
         )
         self._publisher = self.create_publisher(
             JointState, publish_topic, qos_profile_sensor_data
@@ -144,9 +131,9 @@ class OscbfController(Node):
             "portable_config_yaml": str(
                 default_portable_root / "config" / "nineaxis.yaml"
             ),
-            "joint_names": ["J1", "J2", "J3", "J4", "J5", "J6", "J7", "J8", "J9"],
-            "joint_state_topic": "/mujoco_joint_states",
-            "publish_joint_state_topic": "/oscbf_command",
+            "joint_names": list(DEFAULT_JOINT_NAMES),
+            "joint_state_topic": JOINT_STATE_TOPIC,
+            "publish_joint_state_topic": OSCBF_COMMAND_TOPIC,
             "kp_pos": 60.0,
             "kp_orient": 10.0,
             "kp_joint": 0.45,
@@ -232,23 +219,6 @@ class OscbfController(Node):
     # ------------------------------------------------------------------
     # Controller construction
     # ------------------------------------------------------------------
-
-    def _bootstrap_portable(self, portable_root: Path) -> None:
-        """Make ``work`` and the vendored ``dpax`` importable."""
-        work_dir = portable_root / "work"
-        vendor_dpax = portable_root / "vendor" / "dpax"
-        if not (work_dir / "__init__.py").is_file():
-            raise FileNotFoundError(
-                f"portable_oscbf/work not found under {portable_root}; "
-                "set the portable_oscbf_root parameter"
-            )
-        # ``work`` itself must be on the path too: several work modules still
-        # import siblings by their bare top-level name (``from path_following
-        # import PathGeometry``), matching the portable test conftest.
-        for entry in (portable_root, work_dir, vendor_dpax):
-            text = str(entry)
-            if text not in sys.path:
-                sys.path.insert(0, text)
 
     def _build_controller(self, portable_root: Path) -> None:
         from work.ik_data_loader import load_repository_trajectory

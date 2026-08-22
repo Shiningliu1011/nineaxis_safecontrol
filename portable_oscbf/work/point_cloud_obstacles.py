@@ -17,7 +17,7 @@ from dataclasses import dataclass
 
 import fcl
 
-from controller_step_cache import point_jacobian_from_spatial
+from work.controller_step_cache import point_jacobian_from_spatial
 
 
 # ================================================================
@@ -117,7 +117,7 @@ def voxel_downsample(points: np.ndarray, voxel_size: float) -> np.ndarray:
 # ================================================================
 
 # 从 fcl_collision.py 导入包围体参数
-from fcl_collision import (
+from work.fcl_collision import (
     JOINT_NAMES, JOINT_RADII, CAPSULE_DEFS,
     BASE_BOX_SIZE, BASE_BOX_CENTER,
     LINK1_BOX_SIZE, LINK1_BOX_CENTER,
@@ -406,7 +406,7 @@ class FCLPointCloudCollision:
         ----
         list of CbfConstraint
         """
-        from dynamic_obstacles import CbfConstraint
+        from work.dynamic_obstacles import CbfConstraint
 
         if body_link_idx is None:
             body_link_idx = _BODY_LINK_IDX

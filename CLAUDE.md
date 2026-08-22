@@ -48,9 +48,11 @@ pytest portable_oscbf/tests  # 控制核心测试
 `/mujoco_joint_states`（植物状态）→ oscbf_controller → `/oscbf_command` →
 oscbf_plant（S 曲线 jerk 限幅）→ 状态发回。控制器独立于 MoveIt。
 
+- 话题名/QoS/关节名等共享约定统一在 `src/robot_safecontrol_moveit/ros_conventions.py` 与 `robot_spec.py`，节点间禁止互相 import 私有符号
 - 坐标系：URDF Y-up ↔ MuJoCo Z-up，经 `display_frame` euler 旋转转换
 - 圆柱轴心拟合口径三端（轨迹/过渡/控制器）必须一致，默认最小二乘圆拟合
 - 旋转误差用精确旋转向量 `-log(R_des·R_eeᵀ)`，不用一阶叉积（180° 盲区）
+- 内核（portable_oscbf/work）零 ROS 依赖、零裸名同级 import（统一 `from work.X`），节点经 `oscbf_trajectory.bootstrap_portable` 引导
 
 ## Key Documents
 

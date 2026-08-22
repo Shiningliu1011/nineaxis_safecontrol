@@ -378,7 +378,7 @@ class FclSelfCollisionChecker:
 if __name__ == "__main__":
     import time, sys
     sys.path.insert(0, os.path.dirname(__file__))
-    from nineaxis_kinematics import NineaxisKinematics
+    from work.nineaxis_kinematics import NineaxisKinematics
 
     mesh_dir = os.path.join(os.path.dirname(__file__),
                             '..', 'assets', 'ninezzhouURDF', 'meshes')

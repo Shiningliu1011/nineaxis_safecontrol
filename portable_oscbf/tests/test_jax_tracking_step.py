@@ -7,7 +7,7 @@ import pytest
 
 def test_tracking_step_runs_nominal_osc_and_qp_in_one_jitted_entry_point():
     pytest.importorskip("cbfpy")
-    from work.jax_control_loop import JaxControlLoop, MAX_JAX_OBSTACLES
+    from work.jax_control_facade import JaxControlLoop, MAX_JAX_OBSTACLES
 
     loop = JaxControlLoop(dt=0.002, temporal_lambda=0.2)
     loop.init_cbf()
@@ -68,7 +68,7 @@ def test_tracking_step_runs_nominal_osc_and_qp_in_one_jitted_entry_point():
 
 def test_tracking_fast_path_preserves_safe_command_without_h_gradient_telemetry():
     pytest.importorskip("cbfpy")
-    from work.jax_control_loop import JaxControlLoop, MAX_JAX_OBSTACLES
+    from work.jax_control_facade import JaxControlLoop, MAX_JAX_OBSTACLES
 
     loop = JaxControlLoop(dt=0.002, temporal_lambda=0.2)
     loop.init_cbf()

@@ -42,9 +42,9 @@ from sensor_msgs_py import point_cloud2 as pc2
 
 import mujoco
 
-_REPO_ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(_REPO_ROOT / "portable_oscbf"))
-sys.path.insert(0, str(_REPO_ROOT / "portable_oscbf" / "work"))
+from .oscbf_trajectory import bootstrap_portable, default_portable_root
+
+bootstrap_portable(default_portable_root())
 
 from work.perception_config import load_point_cloud_collision, spec_of  # noqa: E402
 from work.ik_data_loader import load_repository_trajectory  # noqa: E402

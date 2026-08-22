@@ -15,10 +15,7 @@ from typing import Optional
 import numpy as np
 import yaml
 
-try:
-    from safety_snapshot import SafetyGridSpec
-except ImportError:  # 包式导入 (from work.perception_config import ...) 时的回退
-    from work.safety_snapshot import SafetyGridSpec
+from work.safety_snapshot import SafetyGridSpec
 
 _DEFAULT_YAML = Path(__file__).resolve().parents[1] / "config" / "obstacle_params.yaml"
 

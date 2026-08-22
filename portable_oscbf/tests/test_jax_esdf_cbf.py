@@ -9,7 +9,7 @@ def test_esdf_adds_one_fixed_barrier_per_robot_collision_sphere():
     pytest.importorskip("cbfpy")
     import jax.numpy as jnp
 
-    from work.jax_control_loop import MAX_JAX_OBSTACLES
+    from work.jax_control_facade import MAX_JAX_OBSTACLES
     from work.nineaxis_manipulator_jax import NineaxisManipulatorJAX
     from work.oscbf_velocity_config import NineaxisOSCBFVelocityConfig
     from work.safety_snapshot import SafetyGridSpec, build_distance_field
@@ -59,7 +59,7 @@ def test_esdf_adds_one_fixed_barrier_per_robot_collision_sphere():
 def test_jax_loop_accepts_a_fixed_shape_distance_snapshot_without_rejit_shape_change():
     pytest.importorskip("cbfpy")
 
-    from work.jax_control_loop import JaxControlLoop
+    from work.jax_control_facade import JaxControlLoop
     from work.safety_snapshot import SafetyGridSpec, build_distance_field
 
     spec = SafetyGridSpec(
@@ -100,7 +100,7 @@ def test_path_tracking_reuses_one_cache_for_fixed_shape_esdf_snapshots():
     """The production path entry point must not compile per perception frame."""
     pytest.importorskip("cbfpy")
 
-    from work.jax_control_loop import JaxControlLoop
+    from work.jax_control_facade import JaxControlLoop
     from work.path_following import PathFollowingConfig, PathGeometry
     from work.safety_snapshot import SafetyGridSpec, build_distance_field
 

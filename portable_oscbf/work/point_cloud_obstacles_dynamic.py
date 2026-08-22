@@ -16,8 +16,8 @@ from typing import List, Optional
 
 import numpy as np
 
-from cbf_types import CbfConstraint, _cbf_upper_bound
-from controller_step_cache import point_jacobian_from_spatial
+from work.cbf_types import CbfConstraint, _cbf_upper_bound
+from work.controller_step_cache import point_jacobian_from_spatial
 
 # P2-28: 统一末端执行器碰撞半径 (原分散在 0.04/0.045/0.06 三处)
 EE_COLLISION_RADIUS = 0.05
@@ -407,7 +407,7 @@ class DynamicPointCloudObstacle:
 
     def get_points(self) -> np.ndarray:
         """采样表面点 (仅用于可视化, 不用于碰撞检测)。"""
-        from point_cloud_obstacles import _sample_sphere_surface, _sample_cylinder_surface
+        from work.point_cloud_obstacles import _sample_sphere_surface, _sample_cylinder_surface
         point_sets = []
         if self.is_obstacle_enabled("sphere1"):
             point_sets.append(_sample_sphere_surface(

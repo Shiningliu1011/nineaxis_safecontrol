@@ -127,7 +127,7 @@ class NineaxisOSCBFVelocityConfig(CBFConfig):
 
         # 障碍物不再烘焙到 config; 通过 h_2 参数传入
         # init_args 提供空障碍物种子, 用于 CBFConfig 的初始化验证
-        _n_obs = 8  # MAX_JAX_OBSTACLES, 与 jax_control_loop.py 一致
+        _n_obs = 8  # MAX_JAX_OBSTACLES, 与 jax_control_facade.py 一致
         init_args = (
             jnp.zeros((_n_obs, 3)),   # obs_pos
             jnp.zeros(_n_obs),        # obs_radii
