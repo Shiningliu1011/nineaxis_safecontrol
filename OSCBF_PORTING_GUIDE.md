@@ -628,7 +628,7 @@ portable_oscbf/work/
 
 > ⚠️ `qpax_solver.py` 未列入——其 `solve_qp_elastic` 包装类现状无调用者（legacy）；目标路线由 cbfpy `CBF.qp_solver` 直接调 qpax。
 
-**配套**: `config/`（YAML）、`data/`（轨迹）、`urdf/`（机器人模型）、`tests/`（25 个单元测试）。
+**配套**: `config/`（YAML）、`data/`（轨迹）、`urdf/`（机器人模型）、`tests/`（36 个单测文件）。
 
 ## 附录 B: 依赖清单
 

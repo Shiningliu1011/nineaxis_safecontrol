@@ -90,9 +90,11 @@ def _in_bounds(node, positions: np.ndarray) -> bool:
 
 
 def test_state_subscription_uses_deep_best_effort_queue():
-    from robot_safecontrol_moveit.oscbf_controller import _state_subscription_qos
+    # 状态流 QoS 契约已集中到 ros_conventions.state_stream_qos()（构造与
+    # 消费共用同一函数），此处断言其属性防回归。
+    from robot_safecontrol_moveit.ros_conventions import state_stream_qos
 
-    qos = _state_subscription_qos()
+    qos = state_stream_qos()
     assert qos.depth == 20
     assert qos.reliability == rclpy.qos.ReliabilityPolicy.BEST_EFFORT
     assert qos.durability == rclpy.qos.DurabilityPolicy.VOLATILE

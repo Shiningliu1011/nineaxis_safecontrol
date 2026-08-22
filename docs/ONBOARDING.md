@@ -85,9 +85,9 @@ euler 旋转自动转换。圆柱轴心拟合口径在轨迹生成端、过渡�
 - **错误处理**：launch 文件对必需配置文件做启动时 `FileNotFoundError` 校验；
   内核侧有 QP 健康检查（`qp_solver_health.py`、`safety_snapshot.py`）。
 - **测试**：pytest（`testpaths = tests`），主包含 launch 集成测试
-  （launch_testing）；`portable_oscbf/tests` 有独立 conftest 与 15+ 单测
-  （FK 与 URDF 一致性、QP 健康、JIT 等价性、动态障碍契约等）；C++ 包有
-  自测可执行文件（test_aeb_full.cpp 等）。
+  （launch_testing）；`portable_oscbf/tests` 有独立 conftest 与 36 个单测文件
+  （FK 与 URDF 一致性、QP 健康、JIT 等价性、动态障碍契约、感知管线等）；C++ 包有
+  自测可执行文件（test_aeb_full.cpp 等）。全量入口：`bash run_all_tests.sh`。
 - **Git**：单 main 分支；提交信息中英混合、多为 feat:/fix: 前缀或中文摘要；
   近期提交围绕 OSCBF 闭环与自主过渡。
 

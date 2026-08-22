@@ -4,8 +4,3 @@ collision:
   planning_min_distance: 0.05
   enable_self_collision: false
 
-fcl_todo:
-  broadphase_manager: DynamicAABBTreeCollisionManager
-  request_nearest_points: true
-  request_signed_distance: false
-

@@ -25,8 +25,7 @@ robot_safecontrol/
 │       ├── config/                     #   SRDF、控制器、运动学配置
 │       └── launch/                     #   demo.launch.py
 ├── config/
-│   ├── mujoco_transition_runtime.yaml  # 过渡服务器运行时参数
-│   └── mujoco_transition_test.yaml     # 测试场景参数
+│   └── mujoco_transition_runtime.yaml  # 过渡服务器运行时参数
 ├── launch/
 │   ├── mujoco_transition_final.launch.py  # 完整闭环 launch
 │   └── mujoco_viewer.launch.py         # ROS2 launch: MuJoCo 可视化
@@ -57,6 +56,9 @@ source install/setup.bash
 # 轨迹起点，回放结束后 OSCBF 控制器接管 /oscbf_command 并跟踪蝴蝶轨迹到
 # 终点。全程无需键盘。
 bash run_demo.sh
+
+# 全量测试（主包 + portable 内核）
+bash run_all_tests.sh
 ```
 
 依赖: ROS2 Humble, MoveIt2, pymoveit2
