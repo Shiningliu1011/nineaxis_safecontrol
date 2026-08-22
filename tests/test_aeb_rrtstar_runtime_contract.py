@@ -48,12 +48,10 @@ class TestAEBRRTstarRuntimeContract(unittest.TestCase):
             / "ompl_planning.yaml"
         )
         cls._runtime_path = _PROJECT / "config" / "mujoco_transition_runtime.yaml"
-        cls._legacy_path = _PROJECT / "config" / "plan_transition.yaml"
         cls._ompl = _yaml(cls._ompl_path)
         cls._runtime = _yaml(cls._runtime_path)["transition_planning_server"][
             "ros__parameters"
         ]
-        cls._legacy = _yaml(cls._legacy_path)["plan_transition"]["ros__parameters"]
 
     def test_moveit_pipeline_loads_the_aeb_planner_manager(self) -> None:
         self.assertEqual(self._ompl["planning_plugin"], _AEB_PLUGIN)
@@ -82,13 +80,10 @@ class TestAEBRRTstarRuntimeContract(unittest.TestCase):
             "Keep an explicit, known rollback planner available",
         )
 
-    def test_persistent_and_legacy_transition_servers_request_aeb_faithful(self) -> None:
+    def test_persistent_transition_server_requests_aeb_faithful(self) -> None:
         self.assertEqual(self._runtime["planning_pipeline"], "ompl")
         self.assertEqual(self._runtime["planner_id"], _AEB_PLANNER_ID)
-        self.assertEqual(self._legacy["planning_pipeline"], "ompl")
-        self.assertEqual(self._legacy["planner_id"], _AEB_PLANNER_ID)
         self.assertEqual(self._runtime["planning_attempts"], 1)
-        self.assertEqual(self._legacy["planning_attempts"], 1)
 
     def test_launch_parameter_builder_preserves_the_aeb_configuration(self) -> None:
         """Exercise the actual loader consumed by the final launch file."""

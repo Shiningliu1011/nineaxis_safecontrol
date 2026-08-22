@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from math import isfinite, sqrt
+from math import isfinite
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from time import monotonic, sleep
@@ -26,10 +26,9 @@ from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import JointState
 
-from .plan_transition import (
-    DEFAULT_JOINT_NAMES,
-)
+from .cylinder_geometry import fit_circle
 from .oscbf_trajectory import load_calibrated_path
+from .robot_spec import DEFAULT_JOINT_NAMES
 
 
 # The project URDF is authored in the legacy Y-up convention.  The wrapper is
@@ -381,51 +380,38 @@ class MuJoCoJointStateViewer(Node):
         if height_margin_m < 0.0:
             raise ValueError("tracking_cylinder_height_margin_m must be non-negative")
 
-        values = np.asarray(points, dtype=float)
         axis = np.asarray(axis_direction, dtype=float)
-        axis_length = float(np.linalg.norm(axis))
-        if axis.shape != (3,) or axis_length < 1e-12:
+        if axis.shape != (3,) or float(np.linalg.norm(axis)) < 1e-12:
             raise ValueError("tracking_cylinder_axis_direction must be a non-zero 3-vector")
-        axis /= axis_length
 
-        # Build an orthonormal basis (u, v) for the plane perpendicular to axis.
-        helper = np.array([1.0, 0.0, 0.0])
-        if abs(float(np.dot(helper, axis))) > 0.9:
-            helper = np.array([0.0, 0.0, 1.0])
-        u = np.cross(axis, helper)
-        u /= np.linalg.norm(u)
-        v = np.cross(axis, u)
-        v /= np.linalg.norm(v)
-
-        plane_x = values @ u
-        plane_y = values @ v
-        matrix = np.column_stack((plane_x, plane_y, np.ones(len(values))))
-        target = -(plane_x * plane_x + plane_y * plane_y)
-        coefficient, *_ = np.linalg.lstsq(matrix, target, rcond=None)
-        d_value, e_value, f_value = coefficient
-        center_x = -0.5 * d_value
-        center_y = -0.5 * e_value
-        radius_squared = center_x * center_x + center_y * center_y - f_value
-        if radius_squared <= 0.0:
+        # Circle fit in the plane normal to the axis; shared with the
+        # transition pipeline's surface-normal computation.
+        fit = fit_circle(points, axis)
+        if fit.radius_squared <= 0.0:
             raise ValueError("Cylinder fit produced a non-positive radius")
-        radius = sqrt(float(radius_squared))
 
-        axial_values = values @ axis
+        values = np.asarray(points, dtype=float)
+        center_x, center_y = fit.center_xy
+        radius = fit.radius
+
+        axial_values = values @ fit.axis
         axial_top = float(axial_values.max()) + height_margin_m
         if extend_to_ground:
             # The floor plane is at z=-0.058 in world coords, which
             # corresponds to Y=-0.058 in base_link (Y-up).  The origin
             # projects to 0 for any axis direction, so the floor's
             # projection equals axis[1] * (-0.058) for axis=[0,1,0].
-            axial_bottom = float(np.dot(np.array([0.0, -0.058, 0.0]), axis))
+            axial_bottom = float(np.dot(np.array([0.0, -0.058, 0.0]), fit.axis))
             height = axial_top - axial_bottom
             axial_center = 0.5 * (axial_bottom + axial_top)
         else:
             axial_bottom = float(axial_values.min()) - height_margin_m
             height = axial_top - axial_bottom
             axial_center = 0.5 * (axial_bottom + axial_top)
-        center = center_x * u + center_y * v + axial_center * axis
+        center = center_x * fit.u + center_y * fit.v + axial_center * fit.axis
 
+        plane_x = values @ fit.u
+        plane_y = values @ fit.v
         radial_distance = np.sqrt(
             (plane_x - center_x) ** 2 + (plane_y - center_y) ** 2
         )
@@ -435,7 +421,7 @@ class MuJoCoJointStateViewer(Node):
 
         return TrackingCylinderSpec(
             center=tuple(float(value) for value in center),
-            axis_direction=tuple(float(value) for value in axis),
+            axis_direction=tuple(float(value) for value in fit.axis),
             radius=radius,
             height=height,
             radial_rms_error=rms_error,

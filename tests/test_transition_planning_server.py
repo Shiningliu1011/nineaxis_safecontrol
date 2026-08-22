@@ -34,43 +34,6 @@ class _FakeLogger:
         self._lines.append(("error", message))
 
 
-class _AutoPlanServer:
-    """Minimal harness for the auto-plan orchestration logic."""
-
-    def __init__(self, attempts: int, succeed_after: int):
-        self._planning = False
-        self._auto_plan_done = False
-        self._auto_plan_attempt = 0
-        self._calls = 0
-        self._succeed_after = succeed_after
-        self._params = {
-            "auto_plan_attempts": _Param(attempts),
-            "oscbf_plant_randomize_service": _Param("/oscbf_plant/randomize"),
-        }
-        self._logs = []
-        self._logger = _FakeLogger(self._logs)
-
-    def get_parameter(self, name):
-        return self._params[name]
-
-    def get_logger(self):
-        return self._logger
-
-    def _plan_callback(self, request, response):
-        self._calls += 1
-        response.success = self._calls >= self._succeed_after
-        response.message = "TRANSITION_REPLAYED" if response.success else "START_STATE_IN_COLLISION"
-
-    def _randomize_plant_start(self):
-        return "RANDOMIZED"
-
-    def _check_moveit_services(self):
-        return True, ""
-
-    def _oscbf_start_service_ready(self):
-        return True
-
-
 class _SettleServer:
     """Harness for the plant-settle wait before the tracking handoff."""
 
@@ -115,7 +78,7 @@ class TestSuccessCodes(unittest.TestCase):
     """Issue #6: all success codes recognised."""
 
     def setUp(self):
-        from robot_safecontrol_moveit.transition_planning_server import SUCCESS_CODES
+        from robot_safecontrol_moveit.transition_executor import SUCCESS_CODES
 
         self.SUCCESS_CODES = SUCCESS_CODES
 
@@ -139,49 +102,6 @@ class TestSuccessCodes(unittest.TestCase):
     def test_success_check(self):
         code = "TRANSITION_REPLAYED"
         self.assertTrue(code in self.SUCCESS_CODES)
-
-
-class TestAutoPlanOrchestration(unittest.TestCase):
-    """Autonomous transition: plan once, retry with a resampled start."""
-
-    @staticmethod
-    def _tick(server):
-        from robot_safecontrol_moveit.transition_planning_server import (
-            TransitionPlanningServer,
-        )
-
-        TransitionPlanningServer._auto_plan_tick(server)
-
-    def test_auto_plan_succeeds_on_first_attempt(self):
-        server = _AutoPlanServer(attempts=3, succeed_after=1)
-        self._tick(server)
-        self.assertTrue(server._auto_plan_done)
-        self.assertEqual(server._auto_plan_attempt, 1)
-        self.assertEqual(server._calls, 1)
-        self.assertIn(
-            ("info", "AUTO_PLAN_SUCCEEDED (attempt 1)"),
-            server._logs,
-        )
-
-    def test_auto_plan_retries_then_reports_failure(self):
-        server = _AutoPlanServer(attempts=2, succeed_after=99)
-        self._tick(server)
-        self.assertFalse(server._auto_plan_done)
-        self._tick(server)
-        self.assertTrue(server._auto_plan_done)
-        self.assertEqual(server._calls, 2)
-        self.assertTrue(
-            any(
-                level == "warn" and "AUTO_PLAN_RETRY 1/2" in message
-                for level, message in server._logs
-            )
-        )
-        self.assertTrue(
-            any(
-                level == "error" and "AUTO_PLAN_FAILED after 2 attempts" in message
-                for level, message in server._logs
-            )
-        )
 
 
 class TestPlantSettleBeforeHandoff(unittest.TestCase):
@@ -229,7 +149,7 @@ class TestResultModeValidation(unittest.TestCase):
     """Issue #5: transition_result_mode must be a valid value."""
 
     def setUp(self):
-        from robot_safecontrol_moveit.transition_planning_server import (
+        from robot_safecontrol_moveit.transition_executor import (
             VALID_RESULT_MODES,
         )
 
@@ -250,7 +170,7 @@ class TestResultFormatting(unittest.TestCase):
     """Validate the pipe-delimited result format."""
 
     def setUp(self):
-        from robot_safecontrol_moveit.transition_planning_server import (
+        from robot_safecontrol_moveit.transition_executor import (
             _format_result,
         )
 

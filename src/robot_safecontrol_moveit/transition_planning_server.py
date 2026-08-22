@@ -9,19 +9,21 @@ Triggers a full transition plan on each ``std_srvs/Trigger`` call to
 key=value result so callers can parse structured information::
 
     error_code=START_STATE_UNAVAILABLE|trajectory_points=0|planning_time=0.0
+
+The phase machine itself lives in :mod:`transition_executor` (no ROS); this
+node only adapts ROS side effects to its ports.
 """
 
 from __future__ import annotations
 
 import os
+from functools import partial
 from math import isfinite
-
-import numpy as np
-import rclpy
-from pathlib import Path
 from time import monotonic, sleep
 from typing import Sequence
 
+import numpy as np
+import rclpy
 from moveit_msgs.srv import (
     GetMotionPlan,
     GetPositionIK,
@@ -35,69 +37,18 @@ from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import JointState
 from std_srvs.srv import Trigger
 
-from .motion_planning import (
-    MotionPlanner,
-    PlanningError,
-    PlanningOptions,
-    StateValidityError,
+from .motion_planning import MotionPlanner, PlanningOptions
+from .robot_spec import DEFAULT_JOINT_NAMES
+from .task_target import solve_first_task_state
+from .trajectory_execution import TrajectoryExecutor
+from .transition_executor import (
+    SUCCESS_CODES,
+    VALID_RESULT_MODES,
+    AutoPlanLoop,
+    TransitionExecutor,
+    TransitionPorts,
+    _format_result,
 )
-from .continuous_ik import IKError, IKServiceUnavailable
-from .trajectory_execution import ExecutionError, TrajectoryExecutor
-from .task_target import (
-    compute_first_task_orientation,
-    load_first_task_target,
-    solve_first_task_state,
-)
-
-DEFAULT_JOINT_NAMES = ("J1", "J2", "J3", "J4", "J5", "J6", "J7", "J8", "J9")
-
-# All codes the server considers a successful outcome (Issue #6).
-SUCCESS_CODES = frozenset({
-    "TRANSITION_PLANNED",
-    "PLAN_ONLY_SUCCESS",
-    "TRANSITION_REPLAYED",
-    "TRANSITION_EXECUTED",
-})
-
-VALID_RESULT_MODES = frozenset({
-    "plan_only",
-    "joint_state_replay",
-    "moveit_execute",
-})
-
-def _source_root() -> Path:
-    return Path(__file__).resolve().parents[2]
-
-
-def _installed_share_file(relative_path: str) -> Path:
-    try:
-        from ament_index_python.packages import get_package_share_directory
-        return Path(get_package_share_directory("robot_safecontrol_moveit")) / relative_path
-    except (ImportError, LookupError):
-        return Path("/__not_installed__")
-
-
-def _resolve_path(param_value: str, default_relative: str) -> Path:
-    if param_value.strip():
-        path = Path(param_value).expanduser()
-    else:
-        installed = _installed_share_file(default_relative)
-        path = installed if installed.is_file() else _source_root() / default_relative
-    if not path.is_file():
-        raise FileNotFoundError(f"File not found: {path}")
-    return path
-
-
-def _format_result(error_code: str, trajectory_points: int, planning_time_s: float,
-                   extra: str = "") -> str:
-    parts = [
-        f"error_code={error_code}",
-        f"trajectory_points={trajectory_points}",
-        f"planning_time={planning_time_s:.3f}",
-    ]
-    if extra:
-        parts.append(extra)
-    return "|".join(parts)
 
 
 def notify_oscbf_start(
@@ -171,6 +122,7 @@ class TransitionPlanningServer(Node):
 
         # Planning service.
         self._planning = False
+        self._pipeline = TransitionExecutor(self._build_ports())
         self._srv = self.create_service(
             Trigger, "/plan_transition_once", self._plan_callback,
             callback_group=ReentrantCallbackGroup(),
@@ -189,9 +141,17 @@ class TransitionPlanningServer(Node):
 
         # Autonomous experiment mode: plan one transition from the current
         # (possibly randomised) plant pose with no keyboard interaction.
-        self._auto_plan_attempt = 0
-        self._auto_plan_done = False
+        self._auto_plan_loop: AutoPlanLoop | None = None
         if bool(self.get_parameter("auto_plan_once").value):
+            self._auto_plan_loop = AutoPlanLoop(
+                attempts=int(self.get_parameter("auto_plan_attempts").value),
+                is_planning=lambda: self._planning,
+                services_ready=self._check_moveit_services,
+                oscbf_ready=self._oscbf_start_service_ready,
+                plan_once=self._plan_once,
+                randomize_plant=self._randomize_plant_start,
+                log=self.get_logger(),
+            )
             # Reentrant group: the auto-plan callback blocks while waiting for
             # joint states / service replies, and must not stall the default
             # group's subscription and client callbacks (same pattern as the
@@ -211,42 +171,60 @@ class TransitionPlanningServer(Node):
             "Transition planning server ready on /plan_transition_once"
         )
 
-    def _auto_plan_tick(self) -> None:
-        """Autonomously trigger one transition plan and retry on failure."""
-        if self._auto_plan_done or self._planning:
-            return
-        # Don't burn attempts on startup races: wait until MoveIt is actually
-        # reachable before counting a plan failure.
-        services_ok, _detail = self._check_moveit_services()
-        if not services_ok:
-            return
-        # The controller only publishes its start service after JIT warm-up
-        # (~2-4 min).  Wait for it so the post-replay handoff cannot be lost.
-        if not self._oscbf_start_service_ready():
-            return
-        self._auto_plan_attempt += 1
+    def _build_ports(self) -> TransitionPorts:
+        """Wire the phase machine to this node's ROS side effects."""
+        log = self.get_logger()
+        solve = partial(
+            solve_first_task_state,
+            moveit=self._moveit,
+            joint_names=self._joint_names,
+            tool_link=self._tool_link,
+            base_frame=self._base_frame,
+            planning_group=self._planning_group,
+            logger=log,
+        )
+        return TransitionPorts(
+            log=log,
+            get_parameter=self.get_parameter,
+            check_moveit_services=self._check_moveit_services,
+            wait_for_joint_state=self._wait_for_joint_state,
+            solve_task_state=solve,
+            validate_state=self._planner.validate_state,
+            plan_transition=self._planner.plan_transition,
+            planner_id=str(self.get_parameter("planner_id").value),
+            replay=self._replay_transition,
+            execute=self._execute_transition,
+            notify_oscbf_start=self._notify_oscbf_start,
+            wait_for_plant_settle=self._wait_for_plant_settle,
+            planning_group=self._planning_group,
+            base_frame=self._base_frame,
+            tool_link=self._tool_link,
+        )
+
+    def _replay_transition(self, transition, *, topic, rate_hz, command_topic):
+        self._executor.replay(
+            transition, topic=topic, rate_hz=rate_hz, command_topic=command_topic
+        )
+
+    def _execute_transition(self, transition):
+        return self._executor.execute(transition, dry_run=False, wait=True)
+
+    def _notify_oscbf_start(self) -> str:
+        return notify_oscbf_start(
+            self, str(self.get_parameter("oscbf_start_service").value)
+        )
+
+    def _plan_once(self) -> tuple[bool, str]:
+        """Run one plan through the service callback; return (success, message)."""
         request = Trigger.Request()
         response = Trigger.Response()
         self._plan_callback(request, response)
-        if response.success:
-            self._auto_plan_done = True
-            self.get_logger().info(
-                f"AUTO_PLAN_SUCCEEDED (attempt {self._auto_plan_attempt})"
-            )
-            return
-        attempts = int(self.get_parameter("auto_plan_attempts").value)
-        if self._auto_plan_attempt >= attempts:
-            self._auto_plan_done = True
-            self.get_logger().error(
-                f"AUTO_PLAN_FAILED after {attempts} attempts: "
-                f"{response.message}"
-            )
-            return
-        plant_code = self._randomize_plant_start()
-        self.get_logger().warn(
-            f"AUTO_PLAN_RETRY {self._auto_plan_attempt}/{attempts}: "
-            f"{response.message}; plant={plant_code}"
-        )
+        return bool(response.success), str(response.message)
+
+    def _auto_plan_tick(self) -> None:
+        """Autonomous experiment tick; the retry policy lives in AutoPlanLoop."""
+        assert self._auto_plan_loop is not None
+        self._auto_plan_loop.tick()
 
     def _oscbf_start_service_ready(self) -> bool:
         """True when the controller's start service is discoverable."""
@@ -416,7 +394,7 @@ class TransitionPlanningServer(Node):
 
         self._planning = True
         try:
-            result_msg = self._execute_plan()
+            result_msg = self._pipeline.execute_plan()
             # Parse error_code to determine success (Issue #6).
             code = result_msg.split("|")[0].split("=", 1)[-1] if "|" in result_msg else ""
             response.success = code in SUCCESS_CODES
@@ -432,200 +410,6 @@ class TransitionPlanningServer(Node):
         finally:
             self._planning = False
         return response
-
-    def _execute_plan(self) -> str:
-        plan_start = monotonic()
-        topic = str(self.get_parameter("joint_state_topic").value)
-        timeout = float(self.get_parameter("joint_state_timeout_s").value)
-        max_age = float(self.get_parameter("max_joint_state_age_s").value)
-        allow_fb = bool(self.get_parameter("allow_joint_state_fallback").value)
-
-        # 0. MoveIt service health check (fail-fast before any IK call).
-        services_ok, service_err = self._check_moveit_services()
-        if not services_ok:
-            return _format_result(service_err, 0, monotonic() - plan_start)
-
-        # 1. Get current joint state (Issue #3: no nested spin).
-        try:
-            start_state = self._wait_for_joint_state(topic, timeout, max_age, allow_fb)
-        except RuntimeError as e:
-            return _format_result(str(e), 0, monotonic() - plan_start)
-
-        self.get_logger().info("START_STATE_RECEIVED")
-
-        # 2. Load the first target and make the collision-aware IK request.
-        traj_file = _resolve_path(
-            str(self.get_parameter("trajectory_mat").value), "data/nurbs/ik_input.mat"
-        )
-        offset = tuple(float(v) for v in self.get_parameter("trajectory_offset_m").value)
-        max_pts = int(self.get_parameter("max_points").value)
-        stride = int(self.get_parameter("point_stride").value)
-
-        try:
-            positions, _ = load_first_task_target(traj_file, offset, max_pts, stride)
-        except Exception as e:
-            return _format_result("TRAJECTORY_LOAD_ERROR", 0, monotonic() - plan_start,
-                                  f"detail={e}")
-
-        align_surface = bool(self.get_parameter("align_tool_x_to_surface_normal").value)
-        cylinder_axis = tuple(float(v) for v in
-                              self.get_parameter("cylinder_axis_direction").value)
-        orientation_xyzw = tuple(float(v) for v in
-                                 self.get_parameter("orientation_xyzw").value)
-
-        first_quat, per_point = compute_first_task_orientation(
-            positions,
-            align_tool_x_to_surface_normal=align_surface,
-            cylinder_axis_direction=cylinder_axis,
-            orientation_xyzw=orientation_xyzw,
-            trajectory_mat=traj_file,
-            offset_m=offset,
-        )
-
-        self.get_logger().info(
-            f"FIRST_TARGET_POSITION={[f'{v:.4f}' for v in positions[0]]}"
-        )
-        self.get_logger().info(
-            f"FIRST_TARGET_ORIENTATION=[{', '.join(f'{v:.6f}' for v in first_quat)}]"
-        )
-
-        try:
-            first_goal = solve_first_task_state(
-                moveit=self._moveit,
-                joint_names=self._joint_names,
-                tool_link=self._tool_link,
-                positions=positions,
-                start_state=start_state,
-                first_orientation=first_quat,
-                per_point_orientations=per_point,
-                max_joint_delta=float(self.get_parameter("max_joint_delta").value),
-                ik_service_timeout_s=float(self.get_parameter("ik_service_timeout_s").value),
-                base_frame=self._base_frame,
-                planning_group=self._planning_group,
-                logger=self.get_logger(),
-            )
-        except IKServiceUnavailable as e:
-            return _format_result("IK_SERVICE_UNAVAILABLE", 0, monotonic() - plan_start,
-                                  f"detail={e}")
-        except IKError as e:
-            moveit_code = getattr(e, "moveit_error_code", None)
-            # GOAL_IK_FAILED is reserved for a real /compute_ik response with
-            # a non-SUCCESS MoveIt error code. Transport/timeouts retain their
-            # own error code instead of being mislabeled as an IK solution.
-            code = "GOAL_IK_FAILED" if moveit_code is not None else "IK_RESPONSE_TIMEOUT"
-            extra = self._ik_failure_context(
-                error=e,
-                moveit_error_code=moveit_code,
-                position=positions[0],
-                orientation=first_quat,
-                seed=start_state,
-            )
-            return _format_result(code, 0, monotonic() - plan_start, extra)
-
-        self.get_logger().info("GOAL_IK_SUCCEEDED")
-
-        # 4. Validate start and goal states (fail-closed).
-        try:
-            self._planner.validate_state(start_state, label="START_STATE")
-        except StateValidityError as e:
-            return _format_result(str(e).split(":")[0], 0, monotonic() - plan_start,
-                                  f"detail={e}")
-        except PlanningError as e:
-            return _format_result("STATE_VALIDITY_SERVICE_UNAVAILABLE", 0,
-                                  monotonic() - plan_start, f"detail={e}")
-
-        try:
-            self._planner.validate_state(first_goal, label="GOAL_STATE")
-        except StateValidityError as e:
-            return _format_result(str(e).split(":")[0], 0, monotonic() - plan_start,
-                                  f"detail={e}")
-        except PlanningError as e:
-            return _format_result("STATE_VALIDITY_SERVICE_UNAVAILABLE", 0,
-                                  monotonic() - plan_start, f"detail={e}")
-
-        # 5. Plan with MoveIt's configured OMPL pipeline.
-        try:
-            transition = self._planner.plan_transition(start_state, first_goal)
-        except PlanningError as e:
-            return _format_result("PLANNER_FAILED", 0, monotonic() - plan_start,
-                                  f"detail={e}")
-
-        elapsed = monotonic() - plan_start
-        mode = str(self.get_parameter("transition_result_mode").value)
-
-        self.get_logger().info(
-            f"TRANSITION_PLANNED: points={len(transition.points)}, "
-            f"time={elapsed:.3f}s, planner={self._planner._options.planner_id}"
-        )
-
-        if mode == "plan_only":
-            return _format_result("TRANSITION_PLANNED", len(transition.points), elapsed)
-
-        if mode == "joint_state_replay":
-            # Switch Viewer to tracking mode (Issue #7: fail on switch error).
-            self.get_logger().info("Switching Viewer to ROS tracking for replay...")
-            try:
-                command_topic = (
-                    str(self.get_parameter("oscbf_command_topic").value) or None
-                )
-                self._executor.replay(
-                    transition,
-                    topic=str(self.get_parameter("replay_joint_state_topic").value),
-                    rate_hz=float(self.get_parameter("replay_rate_hz").value),
-                    command_topic=command_topic,
-                )
-            except ExecutionError as e:
-                error_code = str(e).split(":", 1)[0]
-                return _format_result(
-                    error_code,
-                    len(transition.points),
-                    elapsed,
-                    f"detail={e}",
-                )
-            self.get_logger().info("TRANSITION_REPLAYED")
-            if bool(self.get_parameter("notify_oscbf_start").value):
-                self._wait_for_plant_settle(transition)
-                code = notify_oscbf_start(
-                    self,
-                    str(self.get_parameter("oscbf_start_service").value),
-                )
-                self.get_logger().info(f"OSCBF_START_NOTIFY_RESULT={code}")
-            return _format_result("TRANSITION_REPLAYED", len(transition.points), elapsed)
-
-        if mode == "moveit_execute":
-            result = self._executor.execute(transition, dry_run=False, wait=True)
-            if result.succeeded:
-                return _format_result("TRANSITION_EXECUTED", len(transition.points), elapsed)
-            return _format_result("TRANSITION_EXECUTION_FAILED", len(transition.points), elapsed)
-
-        return _format_result("TRANSITION_PLANNED", len(transition.points), elapsed)
-
-    def _ik_failure_context(
-        self,
-        *,
-        error: Exception,
-        moveit_error_code: int | None,
-        position: Sequence[float],
-        orientation: Sequence[float],
-        seed: JointState,
-    ) -> str:
-        """Return machine-readable context for every failed goal IK request."""
-        seed_positions = ",".join(f"{float(value):.6f}" for value in seed.position)
-        return "|".join(
-            [
-                f"detail={error}",
-                f"moveit_error_code={moveit_error_code if moveit_error_code is not None else 'NO_RESPONSE'}",
-                "position=" + ",".join(f"{float(value):.6f}" for value in position),
-                "orientation=" + ",".join(f"{float(value):.6f}" for value in orientation),
-                f"planning_group={self._planning_group}",
-                f"base_frame={self._base_frame}",
-                f"tool_link={self._tool_link}",
-                "seed_names=" + ",".join(seed.name),
-                f"seed_positions={seed_positions}",
-                "avoid_collisions=true",
-                f"timeout={float(self.get_parameter('ik_service_timeout_s').value):.3f}",
-            ]
-        )
 
     # ------------------------------------------------------------------
     #  Issue #3: no nested rclpy.spin_once / spin_until_future_complete
@@ -700,6 +484,7 @@ class TransitionPlanningServer(Node):
             f"WARNING: start state using MoveIt fallback, not mujoco topic"
         )
         return result
+
 
 def main(args: Sequence[str] | None = None) -> int:
     rclpy.init(args=args)

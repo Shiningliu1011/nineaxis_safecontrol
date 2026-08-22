@@ -165,10 +165,6 @@ class TestFinalLaunchDescription(unittest.TestCase):
             ),
             1,
         )
-        self.assertNotIn(
-            ("robot_safecontrol_moveit", "plan_transition", "plan_transition"),
-            identities,
-        )
         self.assertTrue(
             any(
                 isinstance(action, TimerAction)

@@ -60,7 +60,6 @@ setup(
     license="BSD-3-Clause",
     entry_points={
         "console_scripts": [
-            "plan_transition = robot_safecontrol_moveit.plan_transition:main",
             "mujoco_viewer = robot_safecontrol_moveit.mujoco_viewer_with_cylinder:main",
             "mujoco_joint_state_viewer = robot_safecontrol_moveit.mujoco_viewer_with_cylinder:main",
             "transition_planning_server = robot_safecontrol_moveit.transition_planning_server:main",

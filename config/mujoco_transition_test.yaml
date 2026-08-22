@@ -1,10 +1,9 @@
-# Unified test configuration for MuJoCo manual mode + MoveIt transition planning.
+# Unified test configuration for MuJoCo manual mode + static obstacles.
 # Load this file when launching the test scenario:
 #
 #   ros2 launch robot_safecontrol_moveit mujoco_transition_test.launch.py
 #
-# The Viewer publishes manual joint state to /mujoco_joint_states (BEST_EFFORT),
-# and plan_transition reads from the same topic with matching QoS.
+# The Viewer publishes manual joint state to /mujoco_joint_states (BEST_EFFORT).
 # Static obstacles are published by the static_obstacle_publisher node.
 
 mujoco_joint_state_viewer:
@@ -24,25 +23,3 @@ static_obstacle_publisher:
   ros__parameters:
     static_collision_object_topic: /static_collision_object
     default_frame_id: base_link
-
-plan_transition:
-  ros__parameters:
-    use_current_state: true
-    joint_state_topic: /mujoco_joint_states
-    allow_joint_state_fallback: false
-    joint_state_timeout_s: 5.0
-    max_joint_state_age_s: 1.0
-    scene_sync_timeout_s: 3.0
-    publish_static_obstacles_in_planner: false
-    planner_id: AEBRRTstarFaithfulConfigDefault
-    planning_time_s: 10.0
-    planning_attempts: 1
-    execute_transition: false
-    execute_task_path: false
-    dry_run: true
-    max_points: 1
-    point_stride: 1
-    align_tool_x_to_surface_normal: true
-    cylinder_axis_direction: [0.0, 1.0, 0.0]
-    replay_joint_state_topic: /mujoco_joint_states
-    replay_rate_hz: 5.0

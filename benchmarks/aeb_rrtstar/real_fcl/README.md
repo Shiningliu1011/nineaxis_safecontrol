@@ -20,7 +20,7 @@ environment (the `aeb_rrtstar_ompl/AEBRRTstarPlannerManager` plugin running insi
 
 ## End-to-end pipeline (real config, planning only)
 
-`config/plan_transition.yaml` with `execute_transition:=false`, `max_points=50`,
+`config/plan_transition.yaml` (removed in the 2026-08 C1 refactor; see docs/adr/0001) with `execute_transition:=false`, `max_points=50`,
 `align_tool_x_to_surface_normal:=true`, `planner_id:=AEBRRTstarFaithfulConfigDefault`.
 
 Raw log: `validate_final.log`
