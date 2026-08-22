@@ -12,7 +12,7 @@ from controller_manager_msgs.srv import SwitchController
 from pymoveit2 import MoveIt2, MoveIt2State
 from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import JointState
-from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
+from trajectory_msgs.msg import JointTrajectory
 
 
 class ExecutionError(RuntimeError):
@@ -33,42 +33,6 @@ class TrajectoryExecutor:
         self._node = node
         self._moveit = moveit
         self._joint_names = tuple(joint_names)
-
-    def make_task_trajectory(
-        self,
-        states: Sequence[JointState],
-        source_times_s: Sequence[float],
-        lead_time_s: float = 0.05,
-        time_scale: float = 1.0,
-    ) -> JointTrajectory:
-        """Convert MoveIt IK results plus supplied timestamps to a ROS trajectory."""
-        if len(states) == 0:
-            raise ExecutionError("Cannot execute an empty IK path")
-        if len(states) != len(source_times_s):
-            raise ExecutionError("IK state count and source timestamp count differ")
-        if lead_time_s <= 0.0 or time_scale <= 0.0:
-            raise ValueError("lead_time_s and time_scale must be positive")
-
-        initial_time = float(source_times_s[0])
-        trajectory = JointTrajectory()
-        trajectory.joint_names = list(self._joint_names)
-        previous_time = 0.0
-
-        for index, (state, raw_time) in enumerate(zip(states, source_times_s)):
-            point_time = (float(raw_time) - initial_time) * time_scale + lead_time_s
-            if not isfinite(point_time) or point_time <= previous_time:
-                raise ExecutionError(
-                    f"Source timestamps must be strictly increasing (index {index})"
-                )
-            positions = self._ordered_positions(state)
-            point = JointTrajectoryPoint()
-            point.positions = positions
-            point.time_from_start = self._duration(point_time)
-            trajectory.points.append(point)
-            previous_time = point_time
-
-        self._validate_trajectory(trajectory)
-        return trajectory
 
     def execute(
         self,
@@ -196,13 +160,6 @@ class TrajectoryExecutor:
         if self._moveit.query_state() == MoveIt2State.EXECUTING:
             self._moveit.cancel_execution()
 
-    def _ordered_positions(self, state: JointState) -> list[float]:
-        positions = dict(zip(state.name, state.position))
-        missing = [name for name in self._joint_names if name not in positions]
-        if missing:
-            raise ExecutionError(f"Joint state is missing required joints: {missing}")
-        return [float(positions[name]) for name in self._joint_names]
-
     def _validate_trajectory(self, trajectory: JointTrajectory) -> None:
         if tuple(trajectory.joint_names) != self._joint_names:
             raise ExecutionError(
@@ -226,15 +183,6 @@ class TrajectoryExecutor:
                     f"Trajectory point {index} does not have a strictly increasing time_from_start"
                 )
             previous_time = point_time
-
-    @staticmethod
-    def _duration(seconds: float) -> Duration:
-        sec = int(seconds)
-        nanosec = int(round((seconds - sec) * 1_000_000_000))
-        if nanosec == 1_000_000_000:
-            sec += 1
-            nanosec = 0
-        return Duration(sec=sec, nanosec=nanosec)
 
     @staticmethod
     def _seconds(duration: Duration) -> float:

@@ -1,7 +1,7 @@
 """Unified test launch: MuJoCo Viewer + static obstacle publisher.
 
-This launch file does NOT start plan_transition — that is triggered manually
-after the user has set a manual pose in the Viewer.
+This launch file does NOT start the transition server — the transition is
+triggered manually after the user has set a manual pose in the Viewer.
 
 Usage::
 

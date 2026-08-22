@@ -7,13 +7,14 @@
 ```
 robot_safecontrol/
 ├── src/
-│   ├── plan_transition.py              # 独立脚本：OMPL 过渡路径规划 (无 ROS)
 │   ├── view_arm.py                     # 独立脚本：MuJoCo 机械臂可视化 (无 ROS)
 │   └── robot_safecontrol_moveit/       # ROS2 Python 包
-│       ├── plan_transition.py          #   ROS2 节点：过渡路径规划
-│       ├── transition_planning_server.py #   持久化规划服务器
+│       ├── transition_planning_server.py #   持久化规划服务器（薄 ROS 壳）
+│       ├── transition_executor.py      #   过渡管线相位机（纯逻辑，无 ROS）
 │       ├── continuous_ik.py            #   连续 IK 求解
 │       ├── motion_planning.py          #   MoveIt 运动规划
+│       ├── cylinder_geometry.py        #   圆柱拟合/表面法向（单一实现）
+│       ├── robot_spec.py               #   共享机器人常量（关节名等）
 │       ├── mujoco_viewer_with_cylinder.py  # MuJoCo 可视化节点
 │       └── trajectory_execution.py     #   轨迹执行
 ├── models/
@@ -25,10 +26,10 @@ robot_safecontrol/
 │       ├── config/                     #   SRDF、控制器、运动学配置
 │       └── launch/                     #   demo.launch.py
 ├── config/
-│   ├── plan_transition.yaml            # ROS2 节点参数
-│   └── mujoco_transition_runtime.yaml  # 运行时参数
+│   ├── mujoco_transition_runtime.yaml  # 过渡服务器运行时参数
+│   └── mujoco_transition_test.yaml     # 测试场景参数
 ├── launch/
-│   ├── plan_transition.launch.py       # ROS2 launch: 过渡路径规划
+│   ├── mujoco_transition_final.launch.py  # 完整闭环 launch
 │   └── mujoco_viewer.launch.py         # ROS2 launch: MuJoCo 可视化
 ├── data/
 │   └── nurbs/                          # NURBS 轨迹数据
@@ -50,9 +51,6 @@ robot_safecontrol/
 ```bash
 # MuJoCo 可视化机械臂 + 末端轨迹
 python3 src/view_arm.py
-
-# OMPL 过渡路径规划 (零位→轨迹起始点)
-python3 src/plan_transition.py
 ```
 
 依赖: `mujoco`, `numpy`, `scipy`, `ompl`

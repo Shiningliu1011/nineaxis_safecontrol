@@ -19,7 +19,7 @@ class TestSurfaceNormalOrientations(unittest.TestCase):
     """Test the compute_surface_normal_orientations function."""
 
     def setUp(self):
-        from robot_safecontrol_moveit.task_target import (
+        from robot_safecontrol_moveit.cylinder_geometry import (
             compute_surface_normal_orientations,
         )
         self.compute = compute_surface_normal_orientations
@@ -104,7 +104,7 @@ class TestRotationMatrixToQuaternion(unittest.TestCase):
     """Internal conversion from rotation matrix to quaternion."""
 
     def setUp(self):
-        from robot_safecontrol_moveit.task_target import (
+        from robot_safecontrol_moveit.cylinder_geometry import (
             _rotation_matrix_to_quaternion_xyzw,
         )
         self.convert = _rotation_matrix_to_quaternion_xyzw
@@ -131,10 +131,10 @@ class TestRotationMatrixToQuaternion(unittest.TestCase):
 
 
 class TestSharedLogicIntegration(unittest.TestCase):
-    """Verify that plan_transition and transition_planning_server use the same functions."""
+    """Verify the transition pipeline's shared helpers stay importable."""
 
     def test_same_load_mat_trajectory(self):
-        """Both modules should import from task_target."""
+        """The pipeline helpers live in task_target."""
         from robot_safecontrol_moveit.task_target import (
             load_mat_trajectory,
             compute_first_task_orientation,

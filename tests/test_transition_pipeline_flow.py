@@ -28,15 +28,13 @@ from robot_safecontrol_moveit.motion_planning import StateValidityError
 from robot_safecontrol_moveit.trajectory_execution import (
     TrajectoryExecutor,
 )
-from robot_safecontrol_moveit.transition_planning_server import (
-    TransitionPlanningServer,
-)
-import robot_safecontrol_moveit.transition_planning_server as planning_server
+from robot_safecontrol_moveit.transition_executor import TransitionExecutor
+import robot_safecontrol_moveit.transition_executor as transition_executor
 import robot_safecontrol_moveit.trajectory_execution as trajectory_execution
 
 
 def _result_code(result: str) -> str:
-    """Read the stable top-level status field returned by the server."""
+    """Read the stable top-level status field returned by the pipeline."""
     fields = dict(
         item.split("=", 1) for item in result.split("|") if "=" in item
     )
@@ -64,31 +62,8 @@ class _Logger:
         self.messages.append(("error", str(message)))
 
 
-class _PipelinePlanner:
-    """Small planner fake that records calls made by ``_execute_plan``."""
-
-    def __init__(self, events: list[str]) -> None:
-        self.events = events
-        self._options = SimpleNamespace(planner_id="RRTConnectkConfigDefault")
-        self.start_validation_error: Exception | None = None
-        self.plan_error: Exception | None = None
-
-    def validate_state(self, state: JointState, *, label: str) -> None:
-        self.events.append(f"validate:{label}")
-        if label == "START_STATE" and self.start_validation_error is not None:
-            raise self.start_validation_error
-
-    def plan_transition(
-        self, start_state: JointState, goal_state: JointState
-    ) -> SimpleNamespace:
-        self.events.append("plan")
-        if self.plan_error is not None:
-            raise self.plan_error
-        return SimpleNamespace(points=[object(), object(), object()])
-
-
-class _PipelineServer:
-    """The minimum server-shaped object accepted by the unbound method."""
+class _PipelinePorts:
+    """Ports fake: records the order the phase machine drives its ports."""
 
     _DEFAULT_PARAMETERS = {
         "joint_state_topic": "/mujoco_joint_states",
@@ -107,83 +82,102 @@ class _PipelineServer:
         "transition_result_mode": "plan_only",
         "replay_joint_state_topic": "/mujoco_joint_states",
         "replay_rate_hz": 30.0,
+        "oscbf_command_topic": "",
+        "notify_oscbf_start": False,
     }
 
     def __init__(self, events: list[str]) -> None:
         self.events = events
         self._parameters = dict(self._DEFAULT_PARAMETERS)
-        self._logger = _Logger()
-        self._joint_names = ("J1", "J2")
-        self._tool_link = "tool0"
-        self._base_frame = "base_link"
-        self._planning_group = "arm"
-        self._moveit = object()
-        self._planner = _PipelinePlanner(events)
-        self._executor = object()
-        self._start_state = _joint_state()
+        self.log = _Logger()
+        self.start_state = _joint_state()
+        self.goal_state = _joint_state(positions=(0.3, -0.1))
+        self.start_validation_error: Exception | None = None
+        self.plan_error: Exception | None = None
+        self.planner_id = "RRTConnectkConfigDefault"
 
     def get_parameter(self, name: str) -> SimpleNamespace:
         return SimpleNamespace(value=self._parameters[name])
 
-    def get_logger(self) -> _Logger:
-        return self._logger
-
-    def _check_moveit_services(self) -> tuple[bool, str]:
+    def check_moveit_services(self) -> tuple[bool, str]:
         self.events.append("services")
         return True, ""
 
-    def _wait_for_joint_state(self, *args, **kwargs) -> JointState:
+    def wait_for_joint_state(self, *args, **kwargs) -> JointState:
         self.events.append("fresh_state")
-        return self._start_state
+        return self.start_state
+
+    def solve_task_state(self, **kwargs) -> JointState:
+        self.events.append("ik")
+        return self.goal_state
+
+    def validate_state(self, state: JointState, *, label: str) -> None:
+        self.events.append(f"validate:{label}")
+        if label == "START_STATE" and self.start_validation_error is not None:
+            raise self.start_validation_error
+
+    def plan_transition(self, start_state, goal_state) -> SimpleNamespace:
+        self.events.append("plan")
+        if self.plan_error is not None:
+            raise self.plan_error
+        return SimpleNamespace(points=[object(), object(), object()])
+
+    def replay(self, trajectory, *, topic, rate_hz, command_topic) -> None:
+        self.events.append("replay")
+
+    def execute(self, trajectory) -> SimpleNamespace:
+        self.events.append("execute")
+        return SimpleNamespace(succeeded=True)
+
+    def notify_oscbf_start(self) -> str:
+        return "TRACKING_STARTED"
+
+    def wait_for_plant_settle(self, transition) -> None:
+        self.events.append("settle")
+
+
+class _UnavailableIKPorts(_PipelinePorts):
+    def solve_task_state(self, **kwargs) -> JointState:
+        self.events.append("ik")
+        raise IKServiceUnavailable()
 
 
 class TestTransitionPlanningPipeline(unittest.TestCase):
-    def _patched_task_helpers(self, events: list[str], solve):
-        """Patch task inputs only; the server method remains the real code."""
+    def _patched_task_helpers(self):
+        """Patch task inputs only; the phase machine remains the real code."""
         return (
             patch.object(
-                planning_server,
+                transition_executor,
                 "_resolve_path",
                 return_value=Path("/tmp/ik_input.mat"),
             ),
             patch.object(
-                planning_server,
+                transition_executor,
                 "load_first_task_target",
                 side_effect=lambda *args, **kwargs: (
-                    events.append("target") or ([(0.4, 0.2, 0.8)], [0.0])
+                    self.events.append("target") or ([(0.4, 0.2, 0.8)], [0.0])
                 ),
             ),
             patch.object(
-                planning_server,
+                transition_executor,
                 "compute_first_task_orientation",
                 side_effect=lambda *args, **kwargs: (
-                    events.append("orientation") or ((0.0, 0.0, 0.0, 1.0), None)
+                    self.events.append("orientation") or ((0.0, 0.0, 0.0, 1.0), None)
                 ),
-            ),
-            patch.object(
-                planning_server,
-                "solve_first_task_state",
-                side_effect=solve,
             ),
         )
 
     def test_execute_plan_runs_the_fail_closed_stages_in_order(self):
-        events: list[str] = []
-        fake_server = _PipelineServer(events)
-        goal_state = _joint_state(positions=(0.3, -0.1))
+        self.events: list[str] = []
+        ports = _PipelinePorts(self.events)
 
-        def solve(**kwargs):
-            events.append("ik")
-            self.assertIs(kwargs["start_state"], fake_server._start_state)
-            return goal_state
-
-        patches = self._patched_task_helpers(events, solve)
-        with patches[0], patches[1], patches[2], patches[3]:
-            result = TransitionPlanningServer._execute_plan(fake_server)
+        patches = self._patched_task_helpers()
+        with patches[0], patches[1], patches[2]:
+            result = TransitionExecutor(ports).execute_plan()
 
         self.assertEqual(_result_code(result), "TRANSITION_PLANNED")
         self.assertEqual(
-            events,
+            self.events,
             [
                 "services",
                 "fresh_state",
@@ -197,39 +191,31 @@ class TestTransitionPlanningPipeline(unittest.TestCase):
         )
 
     def test_ik_service_exception_is_returned_as_its_structured_status(self):
-        events: list[str] = []
-        fake_server = _PipelineServer(events)
+        self.events: list[str] = []
+        ports = _UnavailableIKPorts(self.events)
 
-        def unavailable_ik(**kwargs):
-            events.append("ik")
-            raise IKServiceUnavailable()
-
-        patches = self._patched_task_helpers(events, unavailable_ik)
-        with patches[0], patches[1], patches[2], patches[3]:
-            result = TransitionPlanningServer._execute_plan(fake_server)
+        patches = self._patched_task_helpers()
+        with patches[0], patches[1], patches[2]:
+            result = TransitionExecutor(ports).execute_plan()
 
         self.assertEqual(_result_code(result), "IK_SERVICE_UNAVAILABLE")
-        self.assertEqual(events[-1], "ik")
-        self.assertNotIn("plan", events)
+        self.assertEqual(self.events[-1], "ik")
+        self.assertNotIn("plan", self.events)
 
     def test_state_validity_exception_is_returned_before_planning(self):
-        events: list[str] = []
-        fake_server = _PipelineServer(events)
-        fake_server._planner.start_validation_error = StateValidityError(
+        self.events: list[str] = []
+        ports = _PipelinePorts(self.events)
+        ports.start_validation_error = StateValidityError(
             "START_STATE_COLLISION: fixture contact"
         )
 
-        def solve(**kwargs):
-            events.append("ik")
-            return _joint_state(positions=(0.3, -0.1))
-
-        patches = self._patched_task_helpers(events, solve)
-        with patches[0], patches[1], patches[2], patches[3]:
-            result = TransitionPlanningServer._execute_plan(fake_server)
+        patches = self._patched_task_helpers()
+        with patches[0], patches[1], patches[2]:
+            result = TransitionExecutor(ports).execute_plan()
 
         self.assertEqual(_result_code(result), "START_STATE_COLLISION")
-        self.assertEqual(events[-1], "validate:START_STATE")
-        self.assertNotIn("plan", events)
+        self.assertEqual(self.events[-1], "validate:START_STATE")
+        self.assertNotIn("plan", self.events)
 
 
 class _UnavailableService:
