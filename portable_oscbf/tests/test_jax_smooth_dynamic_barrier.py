@@ -9,7 +9,7 @@ def test_smooth_dynamic_barrier_has_one_conservative_row_per_robot_sphere():
     pytest.importorskip("cbfpy")
     import jax.numpy as jnp
 
-    from work.jax_control_loop import MAX_JAX_OBSTACLES
+    from work.jax_control_facade import MAX_JAX_OBSTACLES
     from work.nineaxis_manipulator_jax import NineaxisManipulatorJAX
     from work.oscbf_velocity_config import NineaxisOSCBFVelocityConfig
 

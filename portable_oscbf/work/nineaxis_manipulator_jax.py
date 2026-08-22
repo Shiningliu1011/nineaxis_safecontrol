@@ -20,21 +20,9 @@ from work.collision_envelope import (
 )
 
 
-# URDF 关节链参数 (与 nineaxis_kinematics.py 一致)
-JOINT_CHAIN = [
-    # 完全匹配 URDF + ee_link 偏移
-    ("world",     "base_link", "fixed",      0.0,   0.0,   0.0,   0.0,     0.0,      0.0,      (0, 0, 1)),
-    ("base_link", "Link1",     "prismatic",  0.0,   0.0,   0.0,   0.0,     0.0,      0.0,      (0, 0, 1)),
-    ("Link1",     "Link2",     "revolute",   0.0,   0.343, 0.0,   1.5708, -1.5708,   0.0,      (0, 0, 1)),
-    ("Link2",     "Link3",     "revolute",   0.225, 0.0,   0.0,   0.0,     0.0,      0.0,      (0, 0, 1)),
-    ("Link3",     "Link4",     "revolute",   0.225, 0.0,   0.0,   0.0,     0.0,      1.5708,   (0, 0, 1)),
-    ("Link4",     "Link5",     "revolute",   0.0,  -0.343, 0.0,  -1.5708,  0.0,     -3.1416,   (0, 0, 1)),
-    ("Link5",     "Link6",     "revolute",   0.0,   0.0,   0.0,   1.5708, -1.5708,   0.0,      (0, 0, 1)),
-    ("Link6",     "Link7",     "revolute",   0.135, 0.0,   0.0,  -1.5708,  0.0,      0.0,      (0, 0, 1)),
-    ("Link7",     "Link8",     "revolute",   0.11,  0.0,   0.0,   1.5708,  0.0,      0.0,      (0, 0, 1)),
-    ("Link8",     "Link9",     "revolute",   0.114, 0.0,   0.0,  -1.5708,  0.0,      0.0,      (0, 0, 1)),
-    ("Link9",     "ee_link",   "fixed",      0.235, 0.0,   0.0,   0.0,     0.0,      0.0,      (0, 0, 1)),
-]
+# URDF 关节链参数 — 单一数据源在 nineaxis_kinematics.py（M1 已验证其与
+# URDF 一致）；此处只导入，禁止在本模块重新抄写。
+from work.nineaxis_kinematics import JOINT_CHAIN
 
 
 def _skew_jax(v):
@@ -155,7 +143,7 @@ class NineaxisManipulatorJAX:
         ])
 
         # 从 NumPy 版本提取螺旋轴、零位矩阵和连杆变换
-        from work.nineaxis_kinematics import NineaxisKinematics, JOINT_CHAIN
+        from work.nineaxis_kinematics import NineaxisKinematics
         kin_np = NineaxisKinematics()
         # Keep the JAX box constraints identical to the NumPy/simulation path.
         self.joint_max_velocities = jnp.asarray(kin_np.joint_limits.dq_max)

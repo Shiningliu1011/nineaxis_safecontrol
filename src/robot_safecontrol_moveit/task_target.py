@@ -1,9 +1,11 @@
-"""Shared trajectory target helpers: load, first-target IK, surface-normal orientation.
+"""Shared trajectory target helpers: first-target IK and surface-normal orientation.
 
 The transition pipeline needs trajectory loading and first-target
 computation; this module is the single source of truth for those helpers.
-The cylinder-fit math itself lives in :mod:`cylinder_geometry` so the
-viewer and the planner share one implementation.
+Trajectory loading itself goes through :mod:`oscbf_trajectory` (the
+calibrated transform); the cylinder-fit math lives in
+:mod:`cylinder_geometry` so the viewer and the planner share one
+implementation.
 """
 
 from __future__ import annotations
@@ -11,60 +13,11 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Sequence
 
-import numpy as np
-import scipy.io
 from pymoveit2 import MoveIt2
 from sensor_msgs.msg import JointState
 
 from .continuous_ik import ContinuousIK, IKError, IKOptions
 from .cylinder_geometry import compute_surface_normal_orientations
-
-
-# ---------------------------------------------------------------------------
-#  Shared trajectory loading
-# ---------------------------------------------------------------------------
-
-
-def load_mat_trajectory(
-    path: Path,
-    offset_m: Sequence[float],
-    max_points: int,
-    point_stride: int,
-) -> tuple[list[tuple[float, float, float]], list[float]]:
-    """Load the MAT position path in ``base_link`` coordinates (metres).
-
-    The legacy MuJoCo-only Y-up→Z-up conversion is intentionally absent.  The
-    URDF, MoveIt PlanningScene, and the calibration offset all use the same
-    ``base_link`` coordinates.
-    """
-    mat_data = scipy.io.loadmat(path)
-    try:
-        ik_input = mat_data["ik_input"][0, 0]
-        positions_mm = np.asarray(ik_input["position_series"], dtype=float)
-        times_s = np.asarray(ik_input["time_series"], dtype=float).reshape(-1)
-    except (KeyError, IndexError, TypeError) as error:
-        raise ValueError(f"{path} is not a supported ik_input.mat file") from error
-
-    if positions_mm.ndim != 2 or positions_mm.shape[1] != 3:
-        raise ValueError("position_series must have shape (N, 3)")
-    if positions_mm.shape[0] != times_s.shape[0]:
-        raise ValueError("position_series and time_series have different lengths")
-    if not np.isfinite(positions_mm).all() or not np.isfinite(times_s).all():
-        raise ValueError("MAT trajectory contains non-finite values")
-
-    indices = np.arange(0, len(positions_mm), point_stride, dtype=int)
-    if max_points > 0:
-        indices = indices[:max_points]
-    if len(indices) == 0:
-        raise ValueError("Trajectory selection produced no waypoints")
-
-    offset = np.asarray(offset_m, dtype=float)
-    positions_m = positions_mm[indices] / 1000.0 + offset
-    selected_times = times_s[indices]
-    return (
-        [tuple(float(v) for v in point) for point in positions_m],
-        [float(v) for v in selected_times],
-    )
 
 
 # ---------------------------------------------------------------------------

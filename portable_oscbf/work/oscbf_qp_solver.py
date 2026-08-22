@@ -16,7 +16,7 @@ import logging
 import numpy as np
 from typing import List, Tuple, Optional
 from scipy.sparse import csc_matrix, triu
-from dynamic_obstacles import CbfConstraint
+from work.dynamic_obstacles import CbfConstraint
 
 _logger = logging.getLogger(__name__)
 

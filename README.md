@@ -7,7 +7,6 @@
 ```
 robot_safecontrol/
 ├── src/
-│   ├── view_arm.py                     # 独立脚本：MuJoCo 机械臂可视化 (无 ROS)
 │   └── robot_safecontrol_moveit/       # ROS2 Python 包
 │       ├── transition_planning_server.py #   持久化规划服务器（薄 ROS 壳）
 │       ├── transition_executor.py      #   过渡管线相位机（纯逻辑，无 ROS）
@@ -45,15 +44,6 @@ robot_safecontrol/
 ```
 
 ## 运行
-
-### 独立脚本（无需 ROS）
-
-```bash
-# MuJoCo 可视化机械臂 + 末端轨迹
-python3 src/view_arm.py
-```
-
-依赖: `mujoco`, `numpy`, `scipy`, `ompl`
 
 ### ROS2 节点
 

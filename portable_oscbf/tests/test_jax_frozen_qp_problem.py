@@ -14,7 +14,7 @@ def _block(tree):
 
 def test_frozen_qp_core_matches_the_production_candidate_with_rate_slacks():
     from actuator_limits import command_delta_limits, load_actuator_limit_profile
-    from jax_control_loop import JaxControlLoop
+    from work.jax_control_facade import JaxControlLoop
 
     profile = load_actuator_limit_profile()
     loop = JaxControlLoop(

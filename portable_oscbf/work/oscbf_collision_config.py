@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
-"""OSCBF collision constraint shared configuration (single source of truth for
-velocity and torque modes).
+"""OSCBF collision constraint shared configuration (single source of truth).
 
-Extracted from ``oscbf_velocity_config.py`` so ``oscbf_torque_config.py`` can
-reuse the same collision geometry without duplicating the 17-sphere model or
-the 14 self-collision pairs.
+Holds the 17-sphere model and the 14 self-collision pairs for the
+velocity-level OSCBF configuration.
 
 Reference
 ---------

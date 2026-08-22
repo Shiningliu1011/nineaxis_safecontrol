@@ -64,7 +64,7 @@ def test_velocity_config():
     assert np.all(np.linalg.eigvalsh(np.array(P)) >= -1e-6), "P 矩阵不正定"
 
     # 测试约束 (无障碍物: obs_enabled 全 0)
-    from work.jax_control_loop import MAX_JAX_OBSTACLES
+    from work.jax_control_facade import MAX_JAX_OBSTACLES
     obs_pos_empty = jnp.zeros((MAX_JAX_OBSTACLES, 3))
     obs_rad_empty = jnp.zeros(MAX_JAX_OBSTACLES)
     obs_en_empty = jnp.zeros(MAX_JAX_OBSTACLES)
@@ -87,51 +87,6 @@ def test_velocity_config():
     # 第一条障碍物约束 (robot body 0 vs obs 0) 应有有限 h 值
     assert float(h_obs[config.obstacle_h_start]) < 1e3, (
         "启用障碍物的 h 值不应为 1e3")
-
-
-@pytest.mark.skip(
-    reason="depends on work.frax_manipulator, excluded from the portable core "
-           "(not in OSCBF_PORTING_GUIDE.md Appendix A); torque-level config "
-           "is out of scope for the velocity-level roadmap"
-)
-def test_torque_config():
-    """测试力矩级 OSCBF 配置"""
-    from work.frax_manipulator import FraxManipulator
-    from work.oscbf_torque_config import NineaxisOSCBFTorqueConfig
-
-    robot = FraxManipulator()
-    config = NineaxisOSCBFTorqueConfig(robot)
-
-    # 测试 P 矩阵
-    z = jnp.zeros(18)
-    u_des = jnp.zeros(9)
-    P = config.P(z, u_des)
-
-    assert P.shape == (9, 9), f"P 矩阵形状错误: {P.shape}"
-    assert np.allclose(np.array(P), np.array(P.T), atol=1e-6), "P 矩阵不对称"
-    assert np.all(np.linalg.eigvalsh(np.array(P)) >= -1e-6), "P 矩阵不正定"
-
-    # 测试约束 (无障碍物)
-    # 18 pos + 18 vel + 14 self-coll + 0 obs + 1 sing = 51
-    h = config.h_2(z)
-    assert len(h) == 51, f"约束数量错误: {len(h)} (期望 51)"
-
-    # 测试约束 (有障碍物)
-    obstacle_positions = jnp.array([[0.3, 0.2, 0.5]])
-    obstacle_radii = jnp.array([0.1])
-    config_obs = NineaxisOSCBFTorqueConfig(robot, obstacle_positions, obstacle_radii)
-    h_obs = config_obs.h_2(z)
-    # 18 pos + 18 vel + 14 self-coll + 17*1 obs + 1 sing = 68
-    assert len(h_obs) == 68, f"约束数量错误: {len(h_obs)} (期望 68)"
-
-    # FK consistency: FraxManipulator vs NineaxisManipulatorJAX
-    from work.nineaxis_manipulator_jax import NineaxisManipulatorJAX
-    _robot_jax = NineaxisManipulatorJAX()
-    q_test = jnp.array([0.1, 0.2, -0.1, 0.3, -0.2, 0.1, -0.1, 0.2, -0.1])
-    ee_frax = robot.ee_position(q_test)
-    ee_jax = _robot_jax.ee_position(q_test)
-    assert jnp.allclose(ee_frax, ee_jax, atol=1e-5), \
-        f"FK mismatch: Frax vs JAX = {jnp.max(jnp.abs(ee_frax - ee_jax)):.2e}"
 
 
 @pytest.mark.skip(

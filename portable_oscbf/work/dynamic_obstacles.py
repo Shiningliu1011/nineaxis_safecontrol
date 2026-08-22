@@ -12,9 +12,9 @@ import numpy as np
 from typing import List, Tuple, Optional
 from dataclasses import dataclass
 
-from controller_step_cache import point_jacobian_from_spatial
-from cbf_types import CbfConstraint, _cbf_upper_bound  # 提取到独立模块，向后兼容 re-export
-from point_cloud_obstacles_dynamic import (  # 提取到独立模块，向后兼容 re-export
+from work.controller_step_cache import point_jacobian_from_spatial
+from work.cbf_types import CbfConstraint, _cbf_upper_bound  # 提取到独立模块，向后兼容 re-export
+from work.point_cloud_obstacles_dynamic import (  # 提取到独立模块，向后兼容 re-export
     StaticObstacle, DynamicPointCloudObstacle, MovingObstacle,
 )
 

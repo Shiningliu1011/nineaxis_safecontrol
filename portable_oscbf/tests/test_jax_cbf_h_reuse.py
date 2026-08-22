@@ -10,7 +10,7 @@ def test_cbf_raw_h_matches_unmodified_qp_rhs_divided_by_alpha():
     import jax.numpy as jnp
     from cbfpy import CBF
 
-    from work.jax_control_loop import MAX_JAX_OBSTACLES
+    from work.jax_control_facade import MAX_JAX_OBSTACLES
     from work.nineaxis_manipulator_jax import NineaxisManipulatorJAX
     from work.oscbf_velocity_config import NineaxisOSCBFVelocityConfig
 

@@ -133,15 +133,13 @@ class TestRotationMatrixToQuaternion(unittest.TestCase):
 class TestSharedLogicIntegration(unittest.TestCase):
     """Verify the transition pipeline's shared helpers stay importable."""
 
-    def test_same_load_mat_trajectory(self):
+    def test_pipeline_helpers_are_callable(self):
         """The pipeline helpers live in task_target."""
         from robot_safecontrol_moveit.task_target import (
-            load_mat_trajectory,
             compute_first_task_orientation,
             solve_first_task_state,
         )
         # Verify they are callable.
-        self.assertTrue(callable(load_mat_trajectory))
         self.assertTrue(callable(compute_first_task_orientation))
         self.assertTrue(callable(solve_first_task_state))
 

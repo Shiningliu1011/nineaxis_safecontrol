@@ -627,7 +627,7 @@ class IKTrajectoryData:
         trajectory-to-base transform a second time.
         """
         if self._path_geometry is None:
-            from path_following import PathGeometry
+            from work.path_following import PathGeometry
 
             self._path_geometry = PathGeometry.from_samples(
                 self._pos_world,
@@ -855,35 +855,3 @@ class IKTrajectoryData:
 
         print(f"[extract_key_waypoints] 提取 {len(waypoints)} 个关键路点 (目标 {n_waypoints})")
         return waypoints
-
-
-# ================================================================
-# 测试
-# ================================================================
-if __name__ == "__main__":
-    import sys
-    sys.path.insert(0, '.')
-    from traj_to_base_transform import compute_traj_to_base
-
-    T_traj_to_base, _, _ = compute_traj_to_base()
-    _here = os.path.dirname(os.path.abspath(__file__))
-    _default_mat = os.path.join(_here, '..', 'nurbs_data', 'ik_input.mat')
-    traj = IKTrajectoryData(_default_mat, T_traj_to_base)
-
-    # 冒烟测试
-    t0 = 0.0
-    t_mid = traj.total_time() / 2
-    t_end = traj.total_time()
-
-    for t in [t0, t_mid, t_end]:
-        ref = traj.task_reference_at(t)
-        print(f"\nt={t:.3f}s  block={traj.block_index_at(t)}")
-        print(f"  pos:  [{ref.pos[0]:.4f}, {ref.pos[1]:.4f}, {ref.pos[2]:.4f}] m")
-        print(f"  vel:  [{ref.vel[0]:.4f}, {ref.vel[1]:.4f}, {ref.vel[2]:.4f}] m/s")
-        print(f"  Z_des:{ref.R_des[:, 2].round(4)}")
-        print(f"  chord_err: {traj.chord_error_at(t)*1e6:.2f} um")
-        print(f"  feedrate:  {traj.feedrate_cmd_at(t):.4f} m/s")
-
-    # 提取路点
-    waypoints = traj.extract_key_waypoints(80)
-    print(f"\n路点时间戳: {[f'{wp.t:.2f}' for wp in waypoints[:10]]}...")

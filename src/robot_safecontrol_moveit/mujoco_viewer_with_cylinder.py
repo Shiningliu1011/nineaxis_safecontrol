@@ -29,6 +29,7 @@ from sensor_msgs.msg import JointState
 from .cylinder_geometry import fit_circle
 from .oscbf_trajectory import load_calibrated_path
 from .robot_spec import DEFAULT_JOINT_NAMES
+from .ros_conventions import JOINT_STATE_TOPIC
 
 
 # The project URDF is authored in the legacy Y-up convention.  The wrapper is
@@ -179,7 +180,7 @@ class MuJoCoJointStateViewer(Node):
 
     def _declare_parameters(self) -> None:
         self.declare_parameter("joint_names", list(DEFAULT_JOINT_NAMES))
-        self.declare_parameter("joint_state_topic", "/mujoco_joint_states")
+        self.declare_parameter("joint_state_topic", JOINT_STATE_TOPIC)
         self.declare_parameter("viewer_rate_hz", 60.0)
         self.declare_parameter("urdf_path", "")
         self.declare_parameter("mesh_directory", "")

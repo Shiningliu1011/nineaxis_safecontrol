@@ -12,10 +12,7 @@ from dataclasses import dataclass
 import numpy as np
 from scipy import ndimage
 
-try:
-    from safety_snapshot import MAX_DYNAMIC_TRACKS, SafetyGridSpec
-except ImportError:  # 包式导入回退
-    from work.safety_snapshot import MAX_DYNAMIC_TRACKS, SafetyGridSpec
+from work.safety_snapshot import MAX_DYNAMIC_TRACKS, SafetyGridSpec
 
 
 @dataclass

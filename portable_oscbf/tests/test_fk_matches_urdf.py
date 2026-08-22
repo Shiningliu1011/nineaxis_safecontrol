@@ -252,3 +252,11 @@ def test_jacobian_matches_finite_difference(model_and_urdf):
 
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-v"]))
+
+
+def test_jax_and_numpy_share_one_joint_chain_object():
+    """The JAX model must not re-type the chain: import the single source."""
+    import work.nineaxis_manipulator_jax as jax_module
+    import work.nineaxis_kinematics as np_module
+
+    assert jax_module.JOINT_CHAIN is np_module.JOINT_CHAIN
