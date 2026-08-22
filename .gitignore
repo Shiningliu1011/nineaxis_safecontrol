@@ -12,6 +12,9 @@ log/
 # 生成文件
 output/
 
+# 本地任务票据 (to-tickets)
+.scratch/
+
 # IDE
 .vscode/
 build/

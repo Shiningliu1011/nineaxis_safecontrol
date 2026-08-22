@@ -17,6 +17,7 @@ MoveIt 2。随机位姿 → AEB-RRT* 无碰撞过渡 → OSCBF 安全跟踪蝴�
 bash build_aeb_moveit.sh   # 必须用此脚本：普通 colcon build 找不到嵌套 C++ 包
 source install/setup.bash
 bash run_demo.sh           # 全自动演示，无需键盘
+bash run_all_tests.sh      # 全量测试入口（主包 + 控制内核）
 pytest                     # 主包测试（setup.cfg: testpaths = tests）
 pytest portable_oscbf/tests  # 控制核心测试
 ```
