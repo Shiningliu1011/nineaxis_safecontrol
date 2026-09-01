@@ -16,8 +16,8 @@ from pathlib import Path
 
 # Keep the single-threaded XLA contract of the portable suite before the node
 # imports JAX inside its constructor.
-os.environ.setdefault("XLA_FLAGS", "--xla_cpu_multi_thread_eigen=false")
-os.environ.setdefault("JAX_NUM_THREADS", "1")
+# 单线程 XLA 限制已移除：M6 等价门使用 1e-4 容差，多线程 XLA 在此容差内
+# 行为一致；生产环境允许多线程以加速 JIT 编译。
 
 import numpy as np
 import pytest
