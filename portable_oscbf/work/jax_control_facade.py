@@ -257,6 +257,22 @@ class JaxControlLoop:
         from work.oscbf_velocity_config import NineaxisOSCBFVelocityConfig
 
         jax.config.update('jax_enable_x64', self.enable_x64)
+
+        # 启用 JAX 持久化编译缓存（JAX 0.4.30 实验性，部分版本不生效）。
+        # 首次编译后缓存到磁盘，后续启动理论上秒开。
+        import os
+        cache_dir = os.environ.get(
+            "JAX_COMPILATION_CACHE_DIR",
+            os.path.join(os.path.expanduser("~"), ".cache", "jax_cache"))
+        try:
+            from jax.experimental.compilation_cache import compilation_cache
+            compilation_cache.set_cache_dir(cache_dir)
+        except Exception:
+            try:
+                jax.config.update("jax_compilation_cache_dir", cache_dir)
+            except Exception:
+                pass  # 不支持时忽略
+
         self._config = NineaxisOSCBFVelocityConfig(
             self.robot,
             temporal_lambda=self.temporal_lambda,
@@ -327,36 +343,9 @@ class JaxControlLoop:
         sdf_distance = np.full(sdf_shape, 10.0, dtype=np.float32)
         sdf_origin = np.zeros(3, dtype=np.float32)
 
-        self.step(
-            q_warm, np.zeros(9, dtype=np.float64), obs_pos, obs_radii,
-            obs_enabled, obs_d_safe, obs_vel, obs_radius_dot, obs_alpha,
-            u_safe_prev, sdf_distance, sdf_origin, 1.0, 0.0,
-            self._config.d_safe_collision)
-        self.tracking_step(
-            q=q_warm,
-            task_pos=np.asarray(self.robot.ee_position(q_warm)),
-            task_vel=np.zeros(3, dtype=np.float64),
-            task_rot=np.asarray(self.robot.ee_rotation(q_warm)),
-            task_omega=np.zeros(3, dtype=np.float64),
-            kp_pos=50.0,
-            kp_orient=10.0,
-            kp_joint=0.45,
-            q_des=np.zeros(9, dtype=np.float64),
-            nullspace_speed_limit=0.18,
-            damping=1e-3,
-            obs_pos=obs_pos,
-            obs_radii=obs_radii,
-            obs_enabled=obs_enabled,
-            obs_d_safe=obs_d_safe,
-            obs_vel=obs_vel,
-            obs_radius_dot=obs_radius_dot,
-            obs_alpha=obs_alpha,
-            u_safe_prev=u_safe_prev,
-            sdf_distance=sdf_distance,
-            sdf_origin=sdf_origin,
-            sdf_voxel_size=1.0,
-            sdf_enabled=0.0,
-            sdf_margin=self._config.d_safe_collision)
+        # 仅预热生产内核 path_tracking_step（9 个 JIT 子模块）。
+        # 遗留 step()/tracking_step() 不再预热——它们仅用于测试，
+        # 在首次调用时自行 JIT 编译，不影响生产跟踪性能。
         if self.path_is_configured:
             self.path_tracking_step(
                 q=q_warm,
@@ -380,7 +369,8 @@ class JaxControlLoop:
                 sdf_voxel_size=1.0,
                 sdf_enabled=0.0,
                 sdf_margin=self._config.d_safe_collision)
-        print(f'  JAX 固定形状控制内核 JIT 预热完成 ({time.perf_counter() - t0:.1f}s)',
+        elapsed = time.perf_counter() - t0
+        print(f'  JAX 固定形状控制内核 JIT 预热完成 ({elapsed:.1f}s)',
               flush=True)
         self._warmed_up = True
 
