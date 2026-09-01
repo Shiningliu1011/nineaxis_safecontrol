@@ -49,6 +49,11 @@ def generate_launch_description() -> LaunchDescription:
             # the interactive M/T MoveIt demo, where manual mode owns the
             # joint-state stream.
             DeclareLaunchArgument("start_oscbf_plant", default_value="false"),
+            # 真机模式：sim=仿真执行端（默认），shadow=真机桥记录不发送，
+            # live=真机桥发送 CAN 帧。
+            DeclareLaunchArgument("hardware_mode", default_value="sim"),
+            # 感知障碍物管线（Orbbec 相机 → perception_bridge → obs_*）。
+            DeclareLaunchArgument("start_perception", default_value="false"),
             # With the plant on, the controller must wait for the transition
             # replay to finish before it takes over the command stream.
             DeclareLaunchArgument("oscbf_wait_for_start", default_value="false"),
@@ -146,7 +151,39 @@ def generate_launch_description() -> LaunchDescription:
                     {
                         "wait_for_start":
                             LaunchConfiguration("oscbf_wait_for_start"),
+                        "enable_perception_obstacles":
+                            LaunchConfiguration("start_perception"),
                     },
+                ],
+            ),
+
+            # 4c. 真机执行端桥接节点（shadow/live 模式）。
+            #     hardware_mode=sim 时节点自行跳过（不启动 CAN 轮询）。
+            Node(
+                package="robot_safecontrol_moveit",
+                executable="hardware_bridge",
+                name="hardware_bridge",
+                output="screen",
+                parameters=[
+                    str(share_dir / "config" / "drempower.yaml"),
+                    {
+                        "hardware_mode":
+                            LaunchConfiguration("hardware_mode"),
+                    },
+                ],
+            ),
+
+            # 4d. 感知桥接节点（Orbbec → 解析障碍物 → obs_*）。
+            Node(
+                package="robot_safecontrol_moveit",
+                executable="perception_bridge",
+                name="perception_bridge",
+                output="screen",
+                condition=IfCondition(
+                    LaunchConfiguration("start_perception")
+                ),
+                parameters=[
+                    str(share_dir / "config" / "perception_runtime.yaml"),
                 ],
             ),
 

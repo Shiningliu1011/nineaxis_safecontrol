@@ -165,6 +165,26 @@ class TestFinalLaunchDescription(unittest.TestCase):
             ),
             1,
         )
+        self.assertEqual(
+            identities.count(
+                (
+                    "robot_safecontrol_moveit",
+                    "hardware_bridge",
+                    "hardware_bridge",
+                )
+            ),
+            1,
+        )
+        self.assertEqual(
+            identities.count(
+                (
+                    "robot_safecontrol_moveit",
+                    "perception_bridge",
+                    "perception_bridge",
+                )
+            ),
+            1,
+        )
         self.assertTrue(
             any(
                 isinstance(action, TimerAction)
@@ -191,6 +211,10 @@ class TestFinalLaunchDescription(unittest.TestCase):
         self.assertEqual(arguments["oscbf_randomize_start"], "false")
         self.assertIn("auto_plan_once", arguments)
         self.assertEqual(arguments["auto_plan_once"], "true")
+        self.assertIn("hardware_mode", arguments)
+        self.assertEqual(arguments["hardware_mode"], "sim")
+        self.assertIn("start_perception", arguments)
+        self.assertEqual(arguments["start_perception"], "false")
 
     def test_move_group_rsp_and_server_share_mujoco_joint_state_remap(self) -> None:
         description = self._description()
