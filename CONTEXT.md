@@ -55,3 +55,25 @@ _Avoid_: calibration transform、坐标对齐
 **圆柱拟合**:
 对参考轨迹拟合圆柱，得到轴方向与轴心，用于生成表面法向姿态参考；拟合口径必须在轨迹、过渡、控制三端一致。
 _Avoid_: cylinder fitting、轴线拟合
+
+## 真机部署
+
+**真机执行端**:
+订阅命令流（/oscbf_command）、经安全网关校验后换算为 DrEmpower CAN 帧发送给电机，并把反馈帧解码换算后发布状态流（/mujoco_joint_states）的 ROS 2 节点。
+_Avoid_: hardware bridge、CAN bridge
+
+**安全网关**:
+命令流的唯一卡口——超时/故障/限幅违例时输出零速保持命令并锁存停车原因，直到外部健康确认后人工恢复；网关只检验不重塑。
+_Avoid_: safety gate、command validator
+
+**解析障碍物**:
+点云经聚类后拟合的球/圆柱几何障碍物，以包络球进入控制内核的 obs_* 接口；与稠密点云/ESDF 不同，它是可验证的几何单元。
+_Avoid_: obstacle shape、fitted obstacle
+
+**零位标定表**:
+记录每个关节的方向符号与电机零位偏移的配置文件（hardware_joint_zero.yaml），由机械零位标记法生成。
+_Avoid_: zero calibration、home offset
+
+**DrEmpower 帧**:
+电机 CAN 通信的基本单元，CAN ID = (node_id << 5) | cmd_byte，位置命令 0x19、系统命令 0x08。
+_Avoid_: CAN frame、motor command
