@@ -66,6 +66,24 @@ bash run_all_tests.sh
 最终闭环默认使用 `AEBRRTstarFaithfulConfigDefault`。AEB-RRT* 由 MoveIt
 PlanningScene/FCL 做状态与路径碰撞检查。
 
+### 真机运行（shadow/live 模式）
+
+```bash
+# shadow 模式：记录命令与状态，不发送 CAN 帧
+ros2 launch robot_safecontrol_moveit mujoco_transition_final.launch.py \
+    hardware_mode:=shadow start_oscbf_plant:=false
+
+# live 模式：真机发送 CAN 帧
+ros2 launch robot_safecontrol_moveit mujoco_transition_final.launch.py \
+    hardware_mode:=live start_oscbf_plant:=false
+
+# 带感知的真机模式
+ros2 launch robot_safecontrol_moveit mujoco_transition_final.launch.py \
+    hardware_mode:=live start_oscbf_plant:=false start_perception:=true
+```
+
+零位标定：`python3 scripts/calibrate_zero.py --interface can0`（详见 `docs/real_robot_runbook.md`）。
+
 话题约定：OSCBF 控制器订阅植物状态 `/mujoco_joint_states`，把安全命令发布到
 `/oscbf_command`；`oscbf_plant` 节点把命令经 jerk 限幅积分后作为植物状态发回
 `/mujoco_joint_states`。查看器、过渡服务器、控制器共用同一套校准轨迹变换
