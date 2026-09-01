@@ -24,6 +24,7 @@ from ament_index_python.packages import (
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import JointState
+from std_msgs.msg import Float32MultiArray
 from std_srvs.srv import Trigger
 
 from .oscbf_trajectory import bootstrap_portable
@@ -101,6 +102,19 @@ class OscbfController(Node):
         )
         self._timer = self.create_timer(period_s, self._control_tick)
         self._telemetry_timer = self.create_timer(1.0, self._telemetry_tick)
+
+        # 感知障碍物订阅（默认 disabled，不影响现有行为）
+        self._obs_state: dict = {}
+        self._enable_obs = bool(
+            self.get_parameter("enable_perception_obstacles").value)
+        if self._enable_obs:
+            tracks_topic = str(
+                self.get_parameter("perception_tracks_topic").value)
+            self.create_subscription(
+                Float32MultiArray, tracks_topic,
+                self._tracks_callback, qos_profile_sensor_data)
+            self.get_logger().info(f"perception obstacles enabled: {tracks_topic}")
+
         if not self._tracking_started:
             self._start_service = self.create_service(
                 Trigger, "/oscbf_controller/start_tracking",
@@ -154,6 +168,9 @@ class OscbfController(Node):
             "wait_for_start": False,
             "telemetry_period_s": 1.0,
             "perf_report_path": "output/oscbf_m10_perf.md",
+            # 感知障碍物（默认 disabled，不影响现有行为）
+            "enable_perception_obstacles": False,
+            "perception_tracks_topic": "/perception/tracks",
         }
         for name, value in defaults.items():
             self.declare_parameter(name, value)
@@ -315,9 +332,26 @@ class OscbfController(Node):
         self._latest_q = positions
         self._last_state_time = time.monotonic()
 
-    def step_once(self, q: np.ndarray) -> dict:
+    def _tracks_callback(self, message: Float32MultiArray) -> None:
+        """解码 /perception/tracks（8×10 float）→ obs_* 数组缓存。"""
+        from .obstacle_extractor import MAX_OBSTACLE_SLOTS, TRACK_SLOT_FLOATS
+        arr = np.asarray(message.data, dtype=np.float32)
+        expected = MAX_OBSTACLE_SLOTS * TRACK_SLOT_FLOATS
+        if arr.size < expected:
+            return
+        slots = arr[:expected].reshape(MAX_OBSTACLE_SLOTS, TRACK_SLOT_FLOATS)
+        self._obs_state = {
+            "obs_pos": slots[:, 0:3].astype(np.float64),
+            "obs_radii": slots[:, 3].astype(np.float64),
+            "obs_enabled": slots[:, 7].astype(np.float64),
+            "obs_d_safe": slots[:, 8].astype(np.float64),
+            "obs_vel": slots[:, 4:7].astype(np.float64),
+            "obs_alpha": slots[:, 9].astype(np.float64),
+        }
+
+    def step_once(self, q: np.ndarray, *, obs_kwargs: dict | None = None) -> dict:
         """Advance the control kernel by one step (pure method for tests)."""
-        result = self._loop.path_tracking_step(
+        kwargs = dict(
             q=np.asarray(q, dtype=float),
             path_state=self._path_state,
             kp_pos=float(self.get_parameter("kp_pos").value),
@@ -329,6 +363,9 @@ class OscbfController(Node):
             ),
             damping=float(self.get_parameter("damping").value),
         )
+        if obs_kwargs:
+            kwargs.update(obs_kwargs)
+        result = self._loop.path_tracking_step(**kwargs)
         self._path_state = np.asarray(result.path_state, dtype=float)
         self._last_result = result
         return {
@@ -345,7 +382,8 @@ class OscbfController(Node):
             return
 
         start = time.perf_counter()
-        step = self.step_once(self._latest_q)
+        obs_kwargs = dict(self._obs_state) if self._enable_obs and self._obs_state else None
+        step = self.step_once(self._latest_q, obs_kwargs=obs_kwargs)
         duration_ms = (time.perf_counter() - start) * 1000.0
         self._step_durations.append(duration_ms)
         self._latest_q = None
