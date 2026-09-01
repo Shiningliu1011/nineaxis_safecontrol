@@ -67,6 +67,7 @@ setup(
             "perception_demo = robot_safecontrol_moveit.perception_demo:main",
             "oscbf_controller = robot_safecontrol_moveit.oscbf_controller:main",
             "oscbf_plant = robot_safecontrol_moveit.oscbf_plant:main",
+            "hardware_bridge = robot_safecontrol_moveit.hardware_bridge:main",
         ],
     },
 )

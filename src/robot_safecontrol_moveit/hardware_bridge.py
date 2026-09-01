@@ -121,9 +121,11 @@ class HardwareBridge(Node):
         self._state_pub = self.create_publisher(
             JointState, JOINT_STATE_TOPIC, qos)
 
-        # 反馈发布定时器（100 Hz）
-        self._feedback_timer = self.create_timer(
-            1.0 / poll_frequency_hz, self._tick_feedback)
+        # 反馈发布定时器（仅 shadow/live 模式）
+        self._feedback_timer = None
+        if hardware_mode != "sim":
+            self._feedback_timer = self.create_timer(
+                1.0 / poll_frequency_hz, self._tick_feedback)
 
         self.get_logger().info(
             f"hardware_bridge started: mode={hardware_mode}, "
