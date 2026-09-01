@@ -1,0 +1,59 @@
+# 传感器外参配置（真机）。
+# 相机：Orbbec Gemini 335L（PID 0x0804，USB3.2）
+# 安装方式：固定安装，手动测量外参
+# 前置 P6：相机固定安装后测量 x/y/z + roll/pitch/yaw 并填入本文件。
+#
+# 坐标系：
+#   parent_frame: base_link（机械臂基坐标系，Y-up URDF）
+#   child_frame: camera_color_optical_frame（Orbbec 注册点云的 frame_id）
+#
+# camera_to_world_static: 4x4 齐次变换矩阵（行主序 16 个 float），
+# 把 child_frame 下的点变换到 parent_frame。
+# 当前值为占位（单位阵），必须在实机标定后替换。
+#
+# Orbbec 驱动启动命令（depth_registration:=true 时使用 camera_color_optical_frame）：
+#   ros2 launch orbbec_camera gemini_330_series.launch.py \
+#     depth_width:=640 depth_height:=480 depth_fps:=30 \
+#     color_width:=640 color_height:=480 color_fps:=30 \
+#     depth_registration:=true enable_colored_point_cloud:=true
+
+parent_frame: base_link
+child_frame: camera_color_optical_frame
+
+# 外参矩阵（占位：单位阵 = 相机与 base_link 重合）
+# 格式：行主序 [R11,R12,R13,Tx, R21,R22,R23,Ty, R31,R32,R33,Tz, 0,0,0,1]
+# 实测后替换此值。验收方法：已知尺寸物体放在 base_link 下已知位置，
+# 点云中物体位置误差 <20mm 方可进入动态避障实验。
+camera_to_world_static:
+  - 1.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 1.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 1.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 1.0
+
+# 标定方法与误差估计（待 P6 填写）
+calibration_method: "manual_measurement"  # 或 "apriltag"
+calibration_error_estimate_mm: null       # 待填写
+calibration_error_estimate_deg: null      # 待填写
+
+# 相机启动参数（与 obstacle_params.yaml 对齐）
+orbbec_launch:
+  depth_width: 640
+  depth_height: 480
+  depth_fps: 30
+  color_width: 640
+  color_height: 480
+  color_fps: 30
+  depth_registration: true
+  enable_colored_point_cloud: true

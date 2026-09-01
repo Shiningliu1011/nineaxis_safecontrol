@@ -1,0 +1,40 @@
+# 关节零位标定表（真机）。
+# 零位标定流程（机械零位标记法）：
+#   1. 手动摆到机械零位（各轴限位开关/卡槽/标记处）
+#   2. DrEmpower 0x08 set_zero（order 0x05）固化电机零位
+#   3. 逐关节 ±5° 命令验证正方向与符号
+#   4. 把 sign 和 zero_offset_deg 填入本文件
+#
+# sign: +1 = 电机正转对应 URDF 正方向；-1 = 反向
+# zero_offset_deg: 电机零位与机械零位的角度偏移（set_zero 后通常为 0）
+#
+# 注意：J1 的 zero_offset_deg 单位为 mm（由丝杆传动换算），不是 deg。
+# 前置 P2：J1 丝杆传动参数实测后才能标定 J1。
+
+J1:
+  sign: 1
+  zero_offset_deg: 0.0         # 待实测（丝杆传动未标定前 J1 禁止运动）
+J2:
+  sign: 1
+  zero_offset_deg: 0.0
+J3:
+  sign: 1
+  zero_offset_deg: 0.0
+J4:
+  sign: 1
+  zero_offset_deg: 0.0
+J5:
+  sign: 1
+  zero_offset_deg: 0.0
+J6:
+  sign: 1
+  zero_offset_deg: 0.0
+J7:
+  sign: 1
+  zero_offset_deg: 0.0
+J8:
+  sign: 1
+  zero_offset_deg: 0.0
+J9:
+  sign: 1
+  zero_offset_deg: 0.0
