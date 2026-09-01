@@ -120,6 +120,25 @@ def test_step_once_returns_valid_safe_state(controller_fixture):
     assert step["min_obs_dist"] > 0.0
 
 
+def test_tracking_evaluator_integration(controller_fixture):
+    """评价器在控制器内正确累积跟踪指标。"""
+    node = controller_fixture["node"]
+    # 初始状态：评价器为 None（尚未开始跟踪）
+    assert node.tracking_report() is None
+    # 模拟几步跟踪
+    from robot_safecontrol_moveit.tracking_evaluator import TrackingEvaluator
+    node._evaluator = TrackingEvaluator(trajectory_duration_s=30.0)
+    for i in range(5):
+        step = node.step_once(_START_Q)
+        node._evaluator.update(step, wall_time_s=float(i) * 0.01)
+    report = node.tracking_report()
+    assert report is not None
+    assert report.total_steps == 5
+    assert report.qp_success_rate == 1.0
+    assert report.tracking_score > 0.0
+    assert "score=" in report.summary()
+
+
 def test_no_command_before_start_signal(controller_fixture):
     node = controller_fixture["node"]
     context = controller_fixture["context"]

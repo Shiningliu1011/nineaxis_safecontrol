@@ -34,6 +34,7 @@ from .ros_conventions import (
     OSCBF_COMMAND_TOPIC,
     state_stream_qos,
 )
+from .tracking_evaluator import TrackingEvaluator
 
 
 def _default_share_dir() -> Path:
@@ -74,6 +75,7 @@ class OscbfController(Node):
             self.get_parameter("wait_for_start").value
         )
         self._log_throttle = 0.0
+        self._evaluator: TrackingEvaluator | None = None
 
         portable_root = Path(
             str(self.get_parameter("portable_oscbf_root").value)
@@ -381,12 +383,20 @@ class OscbfController(Node):
         if not self._tracking_started or self._latest_q is None:
             return
 
+        # 首次跟踪步：初始化评价器
+        if self._evaluator is None:
+            self._evaluator = TrackingEvaluator(
+                trajectory_duration_s=self._trajectory_duration_s)
+
         start = time.perf_counter()
         obs_kwargs = dict(self._obs_state) if self._enable_obs and self._obs_state else None
         step = self.step_once(self._latest_q, obs_kwargs=obs_kwargs)
         duration_ms = (time.perf_counter() - start) * 1000.0
         self._step_durations.append(duration_ms)
         self._latest_q = None
+
+        # 累积跟踪指标
+        self._evaluator.update(step, wall_time_s=start)
 
         q_next = step["q_next"]
         lower, upper = self._limits
@@ -490,6 +500,34 @@ class OscbfController(Node):
                 f"tracked in {snapshot['steps']} steps"
             )
             self._completion_logged = True
+            # 输出跟踪评价报告摘要
+            if self._evaluator is not None:
+                report = self._evaluator.report()
+                self.get_logger().info(
+                    f"TRACKING_REPORT: {report.summary()}")
+                # 写入报告文件
+                try:
+                    self.write_tracking_report()
+                except Exception as exc:
+                    self.get_logger().warn(f"failed to write tracking report: {exc}")
+
+    def tracking_report(self):
+        """返回跟踪评价报告（TrackingReport），未开始跟踪时返回 None。"""
+        if self._evaluator is None:
+            return None
+        return self._evaluator.report()
+
+    def write_tracking_report(self, path: str | None = None) -> str:
+        """写入 Markdown 格式的跟踪评价报告，返回文件路径。"""
+        from pathlib import Path
+        report = self._evaluator.report()
+        if path is None:
+            path = str(Path(self.get_parameter("perf_report_path").value).parent
+                       / "tracking_report.md")
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        Path(path).write_text(report.markdown(), encoding="utf-8")
+        self.get_logger().info(f"tracking report written to {path}")
+        return path
 
     def _start_tracking_callback(self, request, response):
         if not self._tracking_started:
