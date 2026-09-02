@@ -6,7 +6,9 @@
 # to the package share directory at runtime.
 /**:
   ros__parameters:
-    dt: 0.002
+    dt: 0.01
+    # 参考路径推进步长 (真实控制周期); QP 积分步 dt 保持轨迹采样周期
+    dt_path: 0.01
     publish_frequency_hz: 100.0
     trajectory_mat: ""                     # default: <share>/data/nurbs/ik_input.mat
     portable_oscbf_root: ""                # default: <share>/portable_oscbf
@@ -17,10 +19,17 @@
     kp_pos: 80.0
     kp_orient: 10.0
     kp_joint: 0.45
+    # 工具轴角速度上限: 曲率段进给被压到 0.03-0.08 m/s 的主因, 从 0.6 提到
+    # 2.0 使 nominal 进给 (feedrate_scale=8.0) 成为实际限额。
+    max_tool_axis_speed_rad_s: 2.0
     # 源数据 feedrate 按旧 tool-axis 限速生成 (~0.04 m/s), 运行时放大整体提速
-    reference_feedrate_scale: 3.0
+    reference_feedrate_scale: 3.5
     nullspace_speed_limit: 0.18
-    damping: 0.001
+    # damped-least-squares (DLS) 阻尼。0.001 时 5D 任务伪逆在路径奇异刃
+    # (σ≈0.032) 放大倍数达 1/(2√λ)≈15.8, 轻微姿态误差即激励 wrist 以
+    # 2.4-2.5 rad/s 猛甩, 末端漂移数百 mm (观测 POS_JUMP)。0.05 时峰值
+    # ≈2.2, 正常段 σ≈0.15 的等效增益从 ~6.6 降到 ~1.8 (跟踪略柔顺)。
+    damping: 0.05
     w_pos: 20.0
     w_orient: 10.0
     w_joint: 0.1

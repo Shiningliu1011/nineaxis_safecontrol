@@ -150,16 +150,16 @@ path_following:
   # slightly ahead of the projection.  0.01 mm is well within the 0.1 mm
   # acceptance gate while avoiding zero-lead edge cases.
   reference_lead_m: 0.00001
-  cross_track_stop_m: 0.001
+  cross_track_stop_m: 0.01
   # Virtual path-reference braking only: v^2 = 2*a*remaining_arc_length.
   # It prevents the terminal reference feed from stepping straight to zero;
   # it is not a substitute for measured actuator braking validation.
-  endpoint_braking_deceleration_m_s2: 0.05
+  endpoint_braking_deceleration_m_s2: 0.5
   endpoint_settle_s: 0.5
   # Tool-axis angular speed limit: ell_dot <= max_tool_axis_speed / ||omega_per_m||.
   # Prevents large angular velocity commands at wrist reversals where
   # omega_per_m is large but Cartesian arc length is small.
-  maximum_tool_axis_speed_rad_s: 0.6
+  maximum_tool_axis_speed_rad_s: 2.0
   # Maximum per-cycle reference feedrate change (m/s).  Smooths the reference
   # feed at segment boundaries without post-hoc output filtering.
   maximum_reference_feedrate_step_m_s: 0.005

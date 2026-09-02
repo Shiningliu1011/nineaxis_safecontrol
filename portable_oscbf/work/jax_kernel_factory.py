@@ -47,6 +47,12 @@ from work.tool_axis_task import (
     tool_axis_angular_velocity_2d_jax,
 )
 
+# 位置反馈误差的饱和半径: 正常跟踪误差 (mm 级) 内线性增益; 超过后反馈
+# 速度封顶为 kp_pos * 0.005 (kp=80 时 0.4 m/s), 防止大误差时反馈随误差
+# 增长、与 plant 位置环串联后自激振荡。
+_POSITION_FB_SATURATION_M = 0.005
+_EPS = 1e-12
+
 
 @dataclass(frozen=True)
 class JaxControlKernels:
@@ -63,6 +69,7 @@ class JaxControlKernels:
 
 
 def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
+                              dt_path: float | None = None,
                               q_min, q_max, aggregate_dynamic_obstacles: bool,
                               enable_rate_limit: bool,
                               rate_limit_du_max, rate_limit_penalty: float,
@@ -73,7 +80,16 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
                               task_mode: str = TASK_MODE_POSE_6D,
                               nullspace_policy=None,
                               ) -> JaxControlKernels:
-    """Build static-shape QP and tracking kernels without changing CBF semantics."""
+    """Build static-shape QP and tracking kernels without changing CBF semantics.
+
+    ``dt`` is the QP integration step (kept at the trajectory sampling period
+    for the stable numeric path); ``dt_path`` is the reference path advance
+    step and must match the real control tick (e.g. 1/publish_frequency).
+    Defaults to ``dt`` when omitted, preserving legacy callers.
+    """
+    dt_path = dt if dt_path is None else float(dt_path)
+    if not 0.0 < dt_path < float("inf"):
+        raise ValueError(f'dt_path must be finite and positive, got {dt_path}')
     obstacle_h_start = controller_config.obstacle_h_start
     obstacle_h_baseline_alpha = controller_config.obstacle_h_baseline_alpha
     smooth_min_temperature = controller_config.smooth_min_temperature
@@ -484,9 +500,28 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
             transverse_pos_err = cap_pos_err - tangent_error
             position_feedback_error = jnp.where(
                 sample.at_endpoint, cap_pos_err, transverse_pos_err)
+            # Saturate the position correction at a small arc-length radius:
+            # beyond it the pull-back speed stays bounded (kp * sat) instead
+            # of growing with the error, so a transient that exceeds the
+            # cross-track stop threshold (feedrate -> 0, pure feedback) can
+            # never cascade into an unstable loop with the plant's own
+            # position servo.
+            fb_norm = jnp.linalg.norm(position_feedback_error)
+            fb_scale = jnp.where(
+                fb_norm > _POSITION_FB_SATURATION_M,
+                _POSITION_FB_SATURATION_M / jnp.maximum(fb_norm, _EPS),
+                jnp.asarray(1.0),
+            )
             endpoint_orient_scale = jnp.where(sample.at_endpoint, 0.1, 1.0)
+            # Endpoint hold mode must not re-open the full 3-D position
+            # feedback at full gain: with the plant's own position loop
+            # (kp=80) the two cascade into a self-oscillating loop the
+            # moment the feedforward drops to zero at the endpoint.  Scale
+            # the position correction like the orientation one.
+            endpoint_pos_scale = jnp.where(sample.at_endpoint, 0.1, 1.0)
             twist_bias = jnp.concatenate([
-                -kp_pos * position_feedback_error,
+                -endpoint_pos_scale * kp_pos
+                * fb_scale * position_feedback_error,
                 -endpoint_orient_scale * kp_orient * cap_orientation_err,
             ])
             twist_per_m = task_velocity_from_world(
@@ -526,7 +561,7 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
                 path_config,
                 path_state,
                 ee_pos,
-                dt_s=dt,
+                dt_s=dt_path,
                 feedrate_joint_limit_m_s=joint_cap,
                 feedrate_cbf_limit_m_s=cbf_cap,
                 feedrate_rate_limit_m_s=rate_cap,
@@ -546,9 +581,19 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
             transverse_pos_err = pos_err - tangent_error
             position_feedback_error = jnp.where(
                 sample.at_endpoint, pos_err, transverse_pos_err)
+            fb_norm = jnp.linalg.norm(position_feedback_error)
+            fb_scale = jnp.where(
+                fb_norm > _POSITION_FB_SATURATION_M,
+                _POSITION_FB_SATURATION_M / jnp.maximum(fb_norm, _EPS),
+                jnp.asarray(1.0),
+            )
             endpoint_orient_scale = jnp.where(sample.at_endpoint, 0.1, 1.0)
+            # Endpoint hold mode: same low-gain position correction as in
+            # _path_cap_nominal (see note there on cascaded loop stability).
+            endpoint_pos_scale = jnp.where(sample.at_endpoint, 0.1, 1.0)
             control_twist_bias = jnp.concatenate([
-                -kp_pos * position_feedback_error,
+                -endpoint_pos_scale * kp_pos
+                * fb_scale * position_feedback_error,
                 -endpoint_orient_scale * kp_orient * orientation_err,
             ])
             control_twist_per_m = task_velocity_from_world(
@@ -599,7 +644,7 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
                 path_config,
                 path_state,
                 ee_pos_next,
-                dt_s=dt,
+                dt_s=dt_path,
             )
             _pos_err_next = ee_pos_next - sample.position_m
             _next_task_error, err_report_next, _next_jacobian = task_geometry_terms(
