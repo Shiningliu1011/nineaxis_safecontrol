@@ -360,7 +360,7 @@ class TransitionPlanningServer(Node):
         self.declare_parameter("replay_rate_hz", 100.0)
         # >1 时把过渡时间剖面按比例拉长, 大行程过渡不再被压成一闪而过的疾驰
         self.declare_parameter("replay_time_scale", 3.0)
-        self.declare_parameter("replay_min_duration_s", 4.0)
+        self.declare_parameter("replay_min_duration_s", 6.0)
         self.declare_parameter("oscbf_command_topic", "")
         self.declare_parameter("notify_oscbf_start", False)
         self.declare_parameter(

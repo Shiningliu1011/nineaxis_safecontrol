@@ -125,18 +125,19 @@ class TrajectoryExecutor:
                     pub, command_pub, trajectory, times_scaled, period
                 )
             else:
-                # planner 结果未填 time_from_start: 按 rate_hz 等速, 但把
-                # time_scale/min_duration 折算到帧间隔上, 避免过短快放。
+                # planner 结果未填 time_from_start: 仍然逐帧折点播放会把
+                # 大行程折线压成 33ms 一跳 (观感甩动)。改用等速虚拟时间表,
+                # 在折点间按 rate_hz 线性重采样 (相邻点之间不再有台阶)。
                 n = len(trajectory.points)
-                period_eff = period * scale
-                if float(min_duration_s) > 0.0 and n * period_eff < min_duration_s:
-                    period_eff = min_duration_s / max(n, 1)
+                total = max(n * period * scale, float(min_duration_s))
+                virtual = [total * i / max(n - 1, 1) for i in range(n)]
                 self._node.get_logger().info(
-                    f"  no time_from_start: uniform replay "
-                    f"{n} pts at {1.0 / period_eff:.0f} Hz "
-                    f"(scaled {period_eff:.2f}s step)"
+                    f"  no time_from_start: uniform-resampled replay "
+                    f"{n} pts over {total:.2f}s at ~{rate_hz:.0f} Hz"
                 )
-                self._replay_uniform(pub, command_pub, trajectory, period_eff)
+                self._replay_interpolated(
+                    pub, command_pub, trajectory, virtual, period
+                )
         finally:
             self._node.get_logger().info("Replay complete.")
             self._node.destroy_publisher(pub)
