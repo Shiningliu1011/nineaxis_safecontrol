@@ -406,7 +406,7 @@ class FCLPointCloudCollision:
         ----
         list of CbfConstraint
         """
-        from work.dynamic_obstacles import CbfConstraint
+        from work.cbf_types import CbfConstraint
 
         if body_link_idx is None:
             body_link_idx = _BODY_LINK_IDX

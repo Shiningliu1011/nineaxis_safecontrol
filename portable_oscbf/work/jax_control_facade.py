@@ -29,6 +29,30 @@ from work.path_posture_reference import PathPostureReference
 from work.tool_axis_task import SUPPORTED_TASK_MODES, TASK_MODE_POSE_6D
 
 
+@dataclass
+class ObstacleState:
+    """Bundle obstacle + SDF inputs for JaxControlLoop methods.
+
+    Replaces the15 individual keyword arguments that were previously passed
+    to every public step method.  All fields default to "no obstacles" so
+    callers only set what they need.
+    """
+
+    obs_pos: np.ndarray | None = None
+    obs_radii: np.ndarray | None = None
+    obs_enabled: np.ndarray | None = None
+    obs_d_safe: np.ndarray | None = None
+    obs_vel: np.ndarray | None = None
+    obs_radius_dot: np.ndarray | None = None
+    obs_alpha: np.ndarray | None = None
+    u_safe_prev: np.ndarray | None = None
+    sdf_distance: np.ndarray | None = None
+    sdf_origin: np.ndarray | None = None
+    sdf_voxel_size: float | None = None
+    sdf_enabled: float = 0.0
+    sdf_margin: float | None = None
+
+
 @dataclass(frozen=True)
 class JaxPathTrackingResult:
     """Host-readable output from one fixed-shape JAX path control step."""
@@ -381,27 +405,27 @@ class JaxControlLoop:
              obs_alpha: np.ndarray = None, u_safe_prev: np.ndarray = None,
              sdf_distance: np.ndarray = None, sdf_origin: np.ndarray = None,
              sdf_voxel_size: float = None, sdf_enabled: float = 0.0,
-             sdf_margin: float = None) -> Tuple[np.ndarray, np.ndarray]:
+             sdf_margin: float = None,
+             obs: ObstacleState | None = None) -> Tuple[np.ndarray, np.ndarray]:
         """Run one fixed-shape CBF-QP step from a supplied nominal velocity."""
         if not self.is_initialized:
             raise RuntimeError('init_cbf() must complete before step()')
-        (obs_pos, obs_radii, obs_enabled, obs_d_safe, obs_vel,
-         obs_radius_dot, obs_alpha, u_safe_prev) = self._normalise_obstacle_inputs(
-            obs_pos, obs_radii, obs_enabled, obs_d_safe, obs_vel,
-            obs_radius_dot, obs_alpha, u_safe_prev)
-        (sdf_distance, sdf_origin, sdf_voxel_size, sdf_enabled,
-         sdf_margin) = self._normalise_sdf_inputs(
-            sdf_distance, sdf_origin, sdf_voxel_size, sdf_enabled, sdf_margin)
+        jx = self._prepare_jax_inputs(
+            obs, obs_pos=obs_pos, obs_radii=obs_radii, obs_enabled=obs_enabled,
+            obs_d_safe=obs_d_safe, obs_vel=obs_vel, obs_radius_dot=obs_radius_dot,
+            obs_alpha=obs_alpha, u_safe_prev=u_safe_prev,
+            sdf_distance=sdf_distance, sdf_origin=sdf_origin,
+            sdf_voxel_size=sdf_voxel_size, sdf_enabled=sdf_enabled,
+            sdf_margin=sdf_margin)
         q_jax = jnp.asarray(q)
         task_p_jax = self._task_p_fn(q_jax)
         result = self._step_fn(
-            q_jax, jnp.asarray(u_des), jnp.asarray(obs_pos),
-            jnp.asarray(obs_radii), jnp.asarray(obs_enabled),
-            jnp.asarray(obs_d_safe), jnp.asarray(obs_vel),
-            jnp.asarray(obs_radius_dot), jnp.asarray(obs_alpha),
-            jnp.asarray(u_safe_prev), jnp.asarray(sdf_distance),
-            jnp.asarray(sdf_origin), jnp.asarray(sdf_voxel_size),
-            jnp.asarray(sdf_enabled), jnp.asarray(sdf_margin), task_p_jax)
+            q_jax, jnp.asarray(u_des),
+            jx['obs_pos'], jx['obs_radii'], jx['obs_enabled'],
+            jx['obs_d_safe'], jx['obs_vel'], jx['obs_radius_dot'],
+            jx['obs_alpha'], jx['u_safe_prev'],
+            jx['sdf_distance'], jx['sdf_origin'], jx['sdf_voxel_size'],
+            jx['sdf_enabled'], jx['sdf_margin'], task_p_jax)
         (q_next, u_safe, u_candidate, qp_ok, min_dist, min_esdf,
          rate_constraint_violation, rate_solver_slack, h_vals, cbf_grad,
          active_count, primal_residual,
@@ -424,7 +448,8 @@ class JaxControlLoop:
                           obs_alpha: np.ndarray = None, u_safe_prev: np.ndarray = None,
                           sdf_distance: np.ndarray = None, sdf_origin: np.ndarray = None,
                           sdf_voxel_size: float = None, sdf_enabled: float = 0.0,
-                          sdf_margin: float = None):
+                          sdf_margin: float = None,
+                          obs: ObstacleState | None = None):
         """Return the exact qpax matrix problem for one real control sample.
 
         This offline audit API shares the production CBF, dynamic-RHS and
@@ -439,23 +464,22 @@ class JaxControlLoop:
                 'frozen QP benchmarking is unavailable in the default '
                 'elastic-QP mode; enable rate limiting to audit the hard '
                 'rate-slack QP')
-        (obs_pos, obs_radii, obs_enabled, obs_d_safe, obs_vel,
-         obs_radius_dot, obs_alpha, u_safe_prev) = self._normalise_obstacle_inputs(
-            obs_pos, obs_radii, obs_enabled, obs_d_safe, obs_vel,
-            obs_radius_dot, obs_alpha, u_safe_prev)
-        (sdf_distance, sdf_origin, sdf_voxel_size, sdf_enabled,
-         sdf_margin) = self._normalise_sdf_inputs(
-            sdf_distance, sdf_origin, sdf_voxel_size, sdf_enabled, sdf_margin)
+        jx = self._prepare_jax_inputs(
+            obs, obs_pos=obs_pos, obs_radii=obs_radii, obs_enabled=obs_enabled,
+            obs_d_safe=obs_d_safe, obs_vel=obs_vel, obs_radius_dot=obs_radius_dot,
+            obs_alpha=obs_alpha, u_safe_prev=u_safe_prev,
+            sdf_distance=sdf_distance, sdf_origin=sdf_origin,
+            sdf_voxel_size=sdf_voxel_size, sdf_enabled=sdf_enabled,
+            sdf_margin=sdf_margin)
         q_jax = jnp.asarray(q)
         task_p = self._task_p_fn(q_jax)
         return self._qp_problem_fn(
-            q_jax, jnp.asarray(u_des), jnp.asarray(obs_pos),
-            jnp.asarray(obs_radii), jnp.asarray(obs_enabled),
-            jnp.asarray(obs_d_safe), jnp.asarray(obs_vel),
-            jnp.asarray(obs_radius_dot), jnp.asarray(obs_alpha),
-            jnp.asarray(u_safe_prev), jnp.asarray(sdf_distance),
-            jnp.asarray(sdf_origin), jnp.asarray(sdf_voxel_size),
-            jnp.asarray(sdf_enabled), jnp.asarray(sdf_margin), task_p)
+            q_jax, jnp.asarray(u_des),
+            jx['obs_pos'], jx['obs_radii'], jx['obs_enabled'],
+            jx['obs_d_safe'], jx['obs_vel'], jx['obs_radius_dot'],
+            jx['obs_alpha'], jx['u_safe_prev'],
+            jx['sdf_distance'], jx['sdf_origin'], jx['sdf_voxel_size'],
+            jx['sdf_enabled'], jx['sdf_margin'], task_p)
 
     def solve_frozen_qp_problem(self, problem):
         """Run upstream qpax on :meth:`freeze_qp_problem` output.
@@ -482,17 +506,18 @@ class JaxControlLoop:
                       obs_alpha: np.ndarray = None, u_safe_prev: np.ndarray = None,
                       sdf_distance: np.ndarray = None, sdf_origin: np.ndarray = None,
                       sdf_voxel_size: float = None, sdf_enabled: float = 0.0,
-                      sdf_margin: float = None):
+                      sdf_margin: float = None,
+                      obs: ObstacleState | None = None):
         """Run nominal P-only OSC and CBF-QP inside one JIT entry point."""
         if not self.is_initialized or self._tracking_fn is None:
             raise RuntimeError('init_cbf() must complete before tracking_step()')
-        (obs_pos, obs_radii, obs_enabled, obs_d_safe, obs_vel,
-         obs_radius_dot, obs_alpha, u_safe_prev) = self._normalise_obstacle_inputs(
-            obs_pos, obs_radii, obs_enabled, obs_d_safe, obs_vel,
-            obs_radius_dot, obs_alpha, u_safe_prev)
-        (sdf_distance, sdf_origin, sdf_voxel_size, sdf_enabled,
-         sdf_margin) = self._normalise_sdf_inputs(
-            sdf_distance, sdf_origin, sdf_voxel_size, sdf_enabled, sdf_margin)
+        jx = self._prepare_jax_inputs(
+            obs, obs_pos=obs_pos, obs_radii=obs_radii, obs_enabled=obs_enabled,
+            obs_d_safe=obs_d_safe, obs_vel=obs_vel, obs_radius_dot=obs_radius_dot,
+            obs_alpha=obs_alpha, u_safe_prev=u_safe_prev,
+            sdf_distance=sdf_distance, sdf_origin=sdf_origin,
+            sdf_voxel_size=sdf_voxel_size, sdf_enabled=sdf_enabled,
+            sdf_margin=sdf_margin)
         tracking_fn = (
             self._tracking_fn if self.collect_cbf_diagnostics
             else self._tracking_fast_fn)
@@ -501,12 +526,11 @@ class JaxControlLoop:
             jnp.asarray(task_rot), jnp.asarray(task_omega), jnp.asarray(kp_pos),
             jnp.asarray(kp_orient), jnp.asarray(kp_joint), jnp.asarray(q_des),
             jnp.asarray(nullspace_speed_limit), jnp.asarray(damping),
-            jnp.asarray(obs_pos), jnp.asarray(obs_radii), jnp.asarray(obs_enabled),
-            jnp.asarray(obs_d_safe), jnp.asarray(obs_vel),
-            jnp.asarray(obs_radius_dot), jnp.asarray(obs_alpha),
-            jnp.asarray(u_safe_prev), jnp.asarray(sdf_distance),
-            jnp.asarray(sdf_origin), jnp.asarray(sdf_voxel_size),
-            jnp.asarray(sdf_enabled), jnp.asarray(sdf_margin))
+            jx['obs_pos'], jx['obs_radii'], jx['obs_enabled'],
+            jx['obs_d_safe'], jx['obs_vel'], jx['obs_radius_dot'],
+            jx['obs_alpha'], jx['u_safe_prev'],
+            jx['sdf_distance'], jx['sdf_origin'], jx['sdf_voxel_size'],
+            jx['sdf_enabled'], jx['sdf_margin'])
         if self.collect_cbf_diagnostics:
             (q_next, u_safe, u_candidate, u_nom, err_6d, ee_pos, ee_rot,
              qp_ok, min_dist, min_esdf, rate_constraint_violation,
@@ -546,7 +570,8 @@ class JaxControlLoop:
                            obs_alpha: np.ndarray = None, u_safe_prev: np.ndarray = None,
                            sdf_distance: np.ndarray = None, sdf_origin: np.ndarray = None,
                            sdf_voxel_size: float = None, sdf_enabled: float = 0.0,
-                           sdf_margin: float = None) -> JaxPathTrackingResult:
+                           sdf_margin: float = None,
+                           obs: ObstacleState | None = None) -> JaxPathTrackingResult:
         """Run one fully-JIT arc-length tracking, CBF-QP, and integration step."""
         if (not self.is_initialized or self._path_tracking_fn is None
                 or not self.path_is_configured):
@@ -555,23 +580,22 @@ class JaxControlLoop:
         state = np.asarray(path_state, dtype=float).reshape(-1)
         if state.shape != (5,):
             raise ValueError(f'path_state must have shape (5,), got {state.shape}')
-        (obs_pos, obs_radii, obs_enabled, obs_d_safe, obs_vel,
-         obs_radius_dot, obs_alpha, u_safe_prev) = self._normalise_obstacle_inputs(
-            obs_pos, obs_radii, obs_enabled, obs_d_safe, obs_vel,
-            obs_radius_dot, obs_alpha, u_safe_prev)
-        (sdf_distance, sdf_origin, sdf_voxel_size, sdf_enabled,
-         sdf_margin) = self._normalise_sdf_inputs(
-            sdf_distance, sdf_origin, sdf_voxel_size, sdf_enabled, sdf_margin)
+        jx = self._prepare_jax_inputs(
+            obs, obs_pos=obs_pos, obs_radii=obs_radii, obs_enabled=obs_enabled,
+            obs_d_safe=obs_d_safe, obs_vel=obs_vel, obs_radius_dot=obs_radius_dot,
+            obs_alpha=obs_alpha, u_safe_prev=u_safe_prev,
+            sdf_distance=sdf_distance, sdf_origin=sdf_origin,
+            sdf_voxel_size=sdf_voxel_size, sdf_enabled=sdf_enabled,
+            sdf_margin=sdf_margin)
         result = self._path_tracking_fn(
             jnp.asarray(q), jnp.asarray(state), jnp.asarray(kp_pos),
             jnp.asarray(kp_orient), jnp.asarray(kp_joint), jnp.asarray(q_des),
             jnp.asarray(nullspace_speed_limit), jnp.asarray(damping),
-            jnp.asarray(obs_pos), jnp.asarray(obs_radii), jnp.asarray(obs_enabled),
-            jnp.asarray(obs_d_safe), jnp.asarray(obs_vel),
-            jnp.asarray(obs_radius_dot), jnp.asarray(obs_alpha),
-            jnp.asarray(u_safe_prev), jnp.asarray(sdf_distance),
-            jnp.asarray(sdf_origin), jnp.asarray(sdf_voxel_size),
-            jnp.asarray(sdf_enabled), jnp.asarray(sdf_margin))
+            jx['obs_pos'], jx['obs_radii'], jx['obs_enabled'],
+            jx['obs_d_safe'], jx['obs_vel'], jx['obs_radius_dot'],
+            jx['obs_alpha'], jx['u_safe_prev'],
+            jx['sdf_distance'], jx['sdf_origin'], jx['sdf_voxel_size'],
+            jx['sdf_enabled'], jx['sdf_margin'])
         (q_next, u_safe, u_candidate, u_nom, err_6d, ee_pos, ee_rot,
          qp_ok, min_dist, min_esdf, rate_constraint_violation,
          rate_solver_slack, h_vals, cbf_grad,
@@ -681,6 +705,50 @@ class JaxControlLoop:
             else float(np.linalg.norm(grad_now - self._last_cbf_grad)))
         self._last_cbf_h = h_now.copy()
         self._last_cbf_grad = grad_now.copy()
+
+    def _prepare_jax_inputs(self, obs: ObstacleState | None = None,
+                            *, obs_pos=None, obs_radii=None, obs_enabled=None,
+                            obs_d_safe=None, obs_vel=None, obs_radius_dot=None,
+                            obs_alpha=None, u_safe_prev=None,
+                            sdf_distance=None, sdf_origin=None,
+                            sdf_voxel_size=None, sdf_enabled=0.0,
+                            sdf_margin=None):
+        """Normalise obstacle + SDF inputs and convert to JAX arrays.
+
+        Accepts either an :class:`ObstacleState` bundle or the individual
+        keyword arguments (backward-compatible).  Returns a dict of JAX
+        arrays ready to pass to the compiled kernel.
+        """
+        if obs is not None:
+            obs_pos = obs.obs_pos; obs_radii = obs.obs_radii
+            obs_enabled = obs.obs_enabled; obs_d_safe = obs.obs_d_safe
+            obs_vel = obs.obs_vel; obs_radius_dot = obs.obs_radius_dot
+            obs_alpha = obs.obs_alpha; u_safe_prev = obs.u_safe_prev
+            sdf_distance = obs.sdf_distance; sdf_origin = obs.sdf_origin
+            sdf_voxel_size = obs.sdf_voxel_size; sdf_enabled = obs.sdf_enabled
+            sdf_margin = obs.sdf_margin
+        (obs_pos, obs_radii, obs_enabled, obs_d_safe, obs_vel,
+         obs_radius_dot, obs_alpha, u_safe_prev) = self._normalise_obstacle_inputs(
+            obs_pos, obs_radii, obs_enabled, obs_d_safe, obs_vel,
+            obs_radius_dot, obs_alpha, u_safe_prev)
+        (sdf_distance, sdf_origin, sdf_voxel_size, sdf_enabled,
+         sdf_margin) = self._normalise_sdf_inputs(
+            sdf_distance, sdf_origin, sdf_voxel_size, sdf_enabled, sdf_margin)
+        return {
+            'obs_pos': jnp.asarray(obs_pos),
+            'obs_radii': jnp.asarray(obs_radii),
+            'obs_enabled': jnp.asarray(obs_enabled),
+            'obs_d_safe': jnp.asarray(obs_d_safe),
+            'obs_vel': jnp.asarray(obs_vel),
+            'obs_radius_dot': jnp.asarray(obs_radius_dot),
+            'obs_alpha': jnp.asarray(obs_alpha),
+            'u_safe_prev': jnp.asarray(u_safe_prev),
+            'sdf_distance': jnp.asarray(sdf_distance),
+            'sdf_origin': jnp.asarray(sdf_origin),
+            'sdf_voxel_size': jnp.asarray(sdf_voxel_size),
+            'sdf_enabled': jnp.asarray(sdf_enabled),
+            'sdf_margin': jnp.asarray(sdf_margin),
+        }
 
     def _normalise_obstacle_inputs(self, obs_pos, obs_radii, obs_enabled,
                                    obs_d_safe, obs_vel, obs_radius_dot,

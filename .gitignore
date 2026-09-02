@@ -20,3 +20,6 @@ output/
 build/
 install/
 log/
+
+# Python 打包产物
+dist/

@@ -18,6 +18,7 @@ import numpy as np
 
 from work.cbf_types import CbfConstraint, _cbf_upper_bound
 from work.controller_step_cache import point_jacobian_from_spatial
+from work.robot_geometry import BODY_SEGMENTS
 
 # P2-28: 统一末端执行器碰撞半径 (原分散在 0.04/0.045/0.06 三处)
 EE_COLLISION_RADIUS = 0.05
@@ -99,18 +100,7 @@ class DynamicPointCloudObstacle:
         ('ee_link', 9, EE_COLLISION_RADIUS),
     ]
 
-    _BODY_SEGMENTS = [
-        ('base_link', 'Link1', 1, 0.055),   # link_idx=max(0,1)=1 ✓
-        ('Link1', 'Link2', 2, 0.065),       # P2-30: 上端点 link_idx
-        ('Link2', 'Link3', 3, 0.075),
-        ('Link3', 'Link4', 4, 0.070),
-        ('Link4', 'Link5', 5, 0.070),
-        ('Link5', 'Link6', 6, 0.060),
-        ('Link6', 'Link7', 7, 0.055),
-        ('Link7', 'Link8', 8, 0.052),
-        ('Link8', 'Link9', 9, 0.050),       # max(8,9)=9
-        ('Link9', 'ee_link', 9, EE_COLLISION_RADIUS),  # max(9,9)=9 ✓
-    ]
+    # _BODY_SEGMENTS removed: use shared BODY_SEGMENTS from work.robot_geometry
 
     def __init__(self, base_center_sphere1, base_center_sphere2, base_center_cylinder,
                  sphere1_base_radius=0.05, sphere2_base_radius=0.04,
@@ -575,7 +565,7 @@ class DynamicPointCloudObstacle:
             # 空间过滤: 障碍物到连杆的快速粗筛距离
             obs_max_reach = obs_radius + d_safe + activation + 0.15  # 粗筛裕量
 
-            for a_name, b_name, link_idx, seg_radius in self._BODY_SEGMENTS:
+            for a_name, b_name, link_idx, seg_radius in BODY_SEGMENTS:
                 if a_name not in T_all or b_name not in T_all:
                     continue
                 a = T_all[a_name][:3, 3]

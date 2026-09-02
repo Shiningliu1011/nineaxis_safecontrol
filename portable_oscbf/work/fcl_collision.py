@@ -19,6 +19,11 @@ import fcl
 import numpy as np
 import trimesh
 
+from work.robot_geometry import (
+    BASE_BOX_CENTER, BASE_BOX_SIZE, LINK1_BOX_CENTER, LINK1_BOX_SIZE,
+    LINK_NAMES,
+)
+
 
 @dataclass
 class FclCollisionPair:
@@ -88,17 +93,8 @@ CALIBRATED_PRIMITIVE_PAIR_EXCLUSIONS = frozenset({
     frozenset(("capsule_Link4_Link5", "joint_Link7")),  # 机械近邻, 零位5mm为基元保守近似
 })
 
-# ================================================================
-# base_link Box (覆盖整个底座: z=-0.335 ~ z=0.562)
-# ================================================================
-BASE_BOX_SIZE = (0.160, 0.140, 0.900)  # (sx, sy, sz)
-BASE_BOX_CENTER = (0.000, 0.006, 0.113)  # 局部坐标系中心
-
-# ================================================================
-# Link1 Box (沿 Link1→Link2 方向, 覆盖 mesh: y=-0.024~0.401, z=-0.185~0.062)
-# ================================================================
-LINK1_BOX_SIZE = (0.160, 0.430, 0.260)  # (sx, sy, sz)
-LINK1_BOX_CENTER = (0.000, 0.189, -0.061)  # 局部坐标系中心
+# BASE_BOX_SIZE, BASE_BOX_CENTER, LINK1_BOX_SIZE, LINK1_BOX_CENTER
+# are now imported from work.robot_geometry (single source of truth).
 
 
 class FclSelfCollisionChecker:

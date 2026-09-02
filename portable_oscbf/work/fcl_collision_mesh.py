@@ -21,6 +21,8 @@ import fcl
 import numpy as np
 import trimesh
 
+from work.robot_geometry import LINK_NAMES
+
 
 @dataclass
 class FclCollisionPair:
@@ -37,16 +39,12 @@ class FclCollisionPair:
 # 链路名 → STL 文件名映射
 # ================================================================
 LINK_MESH_FILES = {
-    "base_link": "base_link.STL",
-    "Link1": "Link1.STL",
-    "Link2": "Link2.STL",
-    "Link3": "Link3.STL",
-    "Link4": "Link4.STL",
-    "Link5": "Link5.STL",  # Link5 包含 Link6
-    "Link7": "Link7.STL",
-    "Link8": "Link8.STL",
-    "Link9": "Link9.STL",
-    # ee_link 不单独建包络: 它是 Link9 的固定偏移 (0.235m), 用 Link9 包络覆盖即可
+    name: f"{name}.STL"
+    for name in LINK_NAMES
+    if name not in ("world", "Link6", "ee_link")
+    # world: 环境, 无链路网格
+    # Link6: 包含在 Link5 网格内
+    # ee_link: Link9 的固定偏移 (0.235m), 用 Link9 包络覆盖即可
 }
 
 # 网格模型的已标定运动链邻接对。
@@ -161,18 +159,8 @@ class FclMeshSelfCollisionChecker:
           7: Link8
           8: Link9 / ee_link
         """
-        # 链接分组 (与运动链对齐)
-        groups = [
-            ["base_link"],       # 0
-            ["Link1"],           # 1
-            ["Link2"],           # 2
-            ["Link3"],           # 3
-            ["Link4"],           # 4
-            ["Link5"],           # 5 (含 Link6)
-            ["Link7"],           # 6
-            ["Link8"],           # 7
-            ["Link9"]            # 8 (已覆盖 ee_link 区域)
-        ]
+        # 链接分组 (与运动链对齐): 每个有网格的链路独立一组
+        groups = [[name] for name in LINK_MESH_FILES]
 
         self._check_pairs: List[Tuple[str, str]] = []
 
