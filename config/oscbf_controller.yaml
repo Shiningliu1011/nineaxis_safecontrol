@@ -16,7 +16,7 @@
     joint_names: ["J1", "J2", "J3", "J4", "J5", "J6", "J7", "J8", "J9"]
     joint_state_topic: /mujoco_joint_states
     publish_joint_state_topic: /oscbf_command
-    kp_pos: 80.0
+    kp_pos: 160.0
     kp_orient: 10.0
     kp_joint: 0.45
     # 工具轴角速度上限: 曲率段进给被压到 0.03-0.08 m/s 的主因, 从 0.6 提到
@@ -49,7 +49,7 @@
     # cap; it remains available as an opt-in pending limit-aware
     # regularisation.
     use_nullspace_policy: false
-    reference_lead_m: 0.02
+    reference_lead_m: 0.01
     orientation_mode: surface_normal
     cylinder_axis_direction: [0.0, 1.0, 0.0]
     # One point on the cylinder axis.  Omitted here = fit from the trajectory

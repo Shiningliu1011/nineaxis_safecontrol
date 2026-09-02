@@ -34,7 +34,7 @@ class PathFollowingConfig:
 
     projection_half_window_segments: int = 96
     max_projection_speed_m_s: float = 3.0
-    reference_lead_m: float = 2.0e-2
+    reference_lead_m: float = 1.0e-2
     cross_track_stop_m: float = 1.0e-2
     endpoint_braking_deceleration_m_s2: float = 5.0e-1
     endpoint_settle_s: float = 0.5

@@ -51,6 +51,12 @@ from work.tool_axis_task import (
 # 速度封顶为 kp_pos * 0.005 (kp=80 时 0.4 m/s), 防止大误差时反馈随误差
 # 增长、与 plant 位置环串联后自激振荡。
 _POSITION_FB_SATURATION_M = 0.005
+# 误差修正速度上限: 小误差 (<3mm) 时限制在 0.25 m/s 平滑回拉 (避免
+# 观测到的快速跳变), 误差增大时限速线性放开到 0.8 m/s 以便救回 (如
+# 83% CBF 窄通道段); 连续函数不引入阶跃。
+_POSITION_FEEDBACK_SPEED_LIMIT_M_S = 0.25
+_POSITION_FEEDBACK_SPEED_LIMIT_SLOPE_M_S_PER_M = 11.0
+_POSITION_FEEDBACK_SPEED_LIMIT_MAX_M_S = 0.8
 _EPS = 1e-12
 
 
@@ -511,6 +517,18 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
                 fb_norm > _POSITION_FB_SATURATION_M,
                 _POSITION_FB_SATURATION_M / jnp.maximum(fb_norm, _EPS),
                 jnp.asarray(1.0),
+            ) * jnp.where(
+                kp_pos * jnp.minimum(fb_norm, _POSITION_FB_SATURATION_M)
+                > jnp.minimum(
+                    _POSITION_FEEDBACK_SPEED_LIMIT_MAX_M_S,
+                    _POSITION_FEEDBACK_SPEED_LIMIT_M_S
+                    + _POSITION_FEEDBACK_SPEED_LIMIT_SLOPE_M_S_PER_M * fb_norm),
+                jnp.minimum(
+                    _POSITION_FEEDBACK_SPEED_LIMIT_MAX_M_S,
+                    _POSITION_FEEDBACK_SPEED_LIMIT_M_S
+                    + _POSITION_FEEDBACK_SPEED_LIMIT_SLOPE_M_S_PER_M * fb_norm)
+                / (kp_pos * jnp.minimum(fb_norm, _POSITION_FB_SATURATION_M)),
+                jnp.asarray(1.0),
             )
             endpoint_orient_scale = jnp.where(sample.at_endpoint, 0.1, 1.0)
             # Endpoint hold mode must not re-open the full 3-D position
@@ -585,6 +603,18 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
             fb_scale = jnp.where(
                 fb_norm > _POSITION_FB_SATURATION_M,
                 _POSITION_FB_SATURATION_M / jnp.maximum(fb_norm, _EPS),
+                jnp.asarray(1.0),
+            ) * jnp.where(
+                kp_pos * jnp.minimum(fb_norm, _POSITION_FB_SATURATION_M)
+                > jnp.minimum(
+                    _POSITION_FEEDBACK_SPEED_LIMIT_MAX_M_S,
+                    _POSITION_FEEDBACK_SPEED_LIMIT_M_S
+                    + _POSITION_FEEDBACK_SPEED_LIMIT_SLOPE_M_S_PER_M * fb_norm),
+                jnp.minimum(
+                    _POSITION_FEEDBACK_SPEED_LIMIT_MAX_M_S,
+                    _POSITION_FEEDBACK_SPEED_LIMIT_M_S
+                    + _POSITION_FEEDBACK_SPEED_LIMIT_SLOPE_M_S_PER_M * fb_norm)
+                / (kp_pos * jnp.minimum(fb_norm, _POSITION_FB_SATURATION_M)),
                 jnp.asarray(1.0),
             )
             endpoint_orient_scale = jnp.where(sample.at_endpoint, 0.1, 1.0)
