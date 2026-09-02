@@ -49,7 +49,7 @@
     # cap; it remains available as an opt-in pending limit-aware
     # regularisation.
     use_nullspace_policy: false
-    reference_lead_m: 0.005
+    reference_lead_m: 0.02
     orientation_mode: surface_normal
     cylinder_axis_direction: [0.0, 1.0, 0.0]
     # One point on the cylinder axis.  Omitted here = fit from the trajectory

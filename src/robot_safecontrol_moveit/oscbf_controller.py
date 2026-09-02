@@ -179,7 +179,7 @@ class OscbfController(Node):
             "solver_tol": 1e-3,
             "task_mode": "tool_axis_5d",
             "use_nullspace_policy": False,
-            "reference_lead_m": 0.5,
+            "reference_lead_m": 0.02,
             "orientation_mode": "surface_normal",
             "cylinder_axis_direction": [0.0, 1.0, 0.0],
             "cylinder_center": [],

@@ -4,6 +4,7 @@ import _path_setup  # noqa: F401
 import jax
 import jax.numpy as jnp
 import numpy as np
+import pytest
 from scipy.spatial.transform import Rotation
 
 from path_following import (
@@ -122,7 +123,12 @@ def test_jax_phase_catch_up_matches_host_for_a_projection_ahead_of_reference():
         host.next_state.reference_progress_m,
         host.next_state.projected_progress_m,
     ], atol=2e-6)
-    assert float(result.state[0]) >= float(result.state[1])
+    # Reference advance is schedule-only after the projection decoupling: a
+    # projection ahead of the reference no longer drags the reference forward
+    # (that catch-up chain throttled the feed by ~20x).  The projection may
+    # therefore lead the reference and is recorded independently.
+    assert float(result.state[0]) == pytest.approx(
+        state.reference_progress_m + float(result.feedrate_m_s) * 0.01, abs=2e-6)
 
 
 def test_jax_reconcile_phase_catch_up_matches_host():

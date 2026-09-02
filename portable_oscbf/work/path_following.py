@@ -34,7 +34,7 @@ class PathFollowingConfig:
 
     projection_half_window_segments: int = 96
     max_projection_speed_m_s: float = 3.0
-    reference_lead_m: float = 1.0e-5
+    reference_lead_m: float = 2.0e-2
     cross_track_stop_m: float = 1.0e-2
     endpoint_braking_deceleration_m_s2: float = 5.0e-1
     endpoint_settle_s: float = 0.5
@@ -391,7 +391,9 @@ def reconcile_path_state_after_motion(
     )
     projected = float(np.clip(raw_projection, state.projected_progress_m, maximum))
     segment, _ = geometry._segment_fraction(projected)
-    reference = max(state.reference_progress_m, projected)
+    # The reference is advanced by advance_path_state only; the measured
+    # projection must not pull it backwards (or catch up with it).
+    reference = state.reference_progress_m
     completed = bool(state.completed or reference >= geometry.total_length_m - _EPS)
     return PathFollowerState(
         reference_progress_m=reference,
@@ -486,27 +488,21 @@ def advance_path_state(
         feedrate = gamma * minimum
         reason = _limiting_reason(nominal, limits, gamma)
 
-    candidate = min(geometry.total_length_m, state.reference_progress_m + feedrate * dt)
-    predicted_projection = min(
-        geometry.total_length_m,
-        projected + min(feedrate, config.max_projection_speed_m_s) * dt,
-    )
-    lead_limited = min(
-        geometry.total_length_m,
-        predicted_projection + config.reference_lead_m,
-    )
-    scheduled_progress = max(
-        state.reference_progress_m, min(candidate, lead_limited))
-    # The reference may not lead the measured projection by more than the
-    # configured allowance, but it must not remain behind it either.  During
-    # a 5-D redundant motion a small null-space/geometry discrepancy can move
-    # the physical end effector farther along the path than the scheduled
-    # feed.  Ignoring tangent error is intentional for path following, so an
-    # uncorrected phase lag would otherwise accumulate as a false full-pose
-    # position error.  ``projected`` already has the per-cycle projection
-    # speed cap, making this a bounded measurement phase correction rather
-    # than a new velocity command or an output filter.
-    reference_progress = max(scheduled_progress, projected)
+    # Bounded-lead scheduling: the reference follows the feed schedule
+    # (reference + feedrate*dt) but may never lead the end-effector projection
+    # by more than reference_lead_m.  This keeps the feed at the nominal speed
+    # while the end effector keeps up, yet freezes the reference when the
+    # effector lags (a stalled projection must not leave the reference racing
+    # ahead).  It replaces the old anchor chain, which pinned the reference to
+    # the projection advance and throttled the feed ~20x.  Safety semantics
+    # are unchanged: gamma and the feed caps freeze the reference when the
+    # cross-track error exceeds the stop threshold or near the endpoint.
+    candidate = min(
+        geometry.total_length_m, state.reference_progress_m + feedrate * dt)
+    lead_capped = min(
+        geometry.total_length_m, projected + config.reference_lead_m)
+    reference_progress = max(
+        state.reference_progress_m, min(candidate, lead_capped))
     completed = reference_progress >= geometry.total_length_m - _EPS
     endpoint_hold = state.endpoint_hold_s + dt if completed else 0.0
     next_state = PathFollowerState(

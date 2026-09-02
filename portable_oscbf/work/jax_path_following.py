@@ -270,20 +270,22 @@ def advance_path_state_jax(geometry: JaxPathGeometry,
     )
     endpoint = sample.at_endpoint | completed_before
     feedrate = jnp.where(endpoint, 0.0, gamma * cap)
+    # Bounded-lead scheduling: the reference follows the feed schedule
+    # (reference + feedrate*dt_s) but may never lead the end-effector
+    # projection by more than reference_lead_m.  This keeps the feed at the
+    # nominal speed while the end effector keeps up, yet freezes the
+    # reference when the effector lags (a stalled projection must not leave
+    # the reference racing ahead).  It replaces the old anchor chain, which
+    # pinned the reference to the projection advance and throttled the feed
+    # ~20x.  Safety semantics are unchanged: gamma and the feed caps freeze
+    # the reference when the cross-track error exceeds the stop threshold or
+    # near the endpoint.
     candidate = jnp.minimum(
         geometry.arc_length_m[-1], reference_progress + feedrate * dt_s)
-    predicted_projection = jnp.minimum(
-        geometry.arc_length_m[-1],
-        projected + jnp.minimum(feedrate, config.max_projection_speed_m_s) * dt_s,
-    )
-    lead_limited = jnp.minimum(
-        geometry.arc_length_m[-1], predicted_projection + config.reference_lead_m)
-    scheduled_progress = jnp.maximum(
-        reference_progress, jnp.minimum(candidate, lead_limited))
-    # Keep the same bounded measured-phase catch-up as the NumPy mirror.  The
-    # projection has already been capped by max_projection_speed_m_s * dt_s,
-    # so this does not create an unconstrained reference-speed path.
-    next_reference_progress = jnp.maximum(scheduled_progress, projected)
+    lead_capped = jnp.minimum(
+        geometry.arc_length_m[-1], projected + config.reference_lead_m)
+    next_reference_progress = jnp.maximum(
+        reference_progress, jnp.minimum(candidate, lead_capped))
     completed = next_reference_progress >= geometry.arc_length_m[-1] - _EPS
     next_endpoint_hold = jnp.where(completed, endpoint_hold + dt_s, 0.0)
     next_state = jnp.array([
@@ -346,7 +348,11 @@ def reconcile_path_state_after_motion_jax(
         0,
         geometry.positions_m.shape[0] - 2,
     ).astype(state.dtype)
-    reference = jnp.maximum(state[PATH_STATE_REFERENCE_PROGRESS], projected)
+    # The reference is advanced by advance_path_state_jax only; the measured
+    # projection must not pull it backwards (or catch up with it).  This keeps
+    # the reference on its feed schedule even when the ee projection lags by
+    # the steady-state tracking error.
+    reference = state[PATH_STATE_REFERENCE_PROGRESS]
     completed = reference >= geometry.arc_length_m[-1] - _EPS
     return state.at[PATH_STATE_REFERENCE_PROGRESS].set(reference).at[
         PATH_STATE_PROJECTED_PROGRESS].set(projected).at[
