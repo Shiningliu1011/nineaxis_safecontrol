@@ -35,10 +35,10 @@ class PathFollowingConfig:
     projection_half_window_segments: int = 96
     max_projection_speed_m_s: float = 0.12
     reference_lead_m: float = 1.0e-5
-    cross_track_stop_m: float = 1.0e-3
-    endpoint_braking_deceleration_m_s2: float = 5.0e-2
+    cross_track_stop_m: float = 1.0e-2
+    endpoint_braking_deceleration_m_s2: float = 5.0e-1
     endpoint_settle_s: float = 0.5
-    maximum_tool_axis_speed_rad_s: float = 0.15
+    maximum_tool_axis_speed_rad_s: float = 2.0
     maximum_reference_feedrate_step_m_s: float = 0.005
 
     def __post_init__(self) -> None:

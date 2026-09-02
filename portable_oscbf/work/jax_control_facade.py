@@ -97,6 +97,7 @@ class JaxControlLoop:
     """
 
     def __init__(self, dt: float = 0.002,
+                 dt_path: float | None = None,
                  w_pos: float = 20.0, w_orient: float = 10.0,
                  w_joint: float = 0.1,
                  temporal_lambda: float = 0.0,
@@ -114,6 +115,8 @@ class JaxControlLoop:
                  joint_limit_cbf_margin: float | None = None,
                  nullspace_policy=None):
         self.dt = float(dt)
+        # 参考路径推进步长默认与 QP 积分步一致; 控制周期 0.01s 时传 dt_path=0.01
+        self.dt_path = self.dt if dt_path is None else float(dt_path)
         self.w_pos = float(w_pos)
         self.w_orient = float(w_orient)
         self.w_joint = float(w_joint)
@@ -323,6 +326,7 @@ class JaxControlLoop:
             robot=self.robot,
             controller_config=self._config,
             dt=self.dt,
+            dt_path=self.dt_path,
             q_min=self.q_min,
             q_max=self.q_max,
             aggregate_dynamic_obstacles=self.aggregate_dynamic_obstacles,

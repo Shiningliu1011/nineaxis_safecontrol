@@ -71,6 +71,15 @@ class OscbfController(Node):
         self._last_result = None
         self._trajectory_duration_s = 30.0
         self._completion_logged = False
+        self._hold_q: Optional[np.ndarray] = None
+        self._hold_reported = False
+        self._stall_since: Optional[float] = None
+        self._last_pos_err: Optional[float] = None
+        self._q_cmd_smooth: Optional[np.ndarray] = None
+        # (monotonic, pos_err) 滚动 5 s 窗口, 用于卡死增强判据。
+        from collections import deque
+        self._pos_err_hist: deque = deque()
+        self._src_hist: deque = deque()
         self._tracking_started = not bool(
             self.get_parameter("wait_for_start").value
         )
@@ -153,13 +162,14 @@ class OscbfController(Node):
             "kp_pos": 60.0,
             "kp_orient": 10.0,
             "kp_joint": 0.45,
-            "reference_feedrate_scale": 3.0,
+            "dt_path": 0.01,
+            "reference_feedrate_scale": 3.5,
             "nullspace_speed_limit": 0.18,
             # PathFollowingConfig.maximum_tool_axis_speed_rad_s 的默认值
             # (0.15) 会让圆柱曲率把 feedrate 压到 ~0.04 m/s; 显式提升到
             # 0.6 使名义进给 (feedrate_scale=3.0) 成为实际限额。
-            "max_tool_axis_speed_rad_s": 0.6,
-            "damping": 1e-3,
+            "max_tool_axis_speed_rad_s": 2.0,
+            "damping": 5e-2,
             "w_pos": 20.0,
             "w_orient": 10.0,
             "w_joint": 0.1,
@@ -168,7 +178,7 @@ class OscbfController(Node):
             "solver_tol": 1e-3,
             "task_mode": "tool_axis_5d",
             "use_nullspace_policy": False,
-            "reference_lead_m": 0.005,
+            "reference_lead_m": 0.00001,
             "orientation_mode": "surface_normal",
             "cylinder_axis_direction": [0.0, 1.0, 0.0],
             "cylinder_center": [],
@@ -290,6 +300,7 @@ class OscbfController(Node):
 
         self._loop = JaxControlLoop(
             dt=float(self.get_parameter("dt").value),
+            dt_path=float(self.get_parameter("dt_path").value),
             w_pos=float(self.get_parameter("w_pos").value),
             w_orient=float(self.get_parameter("w_orient").value),
             w_joint=float(self.get_parameter("w_joint").value),
@@ -386,6 +397,9 @@ class OscbfController(Node):
             "q_next": np.asarray(result.q_next, dtype=float),
             "u_safe": np.asarray(result.u_safe, dtype=float),
             "err_6d": np.asarray(result.err_6d, dtype=float),
+            "ee_pos": np.asarray(result.ee_pos, dtype=float),
+            "reference_position_m": np.asarray(
+                result.reference_position_m, dtype=float),
             "qp_ok": bool(result.qp_ok),
             "min_obs_dist": float(result.min_obs_dist),
             "delta_slack": float(result.delta_slack),
@@ -395,11 +409,28 @@ class OscbfController(Node):
             "reference_at_endpoint": bool(result.reference_at_endpoint),
             "cross_track_error_m": float(result.cross_track_error_m),
             "feedrate_m_s": float(result.feedrate_m_s),
+            "feedrate_nominal_m_s": float(result.feedrate_nominal_m_s),
+            "feedrate_joint_limit_m_s": float(result.feedrate_joint_limit_m_s),
+            "feedrate_cbf_limit_m_s": float(result.feedrate_cbf_limit_m_s),
+            "feedrate_rate_limit_m_s": float(result.feedrate_rate_limit_m_s),
+            "feedrate_tool_axis_limit_m_s": float(
+                result.feedrate_tool_axis_limit_m_s),
+            "feedrate_endpoint_brake_limit_m_s": float(
+                result.feedrate_endpoint_brake_limit_m_s),
+            "gamma": float(result.gamma),
             "limiting_reason_code": int(result.limiting_reason_code),
         }
 
     def _control_tick(self) -> None:
         if not self._tracking_started or self._latest_q is None:
+            return
+
+        # 完成后冻结: 不再运行反馈循环, 只把最终位姿保持发布给执行器。
+        # 路径到达端点后进给前馈消失, 高增益位置反馈 (kp_pos=80) 与 plant
+        # 自身位置环 (kp=80) 串联会自激振荡 (观测: 完成后 pos_err 5mm →
+        # 570mm), 冻结命令是行为上的硬闸门。
+        if self._hold_q is not None:
+            self._publish_positions(self._hold_q)
             return
 
         # 首次跟踪步：初始化评价器
@@ -408,8 +439,9 @@ class OscbfController(Node):
                 trajectory_duration_s=self._trajectory_duration_s)
 
         start = time.perf_counter()
+        q_now = np.asarray(self._latest_q, dtype=float)
         obs_kwargs = dict(self._obs_state) if self._enable_obs and self._obs_state else None
-        step = self.step_once(self._latest_q, obs_kwargs=obs_kwargs)
+        step = self.step_once(q_now, obs_kwargs=obs_kwargs)
         duration_ms = (time.perf_counter() - start) * 1000.0
         self._step_durations.append(duration_ms)
         self._latest_q = None
@@ -417,8 +449,93 @@ class OscbfController(Node):
         # 累积跟踪指标
         self._evaluator.update(step, wall_time_s=start)
 
-        q_next = step["q_next"]
         lower, upper = self._limits
+        # 跳变诊断: 误差与上一步相比 >0.25 m 时, 记录一步的完整输入输出,
+        # 用于区分 "参考跳变" 与 "命令跳变" (观测: 4s 处一秒内 7mm→967mm)。
+        pos_err_now = float(np.linalg.norm(step["err_6d"][:3]))
+        if (self._last_pos_err is not None
+                and abs(pos_err_now - self._last_pos_err) > 0.25):
+            self.get_logger().warning(
+                f"POS_JUMP d_err={pos_err_now - self._last_pos_err:.3f}m "
+                f"u_safe=[{', '.join(f'{v:.3f}' for v in step['u_safe'])}] "
+                f"q_next-qmax={np.max(np.abs(step['q_next'] - q_now)):.4f} "
+                f"ee=[{', '.join(f'{v:.3f}' for v in step['ee_pos'])}] "
+                f"ref=[{', '.join(f'{v:.3f}' for v in step['reference_position_m'])}]"
+            )
+        self._last_pos_err = pos_err_now
+        # 进给分项诊断: 每 300 步打印各 cap, 直接观察是谁在压进给。
+        if len(self._step_durations) % 300 == 0:
+            self.get_logger().info(
+                f"DETAIL steps={len(self._step_durations)} "
+                f"prog={float(self._path_state[0]):.6f} "
+                f"feed={step['feedrate_m_s']:.5f} "
+                f"nom={step['feedrate_nominal_m_s']:.5f} "
+                f"gamma={step['gamma']:.3f} lim={step['limiting_reason_code']} "
+                f"cap_j={step['feedrate_joint_limit_m_s'] if step['feedrate_joint_limit_m_s'] < 1e9 else 9.99:.4f} "
+                f"cap_cbf={step['feedrate_cbf_limit_m_s'] if step['feedrate_cbf_limit_m_s'] < 1e9 else 9.99:.4f} "
+                f"cap_rate={step['feedrate_rate_limit_m_s'] if step['feedrate_rate_limit_m_s'] < 1e9 else 9.99:.4f} "
+                f"cap_tool={step['feedrate_tool_axis_limit_m_s'] if step['feedrate_tool_axis_limit_m_s'] < 1e9 else 9.99:.4f} "
+                f"cap_brake={step['feedrate_endpoint_brake_limit_m_s']:.4f} "
+                f"src={step['reference_source_time_s']:.4f}"
+            )
+        # 卡死检测: 参考进给归零且横断误差持续超限 (再紧的非端点位置)
+        # 时, 反馈拉回与参考停滞会形成长期摆动; 连续超过 1 s 即冻结,
+        # 行为与完成冻结一致 (安全胜过继续挣扎)。
+        if (not bool(step["reference_at_endpoint"])
+                and float(step["feedrate_m_s"]) <= 1e-3
+                and float(step["cross_track_error_m"]) > 5e-3):
+            if self._stall_since is None:
+                self._stall_since = start
+            elif start - self._stall_since > 1.0:
+                hold = np.clip(q_now, lower, upper)
+                self._hold_q = hold
+                self.get_logger().warn(
+                    "TRACKING_STALLED: reference feedrate=0 with cross-track "
+                    f"={float(step['cross_track_error_m'])*1e3:.1f}mm for "
+                    f"{start - self._stall_since:.2f}s; holding current pose"
+                )
+                self._publish_positions(hold)
+                return
+        else:
+            self._stall_since = None
+
+        # 卡死增强判据: 参考源时间 5 s 不变 (参考完全停滞) + 低进给,
+        # 说明系统停在 "参考停走 + 末端无法收回" 的等待态 (如 CBF 曲率段
+        # 封顶), 与横断超限判据互补。误差爬升率在卡死后只有 1-2 mm/s,
+        # 因此不能依赖误差阈值。
+        self._pos_err_hist.append((start, pos_err_now))
+        self._src_hist.append((start, float(step["reference_source_time_s"])))
+        while self._pos_err_hist and start - self._pos_err_hist[0][0] > 5.0:
+            self._pos_err_hist.popleft()
+        while self._src_hist and start - self._src_hist[0][0] > 5.0:
+            self._src_hist.popleft()
+        if (self._hold_q is None
+                and len(self._src_hist) >= 2
+                and float(step["feedrate_m_s"]) < 0.05
+                and float(step["reference_source_time_s"])
+                - self._src_hist[0][1] < 0.01
+                and pos_err_now > 0.005):
+            hold = np.clip(q_now, lower, upper)
+            self._hold_q = hold
+            self.get_logger().warn(
+                "TRACKING_STALLED: reference source-time frozen for 5s "
+                f"(feed={float(step['feedrate_m_s']):.4f}m/s, "
+                f"pos_err={pos_err_now*1e3:.1f}mm); holding current pose"
+            )
+            self._publish_positions(hold)
+            return
+
+        if bool(step["reference_at_endpoint"]) and self._hold_q is None:
+            hold = np.clip(q_now, lower, upper)
+            self._hold_q = hold
+            self.get_logger().info(
+                "END_OF_TRACKING: holding final pose "
+                f"pos_err={float(np.linalg.norm(step['err_6d'][:3]))*1e3:.1f}mm"
+            )
+            self._publish_positions(hold)
+            return
+
+        q_next = step["q_next"]
         valid = np.all(np.isfinite(q_next)) and np.all(q_next >= lower - 1e-9) \
             and np.all(q_next <= upper + 1e-9)
         if not valid:
@@ -433,10 +550,24 @@ class OscbfController(Node):
                 "holding current state"
             )
 
+        self._publish_positions(q_next)
+
+    def _publish_positions(self, positions: np.ndarray) -> None:
+        # 一阶低通 (tau=0.02 s): QP 输出逐 tick 的高频微抖 (20-50 Hz,
+        # 0.1-0.9 rad/s) 直接下发对电机是颤振; 平滑后仅引入约 2-3 tick
+        # 相位滞后, 由位置环与参考前馈吸收, 稳态无偏差。
+        dt = 1.0 / float(self.get_parameter("publish_frequency_hz").value)
+        alpha = dt / (dt + 0.02)
+        target = np.asarray(positions, dtype=float)
+        if self._q_cmd_smooth is None:
+            self._q_cmd_smooth = target.copy()
+        else:
+            self._q_cmd_smooth = (
+                self._q_cmd_smooth + alpha * (target - self._q_cmd_smooth))
         message = JointState()
         message.header.stamp = self.get_clock().now().to_msg()
         message.name = list(self._joint_names)
-        message.position = [float(value) for value in q_next]
+        message.position = [float(value) for value in self._q_cmd_smooth]
         self._publisher.publish(message)
 
     def progress_snapshot(self) -> dict:
@@ -463,6 +594,7 @@ class OscbfController(Node):
             "ready": True,
             "err_6d": np.asarray(result.err_6d, dtype=float),
             "pos_error_m": float(np.linalg.norm(result.err_6d[:3])),
+            "path_progress_m": float(np.asarray(result.path_state)[0]),
             "orient_error_rad": float(np.linalg.norm(result.err_6d[3:])),
             "source_time_s": source_time,
             "trajectory_duration_s": self._trajectory_duration_s,
@@ -496,6 +628,13 @@ class OscbfController(Node):
         snapshot = self.progress_snapshot()
         if not snapshot.get("ready"):
             return
+        if self._hold_q is not None:
+            if not self._hold_reported:
+                self._hold_reported = True
+                self.get_logger().info(
+                    "HELD: tracking frozen at final pose, holding command active"
+                )
+            return
         self.get_logger().info(
             "progress "
             f"source_time={snapshot['source_time_s']:.2f}/"
@@ -505,6 +644,7 @@ class OscbfController(Node):
             f"orient_err={snapshot['orient_error_rad']*180/np.pi:.4f}deg "
             f"cross_track={snapshot['cross_track_error_m']*1000:.3f}mm "
             f"feedrate={snapshot['feedrate_m_s']:.4f}m/s "
+            f"prog={snapshot['path_progress_m']:.4f}m steps={snapshot['steps']} "
             f"limit={snapshot['limiting_reason_code']} "
             f"qp_ok={snapshot['qp_ok']} slack={snapshot['delta_slack']:.2e} "
             f"latency p50/p95/max="
@@ -557,6 +697,13 @@ class OscbfController(Node):
         if not self._tracking_started:
             self._tracking_started = True
             self._path_state = self._loop.initial_path_state()
+            self._hold_q = None
+            self._hold_reported = False
+            self._completion_logged = False
+            self._stall_since = None
+            self._q_cmd_smooth = None
+            self._pos_err_hist.clear()
+            self._src_hist.clear()
             self.get_logger().info(
                 "TRACKING_STARTED: beginning path tracking from the current "
                 "plant state"
