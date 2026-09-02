@@ -305,13 +305,22 @@ class TestTrajectoryReplay(unittest.TestCase):
         self.assertTrue(result.succeeded)
         self.assertIsNotNone(node.publisher)
         assert node.publisher is not None
+        # 带 time_from_start 的轨迹按时间戳插值重采样:
+        # round(0.2s / 0.01s) = 20 帧 + 终点帧, 且帧间为线性插值。
+        self.assertEqual(len(node.publisher.messages), 21)
         self.assertEqual(
-            [list(message.name) for message in node.publisher.messages],
-            [["J2", "J1"], ["J2", "J1"]],
+            [list(message.name) for message in node.publisher.messages][-1],
+            ["J2", "J1"],
         )
         self.assertEqual(
-            [list(message.position) for message in node.publisher.messages],
-            [[20.0, 10.0], [21.0, 11.0]],
+            list(node.publisher.messages[0].position), [20.0, 10.0]
+        )
+        # 第 15 帧 target_t=0.15s 落在 (0.1s -> 0.2s) 段中点: [20.5, 10.5]
+        self.assertEqual(
+            list(node.publisher.messages[14].position), [20.5, 10.5]
+        )
+        self.assertEqual(
+            list(node.publisher.messages[-1].position), [21.0, 11.0]
         )
         self.assertEqual(node.destroyed_publishers, [node.publisher])
 

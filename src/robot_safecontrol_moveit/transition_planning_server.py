@@ -343,7 +343,7 @@ class TransitionPlanningServer(Node):
         self.declare_parameter("goal_joint_tolerance", 0.001)
         self.declare_parameter("transition_result_mode", "plan_only")
         self.declare_parameter("replay_joint_state_topic", JOINT_STATE_TOPIC)
-        self.declare_parameter("replay_rate_hz", 30.0)
+        self.declare_parameter("replay_rate_hz", 100.0)
         self.declare_parameter("oscbf_command_topic", "")
         self.declare_parameter("notify_oscbf_start", False)
         self.declare_parameter(
