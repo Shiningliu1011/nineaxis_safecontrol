@@ -74,6 +74,43 @@ def fit_circle(
     )
 
 
+def snap_path_to_cylindrical_surface(
+    points: Sequence[Sequence[float]],
+    axis_direction: Sequence[float] | np.ndarray,
+) -> tuple[np.ndarray, tuple[float, float, float], float]:
+    """Radially project *points* onto the least-squares fitted cylinder.
+
+    The raw trajectory is generated independently of the cylinder that is
+    fitted to it later, so its points wobble a few millimetres to almost two
+    centimetres around the fitted surface.  The OSCBF controller, the
+    transition first-target and the viewer display all consume the same
+    calibrated path, so this module is where the snap must happen once:
+    projecting radially keeps the axial (along-axis) coordinate and the
+    ordering untouched while pinning the radial coordinate to the fitted
+    radius, which keeps the tool on the work surface instead of penetrating
+    it or floating off it.
+
+    Returns ``(snapped_points, axis_point, radius)``.
+    """
+    values = np.asarray(points, dtype=float).reshape(-1, 3)
+    fit = fit_circle(values, axis_direction)
+    radius = fit.radius
+    axial_vals = values @ fit.axis
+    axial_centre = 0.5 * (float(axial_vals.min()) + float(axial_vals.max()))
+    centre = (
+        fit.center_xy[0] * fit.u
+        + fit.center_xy[1] * fit.v
+        + axial_centre * fit.axis
+    )
+    relative = values - centre
+    axial = np.outer(relative @ fit.axis, fit.axis)
+    radial = relative - axial
+    radial_len = np.linalg.norm(radial, axis=1)
+    radial_len = np.maximum(radial_len, 1e-12)
+    snapped = centre + axial + (radius / radial_len)[:, None] * radial
+    return snapped, tuple(float(c) for c in centre), float(radius)
+
+
 def _rotation_matrix_to_quaternion_xyzw(
     matrix: np.ndarray,
 ) -> tuple[float, float, float, float]:

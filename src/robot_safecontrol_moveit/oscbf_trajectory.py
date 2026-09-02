@@ -74,19 +74,34 @@ def load_calibrated_path(
     *,
     max_points: int = 0,
     point_stride: int = 1,
+    cylinder_axis_direction: Sequence[float] = (0.0, 1.0, 0.0),
 ) -> np.ndarray:
-    """Return the calibrated trajectory positions in ``base_link`` (N, 3)."""
+    """Return the calibrated trajectory positions in ``base_link`` (N, 3).
+
+    The points are radially projected onto the least-squares fitted tracking
+    cylinder so that every consumer (controller, transition first-target,
+    viewer display) agrees the tool works *on* the cylindrical surface rather
+    than wobbling inside or outside it.
+    """
     import scipy.io as sio
+
+    from .cylinder_geometry import snap_path_to_cylindrical_surface
 
     transform = trajectory_to_base_transform(mat_path)
     data = sio.loadmat(mat_path)["ik_input"][0, 0]
     raw = np.asarray(data["position_series"], dtype=float) / 1000.0
-    indices = np.arange(0, len(raw), point_stride, dtype=int)
+    homogeneous = np.hstack([raw, np.ones((len(raw), 1))])
+    # 先用全集拟合圆柱并吸附, 再按 stride/max_points 抽样。若先抽样后吸附,
+    # 小样本(如仅轨迹开头的 64 点)会拟合出一个错误的圆, 与控制器/查看器
+    # 用全路径拟合的结果不一致。
+    calibrated = (transform @ homogeneous.T).T[:, :3]
+    snapped, _, _ = snap_path_to_cylindrical_surface(
+        calibrated, cylinder_axis_direction
+    )
+    indices = np.arange(0, len(snapped), point_stride, dtype=int)
     if max_points > 0:
         indices = indices[:max_points]
-    points = raw[indices]
-    homogeneous = np.hstack([points, np.ones((len(points), 1))])
-    return (transform @ homogeneous.T).T[:, :3]
+    return snapped[indices]
 
 
 def load_calibrated_path_with_times(
@@ -94,21 +109,31 @@ def load_calibrated_path_with_times(
     *,
     max_points: int = 0,
     point_stride: int = 1,
+    cylinder_axis_direction: Sequence[float] = (0.0, 1.0, 0.0),
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Calibrated positions (N, 3) and raw source times (N,) in seconds."""
+    """Calibrated positions (N, 3) and raw source times (N,) in seconds.
+
+    Positions are radially projected onto the fitted tracking cylinder, same
+    as :func:`load_calibrated_path`.
+    """
     import scipy.io as sio
+
+    from .cylinder_geometry import snap_path_to_cylindrical_surface
 
     transform = trajectory_to_base_transform(mat_path)
     data = sio.loadmat(mat_path)["ik_input"][0, 0]
     raw = np.asarray(data["position_series"], dtype=float) / 1000.0
     times = np.asarray(data["time_series"], dtype=float).reshape(-1)
-    indices = np.arange(0, len(raw), point_stride, dtype=int)
+    homogeneous = np.hstack([raw, np.ones((len(raw), 1))])
+    calibrated = (transform @ homogeneous.T).T[:, :3]
+    # 全量吸附后再抽样 (见 load_calibrated_path 的说明)。
+    positions, _, _ = snap_path_to_cylindrical_surface(
+        calibrated, cylinder_axis_direction
+    )
+    indices = np.arange(0, len(positions), point_stride, dtype=int)
     if max_points > 0:
         indices = indices[:max_points]
-    points = raw[indices]
-    homogeneous = np.hstack([points, np.ones((len(points), 1))])
-    positions = (transform @ homogeneous.T).T[:, :3]
-    return positions, times[indices]
+    return positions[indices], times[indices]
 
 
 def apply_trajectory_transform(

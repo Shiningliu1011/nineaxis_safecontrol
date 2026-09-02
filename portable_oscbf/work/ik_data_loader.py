@@ -193,6 +193,13 @@ class IKTrajectoryData:
         ):
             setattr(self, attr, self._fill_nonfinite(getattr(self, attr)))
 
+        # ---- 贴合圆柱表面 ----
+        # 圆柱轴 (0,1,0) 与 controller/viewer/runtime 配置一致; 径向分量吸附
+        # 到拟合半径, 保证控制路径本就工作在圆柱表面 (任何消费侧再吸附幂等)。
+        _axis = np.array([0.0, 1.0, 0.0])
+        _centre, _radius = self._fit_surface_with_radius(_axis)
+        self._snap_path_onto_cylinder(_axis, _centre, _radius)
+
         # ---- 预计算姿态参考标架 ----
         self._path_geometry = None
         self.set_orientation_mode("fixed")
@@ -401,11 +408,17 @@ class IKTrajectoryData:
             raise ValueError("axis_direction must be a non-zero 3-vector")
         axis = axis / axis_len
         if axis_point is None:
-            centre = self._fit_surface_axis_point(axis)
+            centre, radius = self._fit_surface_with_radius(axis)
         else:
             centre = np.asarray(axis_point, dtype=float).ravel()
             if centre.shape != (3,):
                 raise ValueError("axis_point must be a 3-vector")
+            radius = self._fit_surface_with_radius(axis)[1]
+
+        # 吸附到拟合圆柱表面 (镜像 cylinder_geometry.snap_path_to_cylindrical_surface):
+        # 生成的原始轨迹相对拟合圆柱有毫米级径向起伏, 直接把每个点的径向分量
+        # 钉到拟合半径上, 末端工具因此始终工作在圆柱表面, 不伸入也不脱离。
+        self._snap_path_onto_cylinder(axis, centre, radius)
 
         frames = np.zeros((self.num_points, 3, 3))
         for index, point in enumerate(self._pos_world):
@@ -436,6 +449,15 @@ class IKTrajectoryData:
         cylinder centre.  Returns a point ``c`` such that
         ``c + t * axis`` is the fitted axis line.
         """
+        return self._fit_surface_with_radius(axis)[0]
+
+    def _fit_surface_with_radius(self, axis: np.ndarray) -> tuple[np.ndarray, float]:
+        """Fit the cylinder axis point and the surface radius in one pass.
+
+        ``c + t * axis`` is the fitted axis line and the return value is the
+        least-squares surface radius, used for snapping the path onto the
+        cylindrical surface.
+        """
         points = np.asarray(self._pos_world, dtype=float)
         helper = np.array([1.0, 0.0, 0.0])
         if abs(float(np.dot(helper, axis))) > 0.9:
@@ -455,7 +477,36 @@ class IKTrajectoryData:
 
         axial_values = points @ axis
         axial_centre = 0.5 * (float(axial_values.min()) + float(axial_values.max()))
-        return centre_u * u + centre_v * v + axial_centre * axis
+        centre = centre_u * u + centre_v * v + axial_centre * axis
+        radius = float(
+            np.sqrt(centre_u * centre_u + centre_v * centre_v - coeff[2])
+        )
+        return centre, radius
+
+    def _snap_path_onto_cylinder(
+        self, axis: np.ndarray, centre: np.ndarray, radius: float
+    ) -> None:
+        """Radially project the stored world path (and its feedforward).
+
+        The axial and temporal coordinates are untouched; the radial
+        coordinate of every position is pinned to ``radius`` so the tool
+        tracks the surface exactly.  Velocity/acceleration/jerk feedforward
+        vectors get their radial component projected off so they stay tangent
+        to the surface.
+        """
+        relative = self._pos_world - centre
+        axial = np.outer(relative @ axis, axis)
+        radial = relative - axial
+        radial_len = np.linalg.norm(radial, axis=1)
+        radial_len = np.maximum(radial_len, 1e-12)
+        radial_dir = radial / radial_len[:, None]
+        self._pos_world = (
+            centre + axial + (radius / radial_len[:, None]) * radial
+        )
+        for attr in ("_vel_world", "_acc_world", "_jerk_world"):
+            values = np.asarray(getattr(self, attr), dtype=float)
+            radial_component = np.sum(values * radial_dir, axis=1, keepdims=True)
+            setattr(self, attr, values - radial_component * radial_dir)
 
     def _compute_frenet_frames(self) -> np.ndarray:
         """
