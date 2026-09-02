@@ -377,6 +377,13 @@ class OscbfController(Node):
             "qp_ok": bool(result.qp_ok),
             "min_obs_dist": float(result.min_obs_dist),
             "delta_slack": float(result.delta_slack),
+            # TrackingEvaluator 依赖这些键计算完成度/横偏/速率统计,
+            # 缺失会让 report 的 done=0% 而 progress 行却显示 100%。
+            "reference_source_time_s": float(result.reference_source_time_s),
+            "reference_at_endpoint": bool(result.reference_at_endpoint),
+            "cross_track_error_m": float(result.cross_track_error_m),
+            "feedrate_m_s": float(result.feedrate_m_s),
+            "limiting_reason_code": int(result.limiting_reason_code),
         }
 
     def _control_tick(self) -> None:
@@ -495,14 +502,19 @@ class OscbfController(Node):
             f"qp_fail={snapshot['qp_fail_count']}"
         )
         if snapshot["at_endpoint"] and not self._completion_logged:
-            self.get_logger().info(
-                f"TRAJECTORY_COMPLETE: {self._trajectory_duration_s:.1f}s "
-                f"tracked in {snapshot['steps']} steps"
-            )
             self._completion_logged = True
+            report = self._evaluator.report() if self._evaluator is not None else None
+            done_pct = (
+                report.completion_fraction * 100.0 if report is not None else 0.0
+            )
+            self.get_logger().info(
+                f"TRAJECTORY_COMPLETE: done={done_pct:.1f}% "
+                f"duration={self._trajectory_duration_s:.1f}s "
+                f"steps={snapshot['steps']} "
+                f"at_endpoint={snapshot['at_endpoint']}"
+            )
             # 输出跟踪评价报告摘要
-            if self._evaluator is not None:
-                report = self._evaluator.report()
+            if report is not None:
                 self.get_logger().info(
                     f"TRACKING_REPORT: {report.summary()}")
                 # 写入报告文件
