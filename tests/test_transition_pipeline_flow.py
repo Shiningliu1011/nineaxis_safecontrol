@@ -82,6 +82,8 @@ class _PipelinePorts:
         "transition_result_mode": "plan_only",
         "replay_joint_state_topic": "/mujoco_joint_states",
         "replay_rate_hz": 30.0,
+        "replay_time_scale": 1.5,
+        "replay_min_duration_s": 4.0,
         "oscbf_command_topic": "",
         "notify_oscbf_start": False,
     }
@@ -122,7 +124,7 @@ class _PipelinePorts:
             raise self.plan_error
         return SimpleNamespace(points=[object(), object(), object()])
 
-    def replay(self, trajectory, *, topic, rate_hz, command_topic) -> None:
+    def replay(self, trajectory, *, topic, rate_hz, command_topic, time_scale=1.0) -> None:
         self.events.append("replay")
 
     def execute(self, trajectory) -> SimpleNamespace:

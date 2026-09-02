@@ -17,6 +17,8 @@
     kp_pos: 80.0
     kp_orient: 10.0
     kp_joint: 0.45
+    # 源数据 feedrate 按旧 tool-axis 限速生成 (~0.04 m/s), 运行时放大整体提速
+    reference_feedrate_scale: 3.0
     nullspace_speed_limit: 0.18
     damping: 0.001
     w_pos: 20.0

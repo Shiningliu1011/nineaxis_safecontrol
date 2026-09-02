@@ -71,10 +71,18 @@ class TrajectoryExecutor:
         topic: str = "/joint_states",
         rate_hz: float = 30.0,
         command_topic: str | None = None,
+        time_scale: float = 1.0,
+        min_duration_s: float = 0.0,
     ) -> ExecutionResult:
         """Publish trajectory points for visualization and, optionally, as
         actuator commands on ``command_topic`` (the OSCBF plant follows the
         same replayed transition before the controller takes over).
+
+        ``time_scale`` above 1.0 stretches the replayed time profile (the
+        time-optimal transition over metres of joint travel otherwise reads
+        as one fast "swing" and is easy to perceive as jerky motion).
+        ``min_duration_s`` raises the effective scale so a short transition
+        is never replayed as a blink-of-an-eye snap.
         """
         self._validate_trajectory(trajectory)
 
@@ -97,17 +105,38 @@ class TrajectoryExecutor:
         )
 
         period = 1.0 / rate_hz
+        scale = float(time_scale) if time_scale > 0.0 else 1.0
         try:
             times = self._point_times(trajectory)
             if times is not None:
                 # TOPP/平滑时间参数化给出的非均匀时间被等速回放丢弃会让
                 # 稀疏段每步跳变 (观感甩臂); 按时间戳在点间线性插值重采样,
-                # 保留规划出的速度剖面。
+                # 保留规划出的速度剖面。time_scale>1 时按比例拉长整个剖面。
+                if float(min_duration_s) > 0.0 and times[-1] * scale < min_duration_s:
+                    scale = min_duration_s / times[-1]
+                times_scaled = [t * scale for t in times]
+                self._node.get_logger().info(
+                    f"  time profile: raw={times[-1]:.2f}s "
+                    f"time_scale={float(time_scale):.2f} "
+                    f"min_duration={float(min_duration_s):.2f}s "
+                    f"-> scaled={times_scaled[-1]:.2f}s"
+                )
                 self._replay_interpolated(
-                    pub, command_pub, trajectory, times, period
+                    pub, command_pub, trajectory, times_scaled, period
                 )
             else:
-                self._replay_uniform(pub, command_pub, trajectory, period)
+                # planner 结果未填 time_from_start: 按 rate_hz 等速, 但把
+                # time_scale/min_duration 折算到帧间隔上, 避免过短快放。
+                n = len(trajectory.points)
+                period_eff = period * scale
+                if float(min_duration_s) > 0.0 and n * period_eff < min_duration_s:
+                    period_eff = min_duration_s / max(n, 1)
+                self._node.get_logger().info(
+                    f"  no time_from_start: uniform replay "
+                    f"{n} pts at {1.0 / period_eff:.0f} Hz "
+                    f"(scaled {period_eff:.2f}s step)"
+                )
+                self._replay_uniform(pub, command_pub, trajectory, period_eff)
         finally:
             self._node.get_logger().info("Replay complete.")
             self._node.destroy_publisher(pub)

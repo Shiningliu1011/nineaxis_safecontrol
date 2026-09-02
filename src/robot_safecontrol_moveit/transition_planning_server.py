@@ -226,9 +226,23 @@ class TransitionPlanningServer(Node):
             tool_link=self._tool_link,
         )
 
-    def _replay_transition(self, transition, *, topic, rate_hz, command_topic):
+    def _replay_transition(
+        self,
+        transition,
+        *,
+        topic,
+        rate_hz,
+        command_topic,
+        time_scale=1.0,
+        min_duration_s=0.0,
+    ):
         self._executor.replay(
-            transition, topic=topic, rate_hz=rate_hz, command_topic=command_topic
+            transition,
+            topic=topic,
+            rate_hz=rate_hz,
+            command_topic=command_topic,
+            time_scale=time_scale,
+            min_duration_s=min_duration_s,
         )
 
     def _execute_transition(self, transition):
@@ -344,6 +358,9 @@ class TransitionPlanningServer(Node):
         self.declare_parameter("transition_result_mode", "plan_only")
         self.declare_parameter("replay_joint_state_topic", JOINT_STATE_TOPIC)
         self.declare_parameter("replay_rate_hz", 100.0)
+        # >1 时把过渡时间剖面按比例拉长, 大行程过渡不再被压成一闪而过的疾驰
+        self.declare_parameter("replay_time_scale", 3.0)
+        self.declare_parameter("replay_min_duration_s", 4.0)
         self.declare_parameter("oscbf_command_topic", "")
         self.declare_parameter("notify_oscbf_start", False)
         self.declare_parameter(

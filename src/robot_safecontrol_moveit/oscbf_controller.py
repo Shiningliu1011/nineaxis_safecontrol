@@ -153,7 +153,12 @@ class OscbfController(Node):
             "kp_pos": 60.0,
             "kp_orient": 10.0,
             "kp_joint": 0.45,
+            "reference_feedrate_scale": 3.0,
             "nullspace_speed_limit": 0.18,
+            # PathFollowingConfig.maximum_tool_axis_speed_rad_s 的默认值
+            # (0.15) 会让圆柱曲率把 feedrate 压到 ~0.04 m/s; 显式提升到
+            # 0.6 使名义进给 (feedrate_scale=3.0) 成为实际限额。
+            "max_tool_axis_speed_rad_s": 0.6,
             "damping": 1e-3,
             "w_pos": 20.0,
             "w_orient": 10.0,
@@ -250,7 +255,11 @@ class OscbfController(Node):
         trajectory_mat = str(self.get_parameter("trajectory_mat").value)
         config_yaml = str(self.get_parameter("portable_config_yaml").value)
         trajectory = load_repository_trajectory(
-            trajectory_mat, config_yaml_path=config_yaml
+            trajectory_mat,
+            config_yaml_path=config_yaml,
+            feedrate_scale=float(
+                self.get_parameter("reference_feedrate_scale").value
+            ),
         )
         self._trajectory_duration_s = float(
             trajectory.num_points * trajectory.Ts
@@ -295,7 +304,10 @@ class OscbfController(Node):
             PathFollowingConfig(
                 reference_lead_m=float(
                     self.get_parameter("reference_lead_m").value
-                )
+                ),
+                maximum_tool_axis_speed_rad_s=float(
+                    self.get_parameter("max_tool_axis_speed_rad_s").value
+                ),
             ),
         )
         self.get_logger().info("Warming up the JAX control kernel ...")

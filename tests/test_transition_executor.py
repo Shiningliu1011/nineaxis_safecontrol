@@ -80,6 +80,8 @@ class _Ports:
         "transition_result_mode": "plan_only",
         "replay_joint_state_topic": "/mujoco_joint_states",
         "replay_rate_hz": 30.0,
+        "replay_time_scale": 1.5,
+        "replay_min_duration_s": 4.0,
         "oscbf_command_topic": "",
         "notify_oscbf_start": False,
     }
@@ -141,7 +143,7 @@ class _Ports:
             raise self.plan_error
         return self.trajectory
 
-    def replay(self, trajectory, *, topic, rate_hz, command_topic):
+    def replay(self, trajectory, *, topic, rate_hz, command_topic, time_scale=1.0, min_duration_s=0.0):
         self.events.append("replay")
         if self.replay_error is not None:
             raise self.replay_error
