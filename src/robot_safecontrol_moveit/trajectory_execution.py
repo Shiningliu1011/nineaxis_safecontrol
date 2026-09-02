@@ -7,6 +7,8 @@ from math import isfinite
 from time import monotonic, sleep
 from typing import Sequence
 
+from bisect import bisect_right
+
 from builtin_interfaces.msg import Duration
 from controller_manager_msgs.srv import SwitchController
 from pymoveit2 import MoveIt2, MoveIt2State
@@ -96,19 +98,16 @@ class TrajectoryExecutor:
 
         period = 1.0 / rate_hz
         try:
-            for index, point in enumerate(trajectory.points):
-                msg = JointState()
-                msg.header.stamp = self._node.get_clock().now().to_msg()
-                msg.name = list(trajectory.joint_names)
-                msg.position = [float(v) for v in point.positions]
-                pub.publish(msg)
-                if command_pub is not None:
-                    command_pub.publish(msg)
-                if index % 10 == 0 or index == len(trajectory.points) - 1:
-                    self._node.get_logger().info(
-                        f"  Point {index + 1}/{len(trajectory.points)}"
-                    )
-                sleep(period)
+            times = self._point_times(trajectory)
+            if times is not None:
+                # TOPP/平滑时间参数化给出的非均匀时间被等速回放丢弃会让
+                # 稀疏段每步跳变 (观感甩臂); 按时间戳在点间线性插值重采样,
+                # 保留规划出的速度剖面。
+                self._replay_interpolated(
+                    pub, command_pub, trajectory, times, period
+                )
+            else:
+                self._replay_uniform(pub, command_pub, trajectory, period)
         finally:
             self._node.get_logger().info("Replay complete.")
             self._node.destroy_publisher(pub)
@@ -118,6 +117,89 @@ class TrajectoryExecutor:
                 self._switch_broadcaster(activate=True)
 
         return ExecutionResult(submitted=True, completed=True, succeeded=True)
+
+    @staticmethod
+    def _point_times(trajectory: JointTrajectory) -> list[float] | None:
+        """Return per-point time_from_start seconds, or None if untimed."""
+        points = trajectory.points
+        if not points or len(points) < 2:
+            return None
+        times = [
+            float(point.time_from_start.sec) + point.time_from_start.nanosec * 1e-9
+            for point in points
+        ]
+        if times[0] <= 0.0 or times[-1] <= times[0]:
+            return None
+        if any(t2 <= t1 for t1, t2 in zip(times, times[1:])):
+            return None
+        return times
+
+    def _replay_interpolated(
+        self,
+        pub,
+        command_pub,
+        trajectory: JointTrajectory,
+        times: list[float],
+        period: float,
+    ) -> None:
+        """Replay at ``rate_hz`` with linear interpolation between waypoints."""
+        points = trajectory.points
+        positions = [
+            [float(v) for v in point.positions] for point in points
+        ]
+        step_count = max(1, int(round(times[-1] / period)))
+        start = monotonic()
+        for frame in range(1, step_count + 1):
+            target_t = times[-1] * frame / step_count
+            index = bisect_right(times, target_t) - 1
+            index = max(0, min(int(index), len(points) - 2))
+            t0, t1 = times[index], times[index + 1]
+            span = max(t1 - t0, 1e-9)
+            ratio = min(max((target_t - t0) / span, 0.0), 1.0)
+            pos = [
+                a + (b - a) * ratio
+                for a, b in zip(positions[index], positions[index + 1])
+            ]
+            self._publish_replay_point(
+                pub, command_pub, trajectory.joint_names, pos
+            )
+            sleep(max(0.0, start + target_t - monotonic()))
+        self._publish_replay_point(
+            pub, command_pub, trajectory.joint_names, positions[-1]
+        )
+
+    def _replay_uniform(
+        self,
+        pub,
+        command_pub,
+        trajectory: JointTrajectory,
+        period: float,
+    ) -> None:
+        """Fallback equal-rate playback for trajectories without time data."""
+        for index, point in enumerate(trajectory.points):
+            self._publish_replay_point(
+                pub, command_pub, trajectory.joint_names, point.positions
+            )
+            if index % 10 == 0 or index == len(trajectory.points) - 1:
+                self._node.get_logger().info(
+                    f"  Point {index + 1}/{len(trajectory.points)}"
+                )
+            sleep(period)
+
+    def _publish_replay_point(
+        self,
+        pub,
+        command_pub,
+        joint_names,
+        positions,
+    ) -> None:
+        msg = JointState()
+        msg.header.stamp = self._node.get_clock().now().to_msg()
+        msg.name = list(joint_names)
+        msg.position = [float(v) for v in positions]
+        pub.publish(msg)
+        if command_pub is not None:
+            command_pub.publish(msg)
 
     def _switch_broadcaster(self, *, activate: bool) -> bool:
         """Activate or deactivate the JointStateBroadcaster (non-spin)."""
