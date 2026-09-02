@@ -160,7 +160,7 @@ class OscbfController(Node):
             "joint_names": list(DEFAULT_JOINT_NAMES),
             "joint_state_topic": JOINT_STATE_TOPIC,
             "publish_joint_state_topic": OSCBF_COMMAND_TOPIC,
-            "kp_pos": 60.0,
+            "kp_pos": 160.0,
             "kp_orient": 10.0,
             "kp_joint": 0.45,
             "dt_path": 0.01,
@@ -179,7 +179,7 @@ class OscbfController(Node):
             "solver_tol": 1e-3,
             "task_mode": "tool_axis_5d",
             "use_nullspace_policy": False,
-            "reference_lead_m": 0.02,
+            "reference_lead_m": 0.01,
             "orientation_mode": "surface_normal",
             "cylinder_axis_direction": [0.0, 1.0, 0.0],
             "cylinder_center": [],
@@ -324,6 +324,15 @@ class OscbfController(Node):
         )
         self.get_logger().info("Warming up the JAX control kernel ...")
         self._loop.init_cbf()
+        # 拟合圆柱几何 (surface_normal 模式下由轨迹数据拟合), 供径向
+        # 侵入诊断使用: 末端到轴线的径向距离减去半径, 负值=侵入内部。
+        self._surface_axis = None
+        self._surface_centre = None
+        self._surface_radius = None
+        if hasattr(trajectory, "surface_centre"):
+            self._surface_axis = np.asarray(trajectory.surface_axis, dtype=float)
+            self._surface_centre = np.asarray(trajectory.surface_centre, dtype=float)
+            self._surface_radius = float(trajectory.surface_radius)
         self.get_logger().info("JAX control kernel warm-up complete")
         self._path_state = self._loop.initial_path_state()
         self._joint_names = [
@@ -485,6 +494,8 @@ class OscbfController(Node):
                 f"cap_brake={step['feedrate_endpoint_brake_limit_m_s']:.4f} "
                 f"u_max={float(np.max(np.abs(step['u_safe']))):.5f} "
                 f"dq_max={float(np.max(np.abs(step['q_next'] - q_now))):.6f} "
+                f"radial={self._radial_error_m(step['ee_pos'])*1e3:.2f}mm "
+                f"ref_radial={self._radial_error_m(step['reference_position_m'])*1e3:.2f}mm "
                 f"src={step['reference_source_time_s']:.4f}"
             )
         # 卡死检测: 参考进给归零且横断误差持续超限 (再紧的非端点位置)
@@ -578,6 +589,15 @@ class OscbfController(Node):
         message.name = list(self._joint_names)
         message.position = [float(value) for value in self._q_cmd_smooth]
         self._publisher.publish(message)
+
+    def _radial_error_m(self, ee_pos: np.ndarray) -> float:
+        """径向偏差: 末端到圆柱轴线的距离 - 半径 (负=侵入表面内部)。"""
+        if self._surface_centre is None:
+            return float("nan")
+        rel = np.asarray(ee_pos, dtype=float) - self._surface_centre
+        axial = self._surface_axis * float(np.dot(rel, self._surface_axis))
+        radial = rel - axial
+        return float(np.linalg.norm(radial) - self._surface_radius)
 
     def progress_snapshot(self) -> dict:
         """One-shot progress/latency snapshot for logs, tests and tooling."""

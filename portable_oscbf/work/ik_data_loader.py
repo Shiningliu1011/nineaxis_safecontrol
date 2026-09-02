@@ -424,6 +424,10 @@ class IKTrajectoryData:
         # 吸附到拟合圆柱表面 (镜像 cylinder_geometry.snap_path_to_cylindrical_surface):
         # 生成的原始轨迹相对拟合圆柱有毫米级径向起伏, 直接把每个点的径向分量
         # 钉到拟合半径上, 末端工具因此始终工作在圆柱表面, 不伸入也不脱离。
+        # 保存拟合圆柱几何 (供末端径向侵入诊断与约束使用)。
+        self.surface_axis = np.asarray(axis, dtype=float).copy()
+        self.surface_centre = np.asarray(centre, dtype=float).copy()
+        self.surface_radius = float(radius)
         self._snap_path_onto_cylinder(axis, centre, radius)
 
         frames = np.zeros((self.num_points, 3, 3))

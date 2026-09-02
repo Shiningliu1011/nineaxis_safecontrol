@@ -149,7 +149,7 @@ path_following:
   # discrete timing lag is gone, so the lead only needs to keep the reference
   # slightly ahead of the projection.  0.01 mm is well within the 0.1 mm
   # acceptance gate while avoiding zero-lead edge cases.
-  reference_lead_m: 0.02
+  reference_lead_m: 0.01
   cross_track_stop_m: 0.01
   # Virtual path-reference braking only: v^2 = 2*a*remaining_arc_length.
   # It prevents the terminal reference feed from stepping straight to zero;
