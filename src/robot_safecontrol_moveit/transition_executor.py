@@ -251,6 +251,8 @@ class TransitionExecutor:
                     topic=str(get("replay_joint_state_topic").value),
                     rate_hz=float(get("replay_rate_hz").value),
                     command_topic=command_topic,
+                    time_scale=float(get("replay_time_scale").value),
+                    min_duration_s=float(get("replay_min_duration_s").value),
                 )
             except ExecutionError as e:
                 error_code = str(e).split(":", 1)[0]

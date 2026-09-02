@@ -159,7 +159,7 @@ path_following:
   # Tool-axis angular speed limit: ell_dot <= max_tool_axis_speed / ||omega_per_m||.
   # Prevents large angular velocity commands at wrist reversals where
   # omega_per_m is large but Cartesian arc length is small.
-  maximum_tool_axis_speed_rad_s: 0.15
+  maximum_tool_axis_speed_rad_s: 0.6
   # Maximum per-cycle reference feedrate change (m/s).  Smooths the reference
   # feed at segment boundaries without post-hoc output filtering.
   maximum_reference_feedrate_step_m_s: 0.005
@@ -186,7 +186,7 @@ cylinder_demo:
   orientation_mode: tool_forward_tangent_limited
   roll_max_rate_rad_s: 0.5
   roll_max_accel_rad_s2: 25.0
-  tool_axis_speed_limit_rad_s: 0.15
+  tool_axis_speed_limit_rad_s: 0.6
 
 # ============================================================
 # 动态障碍物 CBF 参数

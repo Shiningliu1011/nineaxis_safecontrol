@@ -64,7 +64,8 @@ def reference_trajectory_transform(
 
 def load_repository_trajectory(
         mat_path: str,
-        config_yaml_path: Optional[str] = None) -> "IKTrajectoryData":
+        config_yaml_path: Optional[str] = None,
+        feedrate_scale: float = 1.0) -> "IKTrajectoryData":
     """Load the repository trajectory with the reference calibration.
 
     Uses ``config/nineaxis.yaml`` kinematics (align rotation, ee_center and
@@ -85,7 +86,7 @@ def load_repository_trajectory(
         np.asarray(kinematics_config["trajectory_align_rotation"], dtype=float),
         np.asarray(kinematics_config["ee_center"], dtype=float),
     )
-    data = IKTrajectoryData(mat_path, transform)
+    data = IKTrajectoryData(mat_path, transform, feedrate_scale=feedrate_scale)
     data.set_orientation_mode(
         "fixed", fixed_R=np.asarray(
             kinematics_config["fixed_orientation"], dtype=float))
@@ -111,10 +112,11 @@ class IKTrajectoryData:
     # 旧名称曾把平面蝴蝶曲线的“X 轴向下”约定写进接口名。实际算法始终
     # 保持传入 fixed_R 的 X 轴；保留这个别名只是为了不破坏历史命令。
     LEGACY_TOOL_DOWN_TANGENT_LIMITED = "tool_down_tangent_limited"
-    TOOL_TANGENT_LIMITED_RATE = 0.2  # rad/s, 进一步降低避免锐角处速度大幅下降
+    TOOL_TANGENT_LIMITED_RATE = 0.6  # rad/s, 工具轴角速率限幅 (0.2 时被圆柱曲率压到 ~0.04 m/s, 跟踪过慢)
     TOOL_TANGENT_ACCEL_LIMIT = 10.0  # rad/s^2, 平滑 omega feedforward
 
-    def __init__(self, mat_path: str, T_traj_to_base: np.ndarray):
+    def __init__(self, mat_path: str, T_traj_to_base: np.ndarray,
+                 feedrate_scale: float = 1.0):
         """
         参数
         ----
@@ -122,6 +124,10 @@ class IKTrajectoryData:
             ik_input.mat 文件路径。
         T_traj_to_base : np.ndarray (4×4)
             轨迹坐标系 → 基坐标系的齐次变换矩阵。
+        feedrate_scale : float
+            参考进给缩放。源数据 feedrate_cmd_series 按旧 tool-axis 限速
+            生成, 常把整条路径压到 ~0.02-0.04 m/s; 运行时放大可整体提速,
+            rate/joint 等物理限速 (cap) 仍会兜底。
         """
         import scipy.io as sio
         mat = sio.loadmat(mat_path)
@@ -179,7 +185,7 @@ class IKTrajectoryData:
         self._jerk_norm = self._raw_jerk_norm / 1000.0 * s
         self._tangent_acc_cmd = self._raw_tangent_acc_cmd / 1000.0 * s
         self._tangent_jerk_cmd = self._raw_tangent_jerk_cmd / 1000.0 * s
-        self._feedrate = self._raw_feedrate / 1000.0 * s
+        self._feedrate = self._raw_feedrate / 1000.0 * s * float(feedrate_scale)
         self._chord_err = self._raw_chord_err / 1000.0 * s
 
         # Some generated .mat files contain isolated NaNs at block/tail
