@@ -76,6 +76,7 @@ class OscbfController(Node):
         self._stall_since: Optional[float] = None
         self._last_pos_err: Optional[float] = None
         self._q_cmd_smooth: Optional[np.ndarray] = None
+        self._last_state0: Optional[float] = None
         # (monotonic, pos_err) 滚动 5 s 窗口, 用于卡死增强判据。
         from collections import deque
         self._pos_err_hist: deque = deque()
@@ -178,7 +179,7 @@ class OscbfController(Node):
             "solver_tol": 1e-3,
             "task_mode": "tool_axis_5d",
             "use_nullspace_policy": False,
-            "reference_lead_m": 0.00001,
+            "reference_lead_m": 0.5,
             "orientation_mode": "surface_normal",
             "cylinder_axis_direction": [0.0, 1.0, 0.0],
             "cylinder_center": [],
@@ -465,9 +466,15 @@ class OscbfController(Node):
         self._last_pos_err = pos_err_now
         # 进给分项诊断: 每 300 步打印各 cap, 直接观察是谁在压进给。
         if len(self._step_durations) % 300 == 0:
+            state0 = float(self._path_state[0])
+            state1 = float(self._path_state[1])
+            delta0 = (state0 - self._last_state0
+                      if self._last_state0 is not None else float("nan"))
+            self._last_state0 = state0
             self.get_logger().info(
                 f"DETAIL steps={len(self._step_durations)} "
-                f"prog={float(self._path_state[0]):.6f} "
+                f"prog={state0:.6f} proj={state1:.6f} "
+                f"lead={state0 - state1:.6f} dprog300={delta0:.6f} "
                 f"feed={step['feedrate_m_s']:.5f} "
                 f"nom={step['feedrate_nominal_m_s']:.5f} "
                 f"gamma={step['gamma']:.3f} lim={step['limiting_reason_code']} "
@@ -476,6 +483,8 @@ class OscbfController(Node):
                 f"cap_rate={step['feedrate_rate_limit_m_s'] if step['feedrate_rate_limit_m_s'] < 1e9 else 9.99:.4f} "
                 f"cap_tool={step['feedrate_tool_axis_limit_m_s'] if step['feedrate_tool_axis_limit_m_s'] < 1e9 else 9.99:.4f} "
                 f"cap_brake={step['feedrate_endpoint_brake_limit_m_s']:.4f} "
+                f"u_max={float(np.max(np.abs(step['u_safe']))):.5f} "
+                f"dq_max={float(np.max(np.abs(step['q_next'] - q_now))):.6f} "
                 f"src={step['reference_source_time_s']:.4f}"
             )
         # 卡死检测: 参考进给归零且横断误差持续超限 (再紧的非端点位置)
@@ -702,6 +711,7 @@ class OscbfController(Node):
             self._completion_logged = False
             self._stall_since = None
             self._q_cmd_smooth = None
+            self._last_state0 = None
             self._pos_err_hist.clear()
             self._src_hist.clear()
             self.get_logger().info(

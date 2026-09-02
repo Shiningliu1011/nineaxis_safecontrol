@@ -144,7 +144,7 @@ controller:
 # 这些是仿真/影子模式的控制配置，不替代实机执行器和制动标定。
 path_following:
   projection_half_window_segments: 96
-  max_projection_speed_m_s: 0.12
+  max_projection_speed_m_s: 3.0
   # Forward reference lead.  After the post-integration projection fix the
   # discrete timing lag is gone, so the lead only needs to keep the reference
   # slightly ahead of the projection.  0.01 mm is well within the 0.1 mm
