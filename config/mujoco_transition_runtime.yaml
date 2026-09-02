@@ -46,7 +46,7 @@ transition_planning_server:
     # 过渡时间剖面放大倍数: 大行程过渡不再 1 秒疾驰 (观感甩动)
     replay_time_scale: 3.0
     # 最短过渡回放时长: 即便规划出的轨迹本身只有 <1s 也至少从容播放 4s
-    replay_min_duration_s: 4.0
+    replay_min_duration_s: 6.0
     # Full OSCBF flow: the replay also drives the actuator plant, and the
     # controller is told to start tracking once the transition completes.
     oscbf_command_topic: /oscbf_command
