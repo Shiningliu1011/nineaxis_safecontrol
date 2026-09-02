@@ -32,30 +32,9 @@ class JointLimits:
     ddq_max: np.ndarray # 加速度限位 (电机规格)
 
 
-# ================================================================
-# URDF 关节链参数 (仅用于初始化时提取螺旋轴和零位构型)
-# ================================================================
-JOINT_CHAIN = [
-    # (parent, child, jtype, x, y, z, roll, pitch, yaw, axis)
-    # 完全匹配 URDF: assets/ninezzhouURDF/urdf/ninezzhou.urdf
-    ("world",     "base_link", "fixed",      0.0,   0.0,   0.0,   0.0,     0.0,      0.0,      (0, 0, 1)),
-    ("base_link", "Link1",     "prismatic",  0.0,   0.0,   0.0,   0.0,     0.0,      0.0,      (0, 0, 1)),
-    ("Link1",     "Link2",     "revolute",   0.0,   0.343, 0.0,   1.5708, -1.5708,   0.0,      (0, 0, 1)),
-    ("Link2",     "Link3",     "revolute",   0.225, 0.0,   0.0,   0.0,     0.0,      0.0,      (0, 0, 1)),
-    ("Link3",     "Link4",     "revolute",   0.225, 0.0,   0.0,   0.0,     0.0,      1.5708,   (0, 0, 1)),
-    ("Link4",     "Link5",     "revolute",   0.0,  -0.343, 0.0,  -1.5708,  0.0,     -3.1416,   (0, 0, 1)),
-    ("Link5",     "Link6",     "revolute",   0.0,   0.0,   0.0,   1.5708, -1.5708,   0.0,      (0, 0, 1)),
-    ("Link6",     "Link7",     "revolute",   0.135, 0.0,   0.0,  -1.5708,  0.0,      0.0,      (0, 0, 1)),
-    ("Link7",     "Link8",     "revolute",   0.11,  0.0,   0.0,   1.5708,  0.0,      0.0,      (0, 0, 1)),
-    ("Link8",     "Link9",     "revolute",   0.114, 0.0,   0.0,  -1.5708,  0.0,      0.0,      (0, 0, 1)),
-    # ee_link: 从 Link9 沿 X 方向平移 0.235m
-    # 零位时末端位置: [0, 343, 1387] mm
-    ("Link9",     "ee_link",   "fixed",      0.235, 0.0,   0.0,   0.0,     0.0,      0.0,      (0, 0, 1)),
-]
-
-N_JOINTS = 9  # 1 prismatic + 8 revolute
-LINK_NAMES = ["world", "base_link", "Link1", "Link2", "Link3", "Link4",
-              "Link5", "Link6", "Link7", "Link8", "Link9", "ee_link"]
+# Shared kinematics data — single source of truth in kinematics_data.py.
+# Re-exported here for backward compatibility with existing imports.
+from work.kinematics_data import JOINT_CHAIN, N_JOINTS, LINK_NAMES
 
 # 活动关节在 JOINT_CHAIN 中的索引
 _ACTIVE_IDX = [i for i, (_, _, jt, _, _, _, _, _, _, _) in enumerate(JOINT_CHAIN)

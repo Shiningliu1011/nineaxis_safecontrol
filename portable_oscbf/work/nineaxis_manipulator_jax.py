@@ -20,9 +20,8 @@ from work.collision_envelope import (
 )
 
 
-# URDF 关节链参数 — 单一数据源在 nineaxis_kinematics.py（M1 已验证其与
-# URDF 一致）；此处只导入，禁止在本模块重新抄写。
-from work.nineaxis_kinematics import JOINT_CHAIN
+# URDF joint chain — single source of truth in kinematics_data.py.
+from work.kinematics_data import JOINT_CHAIN
 
 
 def _skew_jax(v):

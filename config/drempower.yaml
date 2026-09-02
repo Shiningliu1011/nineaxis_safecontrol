@@ -2,33 +2,35 @@
 # 来源：协议摘要（real_robot_hardware_source_review.md）+ 选型手册。
 # 前置 P1：厂商库到位后校验字段单位（0x19 速度字段单位）并锁定。
 
-can:
-  interface: can0              # SocketCAN 接口名（CANable 到货后确认）
-  bitrate: 1000000             # 1 Mbps（厂商默认）
+/**:
+  ros__parameters:
+    can:
+      interface: can0              # SocketCAN 接口名（CANable 到货后确认）
+      bitrate: 1000000             # 1 Mbps（厂商默认）
 
-node_ids:                      # 推荐分配，待前置 P5 实读确认
-  J1: 1
-  J2: 2
-  J3: 3
-  J4: 4
-  J5: 5
-  J6: 6
-  J7: 7
-  J8: 8
-  J9: 9
+    node_ids:                      # 推荐分配，待前置 P5 实读确认
+      J1: 1
+      J2: 2
+      J3: 3
+      J4: 4
+      J5: 5
+      J6: 6
+      J7: 7
+      J8: 8
+      J9: 9
 
-# 命令参数（0x19 帧字段，待 P1 厂商库确认单位后锁定）
-command:
-  default_speed: 1.0           # 0x19 速度字段（单位待确认）
-  default_filter_accel: 1.0    # 0x19 滤波/加速度字段（单位待确认）
+    # 命令参数（0x19 帧字段，待 P1 厂商库确认单位后锁定）
+    command:
+      default_speed: 1.0           # 0x19 速度字段（单位待确认）
+      default_filter_accel: 1.0    # 0x19 滤波/加速度字段（单位待确认）
 
-# 安全网关参数（参考项目硬件合同，待实测调整）
-safety:
-  feedback_timeout_s: 0.2      # 反馈超时
-  command_timeout_s: 0.2       # 命令超时
-  velocity_limit: 3.0          # 速度上限（rad/s 或 m/s，未标定前用仿真值）
-  dq_limit: 0.01               # 相邻命令变化上限（rad 或 m）
+    # 安全网关参数（参考项目硬件合同，待实测调整）
+    safety:
+      feedback_timeout_s: 0.2      # 反馈超时
+      command_timeout_s: 0.2       # 命令超时
+      velocity_limit: 3.0          # 速度上限（rad/s 或 m/s，未标定前用仿真值）
+      dq_limit: 0.01               # 相邻命令变化上限（rad 或 m）
 
-# 轮询
-poll:
-  frequency_hz: 100.0          # 与仿真一致
+    # 轮询
+    poll:
+      frequency_hz: 100.0          # 与仿真一致

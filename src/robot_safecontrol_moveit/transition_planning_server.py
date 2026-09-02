@@ -129,6 +129,18 @@ class TransitionPlanningServer(Node):
             callback_group=ReentrantCallbackGroup(),
         )
 
+        # Persistent joint-state subscription (avoids create/destroy race
+        # with the MultiThreadedExecutor — see Issue InvalidHandle).
+        self._js_latest: JointState | None = None
+        self._js_names_set = set(joint_names)
+        self._js_event: "Event" = __import__("threading").Event()
+        self.create_subscription(
+            JointState,
+            str(self.get_parameter("joint_state_topic").value),
+            self._persistent_js_cb,
+            qos_profile_sensor_data,
+        )
+
         # Health-check clients for MoveIt services (created once, reused).
         self._ik_check_client = self.create_client(
             GetPositionIK, "compute_ik"
@@ -171,6 +183,18 @@ class TransitionPlanningServer(Node):
         self.get_logger().info(
             "Transition planning server ready on /plan_transition_once"
         )
+
+    def _persistent_js_cb(self, msg: JointState) -> None:
+        """Persistent joint-state callback — never destroyed."""
+        if self._js_names_set.issubset(msg.name):
+            self._js_latest = msg
+            self._js_event.set()
+
+    def _wait_for_js_snapshot(self, timeout_s: float) -> JointState | None:
+        """Block until a fresh joint state arrives (uses persistent sub)."""
+        self._js_event.clear()
+        self._js_event.wait(timeout_s)
+        return self._js_latest
 
     def _build_ports(self) -> TransitionPorts:
         """Wire the phase machine to this node's ROS side effects."""
@@ -269,48 +293,28 @@ class TransitionPlanningServer(Node):
     ) -> None:
         """Wait until the plant converges to the final replayed waypoint.
 
-        The actuator plant follows commands with a first-order lag, so
-        notifying the controller immediately after the last replay point
-        hands it a plant state that is still tens of centimetres short of the
-        path start.  That transient previously drove the null-space policy
-        into a self-collision barrier and stalled tracking.
+        Uses the persistent joint-state subscription to avoid the
+        create/destroy race with MultiThreadedExecutor (InvalidHandle).
         """
-        from threading import Event
-
         target = np.asarray(transition.points[-1].positions, dtype=float)
-        names_set = set(self._joint_names)
-        latest = []
-        received = Event()
-
-        def _cb(message: JointState) -> None:
-            if names_set.issubset(message.name):
-                positions = dict(zip(message.name, message.position))
-                latest.append(np.asarray(
+        deadline = monotonic() + timeout_s
+        while monotonic() < deadline:
+            msg = self._wait_for_js_snapshot(0.05)
+            if msg is not None:
+                positions = dict(zip(msg.name, msg.position))
+                q = np.asarray(
                     [positions[name] for name in self._joint_names],
                     dtype=float,
-                ))
-                received.set()
-
-        topic = str(self.get_parameter("joint_state_topic").value)
-        sub = self.create_subscription(
-            JointState, topic, _cb, qos_profile_sensor_data
-        )
-        try:
-            deadline = monotonic() + timeout_s
-            while monotonic() < deadline:
-                received.wait(0.05)
-                received.clear()
-                if latest and np.max(np.abs(latest[-1] - target)) < tolerance:
+                )
+                if np.max(np.abs(q - target)) < tolerance:
                     self.get_logger().info(
                         "PLANT_SETTLED: "
-                        f"max|q-target|={float(np.max(np.abs(latest[-1] - target))):.4f}"
+                        f"max|q-target|={float(np.max(np.abs(q - target))):.4f}"
                     )
                     return
-            self.get_logger().warn(
-                "PLANT_SETTLE_TIMEOUT: starting tracking anyway"
-            )
-        finally:
-            self.destroy_subscription(sub)
+        self.get_logger().warn(
+            "PLANT_SETTLE_TIMEOUT: starting tracking anyway"
+        )
 
     def _declare_parameters(self) -> None:
         self.declare_parameter("joint_names", list(DEFAULT_JOINT_NAMES))
@@ -403,7 +407,10 @@ class TransitionPlanningServer(Node):
         except Exception as exc:
             # rclpy's logger does not support the stdlib ``exc_info`` option.
             # Keep the service alive and return a structured failure instead.
-            self.get_logger().error(f"Planning failed: {exc}")
+            import traceback
+            self.get_logger().error(
+                f"Planning failed: {exc}\n{traceback.format_exc()}"
+            )
             response.success = False
             response.message = _format_result(
                 f"UNEXPECTED_ERROR", 0, 0.0, f"detail={exc}"
@@ -418,52 +425,34 @@ class TransitionPlanningServer(Node):
 
     def _wait_for_joint_state(self, topic: str, timeout_s: float, max_age_s: float,
                                allow_fallback: bool) -> JointState:
-        """Wait for a fresh JointState on *topic* using threading.Event.
+        """Wait for a fresh JointState using the persistent subscription."""
+        msg = self._wait_for_js_snapshot(timeout_s)
+        if msg is None:
+            if not allow_fallback:
+                raise RuntimeError("START_STATE_UNAVAILABLE")
+            return self._fallback_joint_state(max_age_s)
 
-        The MultiThreadedExecutor dispatches the subscription callback in a
-        background thread, so we only need to block until the Event is set.
-        """
-        from threading import Event
-        names_set = set(self._joint_names)
-        received = Event()
-        latest: JointState | None = None
+        stamp_sec = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
+        now_sec = self.get_clock().now().nanoseconds * 1e-9
+        age_s = now_sec - stamp_sec
+        if age_s > max_age_s:
+            if not allow_fallback:
+                raise RuntimeError("START_STATE_UNAVAILABLE")
+            return self._fallback_joint_state(max_age_s)
 
-        def _cb(msg: JointState) -> None:
-            nonlocal latest
-            if names_set.issubset(msg.name):
-                latest = msg
-                received.set()
-
-        sub = self.create_subscription(JointState, topic, _cb, qos_profile_sensor_data)
-        try:
-            if not received.wait(timeout_s):
-                if not allow_fallback:
-                    raise RuntimeError("START_STATE_UNAVAILABLE")
-                return self._fallback_joint_state(max_age_s)
-
-            stamp_sec = latest.header.stamp.sec + latest.header.stamp.nanosec * 1e-9
-            now_sec = self.get_clock().now().nanoseconds * 1e-9
-            age_s = now_sec - stamp_sec
-            if age_s > max_age_s:
-                if not allow_fallback:
-                    raise RuntimeError("START_STATE_UNAVAILABLE")
-                return self._fallback_joint_state(max_age_s)
-
-            positions = dict(zip(latest.name, latest.position))
-            if len(latest.position) != len(latest.name):
-                raise RuntimeError("START_STATE_INCOMPLETE")
-            result = JointState()
-            result.header = latest.header
-            result.name = list(self._joint_names)
-            result.position = [float(positions[n]) for n in self._joint_names]
-            if not all(isfinite(float(p)) for p in result.position):
-                raise RuntimeError("START_STATE_NON_FINITE")
-            self.get_logger().info(
-                f"Planning start state source: {topic}; age={age_s:.3f}s"
-            )
-            return result
-        finally:
-            self.destroy_subscription(sub)
+        positions = dict(zip(msg.name, msg.position))
+        if len(msg.position) != len(msg.name):
+            raise RuntimeError("START_STATE_INCOMPLETE")
+        result = JointState()
+        result.header = msg.header
+        result.name = list(self._joint_names)
+        result.position = [float(positions[n]) for n in self._joint_names]
+        if not all(isfinite(float(p)) for p in result.position):
+            raise RuntimeError("START_STATE_NON_FINITE")
+        self.get_logger().info(
+            f"Planning start state source: {topic}; age={age_s:.3f}s"
+        )
+        return result
 
     def _fallback_joint_state(self, max_age_s: float) -> JointState:
         names_set = set(self._joint_names)

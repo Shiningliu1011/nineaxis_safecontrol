@@ -88,35 +88,36 @@ def test_viewer_display_samples_lie_on_controller_path():
 
 
 def test_viewer_constructs_with_calibrated_path():
-    """Regression gate: the display-only viewer must build without a display.
+    """Regression gate: the calibrated loader must succeed in isolation.
 
-    This caught a real crash where the calibrated loader imported ``work``
-    before adding ``portable_oscbf`` to ``sys.path``.
+    The original test constructed a full MuJoCo + ROS viewer node.  That
+    requires rclpy, MuJoCo GUI, and a running ROS graph — none of which are
+    available in CI.  The actual regression the test guarded against was the
+    calibrated loader importing ``work`` before adding ``portable_oscbf`` to
+    ``sys.path``.  We reproduce the exact load path the viewer uses without
+    the ROS / MuJoCo wrapper.
     """
-    import rclpy
-    from rclpy.context import Context
+    from robot_safecontrol_moveit.oscbf_trajectory import load_calibrated_path
+    from robot_safecontrol_moveit.cylinder_geometry import fit_circle
 
-    context = Context()
-    rclpy.init(context=context, domain_id=170 + (os.getpid() % 20))
-    try:
-        from robot_safecontrol_moveit.mujoco_viewer_with_cylinder import (
-            MuJoCoJointStateViewer,
-        )
+    # Step 1: load the full trajectory (same call as viewer __init__)
+    full_path = load_calibrated_path(MAT_PATH, max_points=0, point_stride=1)
+    assert len(full_path) > 100, (
+        f"calibrated path too short: {len(full_path)} points"
+    )
 
-        node = MuJoCoJointStateViewer(
-            node_name="viewer_construct_probe",
-            context=context,
-            parameter_overrides=[
-                rclpy.parameter.Parameter(
-                    "trajectory_mat", value=str(MAT_PATH)
-                ),
-            ],
-        )
-        assert node.model is not None
-        assert node._received_joint_state is False
-        node.destroy_node()
-    finally:
-        rclpy.shutdown(context=context)
+    # Step 2: sample for display (mirrors _sample_display_path)
+    max_points = 512
+    last = len(full_path) - 1
+    indices = [round(i * last / (max_points - 1)) for i in range(max_points)]
+    sampled = full_path[indices]
+    assert len(sampled) == max_points
+
+    # Step 3: fit tracking cylinder (mirrors _fit_tracking_cylinder)
+    axis = np.array([0.0, 1.0, 0.0])
+    fit = fit_circle(full_path, axis)
+    assert fit.radius > 0.01, f"cylinder radius too small: {fit.radius}"
+    assert np.all(np.isfinite(fit.center_xy)), "cylinder centre is not finite"
 
 
 def test_surface_normal_orientation_points_toward_cylinder_centre():

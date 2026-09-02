@@ -39,7 +39,8 @@ def test_cbfpy_osqp_consistency():
     from work.nineaxis_manipulator_jax import NineaxisManipulatorJAX
     from work.oscbf_velocity_config import NineaxisOSCBFVelocityConfig
     from work.unified_qp_solver import UnifiedQPSolver
-    from work.oscbf_qp_solver import OSCBFQPSolver, CbfConstraint
+    # oscbf_qp_solver removed; use CbfConstraint from cbf_types for test scaffolding
+    from work.cbf_types import CbfConstraint
 
     robot = NineaxisManipulatorJAX()
     config = NineaxisOSCBFVelocityConfig(robot)

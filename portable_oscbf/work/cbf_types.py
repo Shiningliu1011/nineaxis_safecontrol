@@ -2,7 +2,7 @@
 """
 cbf_types.py
 ============
-CBF 约束基础类型 — 被 dynamic_obstacles.py、oscbf_qp_solver.py 等模块共用。
+CBF 约束基础类型 — 被 dynamic_obstacles.py 等模块共用。
 
 从 dynamic_obstacles.py 提取，消除循环导入风险。
 """
