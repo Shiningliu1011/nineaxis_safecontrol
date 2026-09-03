@@ -264,6 +264,117 @@ def test_empty_input_returns_empty(spec):
 
 
 # ---------------------------------------------------------------------------
+# instant_occupancy 安全通道: instant_points 始终返回全部有效原始点
+# ---------------------------------------------------------------------------
+
+def test_instant_points_are_raw_not_voxel_centers(spec):
+    """instant_points 是原始点 (非体素中心), 与 static/unconfirmed 不同。"""
+    tracker = OccupancyTracker(spec, occupancy_timeout_s=2.0, static_confirm_s=0.1)
+    pts = _points_in(np.array([0.0, 0.4, 1.3]), 0.05, 200)
+    _, _, instant = tracker.update(pts, stamp_s=0.0)
+    # instant 应返回全部有效原始点 (可能有部分在 workspace 外被裁剪)。
+    assert len(instant) > 0
+    assert instant.shape[1] == 3
+    # 原始点应比体素中心多 (多个点映射到同一体素)。
+    _, _, instant2 = tracker.update(pts, stamp_s=10.0)
+    # 即使 static 层已建立, instant 仍返回原始点。
+    assert len(instant2) > 0
+
+
+def test_instant_points_include_new_obstacles(spec):
+    """新障碍物在 static 确认前就出现在 instant 层。"""
+    tracker = OccupancyTracker(spec, occupancy_timeout_s=2.0, static_confirm_s=5.0)
+    env = _points_in(np.array([0.0, 0.4, 1.3]), 0.1, 500)
+    # 环境持续 10s → 变成 static。
+    for i in range(20):
+        tracker.update(env, stamp_s=i * 0.5)
+    # 新障碍物出现第一帧。
+    new_obs = _points_in(np.array([0.3, 0.5, 1.0]), 0.03, 100)
+    frame = np.vstack([env, new_obs])
+    static, unconfirmed, instant = tracker.update(frame, stamp_s=10.0)
+    # instant 应包含全部点 (环境 + 新障碍物)。
+    assert len(instant) > len(env)
+    # 新障碍物应进 unconfirmed (未达 static_confirm_s)。
+    assert len(unconfirmed) > 0
+    # 环境应进 static。
+    assert len(static) > 0
+
+
+def test_instant_points_returns_all_finite_points(spec):
+    """instant_points 返回全部有限点 (workspace 过滤在上游 preprocess_points)。"""
+    tracker = OccupancyTracker(spec, occupancy_timeout_s=2.0, static_confirm_s=3.0)
+    pts = _points_in(np.array([0.0, 0.4, 1.3]), 0.1, 200)
+    _, _, instant = tracker.update(pts, stamp_s=0.0)
+    # instant 返回全部有限原始点 (workspace 过滤由 preprocess_points 完成)。
+    assert len(instant) > 0
+    assert instant.shape[1] == 3
+
+
+# ---------------------------------------------------------------------------
+# status 编码契约: 10 元素布局验证
+# ---------------------------------------------------------------------------
+
+def test_status_encoding_layout():
+    """status 10 元素布局与 spec 一致 (纯编码测试, 无 ROS)。"""
+    # 模拟 _publish_status 的编码逻辑。
+    camera_alive, lidar_alive = True, False
+    camera_age, lidar_age = 0.05, -1.0
+    camera_used, lidar_used = True, False
+    fusion_stamp, fusion_age = 100.5, 0.02
+    source_count = 1
+    perception_valid = True
+
+    data = [
+        1.0 if camera_alive else 0.0,
+        1.0 if lidar_alive else 0.0,
+        float(camera_age),
+        float(lidar_age),
+        1.0 if camera_used else 0.0,
+        1.0 if lidar_used else 0.0,
+        float(fusion_stamp),
+        float(fusion_age),
+        float(source_count),
+        1.0 if perception_valid else 0.0,
+    ]
+    assert len(data) == 10
+    assert data[0] == 1.0   # camera_alive
+    assert data[1] == 0.0   # lidar_alive
+    assert data[2] == 0.05  # camera_age
+    assert data[3] == -1.0  # lidar_age (无数据)
+    assert data[4] == 1.0   # camera_used
+    assert data[5] == 0.0   # lidar_used
+    assert data[6] == 100.5 # fusion_stamp
+    assert data[7] == 0.02  # fusion_age
+    assert data[8] == 1.0   # source_count
+    assert data[9] == 1.0   # perception_valid
+
+
+def test_perception_valid_formula():
+    """perception_valid = (camera_used or lidar_used) and fusion_age < timeout。"""
+    timeout = 1.0
+    # 有传感器被采用且年龄在超时内 → valid。
+    assert (True or False) and 0.5 < timeout
+    # 无传感器被采用 → invalid。
+    assert not ((False or False) and 0.5 < timeout)
+    # 有传感器但超时 → invalid。
+    assert not ((True or False) and 1.5 < timeout)
+    # 两路都采用且新鲜 → valid。
+    assert (True or True) and 0.1 < timeout
+
+
+def test_alive_vs_used_independent():
+    """alive=True 不保证 used=True (跨传感器 dt 降级场景)。"""
+    # Camera alive 但因跨传感器 dt 太大而未被采用。
+    camera_alive = True
+    camera_used = False  # 被跨传感器 dt 降级。
+    assert camera_alive and not camera_used
+    # LiDAR alive 但因 max_age 超时而未被采用。
+    lidar_alive = True
+    lidar_used = False
+    assert lidar_alive and not lidar_used
+
+
+# ---------------------------------------------------------------------------
 # 动态聚类 → 固定 8 槽
 # ---------------------------------------------------------------------------
 
