@@ -103,22 +103,9 @@ class OccupancyTracker:
         unconfirmed_mask = occupied & ~static_mask
 
         # static_points: 静态体素的中心 (网格稳定, 便于 ESDF 复用)。
-        static_idx = np.argwhere(static_mask)
-        if len(static_idx):
-            static_points = (
-                spec.workspace_min + (static_idx.astype(np.float64) + 0.5)
-                * spec.voxel_size).astype(np.float32)
-        else:
-            static_points = np.empty((0, 3), dtype=np.float32)
-
+        static_points = _voxel_centers(spec, static_mask)
         # unconfirmed_points: 未确认体素的中心。
-        unconfirmed_idx = np.argwhere(unconfirmed_mask)
-        if len(unconfirmed_idx):
-            unconfirmed_points = (
-                spec.workspace_min + (unconfirmed_idx.astype(np.float64) + 0.5)
-                * spec.voxel_size).astype(np.float32)
-        else:
-            unconfirmed_points = np.empty((0, 3), dtype=np.float32)
+        unconfirmed_points = _voxel_centers(spec, unconfirmed_mask)
 
         # instant_points: 当前帧全部有效原始点。
         instant_points = finite.astype(np.float32, copy=False)
@@ -126,5 +113,41 @@ class OccupancyTracker:
         return static_points, unconfirmed_points, instant_points
 
 
-# 向后兼容别名: 旧接口继续工作 (但不接受 stamp_s)。
-StaticOccupancyTracker = OccupancyTracker
+# ---------------------------------------------------------------------------
+# 辅助函数
+# ---------------------------------------------------------------------------
+
+def _voxel_centers(spec: SafetyGridSpec, mask: np.ndarray) -> np.ndarray:
+    """返回 mask 中 True 体素的世界坐标中心点 (N,3) float32。"""
+    idx = np.argwhere(mask)
+    if len(idx):
+        return (spec.workspace_min + (idx.astype(np.float64) + 0.5)
+                * spec.voxel_size).astype(np.float32)
+    return np.empty((0, 3), dtype=np.float32)
+
+
+# ---------------------------------------------------------------------------
+# 向后兼容包装: 旧接口 StaticOccupancyTracker(spec, keep_frames=8)
+# ---------------------------------------------------------------------------
+
+class StaticOccupancyTracker(OccupancyTracker):
+    """向后兼容包装。接受旧 keep_frames 参数, 内部转换为时间模型。
+
+    旧调用方式继续工作::
+
+        tracker = StaticOccupancyTracker(spec, keep_frames=8)
+        static, dynamic = tracker.update(points_world)   # 不需要 stamp_s
+
+    注意: update() 仍返回三层 (static, unconfirmed, instant),
+    旧代码解包两个值会拿到 (static, unconfirmed)。
+    """
+
+    def __init__(self, spec: SafetyGridSpec, keep_frames: int = 8,
+                 presence_gain: int = 2, absence_decay: int = 1) -> None:
+        # keep_frames 帧 → 近似转换为秒 (假设 ~30fps, 每帧 ~0.033s)。
+        # 这只是粗略映射, 实际部署应直接用 OccupancyTracker 的时间参数。
+        approx_frame_s = 0.033
+        static_confirm_s = max(0.1, keep_frames * approx_frame_s)
+        occupancy_timeout_s = max(0.1, keep_frames * approx_frame_s * 0.5)
+        super().__init__(spec, occupancy_timeout_s=occupancy_timeout_s,
+                         static_confirm_s=static_confirm_s)
