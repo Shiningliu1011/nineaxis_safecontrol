@@ -138,8 +138,8 @@ class StaticOccupancyTracker(OccupancyTracker):
         tracker = StaticOccupancyTracker(spec, keep_frames=8)
         static, dynamic = tracker.update(points_world)   # stamp_s 可省略
 
-    注意: update() 仍返回三层 (static, unconfirmed, instant),
-    旧代码解包两个值会拿到 (static, unconfirmed)。
+    update() 返回 2-tuple (static, unconfirmed), 与旧接口一致。
+    unconfirmed 对应旧接口的 dynamic 层。
     """
 
     def __init__(self, spec: SafetyGridSpec, keep_frames: int = 8,
@@ -154,8 +154,9 @@ class StaticOccupancyTracker(OccupancyTracker):
         self._auto_stamp = 0.0
 
     def update(self, points_world, stamp_s=None):  # type: ignore[override]
-        """旧接口兼容: stamp_s 可省略, 自动用单调递增时间。"""
+        """旧接口兼容: stamp_s 可省略, 返回 2-tuple (static, dynamic)。"""
         if stamp_s is None:
             stamp_s = self._auto_stamp
             self._auto_stamp += 0.033  # 假设 ~30fps
-        return super().update(points_world, stamp_s)
+        static, unconfirmed, _instant = super().update(points_world, stamp_s)
+        return static, unconfirmed

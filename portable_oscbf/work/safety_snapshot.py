@@ -163,10 +163,25 @@ class SafetySnapshotStore:
         return snapshot
 
 
+def voxel_downsample(points: np.ndarray, voxel_size: float) -> np.ndarray:
+    """Floor-unique voxel downsample: keep one point per occupied voxel cell."""
+    if len(points) == 0:
+        return np.empty((0, 3), dtype=np.float32)
+    pts = np.asarray(points, dtype=np.float32)
+    mn = pts.min(axis=0)
+    indices = np.floor((pts - mn) / voxel_size).astype(np.int64)
+    _, first = np.unique(indices, axis=0, return_index=True)
+    return pts[np.sort(first)]
+
+
 def preprocess_points(points_sensor: np.ndarray, sensor_to_world: np.ndarray,
                       spec: SafetyGridSpec, *,
-                      robot_spheres: Iterable[Tuple[np.ndarray, float]] = ()) -> np.ndarray:
-    """Transform, crop, voxel-downsample, and remove supplied robot spheres."""
+                      robot_spheres: Iterable[Tuple[np.ndarray, float]] = (),
+                      voxel_size: Optional[float] = None) -> np.ndarray:
+    """Transform, crop, voxel-downsample, and remove supplied robot spheres.
+
+    ``voxel_size`` overrides ``spec.voxel_size`` for the downsample step
+    (used for per-sensor source-voxel sizing)."""
     points = np.asarray(points_sensor, dtype=np.float64).reshape(-1, 3)
     transform = np.asarray(sensor_to_world, dtype=np.float64).reshape(4, 4)
     points = points[np.all(np.isfinite(points), axis=1)]
@@ -187,7 +202,8 @@ def preprocess_points(points_sensor: np.ndarray, sensor_to_world: np.ndarray,
 
     if len(world) == 0:
         return np.empty((0, 3), dtype=np.float32)
-    voxel_indices = np.floor((world - spec.workspace_min) / spec.voxel_size).astype(np.int64)
+    vs = float(voxel_size) if voxel_size is not None else spec.voxel_size
+    voxel_indices = np.floor((world - spec.workspace_min) / vs).astype(np.int64)
     _, first_indices = np.unique(voxel_indices, axis=0, return_index=True)
     return world[np.sort(first_indices)].astype(np.float32, copy=False)
 

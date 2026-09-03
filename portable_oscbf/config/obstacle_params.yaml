@@ -12,8 +12,10 @@ point_cloud_collision:
   # 注意: 驱动 depth_registration:=true 时, 彩色对齐点云 frame 是
   # camera_color_optical_frame (不是 camera_depth_optical_frame)。
   input_frame: camera_color_optical_frame
-  # 世界系 = 机械臂 base_link (占位)。相机→base_link 的 4x4 变换由
-  # camera_to_world_static 提供 (标定后换成 TF + use_tf: true)。
+  # 世界系 (固定环境系, 非机器人本体系)。
+  # 生产环境必须设为 odom 或 map (不动的固定系); base_link 会随机器人移动,
+  # 仅用于仿真占位, 不得用于生产部署。
+  # 相机→world 的 4x4 变换由 camera_to_world_static 提供 (标定后换成 TF + use_tf: true)。
   world_frame: base_link
   # 驱动只发布 depth/points 与 depth_registered/points (彩色对齐), 无 depth/color/points。
   source_topic: /camera/depth_registered/points

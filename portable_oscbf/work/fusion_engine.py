@@ -15,7 +15,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, Optional, Tuple
+from typing import Dict, Iterable, Optional, Tuple
 
 import numpy as np
 
@@ -25,19 +25,24 @@ from work.safety_snapshot import (
     SafetyGridSpec,
     build_distance_field,
     preprocess_points,
+    voxel_downsample,
 )
 from work.static_occupancy import OccupancyTracker
 
 
-def _voxel_downsample(points: np.ndarray, voxel_size: float) -> np.ndarray:
-    """Floor-unique 体素降采样 (与 perception_bridge._voxel_downsample_custom 一致)。"""
+def _filter_robot_spheres(
+    points: np.ndarray,
+    robot_spheres: Iterable[Tuple[np.ndarray, float]],
+) -> np.ndarray:
+    """Remove points inside any robot sphere (world-frame filtering)."""
     if len(points) == 0:
         return points
     pts = np.asarray(points, dtype=np.float32)
-    mn = pts.min(axis=0)
-    indices = np.floor((pts - mn) / voxel_size).astype(np.int64)
-    _, first = np.unique(indices, axis=0, return_index=True)
-    return pts[np.sort(first)]
+    keep = np.ones(len(pts), dtype=bool)
+    for center, radius in robot_spheres:
+        d = np.linalg.norm(pts - np.asarray(center, dtype=np.float32), axis=1)
+        keep &= d > float(radius)
+    return pts[keep]
 
 
 @dataclass
@@ -70,11 +75,14 @@ class FusionEngine:
     perception_timeout_s: float = 1.0
     fusion_voxel_m: float = 0.03
     safety_margin: float = 0.08
+    sdf_far: float = 10.0
     occupancy_timeout_s: float = 0.3
     static_confirm_s: float = 0.5
     cluster_max_tracks: int = MAX_DYNAMIC_TRACKS
     cluster_min_points: int = 4
     cluster_association_max_dist_m: float = 0.5
+    camera_buffer_maxlen: int | None = None
+    lidar_buffer_maxlen: int | None = None
 
     # --- 内部状态 (跨帧连续性) ---
     _occupancy_tracker: OccupancyTracker = field(init=False, repr=False)
@@ -83,10 +91,13 @@ class FusionEngine:
     _prev_fusion_stamps: tuple = field(default=(), init=False)
 
     # --- 传感器缓冲 ---
-    _camera_buffer: list = field(default_factory=list, init=False, repr=False)
-    _lidar_buffer: list = field(default_factory=list, init=False, repr=False)
+    _camera_buffer: deque = field(init=False, repr=False)
+    _lidar_buffer: deque = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
+        from collections import deque as _dq
+        self._camera_buffer = _dq(maxlen=self.camera_buffer_maxlen)
+        self._lidar_buffer = _dq(maxlen=self.lidar_buffer_maxlen)
         self._occupancy_tracker = OccupancyTracker(
             self.spec,
             occupancy_timeout_s=self.occupancy_timeout_s,
@@ -98,15 +109,23 @@ class FusionEngine:
     # 传感器数据输入
     # ------------------------------------------------------------------
 
-    def feed_camera(self, points_world: np.ndarray, stamp_s: float) -> None:
+    def feed_camera(
+        self, points_world: np.ndarray, stamp_s: float, *,
+        robot_spheres: Iterable[Tuple[np.ndarray, float]] = (),
+    ) -> None:
         """推入一帧相机世界系点云 (经预处理后)。"""
         self._camera_buffer.append(
-            (np.asarray(points_world, dtype=np.float32), float(stamp_s)))
+            (np.asarray(points_world, dtype=np.float32), float(stamp_s),
+             list(robot_spheres)))
 
-    def feed_lidar(self, points_world: np.ndarray, stamp_s: float) -> None:
+    def feed_lidar(
+        self, points_world: np.ndarray, stamp_s: float, *,
+        robot_spheres: Iterable[Tuple[np.ndarray, float]] = (),
+    ) -> None:
         """推入一帧 LiDAR 世界系点云 (经预处理后)。"""
         self._lidar_buffer.append(
-            (np.asarray(points_world, dtype=np.float32), float(stamp_s)))
+            (np.asarray(points_world, dtype=np.float32), float(stamp_s),
+             list(robot_spheres)))
 
     def clear_buffers(self) -> None:
         """清空传感器缓冲 (测试用)。"""
@@ -145,7 +164,7 @@ class FusionEngine:
         camera_pts = None
 
         if camera_snapshot:
-            _, latest_cam_stamp = camera_snapshot[-1]
+            _, latest_cam_stamp, _ = camera_snapshot[-1]
             camera_age = now - latest_cam_stamp
             camera_alive = camera_age < self.camera_max_age_s
 
@@ -155,8 +174,9 @@ class FusionEngine:
         t_lidar = None
         lidar_pts = None
 
+        lidar_spheres: list = []
         if lidar_frame is not None:
-            _, stamp = lidar_frame
+            _, stamp, lidar_spheres = lidar_frame
             lidar_age = now - stamp
             lidar_alive = lidar_age < self.lidar_max_age_s
             if lidar_alive:
@@ -165,23 +185,24 @@ class FusionEngine:
                 lidar_pts = lidar_frame[0]
 
         # 3. 时间戳配对: LiDAR 为参考, Camera 选最近。
+        cam_spheres: list = []
         if lidar_used and camera_snapshot:
             best_dt = float("inf")
             best_cam = None
-            for pts, stamp in camera_snapshot:
+            for pts, stamp, spheres in camera_snapshot:
                 dt = abs(stamp - t_lidar)
                 if dt < best_dt:
                     best_dt = dt
-                    best_cam = (pts, stamp)
+                    best_cam = (pts, stamp, spheres)
             if best_cam is not None:
-                cam_pts, cam_stamp = best_cam
+                cam_pts, cam_stamp, cam_spheres = best_cam
                 cam_age = now - cam_stamp
                 if cam_age < self.camera_max_age_s:
                     camera_used = True
                     t_camera = cam_stamp
                     camera_pts = cam_pts
         elif camera_snapshot:
-            pts, stamp = camera_snapshot[-1]
+            pts, stamp, cam_spheres = camera_snapshot[-1]
             cam_age = now - stamp
             if cam_age < self.camera_max_age_s:
                 camera_used = True
@@ -225,7 +246,17 @@ class FusionEngine:
         if lidar_used and lidar_pts is not None:
             clouds.append(lidar_pts)
         merged = np.vstack(clouds) if len(clouds) > 1 else clouds[0]
-        merged = _voxel_downsample(merged, self.fusion_voxel_m)
+        merged = voxel_downsample(merged, self.fusion_voxel_m)
+
+        # 7b. 机器人自体过滤 (世界系球体裁剪)。
+        all_spheres = []
+        if camera_used:
+            all_spheres.extend(cam_spheres)
+        if lidar_used:
+            all_spheres.extend(lidar_spheres)
+        if all_spheres and len(merged) > 0:
+            merged = _filter_robot_spheres(merged, all_spheres)
+
         if len(merged) == 0:
             return self._empty_result(now)
 
@@ -234,7 +265,7 @@ class FusionEngine:
             self._occupancy_tracker.update(merged, fusion_stamp)
 
         # 9. ESDF + 动态聚类。
-        sdf = build_distance_field(static_pts, self.spec)
+        sdf = build_distance_field(static_pts, self.spec, far_distance=self.sdf_far)
         dt_s = fusion_stamp - (self._prev_fusion_stamps[0]
                                if self._prev_fusion_stamps else fusion_stamp)
         new_tracks, self._next_track_id = cluster_into_tracks(
@@ -282,11 +313,11 @@ class FusionEngine:
         camera_age = -1.0
         lidar_age = -1.0
         if self._camera_buffer:
-            _, stamp = self._camera_buffer[-1]
+            _, stamp, _ = self._camera_buffer[-1]
             camera_age = now_s - stamp
             camera_alive = camera_age < self.camera_max_age_s
         if self._lidar_buffer:
-            _, stamp = self._lidar_buffer[-1]
+            _, stamp, _ = self._lidar_buffer[-1]
             lidar_age = now_s - stamp
             lidar_alive = lidar_age < self.lidar_max_age_s
 
