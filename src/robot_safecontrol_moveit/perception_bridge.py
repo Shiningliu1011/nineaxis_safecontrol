@@ -50,6 +50,7 @@ from work.perception_config import (  # noqa: E402
     load_point_cloud_collision,
     spec_of,
 )
+from work.perception_config import ConfigField  # noqa: E402
 from work.static_occupancy import OccupancyTracker  # noqa: E402
 from work.dynamic_clustering import (  # noqa: E402
     TrackState,
@@ -162,41 +163,21 @@ class PerceptionBridge(Node):
     # Parameter declaration
     # ------------------------------------------------------------------
     def _declare_parameters(self, base: PointCloudCollisionConfig) -> None:
-        w_min = base.workspace_min.tolist()
-        w_max = base.workspace_max.tolist()
-        self.declare_parameter("source_topic", base.source_topic)
-        self.declare_parameter("input_frame", base.input_frame)
-        self.declare_parameter("world_frame", base.world_frame)
+        # 从 dataclass config_fields() 自动声明所有配置参数。
+        # 无默认值的字段用 base 中加载的值作为默认。
+        for cf in PointCloudCollisionConfig.config_fields():
+            default = cf.default if cf.default is not None else getattr(base, cf.name)
+            self.declare_parameter(cf.name, default)
+        # workspace 特殊处理 (ndarray → list)。
+        self.declare_parameter("workspace_min", base.workspace_min.tolist())
+        self.declare_parameter("workspace_max", base.workspace_max.tolist())
+        # 桥接节点专属参数 (不在 PointCloudCollisionConfig 中)。
         self.declare_parameter("use_tf", False)
         # 4x4 单位阵 (camera==world), 避免 rclpy 把空列表推断成 BYTE_ARRAY。
         self.declare_parameter(
             "camera_to_world_static",
             [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
              0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0])
-        self.declare_parameter("voxel_size", base.voxel_size)
-        self.declare_parameter("max_points", base.max_points)
-        self.declare_parameter("point_radius", base.point_radius)
-        self.declare_parameter("safety_margin", base.safety_margin)
-        self.declare_parameter("workspace_min", w_min)
-        self.declare_parameter("workspace_max", w_max)
-        self.declare_parameter("sdf_far_distance", base.sdf_far_distance)
-        self.declare_parameter("static_occupancy_frames", base.static_occupancy_frames)
-        # --- LiDAR + 融合 ---
-        self.declare_parameter("source_topic_lidar", base.source_topic_lidar)
-        self.declare_parameter("input_frame_lidar", base.input_frame_lidar)
-        self.declare_parameter("source_voxel_camera_m", base.source_voxel_camera_m)
-        self.declare_parameter("source_voxel_lidar_m", base.source_voxel_lidar_m)
-        self.declare_parameter("fusion_voxel_m", base.fusion_voxel_m)
-        self.declare_parameter("max_inter_sensor_dt_s", base.max_inter_sensor_dt_s)
-        self.declare_parameter("camera_max_age_s", base.camera_max_age_s)
-        self.declare_parameter("lidar_max_age_s", base.lidar_max_age_s)
-        self.declare_parameter("occupancy_timeout_s", base.occupancy_timeout_s)
-        self.declare_parameter("static_confirm_s", base.static_confirm_s)
-        self.declare_parameter("perception_timeout_s", base.perception_timeout_s)
-        self.declare_parameter("cluster_max_tracks", base.cluster_max_tracks)
-        self.declare_parameter("cluster_min_points", base.cluster_min_points)
-        self.declare_parameter(
-            "cluster_association_max_dist_m", base.cluster_association_max_dist_m)
         self.declare_parameter("publish_cloud_rate_hz", 5.0)
         self.declare_parameter("publish_esdf_rate_hz", 10.0)
         self.declare_parameter("publish_collision_rate_hz", 5.0)
@@ -205,51 +186,18 @@ class PerceptionBridge(Node):
     def _load_cfg(self) -> PointCloudCollisionConfig:
         """obstacle_params.yaml 为真源, ROS 参数作为覆盖层。"""
         base = load_point_cloud_collision()
-        return PointCloudCollisionConfig(
-            enabled=base.enabled,
-            input_frame=str(self.get_parameter("input_frame").value),
-            world_frame=str(self.get_parameter("world_frame").value),
-            source_topic=str(self.get_parameter("source_topic").value),
-            voxel_size=float(self.get_parameter("voxel_size").value),
-            max_points=int(self.get_parameter("max_points").value),
-            point_radius=float(self.get_parameter("point_radius").value),
-            safety_margin=float(self.get_parameter("safety_margin").value),
-            workspace_min=np.asarray(
-                self.get_parameter("workspace_min").value, dtype=np.float64),
-            workspace_max=np.asarray(
-                self.get_parameter("workspace_max").value, dtype=np.float64),
-            sdf_far_distance=float(self.get_parameter("sdf_far_distance").value),
-            static_occupancy_frames=int(
-                self.get_parameter("static_occupancy_frames").value),
-            source_topic_lidar=str(
-                self.get_parameter("source_topic_lidar").value),
-            input_frame_lidar=str(
-                self.get_parameter("input_frame_lidar").value),
-            source_voxel_camera_m=float(
-                self.get_parameter("source_voxel_camera_m").value),
-            source_voxel_lidar_m=float(
-                self.get_parameter("source_voxel_lidar_m").value),
-            fusion_voxel_m=float(
-                self.get_parameter("fusion_voxel_m").value),
-            max_inter_sensor_dt_s=float(
-                self.get_parameter("max_inter_sensor_dt_s").value),
-            camera_max_age_s=float(
-                self.get_parameter("camera_max_age_s").value),
-            lidar_max_age_s=float(
-                self.get_parameter("lidar_max_age_s").value),
-            occupancy_timeout_s=float(
-                self.get_parameter("occupancy_timeout_s").value),
-            static_confirm_s=float(
-                self.get_parameter("static_confirm_s").value),
-            perception_timeout_s=float(
-                self.get_parameter("perception_timeout_s").value),
-            cluster_max_tracks=int(
-                self.get_parameter("cluster_max_tracks").value),
-            cluster_min_points=int(
-                self.get_parameter("cluster_min_points").value),
-            cluster_association_max_dist_m=float(
-                self.get_parameter("cluster_association_max_dist_m").value),
-        )
+        # 从 config_fields() 自动读取所有配置参数。
+        kwargs = {}
+        for cf in PointCloudCollisionConfig.config_fields():
+            raw = self.get_parameter(cf.name).value
+            kwargs[cf.name] = cf.type_constructor(raw)
+        # workspace 特殊处理 (list → ndarray)。
+        kwargs["workspace_min"] = np.asarray(
+            self.get_parameter("workspace_min").value, dtype=np.float64)
+        kwargs["workspace_max"] = np.asarray(
+            self.get_parameter("workspace_max").value, dtype=np.float64)
+        kwargs["enabled"] = base.enabled
+        return PointCloudCollisionConfig(**kwargs)
 
     # ------------------------------------------------------------------
     # Transform

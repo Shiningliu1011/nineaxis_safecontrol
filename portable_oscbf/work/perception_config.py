@@ -8,9 +8,9 @@ portable_oscbf 是纯 Python (无 ROS)。本模块只做 yaml 读取 → 冻结 
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from pathlib import Path
-from typing import Optional
+from typing import Callable, List, NamedTuple, Optional, Tuple
 
 import numpy as np
 import yaml
@@ -18,6 +18,13 @@ import yaml
 from work.safety_snapshot import SafetyGridSpec
 
 _DEFAULT_YAML = Path(__file__).resolve().parents[1] / "config" / "obstacle_params.yaml"
+
+
+class ConfigField(NamedTuple):
+    """配置字段元数据: 名称、类型构造函数、默认值。"""
+    name: str
+    type_constructor: Callable
+    default: object
 
 
 @dataclass(frozen=True)
@@ -53,6 +60,31 @@ class PointCloudCollisionConfig:
     cluster_max_tracks: int = 8
     cluster_min_points: int = 4
     cluster_association_max_dist_m: float = 0.5
+
+    @classmethod
+    def config_fields(cls) -> List[ConfigField]:
+        """返回所有可从 YAML 加载的字段元数据 (名称、类型、默认值)。
+
+        这是配置字段的唯一权威声明。感知桥接节点用它自动声明/读取 ROS 参数,
+        消除 perception_bridge.py 中的重复 declare/get 样板代码。
+
+        排除: enabled (布尔开关), workspace_min/max (ndarray 特殊处理)。
+        """
+        result: List[ConfigField] = []
+        for f in fields(cls):
+            if f.name in ("enabled", "workspace_min", "workspace_max"):
+                continue  # 这些字段由特殊逻辑处理
+            if f.default is not f.default_factory:
+                # 有默认值的字段
+                t = type(f.default) if f.default is not None else str
+                result.append(ConfigField(f.name, t, f.default))
+            else:
+                # 无默认值: 根据类型注解推断构造函数
+                type_map = {"str": str, "float": float, "int": int, "bool": bool}
+                type_name = getattr(f.type, "__name__", "str")
+                result.append(ConfigField(
+                    f.name, type_map.get(type_name, str), None))
+        return result
 
 
 def load_point_cloud_collision(

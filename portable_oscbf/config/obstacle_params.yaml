@@ -5,6 +5,8 @@ obstacles:
     radius: 0.18
     safety_margin: 0.08
 
+# 注意: 默认值的权威源是 work/perception_config.py 的 PointCloudCollisionConfig。
+# YAML 中省略的字段会回退到 dataclass 默认值。
 point_cloud_collision:
   enabled: true
   # 注意: 驱动 depth_registration:=true 时, 彩色对齐点云 frame 是
