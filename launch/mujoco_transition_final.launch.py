@@ -54,6 +54,13 @@ def generate_launch_description() -> LaunchDescription:
             DeclareLaunchArgument("hardware_mode", default_value="sim"),
             # 感知障碍物管线（Orbbec 相机 → perception_bridge → obs_*）。
             DeclareLaunchArgument("start_perception", default_value="false"),
+            # --- LiDAR 部署参数（留空 = 单相机模式，向后兼容） ---
+            DeclareLaunchArgument("source_topic_lidar", default_value=""),
+            DeclareLaunchArgument("input_frame_lidar", default_value=""),
+            DeclareLaunchArgument("source_voxel_lidar_m", default_value="0.03"),
+            DeclareLaunchArgument("fusion_voxel_m", default_value="0.03"),
+            DeclareLaunchArgument("max_inter_sensor_dt_s", default_value="0.1"),
+            DeclareLaunchArgument("lidar_max_age_s", default_value="0.5"),
             # With the plant on, the controller must wait for the transition
             # replay to finish before it takes over the command stream.
             DeclareLaunchArgument("oscbf_wait_for_start", default_value="false"),
@@ -186,6 +193,20 @@ def generate_launch_description() -> LaunchDescription:
                 ),
                 parameters=[
                     str(share_dir / "config" / "perception_runtime.yaml"),
+                    {
+                        "source_topic_lidar":
+                            LaunchConfiguration("source_topic_lidar"),
+                        "input_frame_lidar":
+                            LaunchConfiguration("input_frame_lidar"),
+                        "source_voxel_lidar_m":
+                            LaunchConfiguration("source_voxel_lidar_m"),
+                        "fusion_voxel_m":
+                            LaunchConfiguration("fusion_voxel_m"),
+                        "max_inter_sensor_dt_s":
+                            LaunchConfiguration("max_inter_sensor_dt_s"),
+                        "lidar_max_age_s":
+                            LaunchConfiguration("lidar_max_age_s"),
+                    },
                 ],
             ),
 
