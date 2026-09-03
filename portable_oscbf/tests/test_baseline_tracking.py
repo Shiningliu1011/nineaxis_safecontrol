@@ -128,7 +128,7 @@ def _run_baseline() -> tuple[dict, float, float]:
         # Semantic tag for downstream gates (M6): the M5 hard-QP baseline and
         # the post-M7 elastic-QP baseline must never be compared against each
         # other.  Bump this string whenever the controller semantics change.
-        "semantics": np.asarray("m7_elastic_qp_v7_cond_feedforward"),
+        "semantics": np.asarray("m7_elastic_qp_v11_final"),
     }
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     np.savez(OUTPUT_PATH, **arrays)
