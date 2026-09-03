@@ -621,6 +621,16 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
             # Endpoint hold mode: same low-gain position correction as in
             # _path_cap_nominal (see note there on cascaded loop stability).
             endpoint_pos_scale = jnp.where(sample.at_endpoint, 0.1, 1.0)
+            # Conditional velocity feedforward: inject the reference tangential
+            # velocity only when the end-effector is close to the path
+            # (cross_track < 3mm).  This eliminates the steady-state
+            # tangential phase lag (~10mm) caused by damped pseudo-inverse
+            # attenuation, while preventing the overshoot seen with
+            # unconditional feedforward (end-effector far from path has
+            # wrong tangent direction).
+            ct = jnp.linalg.norm(transverse_pos_err)
+            ff_scale = jnp.where(ct < 0.003, jnp.asarray(1.0),
+                                 jnp.clip(1.0 - (ct - 0.003) / 0.007, 0.0, 1.0))
             control_twist_bias = jnp.concatenate([
                 -endpoint_pos_scale * kp_pos
                 * fb_scale * position_feedback_error,

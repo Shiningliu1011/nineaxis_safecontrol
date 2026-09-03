@@ -171,7 +171,7 @@ class OscbfController(Node):
             # 0.6 使名义进给 (feedrate_scale=3.0) 成为实际限额。
             "max_tool_axis_speed_rad_s": 2.0,
             "damping": 5e-2,
-            "w_pos": 20.0,
+            "w_pos": 40.0,
             "w_orient": 10.0,
             "w_joint": 0.1,
             "temporal_lambda": 0.2,
@@ -496,6 +496,7 @@ class OscbfController(Node):
                 f"dq_max={float(np.max(np.abs(step['q_next'] - q_now))):.6f} "
                 f"radial={self._radial_error_m(step['ee_pos'])*1e3:.2f}mm "
                 f"ref_radial={self._radial_error_m(step['reference_position_m'])*1e3:.2f}mm "
+                f"cap_cbf={step['feedrate_cbf_limit_m_s'] if step['feedrate_cbf_limit_m_s'] < 1e9 else 9.99:.4f} "
                 f"src={step['reference_source_time_s']:.4f}"
             )
         # 卡死检测: 参考进给归零且横断误差持续超限 (再紧的非端点位置)

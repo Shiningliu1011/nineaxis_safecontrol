@@ -39,7 +39,7 @@ CURRENT_TRAJECTORY = REPO_ROOT / "data" / "nurbs" / "ik_input.mat"
 BASELINE_PATH = REPO_ROOT / "output" / "baseline_tracking.npz"
 PERF_REPORT_PATH = REPO_ROOT / "output" / "oscbf_m6_perf.md"
 NUM_STEPS = 3000
-CURRENT_SEMANTICS = "m7_elastic_qp_v6_correction_limit"
+CURRENT_SEMANTICS = "m7_elastic_qp_v7_cond_feedforward"
 
 
 def _control_kwargs(initial_q):

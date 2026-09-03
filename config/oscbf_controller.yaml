@@ -30,7 +30,7 @@
     # 2.4-2.5 rad/s 猛甩, 末端漂移数百 mm (观测 POS_JUMP)。0.05 时峰值
     # ≈2.2, 正常段 σ≈0.15 的等效增益从 ~6.6 降到 ~1.8 (跟踪略柔顺)。
     damping: 0.05
-    w_pos: 20.0
+    w_pos: 40.0
     w_orient: 10.0
     w_joint: 0.1
     temporal_lambda: 0.2
