@@ -50,21 +50,15 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_REPO_ROOT / "portable_oscbf"))
 sys.path.insert(0, str(_REPO_ROOT / "portable_oscbf" / "work"))
 
+from work.fusion_engine import FusionEngine  # noqa: E402
 from work.perception_config import (  # noqa: E402
     PointCloudCollisionConfig,
     load_point_cloud_collision,
     spec_of,
 )
-from work.static_occupancy import OccupancyTracker  # noqa: E402
-from work.dynamic_clustering import (  # noqa: E402
-    TrackState,
-    cluster_into_tracks,
-    empty_track_state,
-)
 from work.safety_snapshot import (  # noqa: E402
     MAX_DYNAMIC_TRACKS,
-    SafetyGridSpec,
-    build_distance_field,
+    preprocess_points,
 )
 
 # Each /perception/tracks slot carries 10 floats.
@@ -75,17 +69,6 @@ def _identity_extrinsics() -> np.ndarray:
     return np.eye(4, dtype=np.float64)
 
 
-def _voxel_downsample_custom(
-    points: np.ndarray, voxel_size: float,
-) -> np.ndarray:
-    """Voxel downsample at a custom voxel_size (floor + unique first-index)."""
-    if len(points) == 0:
-        return points
-    pts = np.asarray(points, dtype=np.float32)
-    mn = pts.min(axis=0)
-    indices = np.floor((pts - mn) / voxel_size).astype(np.int64)
-    _, first = np.unique(indices, axis=0, return_index=True)
-    return pts[np.sort(first)]
 
 
 class PerceptionBridge(Node):
@@ -110,14 +93,28 @@ class PerceptionBridge(Node):
         self._collision_rate = float(
             self.get_parameter("publish_collision_rate_hz").value)
 
-        self._occupancy_tracker = OccupancyTracker(
-            self._spec,
+        self._engine = FusionEngine(
+            spec=self._spec,
+            max_inter_sensor_dt_s=self._max_inter_sensor_dt,
+            camera_max_age_s=self._camera_max_age,
+            lidar_max_age_s=self._lidar_max_age,
+            perception_timeout_s=self._perception_timeout,
+            fusion_voxel_m=self._fusion_voxel,
+            safety_margin=self._safety_margin,
+            sdf_far=self._sdf_far,
             occupancy_timeout_s=float(
                 self.get_parameter("occupancy_timeout_s").value),
             static_confirm_s=float(
-                self.get_parameter("static_confirm_s").value))
-        self._prev_tracks: TrackState = empty_track_state(MAX_DYNAMIC_TRACKS)
-        self._next_track_id = 1
+                self.get_parameter("static_confirm_s").value),
+            cluster_max_tracks=int(
+                self.get_parameter("cluster_max_tracks").value),
+            cluster_min_points=int(
+                self.get_parameter("cluster_min_points").value),
+            cluster_association_max_dist_m=float(
+                self.get_parameter("cluster_association_max_dist_m").value),
+            camera_buffer_maxlen=6,
+            lidar_buffer_maxlen=3,
+        )
 
         # TF listener (shared across sensors).
         self._tf_buffer = None
@@ -168,6 +165,10 @@ class PerceptionBridge(Node):
                 qos_profile_sensor_data, callback_group=self._sensor_cbg)
 
         # JointState subscription for self-filtering (latest-only, no history buffer).
+        # TODO(self-filter): 当前仅缓存, 未消费。需实现 FK→碰撞球体管线:
+        #   JointState → pin.forward_kinematics → 碰撞球体 → robot_spheres 参数
+        #   传入 engine.feed_camera(feed_lidar)。届时 _fusion_callback 需读取
+        #   _latest_joint_state 并计算 robot_spheres 列表。
         self._latest_joint_state = None
         self._joint_lock = Lock()
         self._joint_sub = self.create_subscription(
@@ -198,7 +199,6 @@ class PerceptionBridge(Node):
         self._last_esdf_t = 0.0
         self._last_collision_t = 0.0
         self._prev_collision_active: set[int] = set()
-        self._prev_fusion_stamps: tuple = ()
         self.get_logger().info(
             f"PERCEPTION_BRIDGE_STARTED camera={source_topic} "
             f"lidar={source_topic_lidar or '(none)'} "
@@ -257,18 +257,24 @@ class PerceptionBridge(Node):
         """
         if self._use_tf and self._tf_buffer is not None \
                 and self._world_frame != sensor_frame:
+            from tf2_ros import ConnectivityException, ExtrapolationException, \
+                LookupException
             try:
                 t = self._tf_buffer.lookup_transform(
                     self._world_frame, sensor_frame, stamp)
                 return _tf_to_matrix(t)
-            except Exception:
-                pass
+            except (LookupException, ConnectivityException,
+                    ExtrapolationException) as exc:
+                self.get_logger().warn(
+                    f"TF {sensor_frame}->{self._world_frame} at stamp: {exc}")
             try:
                 t = self._tf_buffer.lookup_transform(
                     self._world_frame, sensor_frame, Time())
                 return _tf_to_matrix(t)
-            except Exception:
-                pass
+            except (LookupException, ConnectivityException,
+                    ExtrapolationException) as exc:
+                self.get_logger().warn(
+                    f"TF {sensor_frame}->{self._world_frame} latest: {exc}")
         static = self.get_parameter(static_param_name).value
         if static:
             return np.asarray(static, dtype=np.float64).reshape(4, 4)
@@ -281,6 +287,7 @@ class PerceptionBridge(Node):
         self, msg: PointCloud2, label: str,
         input_frame: str, static_param: str,
         buffer: deque, lock: Lock,
+        source_voxel_m: float,
     ) -> None:
         """Shared decode -> TF -> preprocess -> buffer for both sensors."""
         try:
@@ -298,7 +305,7 @@ class PerceptionBridge(Node):
 
         stamp_s = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
         s2w = self._sensor_to_world(input_frame, msg.header.stamp, static_param)
-        world = self._preprocess(sensor_pts, s2w)
+        world = self._preprocess(sensor_pts, s2w, voxel_size=source_voxel_m)
         if world.shape[0] == 0:
             return
         with lock:
@@ -307,12 +314,14 @@ class PerceptionBridge(Node):
     def _lidar_callback(self, msg: PointCloud2) -> None:
         self._sensor_callback(
             msg, "LiDAR", self._input_frame_lidar,
-            "lidar_to_world_static", self._lidar_buffer, self._lidar_lock)
+            "lidar_to_world_static", self._lidar_buffer, self._lidar_lock,
+            self._source_voxel_lidar)
 
     def _camera_callback(self, msg: PointCloud2) -> None:
         self._sensor_callback(
             msg, "Camera", self._input_frame_camera,
-            "camera_to_world_static", self._camera_buffer, self._camera_lock)
+            "camera_to_world_static", self._camera_buffer, self._camera_lock,
+            self._source_voxel_camera)
 
     def _joint_state_callback(self, msg) -> None:
         with self._joint_lock:
@@ -323,181 +332,64 @@ class PerceptionBridge(Node):
     # ------------------------------------------------------------------
     def _preprocess(
         self, sensor_pts: np.ndarray, sensor_to_world: np.ndarray,
+        *, voxel_size: float | None = None,
     ) -> np.ndarray:
-        """Transform -> workspace crop -> voxel downsample (per spec.voxel_size)."""
+        """Transform -> workspace crop -> voxel downsample."""
         from work.safety_snapshot import preprocess_points
-        return preprocess_points(sensor_pts, sensor_to_world, self._spec)
+        return preprocess_points(sensor_pts, sensor_to_world, self._spec,
+                                 voxel_size=voxel_size)
 
     # ------------------------------------------------------------------
     # Fusion timer (MutuallyExclusiveCallbackGroup, 20 Hz)
     # ------------------------------------------------------------------
     def _fusion_callback(self) -> None:
-        # 1. Snapshot buffers (fast copy under lock).
+        # 1. Snapshot bridge buffers under lock -> feed into engine.
         with self._lidar_lock:
-            lidar_frame = self._lidar_buffer[-1] if self._lidar_buffer else None
+            lidar_snapshot = list(self._lidar_buffer)
         with self._camera_lock:
             camera_snapshot = list(self._camera_buffer)
 
         now_s = self.get_clock().now().nanoseconds * 1e-9
 
-        # 2. Alive / used detection + freshness check.
-        camera_alive = False
-        camera_used = False
-        camera_age = -1.0
-        t_camera = None
-        camera_pts = None
-        if camera_snapshot:
-            # Latest camera frame for alive detection.
-            _, latest_cam_stamp, _ = camera_snapshot[-1]
-            camera_age = now_s - latest_cam_stamp
-            camera_alive = camera_age < self._camera_max_age
+        self._engine.clear_buffers()
+        for pts, stamp, _s2w in lidar_snapshot:
+            self._engine.feed_lidar(pts, stamp)
+        for pts, stamp, _s2w in camera_snapshot:
+            self._engine.feed_camera(pts, stamp)
 
-        lidar_alive = False
-        lidar_used = False
-        lidar_age = -1.0
-        t_lidar = None
-        lidar_pts = None
-        if lidar_frame is not None:
-            pts, stamp, _ = lidar_frame
-            lidar_age = now_s - stamp
-            lidar_alive = lidar_age < self._lidar_max_age
-            if lidar_alive:
-                lidar_used = True
-                t_lidar = stamp
-                lidar_pts = pts
+        result = self._engine.fuse(now_s)
 
-        # 2b. Timestamp pairing: LiDAR as reference, Camera selects nearest.
-        if lidar_used and camera_snapshot:
-            best_dt = float("inf")
-            best_cam = None
-            for pts, stamp, s2w in camera_snapshot:
-                dt = abs(stamp - t_lidar)
-                if dt < best_dt:
-                    best_dt = dt
-                    best_cam = (pts, stamp, s2w)
-            if best_cam is not None:
-                cam_pts, cam_stamp, _ = best_cam
-                cam_age = now_s - cam_stamp
-                if cam_age < self._camera_max_age:
-                    camera_used = True
-                    t_camera = cam_stamp
-                    camera_pts = cam_pts
-        elif camera_snapshot:
-            # No LiDAR: use latest camera frame.
-            pts, stamp, _ = camera_snapshot[-1]
-            cam_age = now_s - stamp
-            if cam_age < self._camera_max_age:
-                camera_used = True
-                t_camera = stamp
-                camera_pts = pts
-
-        # 3. Cross-sensor dt: too far apart -> only use the newer one.
-        if camera_used and lidar_used:
-            dt = abs(t_camera - t_lidar)
-            if dt > self._max_inter_sensor_dt:
-                if t_camera > t_lidar:
-                    lidar_used = False
-                    lidar_pts = None
-                    self.get_logger().debug(
-                        f"Cross-sensor dt={dt:.3f}s > {self._max_inter_sensor_dt}s, "
-                        f"dropping LiDAR (stale)")
-                else:
-                    camera_used = False
-                    camera_pts = None
-                    self.get_logger().debug(
-                        f"Cross-sensor dt={dt:.3f}s > {self._max_inter_sensor_dt}s, "
-                        f"dropping Camera (stale)")
-
-        # 4. fusion_stamp = max of participating sensors (not now).
-        stamps_used = [t for t, used in
-                       [(t_camera, camera_used), (t_lidar, lidar_used)] if used]
-        if not stamps_used:
-            self._publish_status(
-                camera_alive, lidar_alive, camera_age, lidar_age,
-                camera_used, lidar_used, 0.0, -1.0, 0, False, now_s)
-            return
-        fusion_stamp = max(stamps_used)
-
-        # 5. Duplicate frame protection.
-        combo = tuple(sorted(
-            (t for t, used in
-             [(t_camera, camera_used), (t_lidar, lidar_used)] if used)))
-        if combo == self._prev_fusion_stamps:
-            return
-        self._prev_fusion_stamps = combo
-
-        # 6. Self-filtering (TODO: per-sensor-stamp joint interpolation).
-        # 7. Merge + fusion voxel downsample.
-        clouds = []
-        if camera_used and camera_pts is not None:
-            clouds.append(camera_pts)
-        if lidar_used and lidar_pts is not None:
-            clouds.append(lidar_pts)
-        merged = np.vstack(clouds) if len(clouds) > 1 else clouds[0]
-        merged = _voxel_downsample_custom(merged, self._fusion_voxel)
-        if len(merged) == 0:
-            return
-
-        # 8. Three-layer classification.
-        static_pts, unconfirmed_pts, instant_pts = self._occupancy_tracker.update(
-            merged, fusion_stamp)
-
-        # 9. ESDF from static layer.
-        sdf = build_distance_field(
-            static_pts, self._spec, far_distance=self._sdf_far)
-
-        # 10. Dynamic clustering from unconfirmed layer.
-        dt_s = fusion_stamp  # not used for velocity (next frame provides dt)
-        new_tracks, self._next_track_id = cluster_into_tracks(
-            unconfirmed_pts, self._prev_tracks, self._spec,
-            max_tracks=int(self.get_parameter("cluster_max_tracks").value),
-            min_points=int(self.get_parameter("cluster_min_points").value),
-            asso_max_dist_m=float(
-                self.get_parameter("cluster_association_max_dist_m").value),
-            next_id=self._next_track_id,
-        )
-        self._prev_tracks = new_tracks
-
-        # 11. Publish all topics.
-        fusion_age = now_s - fusion_stamp
-        source_count = int(camera_used) + int(lidar_used)
-        perception_valid = (
-            (camera_used or lidar_used)
-            and fusion_age < self._perception_timeout)
+        # 2. Publish result (even when empty — status still reports health).
+        st = result.status
         try:
-            self._publish_status(
-                camera_alive, lidar_alive, camera_age, lidar_age,
-                camera_used, lidar_used, fusion_stamp, fusion_age,
-                source_count, perception_valid, now_s)
-            source_stamp = _stamp_to_msg(fusion_stamp)
-            self._maybe_publish_cloud(merged, now_s, source_stamp)
-            self._maybe_publish_esdf(sdf, now_s)
-            self._publish_tracks(new_tracks, now_s)
-            self._maybe_publish_collision(new_tracks, now_s)
-            self._publish_instant(instant_pts, source_stamp)
+            self._publish_status(st, now_s)
+            if st["source_count"] > 0.0:
+                source_stamp = _stamp_to_msg(st["fusion_stamp"])
+                self._maybe_publish_cloud(result.merged_points, now_s, source_stamp)
+                self._maybe_publish_esdf(result.distance_field, now_s)
+                self._publish_tracks(result.tracks, now_s)
+                self._maybe_publish_collision(result.tracks, now_s)
+                self._publish_instant(result.instant_points, source_stamp)
         except Exception as exc:
             self.get_logger().warn(f"perception publish failed: {exc}")
 
     # ------------------------------------------------------------------
     # Publishing
     # ------------------------------------------------------------------
-    def _publish_status(
-        self, camera_alive, lidar_alive, camera_age, lidar_age,
-        camera_used, lidar_used, fusion_stamp, fusion_age,
-        source_count, perception_valid, now_s,
-    ) -> None:
+    def _publish_status(self, st: dict, now_s: float) -> None:
+        """Publish /perception/status from a FusionEngine status dict."""
         msg = Float32MultiArray()
         msg.data = [
-            1.0 if camera_alive else 0.0,
-            1.0 if lidar_alive else 0.0,
-            float(camera_age),
-            float(lidar_age),
-            1.0 if camera_used else 0.0,
-            1.0 if lidar_used else 0.0,
-            float(fusion_stamp),
-            float(fusion_age),
-            float(source_count),
-            1.0 if perception_valid else 0.0,
+            st["camera_alive"],
+            st["lidar_alive"],
+            st["camera_age"],
+            st["lidar_age"],
+            st["camera_used"],
+            st["lidar_used"],
+            st["fusion_stamp"],
+            st["fusion_age"],
+            st["source_count"],
+            st["perception_valid"],
         ]
         self._status_pub.publish(msg)
 

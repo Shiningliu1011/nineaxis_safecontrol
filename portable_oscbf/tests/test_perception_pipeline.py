@@ -13,7 +13,7 @@ import pytest
 
 from work.dynamic_clustering import cluster_into_tracks, empty_track_state
 from work.perception_config import load_point_cloud_collision, spec_of
-from work.safety_snapshot import MAX_DYNAMIC_TRACKS
+from work.safety_snapshot import MAX_DYNAMIC_TRACKS, preprocess_points
 from work.static_occupancy import OccupancyTracker
 
 
@@ -90,10 +90,24 @@ def test_static_occupancy_tracker_old_interface(spec):
     tracker = StaticOccupancyTracker(spec, keep_frames=8)
     env = _points_in(np.array([0.0, 0.4, 1.3]), 0.1, 800)
     # 旧代码不传 stamp_s → update 内部用默认值。
-    # 但新 update 签名要求 stamp_s, 所以旧代码需要适配。
-    # 验证构造函数不报错, 且返回三层。
-    result = tracker.update(env, stamp_s=0.0)
-    assert len(result) == 3
+    # 向后兼容: 返回 2-tuple (static, dynamic)。
+    result = tracker.update(env)
+    assert len(result) == 2
+
+
+def test_static_occupancy_tracker_two_value_unpack(spec):
+    """旧代码解包两个值 static, dynamic = tracker.update(pts) 不崩溃。
+
+    这是向后兼容的核心契约: StaticOccupancyTracker.update() 必须返回
+    2-tuple (static, dynamic) 而非 3-tuple, 否则旧调用方会 ValueError。
+    """
+    from work.static_occupancy import StaticOccupancyTracker
+    tracker = StaticOccupancyTracker(spec, keep_frames=8)
+    env = _points_in(np.array([0.0, 0.4, 1.3]), 0.1, 800)
+    # 旧代码: 2-value unpack, 不传 stamp_s。
+    static, dynamic = tracker.update(env)
+    assert isinstance(static, np.ndarray)
+    assert isinstance(dynamic, np.ndarray)
 
 
 # ---------------------------------------------------------------------------
@@ -421,3 +435,79 @@ def test_empty_input_produces_all_disabled(spec):
         np.empty((0, 3)), empty_track_state(8), spec, next_id=1)
     assert np.all(state.enabled == 0.0)
     assert nid == 1
+
+
+# ---------------------------------------------------------------------------
+# voxel_downsample: 共享降采样函数 (消除 fusion_engine / perception_bridge 重复)
+# ---------------------------------------------------------------------------
+
+def test_voxel_downsample_deduplicates_nearby_points():
+    """同一体素内的多个点只保留一个。"""
+    from work.safety_snapshot import voxel_downsample
+    # 三个点都在同一个 0.05m 体素内。
+    pts = np.array([[0.0, 0.0, 0.0],
+                    [0.01, 0.01, 0.01],
+                    [0.02, 0.02, 0.02]], dtype=np.float32)
+    result = voxel_downsample(pts, 0.05)
+    assert len(result) == 1
+
+
+def test_voxel_downsample_preserves_distant_points():
+    """不同体素的点全部保留。"""
+    from work.safety_snapshot import voxel_downsample
+    pts = np.array([[0.0, 0.0, 0.0],
+                    [1.0, 0.0, 0.0],
+                    [0.0, 1.0, 0.0]], dtype=np.float32)
+    result = voxel_downsample(pts, 0.05)
+    assert len(result) == 3
+
+
+def test_voxel_downsample_empty_input():
+    """空输入 → 空输出。"""
+    from work.safety_snapshot import voxel_downsample
+    pts = np.empty((0, 3), dtype=np.float32)
+    result = voxel_downsample(pts, 0.05)
+    assert len(result) == 0
+
+
+def test_voxel_downsample_returns_float32():
+    """输出始终是 float32。"""
+    from work.safety_snapshot import voxel_downsample
+    pts = np.array([[0.1, 0.2, 0.3]], dtype=np.float64)
+    result = voxel_downsample(pts, 0.1)
+    assert result.dtype == np.float32
+
+
+# ---------------------------------------------------------------------------
+# preprocess_points: 每传感器源体素降采样
+# ---------------------------------------------------------------------------
+
+def test_preprocess_points_respects_custom_voxel_size(spec):
+    """自定义 voxel_size 参数应覆盖 spec.voxel_size。"""
+    center = (spec.workspace_min + spec.workspace_max) / 2
+    rng = np.random.default_rng(42)
+    pts = (center + rng.uniform(-0.04, 0.04, (200, 3))).astype(np.float32)
+    identity = np.eye(4, dtype=np.float64)
+
+    coarse = preprocess_points(pts, identity, spec, voxel_size=0.1)
+    fine = preprocess_points(pts, identity, spec, voxel_size=0.01)
+    assert len(coarse) < len(fine), (
+        f"coarse({len(coarse)}) should be < fine({len(fine)})")
+
+
+def test_preprocess_points_removes_robot_spheres(spec):
+    """robot_spheres 参数应剔除机器人本体占据的点。"""
+    center = (spec.workspace_min + spec.workspace_max) / 2
+    # 在中心放一个球体 (0.15m 半径) 内的点。
+    rng = np.random.default_rng(99)
+    pts = (center + rng.uniform(-0.02, 0.02, (100, 3))).astype(np.float32)
+    identity = np.eye(4, dtype=np.float64)
+
+    # 无球体过滤 → 全部保留。
+    no_filter = preprocess_points(pts, identity, spec)
+    # 球体覆盖整个点云区域 → 全部剔除。
+    filtered = preprocess_points(
+        pts, identity, spec,
+        robot_spheres=[(center, 0.15)])
+    assert len(no_filter) > 0
+    assert len(filtered) == 0

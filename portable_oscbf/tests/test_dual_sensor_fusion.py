@@ -514,6 +514,38 @@ class TestOccupancyTrackerUnit:
 # 边界情况
 # ---------------------------------------------------------------------------
 
+class TestSelfFiltering:
+    """自体过滤: robot_spheres 参数剔除机器人本体点。"""
+
+    def test_robot_spheres_filtered_from_camera(self, engine, spec):
+        """feed_camera 传入 robot_spheres → 融合后该区域无点。"""
+        center = (spec.workspace_min + spec.workspace_max) / 2
+        # 点云完全在机器人球体内。
+        pts = _box_points(center, 0.02, 200, seed=60)
+        engine.feed_camera(pts, stamp_s=1.0,
+                           robot_spheres=[(center, 0.15)])
+        result = engine.fuse(now_s=1.0)
+        # 球体覆盖全部点 → merged 应为空。
+        assert len(result.merged_points) == 0
+
+    def test_robot_spheres_filtered_from_lidar(self, engine, spec):
+        """feed_lidar 传入 robot_spheres → 融合后该区域无点。"""
+        center = (spec.workspace_min + spec.workspace_max) / 2
+        pts = _box_points(center, 0.02, 200, seed=61)
+        engine.feed_lidar(pts, stamp_s=1.0,
+                          robot_spheres=[(center, 0.15)])
+        result = engine.fuse(now_s=1.0)
+        assert len(result.merged_points) == 0
+
+    def test_no_robot_spheres_keeps_all_points(self, engine, spec):
+        """不传 robot_spheres → 点全部保留。"""
+        center = (spec.workspace_min + spec.workspace_max) / 2
+        pts = _box_points(center, 0.02, 200, seed=62)
+        engine.feed_camera(pts, stamp_s=1.0)
+        result = engine.fuse(now_s=1.0)
+        assert len(result.merged_points) > 0
+
+
 class TestEdgeCases:
     """融合引擎边界情况。"""
 
@@ -546,3 +578,44 @@ class TestEdgeCases:
         engine.feed_camera(pts, stamp_s=2.0)
         result = engine.fuse(now_s=2.0)
         assert result.status["camera_used"] == 1.0
+
+    def test_dt_s_uses_frame_delta_not_absolute_timestamp(self, spec):
+        """dt_s 必须是帧间差 (如 0.1s), 而非绝对时间戳 (如 1.7e9)。
+
+        回归测试: 若 dt_s 误用绝对时间戳, 速度 = distance/1.7e9 ≈ 0,
+        远小于真实值 (distance/0.1 ≈ 数 m/s)。
+        """
+        engine = FusionEngine(
+            spec,
+            max_inter_sensor_dt_s=0.1,
+            camera_max_age_s=0.5,
+            lidar_max_age_s=0.5,
+            perception_timeout_s=1.0,
+            fusion_voxel_m=spec.voxel_size,
+            occupancy_timeout_s=0.3,
+            static_confirm_s=0.5,
+        )
+        # 模拟真实 ROS 时间戳 (自 epoch 秒数 ~1.7e9)。
+        t0 = 1700000000.0
+        dt = 0.1  # 帧间差
+        center = np.array([0.0, 0.5, 1.2])
+        vel = np.array([0.3, 0.0, 0.0])  # 0.3 m/s
+
+        pts1 = _box_points(center, 0.08, 1500, seed=70)
+        pts2 = _box_points(center + vel * dt, 0.08, 1500, seed=70)
+
+        engine.feed_lidar(pts1, stamp_s=t0)
+        engine.fuse(now_s=t0)
+
+        engine.feed_lidar(pts2, stamp_s=t0 + dt)
+        result = engine.fuse(now_s=t0 + dt)
+
+        assert result.tracks.enabled[0] > 0.0
+        vel_x = result.tracks.vel[0, 0]
+        # 若 dt_s 误用绝对时间戳 (1.7e9), 速度 ≈ 0.3/1.7e9 ≈ 1.7e-10。
+        # 正确 dt_s=0.1 → 速度 ≈ 0.3/0.1 = 3.0 m/s。
+        # 若 dt_s 误用绝对时间戳, 速度 ≈ 1.7e-10, 远低于 0.1。
+        # 正确 dt_s=0.1 → 速度 ≈ 0.9 m/s (体素量化后)。
+        assert vel_x > 0.1, (
+            f"Velocity {vel_x:.6f} suggests dt_s uses absolute timestamp, "
+            f"expected > 0.1 m/s")

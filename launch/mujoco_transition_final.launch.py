@@ -61,6 +61,9 @@ def generate_launch_description() -> LaunchDescription:
             DeclareLaunchArgument("fusion_voxel_m", default_value="0.03"),
             DeclareLaunchArgument("max_inter_sensor_dt_s", default_value="0.1"),
             DeclareLaunchArgument("lidar_max_age_s", default_value="0.5"),
+            DeclareLaunchArgument("occupancy_timeout_s", default_value="0.3"),
+            DeclareLaunchArgument("static_confirm_s", default_value="0.5"),
+            DeclareLaunchArgument("perception_timeout_s", default_value="1.0"),
             # With the plant on, the controller must wait for the transition
             # replay to finish before it takes over the command stream.
             DeclareLaunchArgument("oscbf_wait_for_start", default_value="false"),
@@ -206,6 +209,12 @@ def generate_launch_description() -> LaunchDescription:
                             LaunchConfiguration("max_inter_sensor_dt_s"),
                         "lidar_max_age_s":
                             LaunchConfiguration("lidar_max_age_s"),
+                        "occupancy_timeout_s":
+                            LaunchConfiguration("occupancy_timeout_s"),
+                        "static_confirm_s":
+                            LaunchConfiguration("static_confirm_s"),
+                        "perception_timeout_s":
+                            LaunchConfiguration("perception_timeout_s"),
                     },
                 ],
             ),
