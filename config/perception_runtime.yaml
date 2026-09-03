@@ -10,20 +10,46 @@
 #   ros2 run robot_safecontrol_moveit perception_bridge
 #   ros2 run robot_safecontrol_moveit perception_demo
 #
-# World frame is base_link.  The camera->base_link 4x4 is provided by
-# camera_to_world_static (placeholder; replace with real TF + use_tf:true after
-# mounting calibration).  Keep workspace/voxel consistent with
-# portable_oscbf/config/obstacle_params.yaml so the ESDF grid shape matches.
+# World frame is a fixed environment frame (not base_link, which moves with
+# the lift axis).  The sensor->world 4x4 extrinsics are provided by
+# camera_to_world_static / lidar_to_world_static (placeholders; replace with
+# real TF + use_tf:true after mounting calibration).  Keep workspace/voxel
+# consistent with portable_oscbf/config/obstacle_params.yaml so the ESDF
+# grid shape matches.
 
 perception_bridge:
   ros__parameters:
+    # --- Camera (Orbbec Gemini 335L) ---
     source_topic: /camera/depth_registered/points
     input_frame: camera_color_optical_frame
+    # camera->world: bx=cz, by=-cx, bz=-cy, t=[-0.9, 0.4, 1.7]
+    camera_to_world_static: [0.0, 0.0, 1.0, -0.9, -1.0, 0.0, 0.0, 0.4, 0.0, -1.0, 0.0, 1.7, 0.0, 0.0, 0.0, 1.0]
+
+    # --- LiDAR (Livox Mid-360S) ---
+    # Leave empty to disable LiDAR (single-camera mode, backward compatible).
+    source_topic_lidar: ""
+    input_frame_lidar: ""
+    lidar_to_world_static: [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+
+    # --- World frame ---
     world_frame: base_link
     use_tf: false
-    # camera->base_link: bx=cz, by=-cx, bz=-cy, t=[-0.9, 0.4, 1.7]
-    camera_to_world_static: [0.0, 0.0, 1.0, -0.9, -1.0, 0.0, 0.0, 0.4, 0.0, -1.0, 0.0, 1.7, 0.0, 0.0, 0.0, 1.0]
+
+    # --- Voxel sizes ---
     voxel_size: 0.03
+    source_voxel_camera_m: 0.02
+    source_voxel_lidar_m: 0.03
+    fusion_voxel_m: 0.03
+
+    # --- Freshness / fusion timing ---
+    camera_max_age_s: 0.5
+    lidar_max_age_s: 0.5
+    max_inter_sensor_dt_s: 0.1
+    occupancy_timeout_s: 0.3
+    static_confirm_s: 0.5
+    perception_timeout_s: 1.0
+
+    # --- Point cloud processing ---
     max_points: 5000
     point_radius: 0.01
     safety_margin: 0.08
@@ -31,9 +57,13 @@ perception_bridge:
     workspace_max: [0.9, 0.8, 2.0]
     sdf_far_distance: 10.0
     static_occupancy_frames: 8
+
+    # --- Clustering ---
     cluster_max_tracks: 8
     cluster_min_points: 4
     cluster_association_max_dist_m: 0.5
+
+    # --- Publishing rates ---
     publish_cloud_rate_hz: 5.0
     publish_esdf_rate_hz: 10.0
     publish_collision_rate_hz: 5.0
