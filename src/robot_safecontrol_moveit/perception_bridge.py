@@ -50,7 +50,7 @@ from work.perception_config import (  # noqa: E402
     load_point_cloud_collision,
     spec_of,
 )
-from work.static_occupancy import StaticOccupancyTracker  # noqa: E402
+from work.static_occupancy import OccupancyTracker  # noqa: E402
 from work.dynamic_clustering import (  # noqa: E402
     TrackState,
     cluster_into_tracks,
@@ -113,9 +113,12 @@ class PerceptionBridge(Node):
         self._collision_rate = float(self.get_parameter(
             "publish_collision_rate_hz").value)
 
-        self._static_tracker = StaticOccupancyTracker(
-            self._spec, keep_frames=int(self.get_parameter(
-                "static_occupancy_frames").value))
+        self._static_tracker = OccupancyTracker(
+            self._spec,
+            occupancy_timeout_s=float(self.get_parameter(
+                "occupancy_timeout_s").value),
+            static_confirm_s=float(self.get_parameter(
+                "static_confirm_s").value))
         self._prev_tracks: TrackState = empty_track_state(MAX_DYNAMIC_TRACKS)
         self._next_track_id = 1
         self._frame_seq = 0
@@ -178,6 +181,8 @@ class PerceptionBridge(Node):
         self.declare_parameter("workspace_max", w_max)
         self.declare_parameter("sdf_far_distance", base.sdf_far_distance)
         self.declare_parameter("static_occupancy_frames", base.static_occupancy_frames)
+        self.declare_parameter("occupancy_timeout_s", base.occupancy_timeout_s)
+        self.declare_parameter("static_confirm_s", base.static_confirm_s)
         self.declare_parameter("cluster_max_tracks", base.cluster_max_tracks)
         self.declare_parameter("cluster_min_points", base.cluster_min_points)
         self.declare_parameter(
@@ -206,6 +211,10 @@ class PerceptionBridge(Node):
             sdf_far_distance=float(self.get_parameter("sdf_far_distance").value),
             static_occupancy_frames=int(
                 self.get_parameter("static_occupancy_frames").value),
+            occupancy_timeout_s=float(
+                self.get_parameter("occupancy_timeout_s").value),
+            static_confirm_s=float(
+                self.get_parameter("static_confirm_s").value),
             cluster_max_tracks=int(
                 self.get_parameter("cluster_max_tracks").value),
             cluster_min_points=int(
@@ -261,8 +270,10 @@ class PerceptionBridge(Node):
         if world.shape[0] == 0:
             return
 
-        # 静态/动态分离。
-        static_pts, dynamic_pts = self._static_tracker.update(world)
+        # 三层占据分离。
+        stamp_s = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
+        static_pts, unconfirmed_pts, instant_pts = self._static_tracker.update(
+            world, stamp_s)
 
         # ESDF (静态环境)。
         sdf = build_distance_field(
@@ -270,7 +281,7 @@ class PerceptionBridge(Node):
 
         # 动态聚类 → 8 槽。
         new_tracks, self._next_track_id = cluster_into_tracks(
-            dynamic_pts, self._prev_tracks, self._spec,
+            unconfirmed_pts, self._prev_tracks, self._spec,
             max_tracks=int(self.get_parameter("cluster_max_tracks").value),
             min_points=int(self.get_parameter("cluster_min_points").value),
             asso_max_dist_m=float(

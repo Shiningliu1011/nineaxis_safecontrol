@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
-"""静态/动态障碍分离: 把世界系点云分成静态环境与瞬态团块。
+"""静态/动态障碍分离: 把世界系点云分成三层占据模型。
 
 静态环境 (桌、柜、墙等持续存在的物体) 应进入 ESDF 距离场;
 瞬态物体 (人、移动的物体) 应进入动态聚类 → 8 槽 track。
 
-判定原则: 体素占用计数。某体素连续被占据 >= keep_frames 帧后视为静态;
-当前帧新出现、计数未达阈值的体素视为动态。
+判定原则: 时间戳驱动的体素占据。
+  - instant: 当前帧全部点 (原始点)。
+  - unconfirmed: 占据但未达静态阈值的体素中心。
+  - static: 持续占据 >= static_confirm_s 的体素中心。
+
+内部用 prev_occupied 连续性检测: 占据中断后 first_seen 重置为 inf,
+下次重新计时。occupancy_timeout_s 未见的体素清除 first_seen/last_seen。
 """
 
 from __future__ import annotations
@@ -17,39 +22,51 @@ import numpy as np
 from work.safety_snapshot import SafetyGridSpec
 
 
-class StaticOccupancyTracker:
-    """按体素占用时长区分静态/动态。
+class OccupancyTracker:
+    """时间戳驱动三层占据模型。
 
     用法
     ----
-    >>> tracker = StaticOccupancyTracker(spec, keep_frames=8)
-    >>> static, dynamic = tracker.update(points_world)   # 每帧调用一次
+    >>> tracker = OccupancyTracker(spec, occupancy_timeout_s=2.0, static_confirm_s=5.0)
+    >>> static, unconfirmed, instant = tracker.update(points_world, stamp_s)
     """
 
-    def __init__(self, spec: SafetyGridSpec, keep_frames: int = 8,
-                 presence_gain: int = 2, absence_decay: int = 1) -> None:
+    def __init__(
+        self,
+        spec: SafetyGridSpec,
+        occupancy_timeout_s: float = 2.0,
+        static_confirm_s: float = 5.0,
+    ) -> None:
         self.spec = spec
-        self.keep_frames = max(1, int(keep_frames))
-        self.presence_gain = max(1, int(presence_gain))
-        self.absence_decay = max(1, int(absence_decay))
-        # 每体素占用计分 (泄漏计数器, 抗深度噪声):
-        #   出现 -> +presence_gain (封顶 keep_frames); 未出现 -> -absence_decay (归零)。
-        self._counts = np.zeros(spec.shape, dtype=np.int16)
+        self.occupancy_timeout_s = max(0.1, float(occupancy_timeout_s))
+        self.static_confirm_s = max(0.1, float(static_confirm_s))
 
-    def update(self, points_world: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-        """输入世界系 (M,3) 点云, 返回 (static_points, dynamic_points) 世界系 float32。
+        shape = spec.shape
+        # first_seen: 体素首次被连续占据的时间戳; inf 表示未占据。
+        self._first_seen = np.full(shape, np.inf, dtype=np.float64)
+        # last_seen: 体素最后一次被观测到的时间戳; -inf 表示从未见过。
+        self._last_seen = np.full(shape, -np.inf, dtype=np.float64)
+        # prev_occupied: 上一帧的占据掩码, 用于连续性检测。
+        self._prev_occupied = np.zeros(shape, dtype=bool)
 
-        - static_points: 已达阈值的静态体素中心 (供 build_distance_field)。
-        - dynamic_points: 当前帧落在未达阈值体素内的原始点 (供聚类)。
+    def update(
+        self, points_world: np.ndarray, stamp_s: float,
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """输入世界系 (M,3) 点云和时间戳 (秒), 返回三层点云。
+
+        - static_points:    持续占据 >= static_confirm_s 的体素中心 (供 ESDF)。
+        - unconfirmed_points: 当前帧占据但未达静态阈值的体素中心 (供聚类)。
+        - instant_points:   当前帧全部有效点 (原始点)。
         """
         points = np.asarray(points_world, dtype=np.float64).reshape(-1, 3)
         finite = points[np.all(np.isfinite(points), axis=1)]
         spec = self.spec
+        stamp = float(stamp_s)
 
-        # 体素占用: 出现则 +presence_gain (封顶 keep_frames), 未出现才 -absence_decay。
-        # 泄漏计数器抗深度噪声: 表面体素偶尔缺席一帧不会立刻掉回动态。
-        present = np.zeros(spec.shape, dtype=bool)
+        # --- 当前帧占据掩码 ---
+        occupied = np.zeros(spec.shape, dtype=bool)
         valid = np.zeros(len(finite), dtype=bool)
+        idx = None
         if len(finite):
             indices = np.floor(
                 (finite - spec.workspace_min) / spec.voxel_size).astype(np.int64)
@@ -58,18 +75,34 @@ class StaticOccupancyTracker:
             if np.any(valid):
                 idx = indices[valid]
                 unique_idx = np.unique(idx, axis=0)
-                present[unique_idx[:, 0], unique_idx[:, 1], unique_idx[:, 2]] = True
+                occupied[unique_idx[:, 0], unique_idx[:, 1], unique_idx[:, 2]] = True
 
-        self._counts[present] = np.minimum(
-            self._counts[present].astype(np.int32) + self.presence_gain,
-            self.keep_frames).astype(np.int16)
-        self._counts[~present] = np.maximum(
-            self._counts[~present].astype(np.int32) - self.absence_decay,
-            0).astype(np.int16)
+        # --- 连续性检测 ---
+        # newly_occupied: 本帧新出现、上帧未占据的体素 → 重置 first_seen。
+        newly_occupied = occupied & ~self._prev_occupied
+        # 占据中断: 上帧占据、本帧未占据 → first_seen 重置为 inf。
+        gap = ~occupied & self._prev_occupied
 
-        static_mask = self._counts >= self.keep_frames
+        # 更新 first_seen: 新占据的体素记录当前时间; 中断的重置为 inf。
+        self._first_seen[newly_occupied] = stamp
+        self._first_seen[gap] = np.inf
 
-        # 静态点: 静态体素的中心 (网格稳定, 便于 ESDF 复用)。
+        # 更新 last_seen: 当前帧占据的体素更新; 超时的重置为 -inf。
+        self._last_seen[occupied] = stamp
+        timed_out = (~occupied) & ((stamp - self._last_seen) > self.occupancy_timeout_s)
+        self._first_seen[timed_out] = np.inf
+        self._last_seen[timed_out] = -np.inf
+
+        # 更新 prev_occupied。
+        self._prev_occupied = occupied
+
+        # --- 三层分类 ---
+        # static: 持续占据 >= static_confirm_s 的体素。
+        static_mask = occupied & ((stamp - self._first_seen) >= self.static_confirm_s)
+        # unconfirmed: 当前占据但未达静态阈值。
+        unconfirmed_mask = occupied & ~static_mask
+
+        # static_points: 静态体素的中心 (网格稳定, 便于 ESDF 复用)。
         static_idx = np.argwhere(static_mask)
         if len(static_idx):
             static_points = (
@@ -78,12 +111,20 @@ class StaticOccupancyTracker:
         else:
             static_points = np.empty((0, 3), dtype=np.float32)
 
-        # 动态点: 当前帧落在 "出现但未达静态阈值" 体素内的原始点。
-        dynamic = np.zeros(len(finite), dtype=bool)
-        if np.any(valid):
-            present_this = present[idx[:, 0], idx[:, 1], idx[:, 2]]
-            static_this = static_mask[idx[:, 0], idx[:, 1], idx[:, 2]]
-            dynamic[valid] = present_this & ~static_this
-        dynamic_points = finite[dynamic].astype(np.float32, copy=False)
+        # unconfirmed_points: 未确认体素的中心。
+        unconfirmed_idx = np.argwhere(unconfirmed_mask)
+        if len(unconfirmed_idx):
+            unconfirmed_points = (
+                spec.workspace_min + (unconfirmed_idx.astype(np.float64) + 0.5)
+                * spec.voxel_size).astype(np.float32)
+        else:
+            unconfirmed_points = np.empty((0, 3), dtype=np.float32)
 
-        return static_points, dynamic_points
+        # instant_points: 当前帧全部有效原始点。
+        instant_points = finite.astype(np.float32, copy=False)
+
+        return static_points, unconfirmed_points, instant_points
+
+
+# 向后兼容别名: 旧接口继续工作 (但不接受 stamp_s)。
+StaticOccupancyTracker = OccupancyTracker
