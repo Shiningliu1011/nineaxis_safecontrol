@@ -113,7 +113,7 @@ class PerceptionBridge(Node):
         self._collision_rate = float(self.get_parameter(
             "publish_collision_rate_hz").value)
 
-        self._static_tracker = OccupancyTracker(
+        self._occupancy_tracker = OccupancyTracker(
             self._spec,
             occupancy_timeout_s=float(self.get_parameter(
                 "occupancy_timeout_s").value),
@@ -300,7 +300,7 @@ class PerceptionBridge(Node):
 
         # 三层占据分离。
         stamp_s = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
-        static_pts, unconfirmed_pts, instant_pts = self._static_tracker.update(
+        static_pts, unconfirmed_pts, instant_pts = self._occupancy_tracker.update(
             world, stamp_s)
 
         # ESDF (静态环境)。
