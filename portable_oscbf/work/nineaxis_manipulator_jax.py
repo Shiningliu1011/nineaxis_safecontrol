@@ -159,8 +159,7 @@ class NineaxisManipulatorJAX:
                 self._M_links[child] = jnp.eye(4)
 
         # Environment and point-cloud safety use a mesh-conservative outer
-        # envelope. The legacy 17-sphere model remains dedicated to the
-        # separately calibrated self-collision pair topology below.
+        # envelope. Self-collision uses OBB-OBB distances (dpax_collision).
         self.num_environment_collision_spheres = NUM_ENVIRONMENT_COLLISION_SPHERES
         self._environment_sphere_link_indices = jnp.asarray(
             ENVIRONMENT_SPHERE_LINK_INDICES)
@@ -174,7 +173,6 @@ class NineaxisManipulatorJAX:
         self._ee_rotation_jit = jax.jit(ee_rotation_fn, static_argnums=())
         self._ee_transform_jit = jax.jit(ee_transform_fn, static_argnums=())
         self._full_jacobian_jit = jax.jit(full_jacobian_fn, static_argnums=())
-        self._link_collision_data_jit = jax.jit(self.link_collision_data)
 
     def ee_position(self, q: jnp.ndarray) -> jnp.ndarray:
         """末端位置 FK"""
@@ -192,49 +190,6 @@ class NineaxisManipulatorJAX:
         """6-DOF 雅可比 [J_pos; J_rot]"""
         return self._full_jacobian_jit(q, self.S_axes, self.M_zero)
 
-    def self_collision_data(self, q: jnp.ndarray) -> jnp.ndarray:
-        """Return the legacy 17-sphere data used by self-collision CBF pairs.
-
-        This topology remains frozen while its replacement is calibrated
-        against mesh self-clearance. It must not be used for environment or
-        point-cloud clearance; use ``environment_collision_data`` there.
-        """
-        # 计算所有连杆的 FK 变换
-        transforms = self._compute_all_link_transforms(q)
-
-        # 关节球体 (与 fcl_collision.py JOINT_RADII 一致)
-        joint_radii = jnp.array([0.080, 0.075, 0.075, 0.070, 0.065, 0.060, 0.055, 0.040])
-        # Link2~ee_link 的位置 (indices 2~9 in transforms)
-        joint_positions = transforms[2:10, :3, 3]  # (8, 3)
-        joint_spheres = jnp.hstack([joint_positions, joint_radii[:, None]])  # (8, 4)
-
-        # 连杆中点球体 (覆盖连杆轴, 与 CAPSULE_DEFS 对应)
-        # Link2-Link3 中点
-        mid_23 = 0.5 * (transforms[2, :3, 3] + transforms[3, :3, 3])
-        # Link3-Link4 中点
-        mid_34 = 0.5 * (transforms[3, :3, 3] + transforms[4, :3, 3])
-        # Link4-Link5 中点
-        mid_45 = 0.5 * (transforms[4, :3, 3] + transforms[5, :3, 3])
-        # Link5-Link7 中点
-        mid_57 = 0.5 * (transforms[5, :3, 3] + transforms[6, :3, 3])
-        # Link7-Link8 中点
-        mid_78 = 0.5 * (transforms[6, :3, 3] + transforms[7, :3, 3])
-        # Link8-Link9 中点
-        mid_89 = 0.5 * (transforms[7, :3, 3] + transforms[8, :3, 3])
-        # Link9-ee 中点
-        mid_9e = 0.5 * (transforms[8, :3, 3] + transforms[9, :3, 3])
-
-        mid_radii = jnp.array([0.065, 0.055, 0.065, 0.065, 0.040, 0.060, 0.025])
-        mid_positions = jnp.stack([mid_23, mid_34, mid_45, mid_57, mid_78, mid_89, mid_9e])
-        mid_spheres = jnp.hstack([mid_positions, mid_radii[:, None]])  # (7, 4)
-
-        # base_link 和 Link1 用简化球体 (替代 Box)
-        base_center = transforms[0, :3, 3] + transforms[0, :3, :3] @ jnp.array([0.0, 0.006, 0.113])
-        link1_center = transforms[1, :3, 3] + transforms[1, :3, :3] @ jnp.array([0.0, 0.189, -0.061])
-        base_sphere = jnp.array([[base_center[0], base_center[1], base_center[2], 0.135]])
-        link1_sphere = jnp.array([[link1_center[0], link1_center[1], link1_center[2], 0.100]])
-
-        return jnp.vstack([base_sphere, link1_sphere, joint_spheres, mid_spheres])  # (17, 4)
 
     def environment_collision_data(self, q: jnp.ndarray) -> jnp.ndarray:
         """Return the fixed 32-sphere mesh outer envelope for environment CBFs.
@@ -252,10 +207,6 @@ class NineaxisManipulatorJAX:
             + selected[:, :3, 3])
         return jnp.concatenate([
             centers, self._environment_sphere_radii[:, None]], axis=1)
-
-    def link_collision_data(self, q: jnp.ndarray) -> jnp.ndarray:
-        """Backward-compatible alias for the legacy self-collision topology."""
-        return self.self_collision_data(q)
 
     def _compute_all_link_transforms(self, q: jnp.ndarray) -> jnp.ndarray:
         """计算所有连杆的世界系变换 (JAX)"""

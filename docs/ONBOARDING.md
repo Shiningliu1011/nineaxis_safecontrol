@@ -1,13 +1,14 @@
 # robot_safecontrol — Onboarding Guide
-**Generated:** 2026-08-22  **Stack:** ROS 2 Humble / MoveIt 2 / MuJoCo / JAX / C++ OMPL
+**Generated:** 2026-09-03  **Stack:** ROS 2 Humble / MoveIt 2 / MuJoCo / JAX / C++ OMPL
 
 ## Overview
 
 9-DOF 冗余机械臂（1 棱柱关节 J1 + 8 旋转关节 J2-J9）的安全控制项目：在 MuJoCo
-物理仿真中，机械臂从任意随机工作位姿出发，自动规划无碰撞过渡（AEB-RRT*）到
-蝴蝶形参考轨迹起点，随后 OSCBF 安全控制器接管，在保证碰撞/关节限位安全的前提下
-完成末端轨迹跟踪（基于 Morton & Pavone, *Safe, Task-Consistent Manipulation with
-OSCBF*, IROS 2025）。全流程无需键盘，一键运行。
+物理仿真或真机上，机械臂从任意随机工作位姿出发，自动规划无碰撞过渡（AEB-RRT*）
+到蝴蝶形参考轨迹起点，随后 OSCBF 安全控制器接管，在保证碰撞/关节限位安全的前提
+下完成末端轨迹跟踪（基于 Morton & Pavone, *Safe, Task-Consistent Manipulation
+with OSCBF*, IROS 2025）。全流程无需键盘，一键运行。支持仿真、shadow（影子记录）
+和 live（真机 CAN 发送）三种硬件模式。
 
 ## Tech Stack
 
@@ -17,9 +18,10 @@ OSCBF*, IROS 2025）。全流程无需键盘，一键运行。
 | Python 包 | robot_safecontrol_moveit (ament_python), setup.py | 0.1.0 |
 | 运动规划 | MoveIt 2 + pymoveit2 + OMPL 插件 | — |
 | 物理仿真 | MuJoCo | — |
-| 控制内核 | JAX (JIT), qpax 弹性 QP, cbfpy 框架 | — |
+| 控制内核 | JAX 0.6.2 (JIT), qpax 弹性 QP | — |
 | 碰撞 | FCL, OBB 包络, DCOL, 17-球模型 | — |
 | C++ 插件 | aeb_rrtstar_ompl (ament_cmake) | 0.1.0 |
+| 真机通信 | python-can / SocketCAN, DrEmpower 协议 | — |
 | 数值 | numpy, scipy, yaml | — |
 
 ## Architecture
@@ -34,8 +36,16 @@ OSCBF*, IROS 2025）。全流程无需键盘，一键运行。
 积分后把状态发回 `/mujoco_joint_states`。控制器独立于 MoveIt，不依赖 move_group。
 
 **自主过渡流程**：`transition_planning_server` 监听开始信号后，调用 move_group
-的 AEB-RRT* 规划器从随机位姿规划无碰撞过渡到轨迹起点，回放到
-`/transition_replay_viz`；回放结束 → OSCBF 控制器接管（`oscbf_wait_for_start`）。
+的 AEB-RRT* 规划器从随机位姿规划无碰撞过渡到轨迹起点，经 Ruckig 平滑后回放；
+回放结束 → OSCBF 控制器接管（`oscbf_wait_for_start`）。
+
+**真机部署链路**：`hardware_bridge` 节点订阅 `/oscbf_command`，经安全网关校验后
+换算为 DrEmpower CAN 帧发送给电机，反馈帧解码后发布到 `/mujoco_joint_states`。
+支持 shadow（仅记录）和 live（实际发送）两种模式。
+
+**感知管线**：`perception_bridge` 接收点云 → `obstacle_extractor` 聚类拟合球/
+圆柱几何 → 发布到 `/perception/tracks` → `oscbf_controller` 经 `obs_*` 接口注入
+控制内核做动态避障。
 
 **坐标系**：URDF 为 Y-up，MuJoCo 为 Z-up，程序通过 `display_frame` body 的
 euler 旋转自动转换。圆柱轴心拟合口径在轨迹生成端、过渡端、控制器端必须一致
@@ -45,18 +55,22 @@ euler 旋转自动转换。圆柱轴心拟合口径在轨迹生成端、过渡�
 
 | Path | Purpose |
 |------|---------|
-| `src/robot_safecontrol_moveit/` | 主 ROS2 Python 包（节点 + 纯逻辑模块：transition_executor、cylinder_geometry、robot_spec、ros_conventions） |
+| `src/robot_safecontrol_moveit/` | 主 ROS2 Python 包（节点 + 纯逻辑模块） |
 | `src/aeb_rrtstar/` | 独立 Python AEB-RRT* 规划器 + 基准测试（不依赖 ROS） |
 | `src/aeb_rrtstar_ompl/` | 嵌套 C++ MoveIt2 OMPL 插件包 |
 | `portable_oscbf/` | 可移植 JAX OSCBF 控制核心（work/ 为 Python 包，随包分发） |
+| `portable_oscbf/work/` | 控制内核 Python 包（零 ROS 依赖，统一 `from work.X` import） |
 | `portable_oscbf/vendor/dpax/` | 内嵌的 DCOL 可微碰撞库 |
+| `portable_oscbf/tests/` | 控制核心独立测试（36+ 个单测文件） |
+| `portable_oscbf/scripts/` | 内核调试/标定脚本 |
 | `models/ninezzhou/` | 9 轴机械臂 URDF + STL 网格 |
 | `models/ninezzhou_moveit_config/` | MoveIt2 配置（SRDF、控制器、运动学） |
-| `config/` | 节点 YAML 参数（oscbf_controller.yaml 等） |
+| `config/` | 节点 YAML 参数（oscbf_controller.yaml、drempower.yaml 等） |
 | `launch/` | launch 文件（mujoco_transition_final.launch.py 为完整闭环） |
 | `data/nurbs/` | NURBS 轨迹数据（ik_input.mat 逆运动学输入） |
-| `tests/` | 主包 pytest 测试（含 launch 集成测试） |
-| `docs/` | 文档（本指南、planning/aeb_rrtstar 基准报告） |
+| `tests/` | 主包 pytest 测试（24 个文件，含 launch 集成测试） |
+| `scripts/` | 辅助脚本（零位标定、vcan 测试、清场启动） |
+| `docs/` | 文档（本指南、ADR、specs、runbook） |
 | `output/` | 生成文件（已 gitignore） |
 | `build/ install/ log/` | colcon 产物（已 gitignore） |
 
@@ -72,8 +86,9 @@ euler 旋转自动转换。圆柱轴心拟合口径在轨迹生成端、过渡�
    限幅，持续发布状态回 `/mujoco_joint_states`（即使命令丢失也不会卡死，
    模拟真实编码器行为）。
 4. `transition_planning_server.py` 在开始前用 move_group(AEB-RRT* 插件 +
-   FCL 碰撞检查) 规划任意位姿→轨迹起点的无碰撞过渡路径。
-5. 轨迹变换统一：查看器、过渡服务器、控制器共用 `oscbf_trajectory.py`，
+   FCL 碰撞检查) 规划任意位姿→轨迹起点的无碰撞过渡路径，经 Ruckig 平滑后回放。
+5. `tracking_evaluator.py` 订阅状态与命令，实时计算跟踪误差、完成度等指标。
+6. 轨迹变换统一：查看器、过渡服务器、控制器共用 `oscbf_trajectory.py`，
    保证 tool0 与显示的蝴蝶曲线重合。
 
 ## Conventions Detected
@@ -82,14 +97,17 @@ euler 旋转自动转换。圆柱轴心拟合口径在轨迹生成端、过渡�
   类用 PascalCase（`JaxControlLoop`、`SCurveDriverSimulator`）；测试 `test_*.py`。
 - **节点风格**：每个节点一个模块，`main()` 入口注册为 console_scripts；
   模块级 docstring 说明职责与话题约定。
+- **共享约定**：话题名/QoS/关节名等统一在 `ros_conventions.py` 与 `robot_spec.py`，
+  节点间禁止互相 import 私有符号。
+- **控制内核隔离**：`portable_oscbf/work/` 零 ROS 依赖、零裸名同级 import
+  （统一 `from work.X`），节点经 `oscbf_trajectory.bootstrap_portable` 引导。
 - **错误处理**：launch 文件对必需配置文件做启动时 `FileNotFoundError` 校验；
-  内核侧有 QP 健康检查（`qp_solver_health.py`、`safety_snapshot.py`）。
+  内核侧有 QP 健康检查（`qp_solver_health.py`、`safety_snapshot.py`）；
+  真机侧有安全网关（超时/故障/限幅违例 → 零速保持 + 锁存停车原因）。
 - **测试**：pytest（`testpaths = tests`），主包含 launch 集成测试
-  （launch_testing）；`portable_oscbf/tests` 有独立 conftest 与 36 个单测文件
-  （FK 与 URDF 一致性、QP 健康、JIT 等价性、动态障碍契约、感知管线等）；C++ 包有
-  自测可执行文件（test_aeb_full.cpp 等）。全量入口：`bash run_all_tests.sh`。
-- **Git**：单 main 分支；提交信息中英混合、多为 feat:/fix: 前缀或中文摘要；
-  近期提交围绕 OSCBF 闭环与自主过渡。
+  （launch_testing）；`portable_oscbf/tests` 有独立 conftest 与 36+ 个单测文件；
+  C++ 包有自测可执行文件（test_aeb_full.cpp 等）。全量入口：`bash run_all_tests.sh`。
+- **Git**：单 main 分支；提交信息中英混合、多为 feat:/fix:/perf: 前缀或中文摘要。
 
 ## Common Tasks
 
@@ -101,11 +119,19 @@ source install/setup.bash
 # 全自动演示：随机起始位姿 → 无碰撞过渡 → OSCBF 跟踪蝴蝶轨迹（无需键盘）
 bash run_demo.sh
 
+# 真机模式
+ros2 launch robot_safecontrol_moveit mujoco_transition_final.launch.py \
+    hardware_mode:=shadow start_oscbf_plant:=false   # shadow 模式
+ros2 launch robot_safecontrol_moveit mujoco_transition_final.launch.py \
+    hardware_mode:=live start_oscbf_plant:=false      # live 模式
+
 # 测试
-pytest                                   # 主包测试
-pytest portable_oscbf/tests              # 控制核心测试
-colcon test --packages-select aeb_rrtstar_ompl 2>/dev/null || \
-  (cd src/aeb_rrtstar_ompl && colcon build --base-paths . && colcon test --base-paths .)
+pytest                                   # 主包测试（24 个文件）
+pytest portable_oscbf/tests              # 控制核心测试（36+ 个文件）
+bash run_all_tests.sh                    # 全量入口
+
+# 零位标定
+python3 scripts/calibrate_zero.py --interface can0
 
 # 独立脚本（无 ROS）
 python3 src/aeb_rrtstar/single_run.py    # 查看 aeb_rrtstar 用法
@@ -116,12 +142,18 @@ launch——运行中的 move_group 不会自动加载新编译的 `.so` 插件�
 
 ## Key Entry Points
 
-- `src/robot_safecontrol_moveit/oscbf_controller.py` — OSCBF 安全控制节点（M10）
+- `src/robot_safecontrol_moveit/oscbf_controller.py` — OSCBF 安全控制节点
 - `src/robot_safecontrol_moveit/oscbf_plant.py` — jerk 限幅执行器仿真节点
 - `src/robot_safecontrol_moveit/transition_planning_server.py` — 过渡规划服务器（薄 ROS 壳）
 - `src/robot_safecontrol_moveit/transition_executor.py` — 过渡管线相位机（纯逻辑，无 ROS）
 - `src/robot_safecontrol_moveit/mujoco_viewer_with_cylinder.py` — MuJoCo 查看器/仿真
 - `src/robot_safecontrol_moveit/oscbf_trajectory.py` — 统一轨迹变换（三端共享）
+- `src/robot_safecontrol_moveit/hardware_bridge.py` — 真机执行端（CAN 通信 + 安全网关）
+- `src/robot_safecontrol_moveit/perception_bridge.py` — 感知桥接节点
+- `src/robot_safecontrol_moveit/obstacle_extractor.py` — 点云→几何障碍物提取
+- `src/robot_safecontrol_moveit/tracking_evaluator.py` — 跟踪评价指标
+- `src/robot_safecontrol_moveit/drempower_can.py` — DrEmpower CAN 协议编解码
+- `src/robot_safecontrol_moveit/socketcan_backend.py` — SocketCAN 后端
 - `portable_oscbf/work/jax_control_facade.py` — JAX 控制内核主机端入口
 - `src/aeb_rrtstar_ompl/src/AEBRRTstar.cpp` — C++ AEB-RRT* 插件实现
 - `launch/mujoco_transition_final.launch.py` — 完整闭环 launch
@@ -129,10 +161,15 @@ launch——运行中的 move_group 不会自动加载新编译的 `.so` 插件�
 
 ## Key Documents
 
-- `README.md` — 项目概览、运行方式、关节配置表
+- `README.md` — 项目概览、运行方式、关节配置表、真机模式
+- `CONTEXT.md` — 领域词汇表（系统结构、轨迹几何、真机部署术语）
+- `LESSONS_LEARNED.md` — 踩坑经验（现象→根因→修复→教训）
 - `OSCBF_PORTING_GUIDE.md` — OSCBF 从零移植指南（架构 + 步骤 + 验收门）
 - `OSCBF_EXECUTION_PLAN.md` — 执行计划（M6-M12 里程碑）
-- `LESSONS_LEARNED.md` — 踩坑经验（现象→根因→修复→教训）
+- `docs/real_robot_runbook.md` — 真机操作手册
+- `docs/real_robot_execution_plan.md` — 真机落地执行计划
+- `docs/specs/real_robot_landing_spec.md` — 真机落地规格
+- `docs/adr/0001-server-authoritative-transition-pipeline.md` — ADR：过渡管线架构决策
 - `docs/planning/aeb_rrtstar/benchmark_report.md` — AEB-RRT* 基准报告
 
 ## Skills to Load

@@ -1,15 +1,12 @@
 # robot_safecontrol
 
-9-DOF 冗余机械臂（J1 棱柱 + J2-J9 旋转）安全控制：MuJoCo 仿真 + ROS 2 Humble /
-MoveIt 2。随机位姿 → AEB-RRT* 无碰撞过渡 → OSCBF 安全跟踪蝴蝶轨迹，一键闭环
-（`bash run_demo.sh`）。
-
 ## Tech Stack
 
 - ROS 2 Humble（ament_python 主包 + 嵌套 ament_cmake OMPL 插件）
-- Python 3：rclpy、numpy、scipy、mujoco、jax、qpax、pymoveit2
+- Python 3：rclpy、numpy、scipy、mujoco、jax 0.6.2、qpax、pymoveit2
 - C++：OMPL / MoveIt2 插件 `aeb_rrtstar_ompl`
 - 控制内核：纯 JAX OSCBF（Morton & Pavone IROS 2025），位于 `portable_oscbf/work`
+- 真机通信：python-can / SocketCAN，DrEmpower 协议
 
 ## Build & Run
 
@@ -29,8 +26,12 @@ pytest portable_oscbf/tests  # 控制核心测试
 - 每个 ROS 节点一个模块，小写下划线命名，`main()` 注册为 console_scripts
   （见 setup.py `entry_points`）
 - 模块级 docstring 写明职责与话题约定（如 oscbf_controller.py 的 M10 注释）
+- 话题名/QoS/关节名等共享约定统一在 `ros_conventions.py` 与 `robot_spec.py`，
+  节点间禁止互相 import 私有符号
+- 控制内核（portable_oscbf/work）零 ROS 依赖、零裸名同级 import（统一 `from work.X`），
+  节点经 `oscbf_trajectory.bootstrap_portable` 引导
 - 测试 `test_*.py`；launch 集成测试用 launch_testing；对必需配置文件做启动校验
-- 提交信息中英混合，多为 feat:/fix: 前缀
+- 提交信息中英混合，多为 feat:/fix:/perf: 前缀
 
 ## Key Entry Points
 
@@ -40,6 +41,9 @@ pytest portable_oscbf/tests  # 控制核心测试
 - `src/robot_safecontrol_moveit/transition_executor.py` — 过渡管线相位机（纯逻辑、无 ROS，经 ports 注入副作用）
 - `src/robot_safecontrol_moveit/mujoco_viewer_with_cylinder.py` — MuJoCo 仿真/查看器
 - `src/robot_safecontrol_moveit/oscbf_trajectory.py` — 三端共享的轨迹变换
+- `src/robot_safecontrol_moveit/hardware_bridge.py` — 真机执行端（CAN + 安全网关）
+- `src/robot_safecontrol_moveit/perception_bridge.py` — 感知桥接节点
+- `src/robot_safecontrol_moveit/tracking_evaluator.py` — 跟踪评价指标
 - `portable_oscbf/work/jax_control_facade.py` — JAX 控制内核主机端入口
 - `src/aeb_rrtstar_ompl/src/AEBRRTstar.cpp` — C++ AEB-RRT* MoveIt 插件
 - `launch/mujoco_transition_final.launch.py` — 完整闭环 launch
@@ -49,18 +53,18 @@ pytest portable_oscbf/tests  # 控制核心测试
 `/mujoco_joint_states`（植物状态）→ oscbf_controller → `/oscbf_command` →
 oscbf_plant（S 曲线 jerk 限幅）→ 状态发回。控制器独立于 MoveIt。
 
-- 话题名/QoS/关节名等共享约定统一在 `src/robot_safecontrol_moveit/ros_conventions.py` 与 `robot_spec.py`，节点间禁止互相 import 私有符号
 - 坐标系：URDF Y-up ↔ MuJoCo Z-up，经 `display_frame` euler 旋转转换
 - 圆柱轴心拟合口径三端（轨迹/过渡/控制器）必须一致，默认最小二乘圆拟合
 - 旋转误差用精确旋转向量 `-log(R_des·R_eeᵀ)`，不用一阶叉积（180° 盲区）
-- 内核（portable_oscbf/work）零 ROS 依赖、零裸名同级 import（统一 `from work.X`），节点经 `oscbf_trajectory.bootstrap_portable` 引导
+- 真机三种模式：sim（MuJoCo 仿真）、shadow（记录不发送）、live（CAN 发送）
 
 ## Key Documents
 
-- `README.md` — 概览、运行方式、关节配置
+- `README.md` — 概览、运行方式、关节配置、真机模式
+- `CONTEXT.md` — 领域词汇表
 - `LESSONS_LEARNED.md` — 已踩坑教训（改参数/接口前先读）
 - `OSCBF_PORTING_GUIDE.md` — OSCBF 移植架构与验收门
-- `OSCBF_EXECUTION_PLAN.md` — M6-M12 执行计划
+- `docs/real_robot_runbook.md` — 真机操作手册
 - `docs/ONBOARDING.md` — 完整入门指南
 
 ## Notes

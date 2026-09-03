@@ -15,8 +15,7 @@ import jax.numpy as jnp
 import numpy as np
 from cbfpy import CBFConfig, CBF
 from work.nineaxis_manipulator_jax import NineaxisManipulatorJAX
-from work.oscbf_collision_config import (
-    SELF_COLLISION_PAIRS, compute_self_collision_h, compute_obstacle_h)
+from work.dpax_collision import self_collision_distances
 from work.safety_snapshot import sample_distance_field_jax
 from work.joint_limit_contract import JOINT_LIMIT_CBF_MARGIN
 
@@ -87,13 +86,14 @@ class NineaxisOSCBFVelocityConfig(CBFConfig):
         self.singularity_tol = 0.005
         self.singularity_activation = 0.05
 
-        # 自碰撞对 (共享模块, 力矩/速度同一真相源)
-        self.self_collision_pairs = SELF_COLLISION_PAIRS
+        # 自碰撞对 (OBB link-index topology, 14 non-adjacent pairs)
+        from work.obb_collision_model import OBB_COLLISION_PAIRS
+        self.self_collision_pairs = OBB_COLLISION_PAIRS
 
         # QP 中障碍物行的固定位置。JAX 闭环使用它定点修正动态项，
         # 不依赖运行时约束数量，也不会触发重新编译。
         # Dynamic obstacles and ESDF use the mesh-conservative outer envelope.
-        # Self-collision retains its separately calibrated 17-sphere topology.
+        # Self-collision uses OBB-OBB distances (dpax_collision).
         self.num_robot_collision_spheres = int(robot.num_environment_collision_spheres)
         # M7: obstacle rows use one DCOL OBB per link (10 links) instead of the
         # 32-sphere environment envelope; ESDF keeps the 32-sphere rows.
@@ -250,7 +250,7 @@ class NineaxisOSCBFVelocityConfig(CBFConfig):
 
         约束来源:
         1. 关节限位 (18 个)
-        2. 自碰撞避免 (全身碰撞球对)
+        2. 自碰撞避免 (OBB-OBB, 14 non-adjacent pairs)
         3. 障碍物碰撞避免 (全身碰撞球 vs 障碍物球, masked)
         4. 奇异性避免 (1 个)
         """
@@ -261,10 +261,8 @@ class NineaxisOSCBFVelocityConfig(CBFConfig):
         h_joint_lower = q - self.joint_limit_lower - self.joint_limit_cbf_margin
         h_joint = jnp.concatenate([h_joint_upper, h_joint_lower])
 
-        # 2. 自碰撞避免 (frozen legacy pair topology)
-        self_collision_data = self.robot.self_collision_data(q)
-        h_self_collision = self._compute_self_collision_constraints(
-            self_collision_data[:, :3], self_collision_data[:, 3])
+        # 2. 自碰撞避免 (OBB-OBB distance, 14 non-adjacent pairs)
+        h_self_collision = self_collision_distances(q) - self.d_safe_collision
 
         # 3/4. Environment safety uses the mesh-conservative outer envelope
         # (ESDF rows); obstacle primitives use the DCOL OBB-vs-sphere kernel.
@@ -292,14 +290,6 @@ class NineaxisOSCBFVelocityConfig(CBFConfig):
 
         return jnp.concatenate([
             h_joint, h_self_collision, h_obstacles, h_esdf, h_singularity])
-
-    def _compute_self_collision_constraints(self, robot_positions, robot_radii):
-        """自碰撞约束 (委托共享模块 compute_self_collision_h)"""
-        if len(self.self_collision_pairs) == 0:
-            return jnp.array([])
-        return compute_self_collision_h(
-            robot_positions, robot_radii,
-            self.self_collision_pairs, self.d_safe_collision)
 
     def _compute_dcol_obstacle_constraints(self, q, obs_pos, obs_radii,
                                            obs_enabled, obs_d_safe=None,
