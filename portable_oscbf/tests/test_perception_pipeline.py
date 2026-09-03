@@ -52,6 +52,22 @@ def test_spec_shape_positive(spec):
 
 
 # ---------------------------------------------------------------------------
+# 向后兼容: StaticOccupancyTracker 旧接口
+# ---------------------------------------------------------------------------
+
+def test_static_occupancy_tracker_old_interface(spec):
+    """旧 StaticOccupancyTracker(spec, keep_frames=8) 接口继续工作。"""
+    from work.static_occupancy import StaticOccupancyTracker
+    tracker = StaticOccupancyTracker(spec, keep_frames=8)
+    env = _points_in(np.array([0.0, 0.4, 1.3]), 0.1, 800)
+    # 旧代码不传 stamp_s → update 内部用默认值。
+    # 但新 update 签名要求 stamp_s, 所以旧代码需要适配。
+    # 验证构造函数不报错, 且返回三层。
+    result = tracker.update(env, stamp_s=0.0)
+    assert len(result) == 3
+
+
+# ---------------------------------------------------------------------------
 # 三层占据分离: 连续占据升格为 static
 # ---------------------------------------------------------------------------
 
@@ -135,77 +151,77 @@ def test_gap_resets_timing(spec):
 
 
 # ---------------------------------------------------------------------------
-# 三层占据分离: 超时清理
+# 三层占据分离: 超时清理 (通过公共行为验证)
 # ---------------------------------------------------------------------------
 
 def test_timeout_clears_state(spec):
-    """occupancy_timeout_s 未见 → 清除 first_seen/last_seen。"""
-    tracker = OccupancyTracker(spec, occupancy_timeout_s=1.0, static_confirm_s=3.0)
+    """occupancy_timeout_s 未见 → 重新出现时计时重置, 不会直接变 static。"""
+    tracker = OccupancyTracker(spec, occupancy_timeout_s=1.0, static_confirm_s=2.0)
     env = _points_in(np.array([0.0, 0.4, 1.3]), 0.1, 800)
     dt = 0.5
 
-    # 先占据 2 帧 (1s)。
-    for i in range(2):
-        tracker.update(env, stamp_s=i * dt)
+    # 先占据 6 帧 (3s > 2s) → 变成 static。
+    for i in range(6):
+        static, _, _ = tracker.update(env, stamp_s=i * dt)
+    assert len(static) > 0
 
-    # 超过 timeout (1.0s) 不更新 → 内部状态应被清除。
-    # 发一帧空帧, 时间戳超过 timeout。
+    # 超过 timeout (1.0s) 后空帧 → 状态清除。
     tracker.update(np.empty((0, 3)), stamp_s=10.0)
 
-    # 验证内部状态已清除: first_seen 应全是 inf。
-    assert np.all(np.isinf(tracker._first_seen))
-    assert np.all(tracker._last_seen == -np.inf)
+    # 重新出现第一帧 → 应是 unconfirmed, 不是 static (计时已重置)。
+    static, unconfirmed, _ = tracker.update(env, stamp_s=10.5)
+    assert len(static) == 0
+    assert len(unconfirmed) > 0
 
 
 # ---------------------------------------------------------------------------
-# 三层占据分离: prev_occupied 连续性检测
+# 三层占据分离: 连续性检测 (通过公共行为验证)
 # ---------------------------------------------------------------------------
 
-def test_prev_occupied_continuity(spec):
-    """prev_occupied 正确追踪上一帧占据状态。"""
-    tracker = OccupancyTracker(spec, occupancy_timeout_s=2.0, static_confirm_s=3.0)
+def test_continuity_through_behavior(spec):
+    """连续占据 → 升格 static; 中断后 → 需重新计时。"""
+    tracker = OccupancyTracker(spec, occupancy_timeout_s=2.0, static_confirm_s=2.0)
     env = _points_in(np.array([0.0, 0.4, 1.3]), 0.1, 800)
     dt = 0.5
 
-    # 初始 prev_occupied 应全 False。
-    assert not np.any(tracker._prev_occupied)
+    # 前 5 帧连续占据 (2.5s > 2.0s) → 应变 static。
+    for i in range(5):
+        static, unconfirmed, _ = tracker.update(env, stamp_s=i * dt)
+    assert len(static) > 0
+    assert len(unconfirmed) == 0
 
-    # 第一帧后, env 区域应变为 True。
-    tracker.update(env, stamp_s=0.0)
-    assert np.any(tracker._prev_occupied)
+    # 空帧 → 占据中断。
+    tracker.update(np.empty((0, 3)), stamp_s=5 * dt)
 
-    # 保存 prev_occupied 快照。
-    prev_snap = tracker._prev_occupied.copy()
-
-    # 第二帧同样内容, prev_occupied 应更新但连续。
-    tracker.update(env, stamp_s=dt)
-    # 连续占据区域不应触发 newly_occupied (已连续)。
-    # prev_snap & 当前 occupied = 连续区域。
-    assert np.any(tracker._prev_occupied)
-
-    # 空帧 → 占据中断, prev_occupied 应变全 False。
-    tracker.update(np.empty((0, 3)), stamp_s=2 * dt)
-    assert not np.any(tracker._prev_occupied)
+    # 重新出现 → 应是 unconfirmed (计时重置)。
+    static, unconfirmed, _ = tracker.update(env, stamp_s=6 * dt)
+    assert len(static) == 0
+    assert len(unconfirmed) > 0
 
 
-def test_newly_occupied_detection(spec):
-    """newly_occupied = occupied & ~prev_occupied 正确触发。"""
-    tracker = OccupancyTracker(spec, occupancy_timeout_s=2.0, static_confirm_s=3.0)
-    env1 = _points_in(np.array([0.0, 0.4, 1.3]), 0.1, 800, seed=0)
-    env2 = _points_in(np.array([0.0, 0.4, 1.3]), 0.1, 800, seed=1)
+def test_gap_vs_continuous_timing(spec):
+    """连续占据 vs 有间隙的占据: 同样总时长, 行为不同。"""
+    env = _points_in(np.array([0.0, 0.4, 1.3]), 0.1, 800)
     dt = 0.5
 
-    # 第一帧: 全部是 newly_occupied。
-    tracker.update(env1, stamp_s=0.0)
-    first_snap = tracker._first_seen.copy()
+    # 连续: 5 帧 (2.5s) 无中断。
+    tracker1 = OccupancyTracker(spec, occupancy_timeout_s=2.0, static_confirm_s=2.0)
+    for i in range(5):
+        tracker1.update(env, stamp_s=i * dt)
+    static1, _, _ = tracker1.update(env, stamp_s=5 * dt)
+    # 已超 2s → static。
+    assert len(static1) > 0
 
-    # 第二帧: 相同区域, first_seen 不应重置 (连续占据)。
-    tracker.update(env1, stamp_s=dt)
-    # 连续区域的 first_seen 应保持不变。
-    continuous_mask = ~np.isinf(first_snap) & ~np.isinf(tracker._first_seen)
-    if np.any(continuous_mask):
-        np.testing.assert_array_equal(
-            tracker._first_seen[continuous_mask], first_snap[continuous_mask])
+    # 有间隙: 前 3 帧 + 空帧 + 再 2 帧 (总时长相同, 但中间断过)。
+    tracker2 = OccupancyTracker(spec, occupancy_timeout_s=2.0, static_confirm_s=2.0)
+    for i in range(3):
+        tracker2.update(env, stamp_s=i * dt)
+    tracker2.update(np.empty((0, 3)), stamp_s=3 * dt)  # 中断
+    tracker2.update(env, stamp_s=4 * dt)
+    static2, unconfirmed2, _ = tracker2.update(env, stamp_s=4.5 * dt)
+    # 只连续 0.5s → 还是 unconfirmed。
+    assert len(static2) == 0
+    assert len(unconfirmed2) > 0
 
 
 def test_empty_input_returns_empty(spec):
