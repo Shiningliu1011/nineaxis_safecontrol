@@ -23,7 +23,8 @@ import yaml
 
 from work.fcl_collision_mesh import FclMeshSelfCollisionChecker, LINK_MESH_FILES
 from work.nineaxis_manipulator_jax import NineaxisManipulatorJAX
-from work.oscbf_collision_config import SELF_COLLISION_PAIRS, compute_self_collision_h
+from work.dpax_collision import self_collision_distances
+from work.obb_collision_model import OBB_COLLISION_PAIRS
 from work.task_mode_contract import TASK_MODE_TOOL_AXIS_5D
 from work.tool_axis_task import TOOL_AXIS_INDEX, task_jacobian_5d
 
@@ -37,7 +38,7 @@ class SafePostureContract:
     """Thresholds for one offline posture validation.
 
     All distances are metres.  ``minimum_legacy_self_collision_h_m`` is the
-    residual of the currently active 17-sphere self-collision CBF after
+    residual of the currently active OBB self-collision CBF after
     subtracting ``legacy_self_collision_d_safe_m``; it is not an FCL distance.
     ``minimum_task_sigma`` is the least singular value of the 5x9 task
     Jacobian, whose mixed units are inherited from position and radians.
@@ -284,24 +285,17 @@ def mesh_self_clearance(kin, q: np.ndarray, mesh_dir: str | Path,
 
 def legacy_self_collision_h(q: np.ndarray, robot: NineaxisManipulatorJAX,
                             d_safe_m: float) -> tuple[float, tuple[int, int]]:
-    """Return the active 17-sphere/14-pair CBF minimum for one offline pose.
+    """Return the active OBB-OBB/14-pair CBF minimum for one offline pose.
 
-    This value is the existing CBF residual ``h`` rather than an independent
-    mesh distance.  It is kept beside FCL so an offline path report makes the
-    distinction visible instead of treating the two collision models as
-    interchangeable.
+    Uses the same OBB collision model as the real-time controller
+    (dpax_collision.self_collision_distances).  The field name is kept as
+    "legacy" for backward compatibility with existing YAML contracts.
     """
-    # Keep the caller's JAX dtype policy.  The full control facade enables
-    # x64 before building its kernels; standalone offline validation may
-    # intentionally run with JAX's default dtype and must not emit a false
-    # promise that x64 was used.
-    data = np.asarray(robot.self_collision_data(jnp.asarray(q)))
-    pairs = np.asarray(SELF_COLLISION_PAIRS, dtype=int)
-    h_values = np.asarray(compute_self_collision_h(
-        jnp.asarray(data[:, :3]), jnp.asarray(data[:, 3]),
-        jnp.asarray(pairs), float(d_safe_m)))
+    distances = np.asarray(self_collision_distances(jnp.asarray(q)))
+    pairs = np.asarray(OBB_COLLISION_PAIRS, dtype=int)
+    h_values = distances - float(d_safe_m)
     if h_values.shape != (len(pairs),):
-        raise RuntimeError('legacy self-collision CBF returned an unexpected shape')
+        raise RuntimeError('OBB self-collision CBF returned an unexpected shape')
     closest_index = int(np.argmin(h_values))
     return float(h_values[closest_index]), tuple(int(v) for v in pairs[closest_index])
 

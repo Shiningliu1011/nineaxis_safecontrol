@@ -67,6 +67,8 @@ def generate_launch_description() -> LaunchDescription:
             DeclareLaunchArgument("oscbf_randomize_start", default_value="false"),
             # Trigger the transition plan automatically on startup.
             DeclareLaunchArgument("auto_plan_once", default_value="true"),
+            # Show OBB collision envelopes in the MuJoCo viewer.
+            DeclareLaunchArgument("show_obb", default_value="false"),
             # Log startup info.
             LogInfo(
                 msg=f"Starting unified MoveIt transition demo. "
@@ -213,7 +215,13 @@ def generate_launch_description() -> LaunchDescription:
                         executable="mujoco_viewer",
                         name="mujoco_joint_state_viewer",
                         output="screen",
-                        parameters=[runtime_yaml],
+                        parameters=[
+                            runtime_yaml,
+                            {
+                                "show_obb":
+                                    LaunchConfiguration("show_obb"),
+                            },
+                        ],
                     ),
                 ],
             ),

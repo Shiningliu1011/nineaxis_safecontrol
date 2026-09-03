@@ -133,6 +133,9 @@ class MuJoCoJointStateViewer(Node):
             raw_mjcf, target_path, tracking_cylinder,
             joint_names=self._joint_names,
         )
+        if bool(self.get_parameter("show_obb").value):
+            scene_mjcf = self._inject_obb_boxes(scene_mjcf)
+            self.get_logger().info("OBB collision envelopes enabled (show_obb=true)")
         self._model = mujoco.MjModel.from_xml_string(scene_mjcf)
         self._model.opt.gravity[:] = 0.0
         self._data = mujoco.MjData(self._model)
@@ -204,6 +207,7 @@ class MuJoCoJointStateViewer(Node):
         # Lift the red display line very slightly above the transparent surface
         # to avoid z-fighting. This changes visualization only, not IK input.
         self.declare_parameter("path_surface_offset_m", 0.002)
+        self.declare_parameter("show_obb", False)
 
     def _joint_state_callback(self, message: JointState) -> None:
         positions = dict(zip(message.name, message.position))
@@ -455,6 +459,79 @@ class MuJoCoJointStateViewer(Node):
             projected = center + axial + radial * (display_radius / radial_length)
             result.append(tuple(float(value) for value in projected))
         return result
+
+    # ------------------------------------------------------------------
+    #  OBB collision envelopes (display-only, group 2)
+    #  Semi-transparent blue boxes matching the OBB collision model used
+    #  by the OSCBF controller.  Data is inlined from
+    #  ``portable_oscbf/work/obb_collision_model.py`` to avoid a
+    #  cross-package import dependency in the viewer node.
+    # ------------------------------------------------------------------
+
+    _OBB_LINK_NAMES: tuple[str, ...] = (
+        "base_link", "Link1", "Link2", "Link3", "Link4",
+        "Link5", "Link6", "Link7", "Link8", "Link9",
+    )
+
+    # OBB centre in the link-local frame (m).
+    _OBB_LOCAL_CENTERS_M: np.ndarray = np.array([
+        [-1.36345624924e-06, 0.00600035488605, 0.113499969244],
+        [0, 0.188649997115, -0.0612499937415],
+        [0.112499993294, -1.86264514923e-09, -7.45058059692e-09],
+        [0.112499993294, 0, -7.45058059692e-09],
+        [0, -0.0515107642859, -7.45058059692e-09],
+        [1.86264514923e-09, -3.72529029846e-09, -0.1012747325],
+        [0.0629254467785, -1.86264514923e-09, 3.72529029846e-09],
+        [0.0550207030028, -3.72529029846e-09, 0],
+        [0.05323269777, -3.54405492544e-05, -1.11758708954e-08],
+        [0.103750595823, -8.89413058758e-07, -0.0138150909916],
+    ], dtype=np.float64)
+
+    # OBB half-extents along the OBB axes (m).
+    _OBB_HALF_EXTENTS_M: np.ndarray = np.array([
+        [0.0750013664365, 0.0640003532171, 0.448500007391],
+        [0.077500000596, 0.212349995971, 0.123749993742],
+        [0.152550000697, 0.0400000009686, 0.0799999982119],
+        [0.174949306995, 0.0625, 0.0799999982119],
+        [0.0599999986589, 0.100489245728, 0.0799999982119],
+        [0.0609999988228, 0.0489999949932, 0.162225272506],
+        [0.111903931946, 0.0520000029355, 0.0620000064373],
+        [0.10597932525, 0.0509999990463, 0.0570000000298],
+        [0.0932672638446, 0.039964562282, 0.0569999963045],
+        [0.131250580773, 0.0274723032489, 0.0331849111244],
+    ], dtype=np.float64)
+
+    _OBB_RGBA = "0.2 0.55 0.85 0.15"
+
+    @staticmethod
+    def _inject_obb_boxes(mjcf_xml: str) -> str:
+        """Inject one semi-transparent box geom per link for OBB visualisation.
+
+        Each box is a child body of its owning link so it moves automatically
+        with the arm.  All OBBs are currently AABB (identity local rotation),
+        so ``pos`` = local centre and ``size`` = half-extents.
+        """
+        viewer = MuJoCoJointStateViewer
+        for i, link_name in enumerate(viewer._OBB_LINK_NAMES):
+            cx, cy, cz = viewer._OBB_LOCAL_CENTERS_M[i]
+            hx, hy, hz = viewer._OBB_HALF_EXTENTS_M[i]
+            child_body = (
+                f'        <body name="obb_{link_name}" '
+                f'pos="{cx:.10f} {cy:.10f} {cz:.10f}" quat="1 0 0 0">\n'
+                f'          <geom name="obb_{link_name}_box" type="box" '
+                f'size="{hx:.10f} {hy:.10f} {hz:.10f}" '
+                f'rgba="{viewer._OBB_RGBA}" '
+                f'contype="0" conaffinity="0" group="2"/>\n'
+                f'        </body>\n'
+            )
+            pattern = re.compile(
+                rf'(<body\s[^>]*\bname="{re.escape(link_name)}"[^>]*>)'
+            )
+            mjcf_xml = pattern.sub(
+                lambda m, cb=child_body: m.group(0) + "\n" + cb,
+                mjcf_xml, count=1,
+            )
+        return mjcf_xml
 
     # ------------------------------------------------------------------
     #  Coordinate-frame axes (display-only, group 2)
