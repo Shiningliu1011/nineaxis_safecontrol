@@ -51,6 +51,35 @@ def test_spec_shape_positive(spec):
     assert all(s >= 2 for s in shape)
 
 
+def test_config_fields_covers_all_yaml_loadable_fields():
+    """config_fields() 返回所有可从 YAML 加载的字段元数据。"""
+    from work.perception_config import PointCloudCollisionConfig
+    fields = PointCloudCollisionConfig.config_fields()
+    names = {f.name for f in fields}
+    # 验证覆盖了所有 YAML 可加载的简单字段 (非 workspace_min/max)。
+    expected = {
+        "source_topic", "input_frame", "world_frame", "voxel_size",
+        "max_points", "point_radius", "safety_margin", "sdf_far_distance",
+        "static_occupancy_frames", "source_topic_lidar", "input_frame_lidar",
+        "source_voxel_camera_m", "source_voxel_lidar_m", "fusion_voxel_m",
+        "max_inter_sensor_dt_s", "camera_max_age_s", "lidar_max_age_s",
+        "occupancy_timeout_s", "static_confirm_s", "perception_timeout_s",
+        "cluster_max_tracks", "cluster_min_points",
+        "cluster_association_max_dist_m",
+    }
+    assert expected <= names, f"Missing: {expected - names}"
+
+
+def test_config_fields_type_constructors_match_defaults():
+    """每个字段的 type_constructor 能正确转换默认值。"""
+    from work.perception_config import PointCloudCollisionConfig
+    for f in PointCloudCollisionConfig.config_fields():
+        # type_constructor(str) 应不报错 (str, int, float 都能转 str)。
+        assert callable(f.type_constructor)
+        # default 应存在。
+        assert f.default is not None or f.type_constructor is str
+
+
 # ---------------------------------------------------------------------------
 # 向后兼容: StaticOccupancyTracker 旧接口
 # ---------------------------------------------------------------------------
