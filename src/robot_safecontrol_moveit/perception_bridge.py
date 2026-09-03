@@ -181,8 +181,18 @@ class PerceptionBridge(Node):
         self.declare_parameter("workspace_max", w_max)
         self.declare_parameter("sdf_far_distance", base.sdf_far_distance)
         self.declare_parameter("static_occupancy_frames", base.static_occupancy_frames)
+        # --- LiDAR + 融合 ---
+        self.declare_parameter("source_topic_lidar", base.source_topic_lidar)
+        self.declare_parameter("input_frame_lidar", base.input_frame_lidar)
+        self.declare_parameter("source_voxel_camera_m", base.source_voxel_camera_m)
+        self.declare_parameter("source_voxel_lidar_m", base.source_voxel_lidar_m)
+        self.declare_parameter("fusion_voxel_m", base.fusion_voxel_m)
+        self.declare_parameter("max_inter_sensor_dt_s", base.max_inter_sensor_dt_s)
+        self.declare_parameter("camera_max_age_s", base.camera_max_age_s)
+        self.declare_parameter("lidar_max_age_s", base.lidar_max_age_s)
         self.declare_parameter("occupancy_timeout_s", base.occupancy_timeout_s)
         self.declare_parameter("static_confirm_s", base.static_confirm_s)
+        self.declare_parameter("perception_timeout_s", base.perception_timeout_s)
         self.declare_parameter("cluster_max_tracks", base.cluster_max_tracks)
         self.declare_parameter("cluster_min_points", base.cluster_min_points)
         self.declare_parameter(
@@ -211,10 +221,28 @@ class PerceptionBridge(Node):
             sdf_far_distance=float(self.get_parameter("sdf_far_distance").value),
             static_occupancy_frames=int(
                 self.get_parameter("static_occupancy_frames").value),
+            source_topic_lidar=str(
+                self.get_parameter("source_topic_lidar").value),
+            input_frame_lidar=str(
+                self.get_parameter("input_frame_lidar").value),
+            source_voxel_camera_m=float(
+                self.get_parameter("source_voxel_camera_m").value),
+            source_voxel_lidar_m=float(
+                self.get_parameter("source_voxel_lidar_m").value),
+            fusion_voxel_m=float(
+                self.get_parameter("fusion_voxel_m").value),
+            max_inter_sensor_dt_s=float(
+                self.get_parameter("max_inter_sensor_dt_s").value),
+            camera_max_age_s=float(
+                self.get_parameter("camera_max_age_s").value),
+            lidar_max_age_s=float(
+                self.get_parameter("lidar_max_age_s").value),
             occupancy_timeout_s=float(
                 self.get_parameter("occupancy_timeout_s").value),
             static_confirm_s=float(
                 self.get_parameter("static_confirm_s").value),
+            perception_timeout_s=float(
+                self.get_parameter("perception_timeout_s").value),
             cluster_max_tracks=int(
                 self.get_parameter("cluster_max_tracks").value),
             cluster_min_points=int(

@@ -1,0 +1,48 @@
+# perception_runtime.yaml — 感知桥接节点 ROS 参数覆盖层。
+#
+# 用法 (ros2 launch 或 ros2 run --ros-args --params-file):
+#   ros2 run robot_safecontrol_moveit perception_bridge \
+#     --ros-args --params-file <this_file>
+#
+# 所有字段均可被命令行进一步覆盖。缺省值来自 obstacle_params.yaml。
+
+/**:
+  ros__parameters:
+    # --- 相机 ---
+    source_topic: /camera/depth_registered/points
+    input_frame: camera_color_optical_frame
+    world_frame: base_link
+
+    # --- LiDAR (留空则不订阅) ---
+    source_topic_lidar: ""
+    input_frame_lidar: ""
+
+    # --- 体素 ---
+    voxel_size: 0.03
+    source_voxel_camera_m: 0.02
+    source_voxel_lidar_m: 0.03
+    fusion_voxel_m: 0.03
+
+    # --- 时间 ---
+    max_inter_sensor_dt_s: 0.1
+    camera_max_age_s: 0.5
+    lidar_max_age_s: 0.5
+    occupancy_timeout_s: 0.3
+    static_confirm_s: 0.5
+    perception_timeout_s: 1.0
+
+    # --- 点云处理 ---
+    max_points: 5000
+    point_radius: 0.01
+    safety_margin: 0.08
+    sdf_far_distance: 10.0
+
+    # --- 聚类 ---
+    cluster_max_tracks: 8
+    cluster_min_points: 4
+    cluster_association_max_dist_m: 0.5
+
+    # --- 发布频率 ---
+    publish_cloud_rate_hz: 5.0
+    publish_esdf_rate_hz: 10.0
+    publish_collision_rate_hz: 5.0

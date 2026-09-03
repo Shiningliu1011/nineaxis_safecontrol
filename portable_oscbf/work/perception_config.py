@@ -37,8 +37,19 @@ class PointCloudCollisionConfig:
     # 以下为感知管线补充参数 (可被桥接节点 ROS 参数覆盖)
     sdf_far_distance: float = 10.0
     static_occupancy_frames: int = 8  # 旧帧计数模式 (保留兼容)
-    occupancy_timeout_s: float = 2.0
-    static_confirm_s: float = 5.0
+    # --- LiDAR + 融合 (issue 02) ---
+    source_topic_lidar: str = ""
+    input_frame_lidar: str = ""
+    source_voxel_camera_m: float = 0.02
+    source_voxel_lidar_m: float = 0.03
+    fusion_voxel_m: float = 0.03
+    max_inter_sensor_dt_s: float = 0.1
+    camera_max_age_s: float = 0.5
+    lidar_max_age_s: float = 0.5
+    occupancy_timeout_s: float = 0.3
+    static_confirm_s: float = 0.5
+    perception_timeout_s: float = 1.0
+    # --- 聚类 ---
     cluster_max_tracks: int = 8
     cluster_min_points: int = 4
     cluster_association_max_dist_m: float = 0.5
@@ -81,8 +92,17 @@ def load_point_cloud_collision(
         workspace_max=w_max,
         sdf_far_distance=float(section.get("sdf_far_distance", 10.0)),
         static_occupancy_frames=int(section.get("static_occupancy_frames", 8)),
-        occupancy_timeout_s=float(section.get("occupancy_timeout_s", 2.0)),
-        static_confirm_s=float(section.get("static_confirm_s", 5.0)),
+        source_topic_lidar=str(section.get("source_topic_lidar", "")),
+        input_frame_lidar=str(section.get("input_frame_lidar", "")),
+        source_voxel_camera_m=float(section.get("source_voxel_camera_m", 0.02)),
+        source_voxel_lidar_m=float(section.get("source_voxel_lidar_m", 0.03)),
+        fusion_voxel_m=float(section.get("fusion_voxel_m", 0.03)),
+        max_inter_sensor_dt_s=float(section.get("max_inter_sensor_dt_s", 0.1)),
+        camera_max_age_s=float(section.get("camera_max_age_s", 0.5)),
+        lidar_max_age_s=float(section.get("lidar_max_age_s", 0.5)),
+        occupancy_timeout_s=float(section.get("occupancy_timeout_s", 0.3)),
+        static_confirm_s=float(section.get("static_confirm_s", 0.5)),
+        perception_timeout_s=float(section.get("perception_timeout_s", 1.0)),
         cluster_max_tracks=int(section.get("cluster_max_tracks", 8)),
         cluster_min_points=int(section.get("cluster_min_points", 4)),
         cluster_association_max_dist_m=float(

@@ -15,7 +15,23 @@ point_cloud_collision:
   world_frame: base_link
   # 驱动只发布 depth/points 与 depth_registered/points (彩色对齐), 无 depth/color/points。
   source_topic: /camera/depth_registered/points
-  lidar_topic_example: /points
+  # LiDAR (留空则不订阅, 向后兼容)
+  source_topic_lidar: ""
+  input_frame_lidar: ""
+  # 各传感器源体素降采样 (米)
+  source_voxel_camera_m: 0.02
+  source_voxel_lidar_m: 0.03
+  # 融合后体素尺寸 (米)
+  fusion_voxel_m: 0.03
+  # 跨传感器时间差阈值 (秒)
+  max_inter_sensor_dt_s: 0.1
+  # 各传感器最大延迟 (秒)
+  camera_max_age_s: 0.5
+  lidar_max_age_s: 0.5
+  # 占据超时 / 静态确认 / 感知有效超时 (秒)
+  occupancy_timeout_s: 0.3
+  static_confirm_s: 0.5
+  perception_timeout_s: 1.0
   voxel_size: 0.03
   max_points: 5000
   point_radius: 0.01
