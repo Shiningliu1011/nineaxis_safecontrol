@@ -57,3 +57,43 @@ orbbec_launch:
   color_fps: 30
   depth_registration: true
   enable_colored_point_cloud: true
+
+# ---------------------------------------------------------------------------
+# LiDAR 外参（Livox Mid-360S）
+# ---------------------------------------------------------------------------
+# 安装方式：固定安装，手动测量外参
+# child_frame: LiDAR 的 frame_id（由 LiDAR 驱动发布）。
+# lidar_to_world_static: 4×4 齐次变换矩阵（行主序 16 个 float），
+# 把 child_frame 下的点变换到 parent_frame (base_link)。
+# 当前值为占位（单位阵），必须在实机标定后替换。
+#
+# Livox 驱动启动命令示例：
+#   ros2 launch livox_ros_driver2 msg_MID360_launch.py
+
+child_frame_lidar: livox_frame
+
+# 外参矩阵（占位：单位阵 = LiDAR 与 base_link 重合）
+# 格式：行主序 [R11,R12,R13,Tx, R21,R22,R23,Ty, R31,R32,R33,Tz, 0,0,0,1]
+# 实测后替换此值。
+lidar_to_world_static:
+  - 1.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 1.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 1.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 1.0
+
+# LiDAR 标定方法与误差估计（待填写）
+calibration_method_lidar: null           # 例如 "manual_measurement" 或 "target_based"
+calibration_error_estimate_mm_lidar: null
+calibration_error_estimate_deg_lidar: null
