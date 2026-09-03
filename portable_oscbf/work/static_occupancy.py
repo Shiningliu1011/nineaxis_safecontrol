@@ -136,7 +136,7 @@ class StaticOccupancyTracker(OccupancyTracker):
     旧调用方式继续工作::
 
         tracker = StaticOccupancyTracker(spec, keep_frames=8)
-        static, dynamic = tracker.update(points_world)   # 不需要 stamp_s
+        static, dynamic = tracker.update(points_world)   # stamp_s 可省略
 
     注意: update() 仍返回三层 (static, unconfirmed, instant),
     旧代码解包两个值会拿到 (static, unconfirmed)。
@@ -151,3 +151,11 @@ class StaticOccupancyTracker(OccupancyTracker):
         occupancy_timeout_s = max(0.1, keep_frames * approx_frame_s * 0.5)
         super().__init__(spec, occupancy_timeout_s=occupancy_timeout_s,
                          static_confirm_s=static_confirm_s)
+        self._auto_stamp = 0.0
+
+    def update(self, points_world, stamp_s=None):  # type: ignore[override]
+        """旧接口兼容: stamp_s 可省略, 自动用单调递增时间。"""
+        if stamp_s is None:
+            stamp_s = self._auto_stamp
+            self._auto_stamp += 0.033  # 假设 ~30fps
+        return super().update(points_world, stamp_s)
