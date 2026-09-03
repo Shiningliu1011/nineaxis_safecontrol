@@ -36,7 +36,9 @@ class PointCloudCollisionConfig:
     workspace_max: np.ndarray
     # 以下为感知管线补充参数 (可被桥接节点 ROS 参数覆盖)
     sdf_far_distance: float = 10.0
-    static_occupancy_frames: int = 8
+    static_occupancy_frames: int = 8  # 旧帧计数模式 (保留兼容)
+    occupancy_timeout_s: float = 2.0
+    static_confirm_s: float = 5.0
     cluster_max_tracks: int = 8
     cluster_min_points: int = 4
     cluster_association_max_dist_m: float = 0.5
@@ -79,6 +81,8 @@ def load_point_cloud_collision(
         workspace_max=w_max,
         sdf_far_distance=float(section.get("sdf_far_distance", 10.0)),
         static_occupancy_frames=int(section.get("static_occupancy_frames", 8)),
+        occupancy_timeout_s=float(section.get("occupancy_timeout_s", 2.0)),
+        static_confirm_s=float(section.get("static_confirm_s", 5.0)),
         cluster_max_tracks=int(section.get("cluster_max_tracks", 8)),
         cluster_min_points=int(section.get("cluster_min_points", 4)),
         cluster_association_max_dist_m=float(
