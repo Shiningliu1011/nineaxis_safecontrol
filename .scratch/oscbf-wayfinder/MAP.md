@@ -202,7 +202,7 @@ backlog 5 条(已知怎么做,直接实现,不进 Wayfinder)。
 |---|---|---|---|---|---|
 | 06A | 精确刻画当前实现的跟踪语义 | research | — | [#2](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/2) | **P0 起点,已 resolved (2026-09-04)**;AFK 可做;只答「现状为何」→ 见 §5 |
 | 06B | 选定目标跟踪语义与验收标准 | grilling | 06A | [#14](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/14) | **P0 决策枢纽,已 resolved (2026-09-04)**;HITL 8 项拍板 → 见 §5 |
-| 05A | 感知世界坐标系审计(base_link vs 环境系) | research | — | [#4](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/4) | 影响面对比表,AFK 可做 |
+| 05A | 感知世界坐标系审计(base_link vs 环境系) | research | — | [#4](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/4) | **已 resolved (2026-09-04)**;影响面对比表 + CBF frame contract → 见 issues/05a |
 | 05B | 选定规范世界坐标系与标定策略 | grilling | 05A | [#15](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/15) | **HITL 决策**:base_link vs 固定环境系(§3 D) |
 | 07A | 冗余自由度策略对比(9-DOF vs 5D) | research | — | [#5](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/5) | 原 07 对 06 的依赖已解:策略对比可独立 AFK |
 | 07B | 选定冗余目标与优先级 | grilling | 06B+07A | [#16](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/16) | **HITL 决策**:4 选 1+nullspace+优先级(§3 F) |
@@ -247,8 +247,7 @@ evaluator 完成度);参考与测量投影经 bounded lead(0.01m)弱耦合,投�
 roll 是否控制、名义进给率与阈值、死代码取舍、参考起始播种——共 7 项
 (见 issues/06a §11)。
 
-### 06B — 目标跟踪语义与验收标准（resolved）
-**决策:** 最终控制目标 = **分层语义的几何路径跟随**。8 项拍板如下:
+### 06B — 目标跟踪语义与验收标准（resolved）**决策:** 最终控制目标 = **分层语义的几何路径跟随**。8 项拍板如下:
 
 1. **任务语义 (Q1=C):** 硬目标 = 几何路径跟随(cross-track + 工具轴);
    性能 = 关节电机能力上限下的速度表现。安全减速不计为误差。
@@ -282,3 +281,28 @@ consequences 见 issues/06b。
 
 **新增 tickets:** 09 优先级提升(ff_scale/maximum_reference_feedrate_step_m_s
 删除 + reference_feedrate_scale 设大);evaluator 更新 ticket(新增,依赖本决策)。
+
+### 05A — 感知世界坐标系审计（resolved）
+
+**审计结论（2026-09-04,决策仍归 05B）:** 全链路点云/占据/tracks/FK 几何实际共用
+`base_link`（数学自洽）;但 `world_frame` 参数**不控制**任何变换——它只作为 3 个
+输出话题的 frame_id + 休眠中的 TF 目标（use_tf=false）;真正绑定 frame 的是
+`camera_to_world_static`（perception_runtime.yaml,非单位阵假定矩阵）与控制器侧
+隐式约定。`config/sensor_extrinsics.yaml` 为**死配置**（零代码消费）;TF 缺失时
+行为 = 警告 + 回落静态矩阵/identity 的 silent degradation（非 fail-fast / 非 drop）。
+
+**关键事实（修正 MAP 1.6 表述）:**
+- 「外参全占位」不准确:**相机外参**实际加载的是 perception_runtime.yaml 的非单位
+  阵假定安装位姿（无标定来源/无 provenance）;LiDAR 外参为 unit 占位且整条链未启用
+  （source_topic_lidar=""）;sensor_extrinsics.yaml 的占位矩阵未被加载。
+- base_link vs 环境系的冲突仅在**基座运动**时成立;仿真闭环中基座固定（URDF 根
+  = base_link、J1 升降在链内、plant 只随机关节）- 等价假设(基座恒定刚体位姿 +
+  传感器刚体安装 + 同单位)下 base_link 与固定环境系数学等价,但**一旦基座移动**,
+  三层占据（instant/unconfirmed/static）跨帧持久化语义、ESDF 与 track 速度估计
+  会破坏（环境视运动 + 双影 + 假移动 track）;单帧几何仍自洽。
+- 与 spec 口径差异:spec 称 "base_link 随升降轴运动",与 URDF（J1 prismatic 位于
+  base_link 之下,移动的是 Link1）不符;真机基座落地/升降台状态 **Not yet specified**。
+- CBF frame contract:C1-C6（机器人几何与障碍 pos/vel/radii 同系=base_link,
+  tracks 消息无 frame 元数据,无任何运行期校验,违反=静默错误）。
+- 05B 决策输入（选系矩阵 / 标定四选一 / 缺失数据清单 / 迁移接口清单）全部在
+  issues/05a §4、§7 与附录,交由人类拍板。
