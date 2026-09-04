@@ -9,7 +9,8 @@
   如何获取（工装测量 / 外部软件 / 手眼标定）、标定失败时的默认与降级行为；
 - **迁移范围：**按 05A 清单决定本次只改配置，还是需要拆 impl 票（明确票面）。
 
-**Blocked by:** 05A（先有影响面，再拍板选系）。
+**Blocked by:** ~~05A~~ — 已解除：05A 已于 2026-09-04 resolved
+（影响面清单 / CBF frame contract / 外参真实状态 / 决策输入见 issues/05a §Resolution）。
 
 **Type:** grilling（HITL）
 
