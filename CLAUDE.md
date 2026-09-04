@@ -67,6 +67,16 @@ oscbf_plant（S 曲线 jerk 限幅）→ 状态发回。控制器独立于 MoveI
 - `docs/real_robot_runbook.md` — 真机操作手册
 - `docs/ONBOARDING.md` — 完整入门指南
 
+## Agent skills
+
+### Issue tracker
+
+Issues live as GitHub issues on `Shiningliu1011/nineaxis_safecontrol`; use the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Domain docs
+
+Single-context: one `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+
 ## Notes
 
 - `src/aeb_rrtstar/` 为独立 Python 规划器（无 ROS），被 C++ 插件包参考
