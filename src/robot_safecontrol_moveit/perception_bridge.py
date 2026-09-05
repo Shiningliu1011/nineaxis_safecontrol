@@ -36,7 +36,7 @@ from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 from rclpy.time import Time
-from sensor_msgs.msg import JointState, PointCloud2
+from sensor_msgs.msg import JointState, PointCloud2, PointField
 from sensor_msgs_py import point_cloud2 as pc2
 from std_msgs.msg import Float32MultiArray, MultiArrayDimension, MultiArrayLayout
 
@@ -81,16 +81,35 @@ def _points_xyz(msg: PointCloud2) -> np.ndarray:
         arr = pc2.read_points_numpy(msg, field_names=["x", "y", "z"])
         return np.asarray(arr, dtype=np.float32).reshape(-1, 3)
     except AssertionError:
-        offsets = {f.name: f.offset for f in msg.fields}
-        if not all(n in offsets for n in ("x", "y", "z")):
-            raise
+        # Fallback: decode the raw byte buffer by field offset. Valid only for
+        # the common un-packed little-endian layout (count-1 FLOAT32 x/y/z,
+        # row_step*height == len(data)); anything else is rejected loudly
+        # rather than silently misread.
+        if msg.is_bigendian:
+            raise ValueError("big-endian PointCloud2 is not supported")
+        offsets: dict[str, int] = {}
+        for name in ("x", "y", "z"):
+            field = next((f for f in msg.fields if f.name == name), None)
+            if field is None:
+                raise ValueError(f"PointCloud2 missing '{name}' field")
+            if field.datatype != PointField.FLOAT32 or field.count != 1:
+                raise ValueError(
+                    f"'{name}' must be a count-1 FLOAT32 field, "
+                    f"got datatype={field.datatype} count={field.count}")
+            if field.offset + 4 > msg.point_step:
+                raise ValueError(f"'{name}' offset {field.offset} exceeds point_step")
+            offsets[name] = field.offset
+        if msg.row_step * msg.height != len(msg.data):
+            raise ValueError("row_step*height does not match data size")
         raw = np.frombuffer(msg.data, dtype=np.uint8).reshape(-1, msg.point_step)
         if raw.shape[0] * msg.point_step != len(msg.data):
             raise ValueError("point_step does not match data size")
         cols = np.stack([
-            np.ascontiguousarray(raw[:, offsets[n]:offsets[n] + 4]).view(np.float32)
-            for n in ("x", "y", "z")
+            raw[:, offsets[name]:offsets[name] + 4].view(np.float32)[:, 0]
+            for name in ("x", "y", "z")
         ], axis=1)
+        if cols.shape != (raw.shape[0], 3):
+            raise ValueError("decoded x/y/z column layout mismatch")
         return cols
 
 
