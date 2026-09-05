@@ -1,23 +1,24 @@
-# === DUAL-SENSOR REAL PROFILE (OPT-IN, GATED) ===
+# === DUAL-SENSOR REAL PROFILE (OPT-IN, 默认 INERT) ===
 #
-# 仅在 calibration gate 通过后使用！（05B post-review P1）
-# 启用条件（全部满足）:
+# 本 profile **默认不启用 LiDAR**（source_topic_lidar = ""）——即使直接作为
+# params-file 加载，节点也只会订阅相机、行为等价于单相机运行，**不会**出现
+# 用占位/假定外参跑双传感器的静默错误。
+#
+# 启用 LiDAR 的真实前提（全部满足，任何一条不满足都不得修改本段）:
 #   1. T5 两段式标定完成，sensor_extrinsics.yaml 含带 provenance 的
 #      T_lidar^base / T_cam^base（calibrated: true）;
-#   2. T7 标定 SSOT 接线完成（本文件不再携带矩阵，外参由
-#      sensor_extrinsics.yaml 提供，校验 record == runtime 加载值）;
-#   3. T6 启动自检通过（数学合法性 + 标定状态 + 已知物体 20mm 验收）。
+#   2. T7 标定 SSOT 接线完成：bridge/launch 经 ament share 解析唯一
+#      config/sensor_extrinsics.yaml 路径并加载，本文件**不再携带任何
+#      calibration matrix**，外参全部由 sensor_extrinsics.yaml 提供;
+#   3. 代码级 gate（T7/T6）：启动时 fail-fast 校验数学合法性 + 标定状态 +
+#      已知物体 20mm 验收，失败即拒绝进入避障模式（ADR 0003/0004）。
+#      注释/文件名不是 gate——gate 必须是代码，验证未落地前不得启用。
 #
-# 在未满足上述条件的情况下启用 LiDAR = 用占位/假定外参运行双传感器，
-# 属于静默错误（05A/ADR 0003），**禁止**。
-#
-# 使用: 修改下方 LiDAR 段后直接作为 params-file 加载
+# 使用方式:
 #   ros2 run robot_safecontrol_moveit perception_bridge \
 #       --ros-args --params-file config/perception_dual_sensor_real.yaml
-#
-# 注意: T7 实现前，外参仍来自本文件底部 LAUNCHED matrices（与
-# perception_runtime.yaml 同源假定值）；T7 后删除该段并改由
-# config/sensor_extrinsics.yaml 加载。
+#   当前状态下运行 = 单相机（LiDAR 段为空），与 perception_runtime.yaml 等价;
+#   T5/T6/T7 全部落地后才允许把下方 source_topic_lidar 改为 /livox/lidar。
 
 perception_bridge:
   ros__parameters:
@@ -27,11 +28,11 @@ perception_bridge:
     # 假定安装位姿（无标定 provenance，05A）: bx=cz, by=-cx, bz=-cy, t=[-0.9, 0.4, 1.7]
     camera_to_world_static: [0.0, 0.0, 1.0, -0.9, -1.0, 0.0, 0.0, 0.4, 0.0, -1.0, 0.0, 1.7, 0.0, 0.0, 0.0, 1.0]
 
-    # --- LiDAR (Livox Mid-360S) — GATED，见头部说明 ---
-    source_topic_lidar: /livox/lidar
-    input_frame_lidar: livox_frame
-    # T7 后由 sensor_extrinsics.yaml 提供；当前为占位身份矩阵。
-    lidar_to_world_static: [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+    # --- LiDAR (Livox Mid-360S) — 默认 INERT，见头部说明 ---
+    # 保持为空！启用条件见头部前提 1-3；T7 后外参改由
+    # config/sensor_extrinsics.yaml（唯一真源）提供，本文件只留 topic/frame。
+    source_topic_lidar: ""
+    input_frame_lidar: ""
 
     # --- World frame ---
     world_frame: base_link
