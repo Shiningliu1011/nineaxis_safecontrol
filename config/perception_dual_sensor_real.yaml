@@ -1,0 +1,83 @@
+# === DUAL-SENSOR REAL PROFILE (OPT-IN, GATED) ===
+#
+# 仅在 calibration gate 通过后使用！（05B post-review P1）
+# 启用条件（全部满足）:
+#   1. T5 两段式标定完成，sensor_extrinsics.yaml 含带 provenance 的
+#      T_lidar^base / T_cam^base（calibrated: true）;
+#   2. T7 标定 SSOT 接线完成（本文件不再携带矩阵，外参由
+#      sensor_extrinsics.yaml 提供，校验 record == runtime 加载值）;
+#   3. T6 启动自检通过（数学合法性 + 标定状态 + 已知物体 20mm 验收）。
+#
+# 在未满足上述条件的情况下启用 LiDAR = 用占位/假定外参运行双传感器，
+# 属于静默错误（05A/ADR 0003），**禁止**。
+#
+# 使用: 修改下方 LiDAR 段后直接作为 params-file 加载
+#   ros2 run robot_safecontrol_moveit perception_bridge \
+#       --ros-args --params-file config/perception_dual_sensor_real.yaml
+#
+# 注意: T7 实现前，外参仍来自本文件底部 LAUNCHED matrices（与
+# perception_runtime.yaml 同源假定值）；T7 后删除该段并改由
+# config/sensor_extrinsics.yaml 加载。
+
+perception_bridge:
+  ros__parameters:
+    # --- Camera (Orbbec Gemini 335L) ---
+    source_topic: /camera/depth_registered/points
+    input_frame: camera_color_optical_frame
+    # 假定安装位姿（无标定 provenance，05A）: bx=cz, by=-cx, bz=-cy, t=[-0.9, 0.4, 1.7]
+    camera_to_world_static: [0.0, 0.0, 1.0, -0.9, -1.0, 0.0, 0.0, 0.4, 0.0, -1.0, 0.0, 1.7, 0.0, 0.0, 0.0, 1.0]
+
+    # --- LiDAR (Livox Mid-360S) — GATED，见头部说明 ---
+    source_topic_lidar: /livox/lidar
+    input_frame_lidar: livox_frame
+    # T7 后由 sensor_extrinsics.yaml 提供；当前为占位身份矩阵。
+    lidar_to_world_static: [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+
+    # --- World frame ---
+    world_frame: base_link
+    use_tf: false
+
+    # --- Voxel sizes ---
+    voxel_size: 0.03
+    source_voxel_camera_m: 0.02
+    source_voxel_lidar_m: 0.03
+    fusion_voxel_m: 0.03
+
+    # --- Freshness / fusion timing ---
+    camera_max_age_s: 0.5
+    lidar_max_age_s: 0.5
+    max_inter_sensor_dt_s: 0.1
+    occupancy_timeout_s: 0.3
+    static_confirm_s: 0.5
+    # PROVISIONAL (05B post-review): 最终值由 #10 陈旧数据模型结算。
+    perception_timeout_s: 1.0
+
+    # --- Point cloud processing ---
+    max_points: 5000
+    point_radius: 0.01
+    safety_margin: 0.08
+    workspace_min: [-0.9, -0.2, -0.6]
+    workspace_max: [0.9, 0.8, 2.0]
+    sdf_far_distance: 10.0
+    static_occupancy_frames: 8
+
+    # --- Clustering ---
+    cluster_max_tracks: 8
+    cluster_min_points: 4
+    cluster_association_max_dist_m: 0.5
+
+    # --- Publishing rates ---
+    publish_cloud_rate_hz: 5.0
+    publish_esdf_rate_hz: 10.0
+    publish_collision_rate_hz: 5.0
+    collision_object_prefix: camera_cluster
+
+perception_demo:
+  ros__parameters:
+    control_dt_s: 0.002
+    render_hz: 60.0
+    sdf_margin: 0.08
+    trajectory_mat: ""
+    joint_names: [J1, J2, J3, J4, J5, J6, J7, J8, J9]
+    # Obstacle slots default: disabled until the first /perception/tracks frame.
+    enable_dynamic_slots: true

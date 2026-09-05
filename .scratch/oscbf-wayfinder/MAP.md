@@ -230,12 +230,13 @@ backlog 5 条(已知怎么做,直接实现,不进 Wayfinder)。
 | 09 | 配置一致性清理(alpha 漂移/遗留/死参数) | impl | [#12](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/12) | **06B 后优先级提升**:删除 ff_scale 死代码 + maximum_reference_feedrate_step_m_s 死参数 + reference_feedrate_scale 设大 |
 | 11 | SocketCAN 后端与参数注入 | impl(blocked) | [#13](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/13) | 硬件不足暂移出;vcan 代码部分可另行拆小票 |
 | T0 | spec 与参数注释修订(坐标系/验收/故障反应) | impl | [#20](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/20) | **05B 后新增(立即)**:base_link 固定系表述/J1 直线导轨称法/world_frame 语义/20mm 验收/configured stop + interlock;perception_runtime.yaml 头注释同步 |
-| T1 | `/perception/tracks` 契约升级(显式 obstacle observation) | impl | [#21](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/21) | **P0**:timestamp + frame_id(→ 运行期 frame 校验);depends: 05B 选系 |
-| T2 | 自体过滤 bridge 接线(robot_spheres) | impl | [#22](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/22) | **P0**(与 T1 并行):JointState 缓存 → robot_spheres → feed_camera/feed_lidar(引擎侧已支持 fusion_engine.py:33-42) |
-| T3 | 感知健康接线(perception_valid → 零速+锁存) | impl | [#23](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/23) | **P0**:depends T1+T2;apply_qp_health_gate 已存在;perception_timeout_s=1.0 |
+| T7 | 标定 SSOT 接线(sensor_extrinsics.yaml 唯一真源) | impl | [#27](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/27) | **P0(新增,post-review),T1/T2/T3 前置**:bridge/launch 读 sensor_extrinsics.yaml、runtime yaml 去矩阵、假定矩阵迁为 calibrated:false、校验 record==runtime(ID/hash);ADR 0004 |
+| T1 | `/perception/tracks` 契约升级(显式 obstacle observation) | impl | [#21](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/21) | **P0,depends T7**:timestamp + frame_id(→ 运行期 frame 校验) |
+| T2 | 自体过滤 bridge 接线(robot_spheres) | impl | [#22](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/22) | **P0**(与 T1 并行),**depends T7**:JointState 缓存 → robot_spheres → feed_camera/feed_lidar(引擎侧已支持 fusion_engine.py:33-42) |
+| T3 | 感知健康接线(perception_valid → 零速+锁存) | impl | [#23](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/23) | **P0**:depends T1+T2+T7+#10 模型;age_stop 暂=perception_timeout_s=1.0s provisional;apply_qp_health_gate 已存在 |
 | T4 | 合成传感器仿真(闭环验证用) | impl | [#24](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/24) | **P1**: 仅无现场条件时闭环验证;现场条件具备后以真机为准 |
 | T5 | 标定工具链(FAST-Calib2 ROS2 移植 + AX=YB + 板/夹具) | impl | [#25](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/25) | **P1**(P6 前置):DIY PVC 板(4 反光环+4 视觉标记)+ 法兰 Apriltag |
-| T6 | 启动自检程序(矩阵校验+provenance 比对+20mm 验收) | impl | [#26](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/26) | **P1**:depends T5+T1;失败拒绝进入避障模式 |
+| T6 | 启动自检程序(数学合法性+标定状态+record==runtime) | impl | [#26](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/26) | **P1**:depends T5+T1+T7;按 05B item 6 分组判据(无「非单位阵」);失败拒绝进入避障模式 |
 
 ---
 
@@ -339,22 +340,39 @@ calibration provenance,LiDAR 外参仍未验证）;`world_frame` 参数**不控�
    (未来移动基座:感知持久化存环境系 + 边界带 timestamp 变换)。
 4. **spec 处理:** 修订错误表述(base_link 固定/J1 直线导轨/world_frame 语义/
    20mm 验收/故障反应)→ **T0**(立即)。
-5. **失效策略(3 层):** 启动期 fail-fast(矩阵自检+provenance 比对≤20mm/5°+
-   已知物体 20mm 验收→拒避障模式);运行期单帧失效→drop(沿用上一帧+d_safe);
-   持续 fusion_age>1.0s→`apply_qp_health_gate` 零速+锁存(restart interlock)。
+5. **失效策略(3 层):** 启动期 fail-fast(分组校验:数学合法性+标定状态+record 一致
+   →拒避障模式);运行期**仅瞬时数据异常**单帧→drop(沿用上一帧+d_safe);
+   持续 fusion_age>age_stop→`apply_qp_health_gate` 零速+锁存(restart interlock)。
    **否决:** 0.5s 有限重试;静默 identity 回退(现 `_sensor_to_world`
-   current→latest→static→identity 链废弃)。
-6. **不可信判据:** 非有限矩阵/det≠+1/单位阵/与记录偏差超限/时间戳超 0.5s/
-   fusion_age>1s/自体过滤无效(与几何重叠)/已知物体验收失败——任一成立按第 5 条处置。
+   current→latest→static→identity 链废弃)。**post-review(2026-09-05):**
+   age_stop 暂=perception_timeout_s=1.0s 为 **provisional** 工程值,由 #10
+   陈旧数据模型(d_safe,eff=d0+v_bound·age+σ_calib+σ_tracking;分档 use+inflate/
+   conservative/zero+latch)结算;静态外参无效/provenance 缺失=立即 invalid 不入
+   避障,非 drop 后继续。本段为 **Target/decided behavior**——T1/T2/T3/T5/T6/T7
+   完成前不得视为 current behavior。
+6. **不可信判据(post-review 修订:删除「单位阵」判据,拆两组):** 数学合法性
+   (元素非有限/R^T R≠I/det≠+1/bottom row/translation 机械范围)+ 标定状态
+   (calibrated:true+provenance 字段完整+20mm 验收+record==runtime 加载值
+   ID/hash)+ 运行期健康(时间戳/age/自体过滤生效)。identity 可以是合法外参,
+   不代表未标定。
 7. **标定策略(两段式):** FAST-Calib2(PVC+4 反光环+4 视觉标记 DIY 板,≥3 场景,
    lidar_center_test 前置)→ T_lidar^cam;法兰小 Apriltag + AX=YB → T_cam^base;
    复合 T_lidar^base 入 sensor_extrinsics.yaml + provenance;20mm 验收硬门槛;
    P6 机械测量回退;**否决**反光球/$2k 孔板主标定、传感器装臂/运动部件。
-8. **迁移范围(T0–T6 全立项,Part of #1):** T0 spec 修订(立即);
-   T1 tracks 契约 timestamp+frame_id(P0);T2 自体过滤 bridge 接线(P0,与 T1 并行);
-   T3 感知健康 perception_valid→零速+锁存(P0,依赖 T1+T2);
+   **post-review:** 该文件为**唯一 calibration authority**(ADR 0004/T7)。
+8. **迁移范围(T0–T7 全立项,Part of #1):** T0 spec 修订(立即);
+   **T7 标定 SSOT 接线(P0,T1/T2/T3 前置,新增)**——sensor_extrinsics.yaml 唯一真源、
+   runtime yaml 去矩阵、假定矩阵迁为 calibrated:false、record==runtime 校验;
+   T1 tracks 契约 timestamp+frame_id(P0,depends T7);
+   T2 自体过滤 bridge 接线(P0,与 T1 并行,depends T7);
+   T3 感知健康 perception_valid→零速+锁存(P0,依赖 T1+T2+T7+#10 模型;
+   age_stop 暂 1.0s provisional);
    T4 合成传感器仿真(P1);T5 标定工具链(P1,P6 前置);
-   T6 启动自检程序(P1,依赖 T5+T1);**仅 P6 现场数值标定+20mm 验收受现场阻塞**。
+   T6 启动自检程序(P1,依赖 T5+T1+T7;判据按 item 6 分组);
+   **仅 P6 现场数值标定+20mm 验收受现场阻塞**。
 
-**文档产物:** ADR 0002(base_link 唯一规范系)/ADR 0003(感知失效策略);
-CONTEXT.md 词汇(世界坐标系/标定 provenance);spec 修订(T0 内容)。
+**文档产物:** ADR 0002(base_link 唯一规范系;post-review 修正 B/C 定义)/
+ADR 0003(感知失效策略;post-review 修订判据分组+provisional 1.0s)/
+ADR 0004(标定 SSOT);CONTEXT.md 词汇(世界坐标系/标定 provenance);
+spec 修订(T0 内容)。以上失败/超时/闭锁行为均为 Target/decided,
+非 current behavior(实现见 T1–T7)。

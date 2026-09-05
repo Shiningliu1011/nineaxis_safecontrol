@@ -13,11 +13,21 @@
 # World frame is base_link: a fixed machine frame (Y-up: +Y vertical, +Z the
 # horizontal J1 linear-rail direction, +X lateral).  The base is fixed in the
 # work environment and J1 is the in-chain prismatic joint (q1), so base_link
-# does not move with any joint (05B decision 2026-09-05).  The sensor->world
-# 4x4 extrinsics are provided by camera_to_world_static / lidar_to_world_static
-# (ASSUMED/PROVISIONAL poses — no calibration provenance yet; replace with
-# calibrated values per the two-stage calibration plan, keep use_tf:false
-# until then).  Keep workspace/voxel consistent with
+# does not move with any joint (05B decision 2026-09-05).
+#
+# Calibration authority: config/sensor_extrinsics.yaml is the SINGLE source of
+# truth for sensor->world matrices (ADR 0004).  Until T7 (calibration SSOT
+# wiring) is implemented, the matrices below are consumed by the bridge — they
+# are the ASSUMED camera mounting pose (no calibration provenance, 05A finding)
+# and MUST NOT be edited by hand as if calibrated.  T7 removes them from this
+# file and loads sensor_extrinsics.yaml instead.
+#
+# LiDAR is OFF by default (source_topic_lidar: "") to keep single-Camera
+# behavior unchanged and until the calibration gate (T5/T6/T7) is passed; use
+# config/perception_dual_sensor_real.yaml (or dual_sensor_calibrated profile)
+# to enable the dual-sensor runtime.
+#
+# Keep workspace/voxel consistent with
 # portable_oscbf/config/obstacle_params.yaml so the ESDF grid shape matches.
 
 perception_bridge:
@@ -29,11 +39,15 @@ perception_bridge:
     camera_to_world_static: [0.0, 0.0, 1.0, -0.9, -1.0, 0.0, 0.0, 0.4, 0.0, -1.0, 0.0, 1.7, 0.0, 0.0, 0.0, 1.0]
 
     # --- LiDAR (Livox Mid-360S) ---
-    # 驱动（注意：msg_MID360s_launch.py 的 xfer_format=0 才会发 PointCloud2）:
+    # 默认关闭（保持单 Camera 行为 + calibration gate 未过不启用）。
+    # 双传感器部署改载 config/perception_dual_sensor_real.yaml。
+    # 驱动（注意：msg_MID360s_launch.py 的 xfer_format=0 才会发 PointCloud2，
+    # frame_id 固定为 livox_frame）:
     #   source ~/livox_ws/install/setup.bash
     #   ros2 launch livox_ros_driver2 msg_MID360s_launch.py
-    source_topic_lidar: /livox/lidar
-    input_frame_lidar: livox_frame
+    source_topic_lidar: ""
+    input_frame_lidar: ""
+    # T7（标定 SSOT）后移至 sensor_extrinsics.yaml；当前占位，勿手改。
     lidar_to_world_static: [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0]
 
     # --- World frame ---
