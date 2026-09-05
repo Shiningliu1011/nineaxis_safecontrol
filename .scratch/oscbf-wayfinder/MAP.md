@@ -91,19 +91,25 @@ QP 失败 0(旧配置 kp_pos=60/lead=1e-5);JIT 预热 28.75s;p95 6.177ms。
 - **已实现:** 点云级融合 = 时间戳配对 + voxel 降采样;三层占据(instant /
   unconfirmed / static);`OccupancyTracker` 时间戳驱动;8×10 槽球编码;
   tracks 过滤+速度估计(obs_vel/obs_radius_dot)。
-- **未知决策 [DISCUSS-D]:** 传感器外参**全占位**——标定方案/数据无;
-  `world_frame=base_link` 与规格"固定环境系"冲突(机器人基座动则世界机系动)。
+- **决策 [DISCUSS-D] 已定(2026-09-05,05B):** 传感器外参**待标定**——方案已定
+  两段式(FAST-Calib2 → T_lidar^cam;AX=YB → T_cam^base;复合入
+  sensor_extrinsics.yaml + provenance),20mm 已知物体验收为硬门槛,P6 机械测量
+  为回退;`world_frame=base_link` 与规格"固定环境系"冲突以 **spec 修订(T0)**
+  解决——基座固定 ⇒ base_link 即固定环境系。
 - **Not yet specified:** 传感器真实数据/回放文件不存在;LiDAR 与 depth 的
   时钟同步硬件方案(现为软件配对)。
-- **tickets:** #05A/#05B(坐标系审计+拍板)、#10(时间/延迟模型)。
+- **tickets:** #05B ✅、#05A、#10(时间/延迟模型);impl: T5(标定工具链)/T6(启动自检)。
 
 ### 1.7 Coordinate frames
 - **已实现:** 控制器/感知 `world_frame=base_link`;tool0 名义工具;
   `trajectory_offset_m=[0,0.343,1.587]`(整条参考轨迹被平移);MATLAB 蝴蝶曲线
   被**径向投影到最小二乘圆柱面**再作为参考(近似工具轴=柱轴心)。
+- **决策 [DISCUSS-D] 已定(2026-09-05,05B):** base_link vs 独立环境系之争拍板为
+  **A——全系统 base_link**;base_link 正式定义为用户规定的 Y-up 机架固定系
+  (+Y 竖直、+Z 导轨水平、+X 横向),MuJoCo Z-up 仅 viewer 显示。
 - **未知决策 [DISCUSS-D]:** 参考轨迹为什么是圆柱投影(原始 MATLAB 轨迹无姿态,
-  投影假设来自哪?);base_link vs 环境系。
-- **tickets:** #05A/#05B、#06A/#06B。
+  投影假设来自哪?)。
+- **tickets:** #05A/#05B ✅、#06A/#06B;impl: T0(spec 修订)/T1(tracks 契约)。
 
 ### 1.8 Timing/latency
 - **已实现:** 100Hz;JIT 预热 8.6–28.75s(模块化/全量);单步延迟上报
@@ -177,7 +183,7 @@ QP 失败 0(旧配置 kp_pos=60/lead=1e-5);JIT 预热 28.75s;p95 6.177ms。
 | A | 跟踪语义与验收指标 | **已定案(06B):** 分层语义,cross_track=primary,RMS/p95/max | #06B ✅ |
 | B | 参考轨迹/姿态来源 | **已定案(06B):** 算法测试轨迹,通用接口,source_time=诊断 | #06B ✅ |
 | C | 验收阈值 | **已定案(06B):** cross_track≤0.15/0.5/2.0mm,orient≤0.05°/0.5° | #06B ✅ |
-| D | 感知坐标系 | base_link(现状) vs 固定环境系(规格);外参标定方案 | #05B |
+| D | 感知坐标系 | **已定案(05B):** A 全系统 base_link（基座固定 ⇒ base_link=固定环境系,数学等价;Y-up 机架系）+ spec 修订;标定两段式(FAST-Calib2 + AX=YB)+ 20mm 验收;失效策略 3 层(启动 fail-fast / 单帧 drop / 持续零速闭锁);**否决** B/C 实现(记录演进)/0.5s 重试/静默 identity | #05B ✅ |
 | E | 仿真保真度 | 保持几何积分 plant / 引入 MuJoCo 物理 / 传感器仿真回放 | — |
 | F | 冗余策略 | 4 选 1(见 #07A);是否启用零空间;避障 vs 任务优先 | #07B |
 | G | 性能预算 | **已定案(06B):** 50Hz 预算(20ms)+100Hz 目标;miss rate≤1% | #01B |
@@ -203,7 +209,7 @@ backlog 5 条(已知怎么做,直接实现,不进 Wayfinder)。
 | 06A | 精确刻画当前实现的跟踪语义 | research | — | [#2](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/2) | **P0 起点,已 resolved (2026-09-04)**;AFK 可做;只答「现状为何」→ 见 §5 |
 | 06B | 选定目标跟踪语义与验收标准 | grilling | 06A | [#14](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/14) | **P0 决策枢纽,已 resolved (2026-09-04)**;HITL 8 项拍板 → 见 §5 |
 | 05A | 感知世界坐标系审计(base_link vs 环境系) | research | — | [#4](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/4) | **已 resolved (2026-09-04)**;影响面对比表 + CBF frame contract → 见 issues/05a |
-| 05B | 选定规范世界坐标系与标定策略 | grilling | 05A | [#15](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/15) | **HITL 决策**:base_link vs 固定环境系(§3 D) |
+| 05B | 选定规范世界坐标系与标定策略 | grilling | 05A | [#15](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/15) | **已 resolved (2026-09-05)**;HITL 8 项拍板:选系 A + 标定两段式 + 失败 3 层策略 → 见 §5;迁移拆 T0–T6 |
 | 07A | 冗余自由度策略对比(9-DOF vs 5D) | research | — | [#5](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/5) | 原 07 对 06 的依赖已解:策略对比可独立 AFK |
 | 07B | 选定冗余目标与优先级 | grilling | 06B+07A | [#16](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/16) | **HITL 决策**:4 选 1+nullspace+优先级(§3 F) |
 | 01A | 19.4ms 回归剖面与成本分布 | prototype | — | [#3](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/3) | 只测「慢在哪」+优化候选清单 |
@@ -223,6 +229,13 @@ backlog 5 条(已知怎么做,直接实现,不进 Wayfinder)。
 | 04 | portable 容差回归修复 | impl | [#11](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/11) | 核对语义后放宽容差 |
 | 09 | 配置一致性清理(alpha 漂移/遗留/死参数) | impl | [#12](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/12) | **06B 后优先级提升**:删除 ff_scale 死代码 + maximum_reference_feedrate_step_m_s 死参数 + reference_feedrate_scale 设大 |
 | 11 | SocketCAN 后端与参数注入 | impl(blocked) | [#13](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/13) | 硬件不足暂移出;vcan 代码部分可另行拆小票 |
+| T0 | spec 与参数注释修订(坐标系/验收/故障反应) | impl | [#20](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/20) | **05B 后新增(立即)**:base_link 固定系表述/J1 直线导轨称法/world_frame 语义/20mm 验收/configured stop + interlock;perception_runtime.yaml 头注释同步 |
+| T1 | `/perception/tracks` 契约升级(显式 obstacle observation) | impl | [#21](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/21) | **P0**:timestamp + frame_id(→ 运行期 frame 校验);depends: 05B 选系 |
+| T2 | 自体过滤 bridge 接线(robot_spheres) | impl | [#22](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/22) | **P0**(与 T1 并行):JointState 缓存 → robot_spheres → feed_camera/feed_lidar(引擎侧已支持 fusion_engine.py:33-42) |
+| T3 | 感知健康接线(perception_valid → 零速+锁存) | impl | [#23](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/23) | **P0**:depends T1+T2;apply_qp_health_gate 已存在;perception_timeout_s=1.0 |
+| T4 | 合成传感器仿真(闭环验证用) | impl | [#24](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/24) | **P1**: 仅无现场条件时闭环验证;现场条件具备后以真机为准 |
+| T5 | 标定工具链(FAST-Calib2 ROS2 移植 + AX=YB + 板/夹具) | impl | [#25](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/25) | **P1**(P6 前置):DIY PVC 板(4 反光环+4 视觉标记)+ 法兰 Apriltag |
+| T6 | 启动自检程序(矩阵校验+provenance 比对+20mm 验收) | impl | [#26](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/26) | **P1**:depends T5+T1;失败拒绝进入避障模式 |
 
 ---
 
@@ -284,12 +297,15 @@ consequences 见 issues/06b。
 
 ### 05A — 感知世界坐标系审计（resolved）
 
-**审计结论（2026-09-04,决策仍归 05B）:** 全链路点云/占据/tracks/FK 几何实际共用
-`base_link`（数学自洽）;但 `world_frame` 参数**不控制**任何变换——它只作为 3 个
-输出话题的 frame_id + 休眠中的 TF 目标（use_tf=false）;真正绑定 frame 的是
-`camera_to_world_static`（perception_runtime.yaml,非单位阵假定矩阵）与控制器侧
-隐式约定。`config/sensor_extrinsics.yaml` 为**死配置**（零代码消费）;TF 缺失时
-行为 = 警告 + 回落静态矩阵/identity 的 silent degradation（非 fail-fast / 非 drop）。
+**审计结论（2026-09-04,决策仍归 05B）:** **软件内部 frame convention 当前自洽**——
+全链路点云/占据/tracks/FK 几何实际共用 `base_link`（数学自洽,仅为软件内部约定,
+不代表物理坐标正确;当前无物理标定精度证据:相机外参仅假定安装位姿、无
+calibration provenance,LiDAR 外参仍未验证）;`world_frame` 参数**不控制**任何
+变换——它只作为 3 个输出话题的 frame_id + 休眠中的 TF 目标（use_tf=false）;
+真正绑定 frame 的是 `camera_to_world_static`（perception_runtime.yaml,非单位阵
+假定矩阵）与控制器侧隐式约定。`config/sensor_extrinsics.yaml` 为**死配置**
+（零代码消费）;TF 缺失时行为 = 警告 + 回落静态矩阵/identity 的 silent degradation
+（非 fail-fast / 非 drop）。
 
 **关键事实（修正 MAP 1.6 表述）:**
 - 「外参全占位」不准确:**相机外参**实际加载的是 perception_runtime.yaml 的非单位
@@ -301,8 +317,44 @@ consequences 见 issues/06b。
   三层占据（instant/unconfirmed/static）跨帧持久化语义、ESDF 与 track 速度估计
   会破坏（环境视运动 + 双影 + 假移动 track）;单帧几何仍自洽。
 - 与 spec 口径差异:spec 称 "base_link 随升降轴运动",与 URDF（J1 prismatic 位于
-  base_link 之下,移动的是 Link1）不符;真机基座落地/升降台状态 **Not yet specified**。
+  base_link 之下,移动的是 Link1）不符;真机基座**固定落地**（无升降台,该"升降台
+  Not yet specified"项已由 05B 拍板:基座固定不动;J1 为水平直线导轨,见 §5 05B）。
+  -- 本文中"升降台/升降轴"术语自 05B 起终止使用（实为直线导轨）。
 - CBF frame contract:C1-C6（机器人几何与障碍 pos/vel/radii 同系=base_link,
   tracks 消息无 frame 元数据,无任何运行期校验,违反=静默错误）。
 - 05B 决策输入（选系矩阵 / 标定四选一 / 缺失数据清单 / 迁移接口清单）全部在
   issues/05a §4、§7 与附录,交由人类拍板。
+
+### 05B — 选定规范世界坐标系与标定策略（resolved,2026-09-05）
+
+**决策内容（8 项拍板,详见 issues/05b §Resolution）:**
+
+1. **基座运动边界:** 基座物理固定;1P8R,J1 = 工作台直线导轨/丝杠(链内关节 q1,
+   URDF 轴 z,0–0.585m),移动的是滑台+臂,不是 base_link;
+   **否决/终止**"升降轴/升降台"称谓(实为直线导轨)。
+2. **坐标系约定:** base_link = 用户规定的 Y-up 机架系(+Y 竖直、+Z 导轨水平、
+   +X 横向);感知/控制器/MoveIt/POE FK 全链路共用;MuJoCo Z-up 仅 viewer 显示。
+3. **选系: A(全系统 base_link)。** 依据:基座固定 + 传感器臂外固定安装 ⇒
+   base_link 与固定环境系数学等价、零改动零风险。B/C 不实现;**C 保留为演进路径**
+   (未来移动基座:感知持久化存环境系 + 边界带 timestamp 变换)。
+4. **spec 处理:** 修订错误表述(base_link 固定/J1 直线导轨/world_frame 语义/
+   20mm 验收/故障反应)→ **T0**(立即)。
+5. **失效策略(3 层):** 启动期 fail-fast(矩阵自检+provenance 比对≤20mm/5°+
+   已知物体 20mm 验收→拒避障模式);运行期单帧失效→drop(沿用上一帧+d_safe);
+   持续 fusion_age>1.0s→`apply_qp_health_gate` 零速+锁存(restart interlock)。
+   **否决:** 0.5s 有限重试;静默 identity 回退(现 `_sensor_to_world`
+   current→latest→static→identity 链废弃)。
+6. **不可信判据:** 非有限矩阵/det≠+1/单位阵/与记录偏差超限/时间戳超 0.5s/
+   fusion_age>1s/自体过滤无效(与几何重叠)/已知物体验收失败——任一成立按第 5 条处置。
+7. **标定策略(两段式):** FAST-Calib2(PVC+4 反光环+4 视觉标记 DIY 板,≥3 场景,
+   lidar_center_test 前置)→ T_lidar^cam;法兰小 Apriltag + AX=YB → T_cam^base;
+   复合 T_lidar^base 入 sensor_extrinsics.yaml + provenance;20mm 验收硬门槛;
+   P6 机械测量回退;**否决**反光球/$2k 孔板主标定、传感器装臂/运动部件。
+8. **迁移范围(T0–T6 全立项,Part of #1):** T0 spec 修订(立即);
+   T1 tracks 契约 timestamp+frame_id(P0);T2 自体过滤 bridge 接线(P0,与 T1 并行);
+   T3 感知健康 perception_valid→零速+锁存(P0,依赖 T1+T2);
+   T4 合成传感器仿真(P1);T5 标定工具链(P1,P6 前置);
+   T6 启动自检程序(P1,依赖 T5+T1);**仅 P6 现场数值标定+20mm 验收受现场阻塞**。
+
+**文档产物:** ADR 0002(base_link 唯一规范系)/ADR 0003(感知失效策略);
+CONTEXT.md 词汇(世界坐标系/标定 provenance);spec 修订(T0 内容)。

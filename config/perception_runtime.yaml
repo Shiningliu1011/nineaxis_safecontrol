@@ -10,12 +10,15 @@
 #   ros2 run robot_safecontrol_moveit perception_bridge
 #   ros2 run robot_safecontrol_moveit perception_demo
 #
-# World frame is a fixed environment frame (not base_link, which moves with
-# the lift axis).  The sensor->world 4x4 extrinsics are provided by
-# camera_to_world_static / lidar_to_world_static (placeholders; replace with
-# real TF + use_tf:true after mounting calibration).  Keep workspace/voxel
-# consistent with portable_oscbf/config/obstacle_params.yaml so the ESDF
-# grid shape matches.
+# World frame is base_link: a fixed machine frame (Y-up: +Y vertical, +Z the
+# horizontal J1 linear-rail direction, +X lateral).  The base is fixed in the
+# work environment and J1 is the in-chain prismatic joint (q1), so base_link
+# does not move with any joint (05B decision 2026-09-05).  The sensor->world
+# 4x4 extrinsics are provided by camera_to_world_static / lidar_to_world_static
+# (ASSUMED/PROVISIONAL poses — no calibration provenance yet; replace with
+# calibrated values per the two-stage calibration plan, keep use_tf:false
+# until then).  Keep workspace/voxel consistent with
+# portable_oscbf/config/obstacle_params.yaml so the ESDF grid shape matches.
 
 perception_bridge:
   ros__parameters:
@@ -26,9 +29,11 @@ perception_bridge:
     camera_to_world_static: [0.0, 0.0, 1.0, -0.9, -1.0, 0.0, 0.0, 0.4, 0.0, -1.0, 0.0, 1.7, 0.0, 0.0, 0.0, 1.0]
 
     # --- LiDAR (Livox Mid-360S) ---
-    # Leave empty to disable LiDAR (single-camera mode, backward compatible).
-    source_topic_lidar: ""
-    input_frame_lidar: ""
+    # 驱动（注意：msg_MID360s_launch.py 的 xfer_format=0 才会发 PointCloud2）:
+    #   source ~/livox_ws/install/setup.bash
+    #   ros2 launch livox_ros_driver2 msg_MID360s_launch.py
+    source_topic_lidar: /livox/lidar
+    input_frame_lidar: livox_frame
     lidar_to_world_static: [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0]
 
     # --- World frame ---

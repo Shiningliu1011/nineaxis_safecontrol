@@ -30,12 +30,22 @@
 
 # Resolution — 感知世界坐标系审计（2026-09-04）
 
-**结论（一句话）：** 当前整条感知→CBF 链在数学上是自洽的——点云、占据栅格、tracks、
-控制器 FK 几何全部以 `base_link` 为共同坐标系；但 `world_frame` 参数本身在今天
-**并不控制**任何坐标变换（它只是输出消息 frame_id + 休眠中的 TF 目标），真正绑定
-frame 语义的是两个静态外参矩阵和控制器侧的隐式约定；`config/sensor_extrinsics.yaml`
-是**完全未被消费的死配置**。同 frame 自洽成立的前提是「基座永远不动」；一旦基座
-运动，三层占据模型/ESDF/track 速度估计全部出现语义破坏（详见 §5）。
+**结论（一句话）：** **软件内部 frame convention 当前自洽**——点云、占据栅格、tracks、
+控制器 FK 几何全部以 `base_link` 为共同坐标系，感知→CBF 链在数学上自洽。但这
+**不代表物理坐标正确**，二者必须严格区分：
+
+- 软件内部 frame convention 当前自洽（点云/占据/tracks/FK 同为 base_link，
+  数学运算一致）；
+- Camera 静态外参只有**假定安装位姿**（perception_runtime.yaml 的非单位阵，
+  无标定来源 / 无 calibration provenance）；
+- LiDAR 外参**仍未验证**（单位阵占位且 `source_topic_lidar=""` 整条链未启用）；
+- 因此当前**没有证据**证明真实障碍物在 base_link 中的位置具有物理标定精度。
+
+其余事实：`world_frame` 参数本身在今天**并不控制**任何坐标变换（它只是输出消息
+frame_id + 休眠中的 TF 目标），真正绑定 frame 语义的是两个静态外参矩阵和控制器侧
+的隐式约定；`config/sensor_extrinsics.yaml` 是**完全未被消费的死配置**。同 frame
+自洽成立的前提是「基座永远不动」；一旦基座运动，三层占据模型/ESDF/track 速度估计
+全部出现语义破坏（详见 §5）。
 
 本文档按【代码事实 → 引用】呈现，不做 05B 决策。所有行号以 2026-09-04 main 分支为准。
 
