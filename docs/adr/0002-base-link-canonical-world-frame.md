@@ -12,11 +12,14 @@
 **Considered Options**：A（本决定）全系统 base_link——感知、控制、几何全在
 base_link 中表达，无任何跨系变换，与现有代码/测试/参数零迁移量，软件内部参考系
 自洽（注：软件内部自洽不等于物理标定精度，后者另见 ADR 0003 与 05A 结论）；
-B 感知用独立固定世界系（如 map/odom），控制器保留 base_link，感知→控制器边界
-引入显式带时间戳变换——被否：两套坐标系并存、边界变换本身成为新的失效面，
-且对本项目无收益（base_link 已固定）；C 感知持久占用与动态目标存于固定世界系、
-OSCBF/POE/碰撞几何留在 base_link，仅在感知→控制器边界做变换——保留为演进路径
-记录（未来若 base_link 变为移动基座时启用），当前不实现。
+B 全系统 fixed-world——感知、FK 与 CBF 全部表达在独立环境系（map/workcell/
+world，repo 中不存在该帧，需先定义物理基准并做基座→env 标定），被否：需定义
+新帧 + 整链路（内核/调用方/感知）迁移，固定基座下与 A 数学等价、短期收益为零；
+C 感知 fixed-world + 控制器/CBF base_link（混合）——perception 以固定环境系为
+canonical persistence frame（三层占据/ESDF/track 关联在其内做），OSCBF/POE/
+碰撞几何留在 base_link，感知→控制器边界用**带 timestamp 的显式 transform** 转换
+obstacle position/velocity——**保留为演进路径记录**（未来若 base_link 变为移动
+基座/外部工装对齐需求出现时启用），当前不实现。
 
 **Consequences**：规格中「world_frame 是固定环境坐标系、不是 base_link」与
 「base_link 随升降轴运动」等表述错误，须修订（T0）；`base_link` 语义正式定义为

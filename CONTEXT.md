@@ -60,8 +60,14 @@ _Avoid_: world_frame（独立 env 帧）、map、odom
 
 **标定 provenance**: 每个传感器静态外参的来源记录——方法（如 FAST-Calib2 /
 AX=YB）、日期、操作者、残差与误差估计。外参进入 `config/sensor_extrinsics.yaml`
-时必须携带 provenance；启动期自检（矩阵自检 + 与 provenance 记录比对
-≤20mm/5° + 已知尺寸物体 20mm 验收）任一不通过则拒绝进入避障模式。
+时必须携带 provenance（含 `calibrated`、`sensor_serial`、`calibration_id`、
+`timestamp`、`operator`、`residual`、`error_estimate`、`frame_from`、
+`frame_to`）；该文件是**唯一 calibration authority**（ADR 0004，标定工具写它、
+bridge/launch 读它、T6 校验「被校验 record == runtime 加载 record（ID/hash）」），
+`perception_runtime.yaml` 不持有标定矩阵（T7 落地后）。启动期自检分两组——
+数学合法性（元素有限/R^T R ≈ I/det≈1/bottom row/translation 机械范围，
+**非单位阵不是判据**——identity 可以是合法外参）与标定状态（provenance 完整 +
+与记录比对 ≤20mm/5° + 已知物体验收）——任一不通过则拒绝进入避障模式。
 _Avoid_: 外参来源、calibration record
 
 ## 轨迹与几何

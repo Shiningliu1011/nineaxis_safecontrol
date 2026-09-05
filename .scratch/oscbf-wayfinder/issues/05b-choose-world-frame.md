@@ -143,18 +143,33 @@
    （= base_link，删除「必须独立环境系」）/ 20mm 已知物体验收 / 故障反应
    （configured stop + restart interlock）；`perception_runtime.yaml` 头部注释
    同步修正。
-5. **失效策略：** ①启动期 fail-fast（矩阵自检 + 与 provenance 记录比对
-   ≤20mm/5° + 已知尺寸物体 20mm 验收 → 任一失败拒绝进入避障模式）；
-   ②运行期单帧 TF/外参失效 → 丢弃该帧（CBF 沿用上一帧 + d_safe 裕度）；
-   ③持续失效 fusion_age > `perception_timeout_s`(1.0s) → 经
-   `apply_qp_health_gate` 置零速 + 锁存（restart interlock）。
+5. **失效策略：** ①启动期 fail-fast（见第 6 条分组校验 → 任一失败拒绝进入避障
+   模式）；②运行期**仅瞬时数据异常**（单帧 TF 查询失败/丢帧/解码错）→ 丢弃该帧
+   （CBF 沿用上一帧 + d_safe 裕度）；③持续失效 fusion_age >
+   `perception_timeout_s` → 经 `apply_qp_health_gate` 置零速 + 锁存
+   （restart interlock）。
    **否决：② 0.5s 有限重试窗口（与 ③ 阈值语义重叠、陈旧数据窗口只是包装风险）；
    ③ 静默身份回退（几何含义错误、不可追踪的静默降级）。**
    当前 `_sensor_to_world` 的 current→latest→static→identity 兜底与 static 参数
    为空时静默 `_identity_extrinsics()` 行为按本策略废弃。
-6. **不可信判据（启动校验 + 运行期每周期）：** 矩阵元素非有限 / det≠+1 /
-   单位阵 / 与 provenance 记录偏差超限 / 时间戳超 camera_max_age(0.5s) /
-   fusion_age>1s / 自体过滤未生效（tracks 与机器人几何重叠）/ 已知物体验收失败。
+   **（2026-09-05 post-review 修订：① 细化按下条分组；「运行期单帧失败」明确
+   限定为瞬时数据异常——静态外参本身无效/provenance 缺失时**立即 invalid、
+   不允许进入 perception-based avoidance**，不是「drop 一帧继续」；
+   ③ 的 perception_timeout_s=1.0s 为 provisional engineering value，
+   最终由 #10 陈旧数据模型结算，见 §Post-review。）**
+6. **不可信判据（启动校验 + 运行期每周期）分两组（2026-09-05 post-review 修订：
+   删除「非单位阵」判据——合法刚体外参可以为 identity，identity 只是配置管理
+   约定，不等价于「未标定」；把数学合法性与标定状态分开，标定状态判据取代
+   matrix≠identity）：**
+   - **数学合法性**：元素非有限 / R^T R 偏离单位阵 / det≠+1 / bottom row
+     非 [0 0 0 1] / translation 超出机械合理范围；
+   - **标定状态**：`calibrated: false` / provenance 字段缺失
+     （sensor_serial、calibration_id、method、timestamp、operator、residual、
+     error_estimate、frame_from、frame_to）/ 与记录偏差超 ≤20mm/5° /
+     calibration record ≠ runtime 加载值（ID/hash，ADR 0004）/ 已知物体
+     20mm 验收失败；
+   - **运行期数据健康**：时间戳超 camera_max_age(0.5s) / fusion_age>1s
+     （provisional，#10 结算）/ 自体过滤未生效（tracks 与机器人几何重叠）。
    任意一条成立 ⇒ 按第 5 条策略处置。
 7. **标定策略（两段式）：** Stage 1 = FAST-Calib2
    （PVC 板 + 4 反光环 + 4 视觉标记 DIY 标定板，≥3 场景，`lidar_center_test`
@@ -165,16 +180,28 @@
    失败/不可用时）；**否决：反光球靶标与 $2k 孔板作为主标定方案；传感器装
    臂上/运动部件（外参变时变，否决）。** 未校准证据前不宣称物理精度
    （与 05A §Resolution 一致）。
-8. **迁移范围（T0–T6 全部立项于 impl backlog，Part of #1）：**
+8. **迁移范围（T0–T7 全部立项于 impl backlog，Part of #1）：**
    - **T0** spec 修订（立即；本批完成的 spec 修订即其内容，按惯例列票归档）——
+   - **T7 标定 SSOT 接线（2026-09-05 post-review 新增，P0，T1/T2/T3 前置）**：
+     `sensor_extrinsics.yaml` 成为唯一 calibration authority——bridge/launch
+     从它加载外参，`perception_runtime.yaml` 移除 `camera_to_world_static` /
+     `lidar_to_world_static`（仅留 topic/frame/voxel/timeout/fusion）；
+     现有假定相机矩阵迁移为 `calibrated: false` 记录（保持单 Camera 行为不变）；
+     结构扩展 calibrated/sensor_serial/calibration_id/method/timestamp/operator/
+     residual/error_estimate/frame_from/frame_to；T6 校验 record==runtime（ID/hash）。
+     详见 ADR 0004 + issues/07b-post-review（新票见 §Post-review）；
    - **T1** `/perception/tracks` 契约升级：显式 obstacle observation contract
-     （timestamp + frame_id，可选来源/置信度/provenance 指纹）（**P0**）；
+     （timestamp + frame_id，可选来源/置信度/provenance 指纹）（**P0**，
+     **depends T7**）；
    - **T2** 自体过滤 bridge 接线：`perception_bridge` 缓存 JointState → 构建
      robot_spheres → `feed_camera/feed_lidar` 传入（引擎侧已支持，
-     fusion_engine.py:33-42，bridge 侧 TODO）（**P0**，与 T1 并行）；
+     fusion_engine.py:33-42，bridge 侧 TODO）（**P0**，与 T1 并行，
+     **depends T7**）；
    - **T3** 感知健康接线：`/perception/status` 的 perception_valid →
-     控制器健康通道 → 零速 + 锁存（**P0**，依赖 T1+T2 提供时间戳语义；
-     T1 之前 `_tracks_callback` 无新鲜度检查、obs_state 永久缓存）；
+     控制器健康通道 → 零速 + 锁存（**P0**，依赖 T1+T2 提供时间戳语义 +
+     T7（外参可信）+ #10 stale-data 模型；T1 之前 `_tracks_callback` 无新鲜度
+     检查、obs_state 永久缓存；age_stop 暂用 perception_timeout_s=1.0s
+     provisional，由 #10 结算）；
    - **T4** 合成传感器仿真（**P1**：仅用于闭环验证，未现场条件下替代；
      现场条件具备后以真机为准）；
    - **T5** 标定工具链：FAST-Calib2 ROS2 移植 + AX=YB 求解器
@@ -186,3 +213,45 @@
 **被否决并记录（供后续审阅）：** B（fixed-world 全域）、C（混合且不排除演进）、
 反光球/机械测量为主标定、0.5s 有限重试（②）、静默身份回退、传感器装臂/
 运动部件、升降台（本项目无升降轴，术语终止使用）。
+
+---
+
+## Post-review（2026-09-05，用户审查 2e21db4 后）
+
+**结论：05B 决策 PASS with changes（核心架构决策保留，本批非推翻重做）。**
+6 项修整与本票的落点：
+
+1. **P0-1 标定 SSOT**——`config/sensor_extrinsics.yaml` 为唯一 calibration
+   authority（标定工具写它、bridge/launch 读它）；`perception_runtime.yaml`
+   移除 calibration matrix，只留 topic/frame/voxel/timeout/fusion；
+   T6 验证「被校验 record == runtime 加载 record」（calibration_id/hash）。
+   **新立项 T7（P0，T1/T2/T3 前置）**；ADR 0004 记录决策；
+   本票 item 5/6/8 已同步（拆分校验分组 + 记录一致性）。
+2. **P0-2 删除「非单位阵=有效标定」**——合法 SE(3) 外参可为 identity；
+   identity 是配置管理约定，不是几何合法性规则。拆为「数学合法性」
+   （R^T R ≈ I / det≈1 / 有限 / bottom row / translation 机械范围）+
+   「标定状态」（calibrated: true + provenance 字段完整 + 20mm 验收 +
+   record 一致）；ADR 0003、本票 item 6、T6 已同步。
+3. **P0-3 陈旧障碍物使用模型**——Ticket #10 须输出
+   `d_safe,eff = d0 + v_bound·age + σ_calib + σ_tracking` 及分档
+   （age ≤ age_warn use+inflate；age_warn < age ≤ age_stop conservative；
+   age > age_stop zero/latch）；`perception_timeout_s=1.0s` 明确为
+   **provisional engineering value**，由 #10 验证/修订；
+   静态外参无效与瞬时单帧异常分离——前者立即 invalid、不入感知避障。
+   ADR 0003、本票 item 5/6、T3 已同步；#10（#7）已留言要求输出该模型。
+4. **P1 ADR 0002 B/C 定义修正**——B = 全系统 fixed-world（感知+FK+CBF 全部
+   独立环境系）；C = 感知 fixed-world + 控制器/CBF base_link（混合，未来
+   移动基座演进路线）；修复后与 05B 原票定义一致。
+5. **P1 LiDAR 默认关闭**——`perception_runtime.yaml` 回退
+   `source_topic_lidar: ""` / `input_frame_lidar: ""`（与 spec 默认一致）；
+   另设 `config/perception_dual_sensor_real.yaml` 显式 profile，
+   仅 calibration gate（T5/T6/T7）通过后可用。
+6. **P1 措辞**——ADR 0003/本票 5-6 节统一标为 Target/Decided behavior；
+   当前实现状态（T1/T2/T3/T5/T6/T7 未完成：自体过滤 TODO、
+   perception_valid 无人订阅、兜底链未改）在 MAP/ADR 标注，避免
+   「规格写好了=实现好了」的误读。
+
+**附带修复（旧问题）**：`PerceptionBridge.__init__` 中参数读取块位于
+`FusionEngine(...)` 构造**之前**（工作树已验证：实际启动 source build 成功，
+`PERCEPTION_BRIDGE_STARTED`；git main 2e21db4 上为乱序会 AttributeError），
+随 fix commit 提交。
