@@ -229,7 +229,8 @@
    本票 item 5/6/8 已同步（拆分校验分组 + 记录一致性）。
 2. **P0-2 删除「非单位阵=有效标定」**——合法 SE(3) 外参可为 identity；
    identity 是配置管理约定，不是几何合法性规则。拆为「数学合法性」
-   （R^T R ≈ I / det≈1 / 有限 / bottom row / translation 机械范围）+
+   （R^T R ≈ I / det≈+1（非 |det|≈1，二轮修正）/ 有限 / bottom row /
+   translation 机械范围）+
    「标定状态」（calibrated: true + provenance 字段完整 + 20mm 验收 +
    record 一致）；ADR 0003、本票 item 6、T6 已同步。
 3. **P0-3 陈旧障碍物使用模型**——Ticket #10 须输出
@@ -255,3 +256,38 @@
 `FusionEngine(...)` 构造**之前**（工作树已验证：实际启动 source build 成功，
 `PERCEPTION_BRIDGE_STARTED`；git main 2e21db4 上为乱序会 AttributeError），
 随 fix commit 提交。
+
+---
+
+## Post-review（第 2 轮，2026-09-05，二轮审查 273a57f 后）
+
+**结论：3 P0 + 2 P1；本批修复合入后 05B 正式关口通过。** 5 项修复与落点：
+
+1. **P0 real profile 默认 inert（无代码 gate 前不形成双传感运行路径）**——
+   `perception_dual_sensor_real.yaml` 曾直接设置 `source_topic_lidar: /livox/lidar`
+   + identity 占位矩阵，且被 `setup.py` 全量安装进 share，等于可执行的危险配置；
+   现已将 LiDAR 段置空（source_topic_lidar / input_frame_lidar = ""）并移除矩阵，
+   直接以其为 params-file 运行 = 单相机；头注释明确 gate 必须是 fail-fast
+   **代码**（T7/T6 落地，ADR 0003/0004），注释/文件名不是 gate。
+2. **P0 det 判据修正**——`|det(R)| ≈ 1` 会接受 det = −1 的反射矩阵（反射同样
+   满足 R^T R ≈ I，但不是 SO(3)，障碍坐标会被镜像）；统一为 `det(R) ≈ +1`，
+   不取绝对值。ADR 0003、T6（#26）已改；本票 item 6 与 MAP §5 原本即
+   det≠+1 ✓。
+3. **P0 运行时文件身份（T7 新增契约）**——源码树 `config/` 与 `setup.py` 安装
+   副本是两个物理位置；T7 必须让 bridge/launch 经
+   `get_package_share_directory()` 解析**唯一 resolved 绝对路径**加载，
+   启动记录 path + calibration_id + 内容 hash（日志与 `/perception/status`），
+   T6 校对节点**实际加载**的 ID/hash（不是再读源码树副本）；T5 写入后须重新
+   部署并验证 record==runtime。ADR 0004（运行时文件身份一节）、#27、MAP T7 行
+   已同步。
+4. **P1 GitHub native blockers**——#21/#22/#23/#26 的依赖此前只写在正文
+   （blocked_by 均为 0）；已建立 native blocking 关系：
+   T1←T7、T2←T7、T3←T1+T2+T7+#10(#7)、T6←T5+T1+T7
+   （验证：21/22 各 1 条，23 共 4 条，26 共 3 条）。frontier 语义恢复：
+   T1/T2 在 T7 完成前不会被判为 unblocked。
+5. **P1 Livox decoder 收紧 + 回归测试**——`_points_xyz` fallback 补
+   is_bigendian / PointField datatype / count / offset / row_step 检查，
+   并修复返回 (N,3,1) 的形状 bug（严格 (N,3)）；
+   `tests/test_perception_bridge_points.py` 构造 Livox 风格混合字段
+   PointCloud2，断言严格 (N,3) 且数值一致，另含 homogeneous / 大端 /
+   字段类型 / row_step 负例（perception 侧 10 项测试通过）。

@@ -25,9 +25,10 @@ current→latest→static→identity 兜底、`perception_valid` 无人订阅、
   坐标系被定义为与 base_link 重合），identity 是不是 placeholder 只是配置管理
   约定，不是 SE(3) 几何合法性规则；「matrix != identity」不能替代「这份数据
   真的被标定过」：
-  - **数学合法性**：元素均有限；`R^T R ≈ I`（按残差阈值）；`|det(R)| ≈ 1`；
-    bottom row ≈ [0 0 0 1]；translation 在机械合理范围内（按 workspace + 支架
-    物理包络设定）。
+  - **数学合法性**：元素均有限；`R^T R ≈ I`（按残差阈值）；`det(R) ≈ +1`
+    （**不取绝对值**——`|det(R)| ≈ 1` 会把 det = −1 的反射矩阵误判为合法旋转；
+    反射满足 `R^T R ≈ I` 但不是 SO(3)，障碍坐标会被镜像）；bottom row ≈
+    [0 0 0 1]；translation 在机械合理范围内（按 workspace + 支架物理包络设定）。
   - **标定状态（provenance 完整）**：`calibrated: true`；`sensor_serial`、
     `calibration_id`、`method`、`timestamp`、`operator`、`residual`、
     `error_estimate`、`frame_from`、`frame_to` 完整且与记录一致；与 provenance

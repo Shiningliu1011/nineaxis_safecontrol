@@ -209,7 +209,7 @@ backlog 5 条(已知怎么做,直接实现,不进 Wayfinder)。
 | 06A | 精确刻画当前实现的跟踪语义 | research | — | [#2](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/2) | **P0 起点,已 resolved (2026-09-04)**;AFK 可做;只答「现状为何」→ 见 §5 |
 | 06B | 选定目标跟踪语义与验收标准 | grilling | 06A | [#14](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/14) | **P0 决策枢纽,已 resolved (2026-09-04)**;HITL 8 项拍板 → 见 §5 |
 | 05A | 感知世界坐标系审计(base_link vs 环境系) | research | — | [#4](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/4) | **已 resolved (2026-09-04)**;影响面对比表 + CBF frame contract → 见 issues/05a |
-| 05B | 选定规范世界坐标系与标定策略 | grilling | 05A | [#15](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/15) | **已 resolved (2026-09-05)**;HITL 8 项拍板:选系 A + 标定两段式 + 失败 3 层策略 → 见 §5;迁移拆 T0–T6 |
+| 05B | 选定规范世界坐标系与标定策略 | grilling | 05A | [#15](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/15) | **已 resolved (2026-09-05)**;HITL 8 项拍板:选系 A + 标定两段式 + 失败 3 层策略 → 见 §5;迁移拆 T0–T7 |
 | 07A | 冗余自由度策略对比(9-DOF vs 5D) | research | — | [#5](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/5) | 原 07 对 06 的依赖已解:策略对比可独立 AFK |
 | 07B | 选定冗余目标与优先级 | grilling | 06B+07A | [#16](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/16) | **HITL 决策**:4 选 1+nullspace+优先级(§3 F) |
 | 01A | 19.4ms 回归剖面与成本分布 | prototype | — | [#3](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/3) | 只测「慢在哪」+优化候选清单 |
@@ -230,13 +230,13 @@ backlog 5 条(已知怎么做,直接实现,不进 Wayfinder)。
 | 09 | 配置一致性清理(alpha 漂移/遗留/死参数) | impl | [#12](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/12) | **06B 后优先级提升**:删除 ff_scale 死代码 + maximum_reference_feedrate_step_m_s 死参数 + reference_feedrate_scale 设大 |
 | 11 | SocketCAN 后端与参数注入 | impl(blocked) | [#13](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/13) | 硬件不足暂移出;vcan 代码部分可另行拆小票 |
 | T0 | spec 与参数注释修订(坐标系/验收/故障反应) | impl | [#20](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/20) | **05B 后新增(立即)**:base_link 固定系表述/J1 直线导轨称法/world_frame 语义/20mm 验收/configured stop + interlock;perception_runtime.yaml 头注释同步 |
-| T7 | 标定 SSOT 接线(sensor_extrinsics.yaml 唯一真源) | impl | [#27](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/27) | **P0(新增,post-review),T1/T2/T3 前置**:bridge/launch 读 sensor_extrinsics.yaml、runtime yaml 去矩阵、假定矩阵迁为 calibrated:false、校验 record==runtime(ID/hash);ADR 0004 |
+| T7 | 标定 SSOT 接线(sensor_extrinsics.yaml 唯一真源) | impl | [#27](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/27) | **P0(新增,post-review),T1/T2/T3 前置**:bridge/launch 读 sensor_extrinsics.yaml、runtime yaml 去矩阵、假定矩阵迁为 calibrated:false、校验 record==runtime(ID/hash);**运行时经 ament share 解析唯一 resolved 绝对路径加载,启动记录 path+calibration_id+内容 hash,T6 对比节点实际加载值(ADR 0004 运行时文件身份)** |
 | T1 | `/perception/tracks` 契约升级(显式 obstacle observation) | impl | [#21](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/21) | **P0,depends T7**:timestamp + frame_id(→ 运行期 frame 校验) |
 | T2 | 自体过滤 bridge 接线(robot_spheres) | impl | [#22](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/22) | **P0**(与 T1 并行),**depends T7**:JointState 缓存 → robot_spheres → feed_camera/feed_lidar(引擎侧已支持 fusion_engine.py:33-42) |
 | T3 | 感知健康接线(perception_valid → 零速+锁存) | impl | [#23](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/23) | **P0**:depends T1+T2+T7+#10 模型;age_stop 暂=perception_timeout_s=1.0s provisional;apply_qp_health_gate 已存在 |
 | T4 | 合成传感器仿真(闭环验证用) | impl | [#24](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/24) | **P1**: 仅无现场条件时闭环验证;现场条件具备后以真机为准 |
 | T5 | 标定工具链(FAST-Calib2 ROS2 移植 + AX=YB + 板/夹具) | impl | [#25](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/25) | **P1**(P6 前置):DIY PVC 板(4 反光环+4 视觉标记)+ 法兰 Apriltag |
-| T6 | 启动自检程序(数学合法性+标定状态+record==runtime) | impl | [#26](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/26) | **P1**:depends T5+T1+T7;按 05B item 6 分组判据(无「非单位阵」);失败拒绝进入避障模式 |
+| T6 | 启动自检程序(数学合法性+标定状态+record==runtime) | impl | [#26](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/26) | **P1**:depends T5+T1+T7;按 05B item 6 分组判据(无「非单位阵」;det≈+1 不取 |det|≈1);失败拒绝进入避障模式 |
 
 ---
 
@@ -363,6 +363,8 @@ calibration provenance,LiDAR 外参仍未验证）;`world_frame` 参数**不控�
 8. **迁移范围(T0–T7 全立项,Part of #1):** T0 spec 修订(立即);
    **T7 标定 SSOT 接线(P0,T1/T2/T3 前置,新增)**——sensor_extrinsics.yaml 唯一真源、
    runtime yaml 去矩阵、假定矩阵迁为 calibrated:false、record==runtime 校验;
+   **运行时经 ament share 解析唯一 resolved 绝对路径加载,启动记录
+   path+calibration_id+内容 hash,T6 对比节点实际加载值(ADR 0004)**;
    T1 tracks 契约 timestamp+frame_id(P0,depends T7);
    T2 自体过滤 bridge 接线(P0,与 T1 并行,depends T7);
    T3 感知健康 perception_valid→零速+锁存(P0,依赖 T1+T2+T7+#10 模型;
@@ -373,6 +375,6 @@ calibration provenance,LiDAR 外参仍未验证）;`world_frame` 参数**不控�
 
 **文档产物:** ADR 0002(base_link 唯一规范系;post-review 修正 B/C 定义)/
 ADR 0003(感知失效策略;post-review 修订判据分组+provisional 1.0s)/
-ADR 0004(标定 SSOT);CONTEXT.md 词汇(世界坐标系/标定 provenance);
+ADR 0004(标定 SSOT;二轮补充「运行时文件身份」);CONTEXT.md 词汇(世界坐标系/标定 provenance);
 spec 修订(T0 内容)。以上失败/超时/闭锁行为均为 Target/decided,
 非 current behavior(实现见 T1–T7)。
