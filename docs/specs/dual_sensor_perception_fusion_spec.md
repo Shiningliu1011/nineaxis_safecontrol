@@ -73,8 +73,13 @@ ESDF 构建、动态聚类与发布。新增即时占据安全通道（`/percept
     以便单 Camera 场景下行为与原版完全一致，无需修改任何配置。
 18. 作为部署者，我想要 LiDAR 和 Camera 各有独立的源体素尺寸参数，
     以便根据各自点云密度选择合适的降采样分辨率。
-19. 作为部署者，我想要 world_frame 指向固定环境坐标系（而非 base_link），
-    以便感知结果在机械臂升降运动中保持空间稳定。
+19. 作为部署者，我想要 world_frame 指向 base_link（固定的机架基坐标系，Y-up：
+    +Y 竖直向上、+Z 为 J1 直线导轨水平方向、+X 横向），以便感知结果与控制器、
+    运动学共用同一坐标系，链路零跨系变换。
+    注：05B 定案（2026-09-05）——基座物理固定、J1 为链内直线导轨/丝杠移动关节
+    （q1，非基座运动），base_link 不随任何关节运动，即固定环境系；本规格旧表述
+    「base_link 随升降轴运动」与「world_frame 必须是独立固定环境系」**作废**，
+    「升降轴」称法终止使用（实为直线导轨）。
 20. 作为部署者，我想要 launch 文件新增 LiDAR 相关参数（topic、frame、
     extrinsics），以便双传感器部署只需修改 launch 参数和外参配置。
 21. 作为感知开发者，我想要传感器回调使用 ReentrantCallbackGroup 而融合定时器
@@ -188,8 +193,13 @@ fusion_timer (20Hz)
 
 ### 坐标系与 TF
 
-- `world_frame`：固定环境坐标系（不是 base_link，base_link 随升降轴运动）
-- 每路传感器有独立的静态外参（sensor_frame → world）
+- `world_frame`：base_link（机器人的机架基坐标系，Y-up：+Y 竖直向上、+Z 为
+  J1 直线导轨水平方向、+X 横向）。基座物理固定于工作环境，J1 是链内移动关节
+  （直线导轨/丝杠，滑台沿 base_link 的 +Z 平移，行程 0–0.585m），base_link
+  本身不随任何关节运动，因此它就是固定环境坐标系（05B 定案：全系统以此为唯一
+  规范系，不另设独立环境帧）。
+- 每路传感器有独立的静态外参（sensor_frame → base_link），均为常量
+  （相机/激光雷达安装于臂外固定支架，不随时间变化）
 - TF 查询使用传感器自身的消息时间戳
 
 ### 体素尺寸层次
@@ -272,4 +282,8 @@ fusion_timer (20Hz)
   alive/used 语义区分、`prev_occupied` 连续性、instant_occupancy
   安全通道、自体过滤移到融合定时器等 6 项关键问题。
 - 向后兼容是硬约束：单 Camera 场景下不得有任何行为变化。
-- world_frame 必须是固定环境坐标系，不是 base_link。
+- world_frame 语义已于 2026-09-05 按 05B 拍板修订为 base_link（固定机架系）：
+  基座物理固定、J1 为链内直线导轨移动关节，base_link 自身不动，即固定环境系；
+  「world_frame 必须是固定环境坐标系、不是 base_link」的旧表述作废。修订依据见
+  ADR 0002（docs/adr/0002-base-link-canonical-world-frame.md），后续修订登记
+  于 tickets T0。
