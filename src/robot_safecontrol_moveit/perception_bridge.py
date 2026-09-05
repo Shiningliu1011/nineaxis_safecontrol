@@ -71,6 +71,29 @@ def _identity_extrinsics() -> np.ndarray:
 
 
 
+def _points_xyz(msg: PointCloud2) -> np.ndarray:
+    """Extract x/y/z as float32 regardless of mixed field datatypes.
+
+    sensor_msgs_py.read_points_numpy requires all fields to share one dtype,
+    which Livox PointCloud2 (float32 xyz + uint8 tag/line) violates.
+    """
+    try:
+        arr = pc2.read_points_numpy(msg, field_names=["x", "y", "z"])
+        return np.asarray(arr, dtype=np.float32).reshape(-1, 3)
+    except AssertionError:
+        offsets = {f.name: f.offset for f in msg.fields}
+        if not all(n in offsets for n in ("x", "y", "z")):
+            raise
+        raw = np.frombuffer(msg.data, dtype=np.uint8).reshape(-1, msg.point_step)
+        if raw.shape[0] * msg.point_step != len(msg.data):
+            raise ValueError("point_step does not match data size")
+        cols = np.stack([
+            np.ascontiguousarray(raw[:, offsets[n]:offsets[n] + 4]).view(np.float32)
+            for n in ("x", "y", "z")
+        ], axis=1)
+        return cols
+
+
 class PerceptionBridge(Node):
     """Dual-sensor point cloud -> world-frame ESDF + dynamic tracks + MoveIt collision objects."""
 
@@ -92,6 +115,22 @@ class PerceptionBridge(Node):
         self._esdf_rate = float(self.get_parameter("publish_esdf_rate_hz").value)
         self._collision_rate = float(
             self.get_parameter("publish_collision_rate_hz").value)
+
+        # Sensor parameters.
+        self._input_frame_camera = str(self.get_parameter("input_frame").value)
+        self._input_frame_lidar = str(self.get_parameter("input_frame_lidar").value)
+        self._source_voxel_camera = float(
+            self.get_parameter("source_voxel_camera_m").value)
+        self._source_voxel_lidar = float(
+            self.get_parameter("source_voxel_lidar_m").value)
+        self._fusion_voxel = float(self.get_parameter("fusion_voxel_m").value)
+        self._camera_max_age = float(
+            self.get_parameter("camera_max_age_s").value)
+        self._lidar_max_age = float(self.get_parameter("lidar_max_age_s").value)
+        self._max_inter_sensor_dt = float(
+            self.get_parameter("max_inter_sensor_dt_s").value)
+        self._perception_timeout = float(
+            self.get_parameter("perception_timeout_s").value)
 
         self._engine = FusionEngine(
             spec=self._spec,
@@ -128,22 +167,6 @@ class PerceptionBridge(Node):
         # fusion timer is mutually exclusive (serial, no competition).
         self._sensor_cbg = ReentrantCallbackGroup()
         self._fusion_cbg = MutuallyExclusiveCallbackGroup()
-
-        # Sensor parameters.
-        self._input_frame_camera = str(self.get_parameter("input_frame").value)
-        self._input_frame_lidar = str(self.get_parameter("input_frame_lidar").value)
-        self._source_voxel_camera = float(
-            self.get_parameter("source_voxel_camera_m").value)
-        self._source_voxel_lidar = float(
-            self.get_parameter("source_voxel_lidar_m").value)
-        self._fusion_voxel = float(self.get_parameter("fusion_voxel_m").value)
-        self._camera_max_age = float(
-            self.get_parameter("camera_max_age_s").value)
-        self._lidar_max_age = float(self.get_parameter("lidar_max_age_s").value)
-        self._max_inter_sensor_dt = float(
-            self.get_parameter("max_inter_sensor_dt_s").value)
-        self._perception_timeout = float(
-            self.get_parameter("perception_timeout_s").value)
 
         # Short-history buffers: (points, stamp_s, sensor_to_world) + Lock.
         self._camera_buffer: deque = deque(maxlen=6)
@@ -291,8 +314,7 @@ class PerceptionBridge(Node):
     ) -> None:
         """Shared decode -> TF -> preprocess -> buffer for both sensors."""
         try:
-            arr = pc2.read_points_numpy(msg, field_names=["x", "y", "z"])
-            sensor_pts = np.asarray(arr, dtype=np.float32).reshape(-1, 3)
+            sensor_pts = _points_xyz(msg)
         except Exception as exc:
             self.get_logger().warn(f"{label} decode failed: {exc}")
             return

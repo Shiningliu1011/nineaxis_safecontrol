@@ -67,8 +67,10 @@ orbbec_launch:
 # 把 child_frame 下的点变换到 parent_frame (base_link)。
 # 当前值为占位（单位阵），必须在实机标定后替换。
 #
-# Livox 驱动启动命令示例：
-#   ros2 launch livox_ros_driver2 msg_MID360_launch.py
+# Livox 驱动启动命令示例（xfer_format=0 时发布 /livox/lidar 的 PointCloud2，
+# frame_id 固定为 livox_frame）：
+#   source ~/livox_ws/install/setup.bash
+#   ros2 launch livox_ros_driver2 msg_MID360s_launch.py
 
 child_frame_lidar: livox_frame
 
