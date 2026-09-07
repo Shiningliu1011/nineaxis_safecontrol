@@ -311,7 +311,8 @@ class NineaxisOSCBFVelocityConfig(CBFConfig):
         if obs_radius_dot is None:
             obs_radius_dot = jnp.zeros_like(obs_radii)
         h_obs, h_dot_obs = compute_dcol_obstacle_clearance(
-            q, obs_pos, obs_radii, obs_d_safe, obs_vel, obs_radius_dot)
+            q, obs_pos, obs_radii, obs_d_safe, obs_vel, obs_radius_dot,
+            obs_enabled=obs_enabled)
 
         if not self.aggregate_dynamic_obstacles:
             mask = obs_enabled[None, :] > 0.5

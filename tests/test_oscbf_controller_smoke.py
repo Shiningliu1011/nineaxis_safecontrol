@@ -254,37 +254,78 @@ def test_progress_snapshot_reports_tracking_state(controller_fixture):
     assert np.isfinite(snapshot["latency_p95_ms"])
 
 
+def _call_start_tracking(node, context) -> None:
+    """Explicitly start tracking via the service (order-independent tests).
+
+    The controller only steps once ``/oscbf_controller/start_tracking`` has
+    been served, so any test that needs real step-latency samples must start
+    it itself instead of relying on a sibling test's side effect.
+    """
+    from std_srvs.srv import Trigger
+
+    client_node = rclpy.create_node("oscbf_start_client", context=context)
+    client = client_node.create_client(Trigger, _START_SERVICE)
+    executor = SingleThreadedExecutor(context=context)
+    executor.add_node(client_node)
+    executor.add_node(node)
+    deadline = time.monotonic() + 5.0
+    while not client.service_is_ready() and time.monotonic() < deadline:
+        executor.spin_once(timeout_sec=0.1)
+    assert client.service_is_ready(), "start service never became ready"
+    future = client.call_async(Trigger.Request())
+    deadline = time.monotonic() + 5.0
+    while not future.done() and time.monotonic() < deadline:
+        executor.spin_once(timeout_sec=0.1)
+    assert future.done(), "start service call timed out"
+    assert future.result().success
+    executor.remove_node(client_node)
+    client_node.destroy_node()
+
+
 def test_perf_report_p95_within_budget(controller_fixture):
     node = controller_fixture["node"]
     context = controller_fixture["context"]
+    budget_ms = float(node.get_parameter("latency_budget_ms").value)
 
-    # Drive a short burst of plant states so the controller accumulates real
-    # step-latency samples, independent of the publish test's side effects.
+    # 该测试必须自给自足：显式启动跟踪，不依赖同模块前序测试的泄漏状态
+    # （见 ticket 02/perf 孤立性）。模块内顺序运行时节点可能已处于跟踪状态,
+    # 服务幂等返回 ALREADY_TRACKING, 重复调用安全。
+    if not node._tracking_started:
+        _call_start_tracking(node, context)
+
+    # 采集真实的 path_tracking_step 延迟样本。不用 ROS 管线泵送: 测试里
+    # spin_once(0.02)+密集 publish 会使订阅回调饿死控制定时器(单线程
+    # executor 每轮只处理一个 waitable), 实测 5s 只得到 2 个样本; 而
+    # _control_tick 计时段就是 start→step_once, 与 step_once 直接循环
+    # 测量的是同一段代码。用 q_next 闭环推进(等价于 plant 跟随命令),
+    # 让跟踪持续移动、大样本确定可复现。
     if len(node._step_durations) < 20:
-        probe = rclpy.create_node("oscbf_perf_probe", context=context)
-        publisher = probe.create_publisher(
-            JointState, _STATE_TOPIC, qos_profile_sensor_data
-        )
-        executor = SingleThreadedExecutor(context=context)
-        executor.add_node(probe)
-        executor.add_node(node)
-        plant = JointState()
-        plant.name = ["J1", "J2", "J3", "J4", "J5", "J6", "J7", "J8", "J9"]
-        plant.position = [float(value) for value in _START_Q]
-        deadline = time.monotonic() + 5.0
-        while time.monotonic() < deadline:
-            publisher.publish(plant)
-            executor.spin_once(timeout_sec=0.05)
-        executor.remove_node(node)
-        probe.destroy_node()
+        node._hold_q = None
+        q_follow = _START_Q.copy()
+        for _ in range(200):
+            t0 = time.perf_counter()
+            step = node.step_once(q_follow)
+            node._step_durations.append((time.perf_counter() - t0) * 1000.0)
+            q_follow = np.asarray(step["q_next"], dtype=float)
 
     node.write_perf_report()
     text = controller_fixture["perf_path"].read_text(encoding="utf-8")
+    # Preserve failed measurements too; a stale passing report must not hide
+    # the latest regression. Keep isolated evidence separate from demo output.
+    evidence_path = REPO_ROOT / "output" / "oscbf_m10_perf_isolated.md"
+    evidence_path.parent.mkdir(parents=True, exist_ok=True)
+    evidence_path.write_text(text, encoding="utf-8")
     match = re.search(r"p95: ([0-9.]+) ms", text)
     assert match is not None, f"missing p95 in report:\n{text}"
     p95 = float(match.group(1))
-    assert 0.0 < p95 < 10.0, f"p95 step latency {p95:.3f} ms out of budget"
-    # Keep the acceptance evidence in the repository output directory too.
-    evidence_path = REPO_ROOT / "output" / "oscbf_m10_perf.md"
-    evidence_path.parent.mkdir(parents=True, exist_ok=True)
-    evidence_path.write_text(text, encoding="utf-8")
+    assert 0.0 < p95 < budget_ms, (
+        f"p95 step latency {p95:.3f} ms out of budget ({budget_ms:.0f} ms)")
+    # 01B 口径: 50Hz 预算 + miss rate<=1%（超预算步数占比）。
+    miss_match = re.search(r"miss rate = ([0-9.]+)%", text)
+    assert miss_match is not None, f"missing miss rate in report:\n{text}"
+    miss_rate = float(miss_match.group(1)) / 100.0
+    assert miss_rate <= 0.01, (
+        f"miss rate {miss_rate * 100:.2f}% exceeds the 1% budget")
+    assert len(node._step_durations) >= 20, (
+        "perf report needs >= 20 step samples to be meaningful, got "
+        f"{len(node._step_durations)}")
