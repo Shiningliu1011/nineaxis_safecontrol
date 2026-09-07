@@ -114,8 +114,12 @@ QP 失败 0(旧配置 kp_pos=60/lead=1e-5);JIT 预热 28.75s;p95 6.177ms。
 ### 1.8 Timing/latency
 - **已实现:** 100Hz;JIT 预热 8.6–28.75s(模块化/全量);单步延迟上报
   (`latency_p95_ms`);发布低通 τ=0.02;反馈路径含状态新鲜度/冻结/stall 检测。
-- **未知决策 [DISCUSS-G]:** 10ms 预算是否保留——**实测 p95=19.367ms 已超**;
-  JIT 预热 8.6s~28.75s 是否需要在 launch 前显式完成(热启动脚本)。
+- **未知决策 [DISCUSS-G] 已定案(2026-09-04,06B)并落地(2026-09-06):** 50Hz
+  预算(20ms) + 100Hz 目标; miss rate≤1%。旧 10ms 预算放弃。落地内容见
+  issues/01b 与 01a-phase-times.md：`latency_budget_ms=20` 参数化，
+  miss rate 进报告。2026-09-07 缓存后隔离 p95=9.287ms/miss=0%，
+  完整 demo p95=19.253ms/miss=2.43%，因此完整系统尚未通过。
+  已保留有收益优化；用户要求暂停研究，最终验证范围见留存记录。
 - **Not yet specified:** 感知→CBF 的延迟模型(ticket #10);Python/GIL + 无 RT
   调度下的硬实时保证。
 - **tickets:** #01A/#01B、#10。
@@ -163,16 +167,17 @@ QP 失败 0(旧配置 kp_pos=60/lead=1e-5);JIT 预热 28.75s;p95 6.177ms。
 
 ---
 
-## 2. 测试与质量现状(本次实测,2026-09-04)
+## 2. 测试与质量现状（2026-09-06 本机实测）
 
 | 套件 | 结果 | 说明 |
 |---|---|---|
-| `tests/`(主包, ROS2) | **4 failed / 241 passed / 141.95s** | settle×2(测试与实现不同步);e2e steps=10<200;perf p95=19.4ms>10ms |
-| `portable_oscbf/tests`(全量) | **1 failed / 140 passed / 34 skipped / 560s** | tool-axis roll-only 容差回归(断言 atol=1e-8,实际偏差 2.7e-08,JAX 精度级) |
-| `run_all_tests.sh` | **不可用** | `set -u` + ROS setup.bash `AMENT_TRACE_SETUP_FILES: unbound variable` 提前退出 |
+| `tests/`(主包, ROS2) | **250 passed / 0 failed / 114.18s** | settle×2 假类同步修复;e2e 按步数采样(原 src>0.5 提前退出假设错误);perf 口径按 01B(20ms+miss≤1%)且自给自足 |
+| `portable_oscbf/tests`(全量) | **1 failed / 140 passed / 34 skipped / 490.20s** | 仍为 #11 roll-only 容差断言(atol=1e-8 vs 2.7e-8, JAX 精度级), 逻辑无回归(见 issues/04) |
+| `run_all_tests.sh` | **仍不可用** | `set -u` + ROS setup.bash `AMENT_TRACE_SETUP_FILES: unbound variable`(issues/03) |
 
-对照 M12 所述 "85 passed/43 skipped" 是部分子集;真实全量数字以本表为准。
-失败项全部复现,非环境负载造成(单独重跑同样失败)。
+对比 M12 所述 "85 passed/43 skipped" 是部分子集; 2026-09-04 主包 4 failed 列表
+到 2026-09-06 全部修复(settle/e2e/perf 三项, 即 #9)。剩余已知失败:
+#11(portable 容差, 未提交修复)与 #10(run_all_tests.sh set -u, 未修复)。
 
 ---
 
@@ -186,7 +191,7 @@ QP 失败 0(旧配置 kp_pos=60/lead=1e-5);JIT 预热 28.75s;p95 6.177ms。
 | D | 感知坐标系 | **已定案(05B):** A 全系统 base_link（基座固定 ⇒ base_link=固定环境系,数学等价;Y-up 机架系）+ spec 修订;标定两段式(FAST-Calib2 + AX=YB)+ 20mm 验收;失效策略 3 层(启动 fail-fast / 单帧 drop / 持续零速闭锁);**否决** B/C 实现(记录演进)/0.5s 重试/静默 identity | #05B ✅ |
 | E | 仿真保真度 | 保持几何积分 plant / 引入 MuJoCo 物理 / 传感器仿真回放 | — |
 | F | 冗余策略 | 4 选 1(见 #07A);是否启用零空间;避障 vs 任务优先 | #07B |
-| G | 性能预算 | **已定案(06B):** 50Hz 预算(20ms)+100Hz 目标;miss rate≤1% | #01B |
+| G | 性能预算 | **预算已定案，完整系统验收未通过：** 20ms+miss≤1%；缓存后 demo miss=2.43%，研究暂停（01a-phase-times.md） | #01B |
 | H | QP 失败策略 | 零速(现状) vs 降级;d_safe/margin 取值 | #08B |
 
 ---
@@ -212,8 +217,8 @@ backlog 5 条(已知怎么做,直接实现,不进 Wayfinder)。
 | 05B | 选定规范世界坐标系与标定策略 | grilling | 05A | [#15](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/15) | **已 resolved (2026-09-05)**;HITL 8 项拍板:选系 A + 标定两段式 + 失败 3 层策略 → 见 §5;迁移拆 T0–T7 |
 | 07A | 冗余自由度策略对比(9-DOF vs 5D) | research | — | [#5](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/5) | 原 07 对 06 的依赖已解:策略对比可独立 AFK |
 | 07B | 选定冗余目标与优先级 | grilling | 06B+07A | [#16](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/16) | **HITL 决策**:4 选 1+nullspace+优先级(§3 F) |
-| 01A | 19.4ms 回归剖面与成本分布 | prototype | — | [#3](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/3) | 只测「慢在哪」+优化候选清单 |
-| 01B | 选定控制率/延迟预算与实现策略 | grilling | 01A | [#17](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/17) | **HITL 决策**:10ms 保留?降频/C++?(§3 G);02 的 perf 口径依赖此票 |
+| 01A | 19.4ms 回归剖面与成本分布 | prototype | — | [#3](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/3) | **已 resolved (2026-09-06)**;瓶颈=cbfpy G_qp(9×JVP 全 h, 7.2ms/步);阶段表+候选清单 → 01a-phase-times.md |
+| 01B | 选定控制率/延迟预算与实现策略 | grilling | 01A | [#17](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/17) | **已定案(06B, 2026-09-04)+已落地 (2026-09-06)**: 50Hz(20ms)+100Hz目标+miss≤1%;落地细节见 issues/01b |
 | 08A | QP 可行性实证测量(障碍+自碰撞) | prototype | — | [#6](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/6) | 必须靠实验回答;先跑原型量化,不先改产品实现 |
 | 08B | 选定不可行/裕度/降级策略 | grilling | 08A+12 | [#18](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/18) | **HITL 决策**:零速 vs 降级、裕度与汇编(§3 H) |
 | 10 | 感知时间同步与延迟模型 | research+impl | — | [#7](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/7) | 为 08B/01A 提供延迟/年龄诊断输入 |

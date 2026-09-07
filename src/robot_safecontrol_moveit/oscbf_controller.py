@@ -186,6 +186,9 @@ class OscbfController(Node):
             "wait_for_start": False,
             "telemetry_period_s": 1.0,
             "perf_report_path": "output/oscbf_m10_perf.md",
+            # 01B 定案(2026-09-04, 见 .scratch/oscbf-wayfinder/issues/01b):
+            # 50Hz 预算(20ms) + 100Hz 目标; miss rate<=1%(超预算步数占比)。
+            "latency_budget_ms": 20.0,
             # 感知障碍物（默认 disabled，不影响现有行为）
             "enable_perception_obstacles": False,
             "perception_tracks_topic": "/perception/tracks",
@@ -756,15 +759,25 @@ class OscbfController(Node):
             p95 = float(np.percentile(self._step_durations, 95))
             p50 = float(np.percentile(self._step_durations, 50))
             maximum = float(np.max(self._step_durations))
+            budget = float(self.get_parameter("latency_budget_ms").value)
+            miss_count = int(np.count_nonzero(
+                np.asarray(self._step_durations) > budget))
+            miss_rate = miss_count / len(self._step_durations)
         else:
             p95 = p50 = maximum = float("nan")
+            budget = float(self.get_parameter("latency_budget_ms").value)
+            miss_count = 0
+            miss_rate = 0.0
         report_path.write_text(
             "# M10 oscbf_controller 性能证据\n\n"
             f"- 控制频率: {self.get_parameter('publish_frequency_hz').value} Hz\n"
             f"- 步数: {len(self._step_durations)}\n"
             f"- `path_tracking_step` 延迟 p50: {p50:.3f} ms\n"
-            f"- `path_tracking_step` 延迟 p95: {p95:.3f} ms（阈值 < 10 ms）\n"
+            f"- `path_tracking_step` 延迟 p95: {p95:.3f} ms（01B 口径: "
+            f"50Hz 预算 = {budget:.0f} ms）\n"
             f"- 单步最大: {maximum:.3f} ms\n"
+            f"- 超预算(>{budget:.0f}ms)步数: {miss_count} "
+            f"(miss rate = {miss_rate * 100:.2f}%, 上限 1%)\n"
             f"- QP 失败次数: {self._qp_fail_count}\n",
             encoding="utf-8",
         )

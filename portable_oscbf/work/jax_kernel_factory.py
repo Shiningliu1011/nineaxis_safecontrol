@@ -208,7 +208,8 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
         positions = collision_data[:, :3]
         radii = collision_data[:, 3]
         h_obs, h_dot_obs = compute_dcol_obstacle_clearance(
-            q, obs_pos, obs_radii, obs_d_safe, obs_vel, obs_radius_dot)
+            q, obs_pos, obs_radii, obs_d_safe, obs_vel, obs_radius_dot,
+            obs_enabled=obs_enabled)
         if aggregate_dynamic_obstacles:
             h_qp = apply_aggregated_dynamic_cbf_terms(
                 h_qp, h_obs, h_dot_obs, obs_enabled, obs_alpha,
@@ -456,10 +457,9 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
     path_modules: tuple = ()
     if path_geometry is not None and path_config is not None:
         # ------------------------------------------------------------------
-        # Modular JIT (M6): the path step is a host scheduler that calls a
-        # small set of independently compiled jitted modules.  Each module
-        # keeps exactly the arithmetic of the former whole-kernel function so
-        # the M5 baseline remains the numerical reference (< 1e-12).
+        # Keep the M6 modules independently callable for profiling. Production
+        # composes them inside one outer JIT to avoid host dispatch between
+        # modules; the trajectory baseline remains the numerical reference.
         # ------------------------------------------------------------------
 
         def _posture_target(progress_m, fallback_q_des):
@@ -708,7 +708,7 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
                                obs_vel, obs_radius_dot, obs_alpha, u_safe_prev,
                                sdf_distance, sdf_origin, sdf_voxel_size,
                                sdf_enabled, sdf_margin):
-            """One modular-JIT path-following OSCBF step (host scheduler)."""
+            """Compose the path modules into one compiled control step."""
             ee_pos, ee_rot, full_jacobian = _path_kinematics(q)
             cap_sample = _path_sample(path_state[0])
             u_bias, u_per_m = _path_cap_nominal(
@@ -768,14 +768,10 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
                 actual_tangent_speed, sample.at_endpoint, control_q_des,
             )
 
-        # Compatibility surface used by legacy tests that assert a single
-        # JIT cache entry: report the maximum module cache size (1 after the
-        # first call, i.e. no recompilation).
-        def _path_cache_size():
-            return max(module._cache_size() for module in path_modules)
-
-        path_tracking_step._cache_size = _path_cache_size
-        path_tracking = path_tracking_step
+        # Keep the module entry points for profiling, but dispatch production
+        # tracking once so intermediates stay inside the compiled computation.
+        # The resulting function exposes its actual JIT cache size.
+        path_tracking = jax.jit(path_tracking_step)
 
     return JaxControlKernels(
         step=jax.jit(solve_step),

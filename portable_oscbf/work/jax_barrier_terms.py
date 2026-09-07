@@ -23,18 +23,37 @@ def compute_obstacle_clearance(center_deltas, robot_radii, obs_radii, obs_d_safe
 
 
 def compute_dcol_obstacle_clearance(q, obs_pos, obs_radii, obs_d_safe,
-                                    obs_vel, obs_radius_dot):
+                                    obs_vel, obs_radius_dot, *, obs_enabled=None):
     """DCOL OBB-vs-sphere clearance and time terms (M7 hot path).
 
     Returns ``(h_obs, h_dot_obs)`` shaped ``(N_obb, N_obs)``: the surface
     distance minus the per-slot safety margin, and the dynamic time terms
     from the DCOL distance gradient (zero for static obstacles).
+
+    When ``obs_enabled`` is supplied and all slots are disabled, return zero
+    placeholders without evaluating geometry or its derivatives. Callers must
+    mask these placeholders as usual; active (including partially active)
+    inputs use the original computation and retain the same matrix shapes.
     """
 
     from work.dpax_collision import obb_sphere_clearance
 
-    return obb_sphere_clearance(
-        q, obs_pos, obs_radii, obs_vel, obs_radius_dot, obs_d_safe)
+    def compute():
+        return obb_sphere_clearance(
+            q, obs_pos, obs_radii, obs_vel, obs_radius_dot, obs_d_safe)
+
+    if obs_enabled is None:
+        return compute()
+
+    from work.obb_collision_model import OBB_LINK_NAMES, OBB_LOCAL_CENTERS_M
+
+    def inactive():
+        dtype = jnp.result_type(q, obs_pos, obs_radii, obs_d_safe,
+                                obs_vel, obs_radius_dot, OBB_LOCAL_CENTERS_M)
+        zeros = jnp.zeros((len(OBB_LINK_NAMES), obs_pos.shape[0]), dtype=dtype)
+        return zeros, zeros
+
+    return jax.lax.cond(jnp.any(obs_enabled > 0.5), compute, inactive)
 
 
 def compute_obstacle_time_terms(center_deltas, obs_vel, obs_radius_dot):

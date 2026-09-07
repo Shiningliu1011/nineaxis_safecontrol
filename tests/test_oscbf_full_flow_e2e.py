@@ -184,9 +184,13 @@ def test_zero_transition_then_tracking(closed_loop):
         executor.remove_node(client_node)
         # Let the closed loop run through the slow trajectory start ramp; the
         # reference must advance and drag the plant along with it.
+        # 注意: 不能以 source_time>0.5 作为提前退出的条件——参考在 0.2s 内
+        # 就会越过 0.5s(启动冲量 + 路径源时间偏置), 而步数样本只积累到
+        # ~60Hz×0.2s≈12 步, 直接断言 200 步会因样本不足而失败 (实测证据
+        # 2026-09-06, 控制器无停走/无僵持)。改为按步数收集满再进行校验。
         deadline = time.monotonic() + 15.0
         while time.monotonic() < deadline:
-            if controller.progress_snapshot().get("source_time_s", 0.0) > 0.5:
+            if controller.progress_snapshot().get("steps", 0) >= 200:
                 break
             time.sleep(0.1)
         snapshot = controller.progress_snapshot()

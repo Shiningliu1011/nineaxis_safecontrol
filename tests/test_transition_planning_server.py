@@ -38,6 +38,8 @@ class _SettleServer:
     """Harness for the plant-settle wait before the tracking handoff."""
 
     def __init__(self, deliver_state: bool):
+        import threading
+
         from sensor_msgs.msg import JointState
         from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
@@ -46,6 +48,10 @@ class _SettleServer:
         self._logs = []
         self._logger = _FakeLogger(self._logs)
         self._subscription_cb = None
+        # 与节点持久订阅状态机同步（_persistent_js_cb / _wait_for_js_snapshot）:
+        # 消息到达 -> 记 _js_latest + set _js_event; 等待方 clear+wait。
+        self._js_latest = None
+        self._js_event = threading.Event()
 
         self.transition = JointTrajectory()
         self.transition.joint_names = list(self._joint_names)
@@ -69,9 +75,16 @@ class _SettleServer:
     def destroy_subscription(self, subscription):
         pass
 
+    def _wait_for_js_snapshot(self, timeout_s: float):
+        """Mirror ``TransitionPlanningServer._wait_for_js_snapshot``."""
+        self._js_event.clear()
+        self._js_event.wait(timeout_s)
+        return self._js_latest
+
     def deliver(self):
         if self._deliver_state:
-            self._subscription_cb(self.message)
+            self._js_latest = self.message
+            self._js_event.set()
 
 
 class TestSuccessCodes(unittest.TestCase):

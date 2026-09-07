@@ -181,6 +181,8 @@ class JaxControlLoop:
 
         self._cbf = None
         self._config = None
+        self._default_jax_inputs = None
+        self._default_jax_inputs_key = None
         self._step_fn = None
         self._tracking_fn = None
         self._tracking_fast_fn = None
@@ -592,9 +594,13 @@ class JaxControlLoop:
             sdf_voxel_size=sdf_voxel_size, sdf_enabled=sdf_enabled,
             sdf_margin=sdf_margin)
         result = self._path_tracking_fn(
-            jnp.asarray(q), jnp.asarray(state), jnp.asarray(kp_pos),
-            jnp.asarray(kp_orient), jnp.asarray(kp_joint), jnp.asarray(q_des),
-            jnp.asarray(nullspace_speed_limit), jnp.asarray(damping),
+            # The outer function is already jitted.  Keep array conversion at
+            # the two public vector boundaries, while passing scalar gains and
+            # the normalized path state through unchanged; the JIT boundary
+            # handles conversion without separate jnp.asarray dispatches.
+            jnp.asarray(q), state, kp_pos,
+            kp_orient, kp_joint, jnp.asarray(q_des),
+            nullspace_speed_limit, damping,
             jx['obs_pos'], jx['obs_radii'], jx['obs_enabled'],
             jx['obs_d_safe'], jx['obs_vel'], jx['obs_radius_dot'],
             jx['obs_alpha'], jx['u_safe_prev'],
@@ -723,6 +729,24 @@ class JaxControlLoop:
         keyword arguments (backward-compatible).  Returns a dict of JAX
         arrays ready to pass to the compiled kernel.
         """
+        use_defaults = (
+            obs is None
+            and all(value is None for value in (
+                obs_pos, obs_radii, obs_enabled, obs_d_safe, obs_vel,
+                obs_radius_dot, obs_alpha, sdf_distance, sdf_origin,
+                sdf_voxel_size, sdf_margin))
+            and isinstance(sdf_enabled, (int, float)) and sdf_enabled == 0.0)
+        if use_defaults:
+            defaults_key = (self._config.d_safe_collision,
+                            self._config.obstacle_h_baseline_alpha,
+                            self.enable_sdf, self.sdf_shape,
+                            jax.config.x64_enabled)
+            if (self._default_jax_inputs is not None
+                    and self._default_jax_inputs_key == defaults_key):
+                # JAX arrays are immutable. Copy only the mapping and always
+                # refresh the previous control used by the rate constraints.
+                return dict(self._default_jax_inputs, u_safe_prev=jnp.asarray(
+                    self._last_u_safe if u_safe_prev is None else u_safe_prev))
         if obs is not None:
             obs_pos = obs.obs_pos; obs_radii = obs.obs_radii
             obs_enabled = obs.obs_enabled; obs_d_safe = obs.obs_d_safe
@@ -738,7 +762,7 @@ class JaxControlLoop:
         (sdf_distance, sdf_origin, sdf_voxel_size, sdf_enabled,
          sdf_margin) = self._normalise_sdf_inputs(
             sdf_distance, sdf_origin, sdf_voxel_size, sdf_enabled, sdf_margin)
-        return {
+        result = {
             'obs_pos': jnp.asarray(obs_pos),
             'obs_radii': jnp.asarray(obs_radii),
             'obs_enabled': jnp.asarray(obs_enabled),
@@ -753,6 +777,11 @@ class JaxControlLoop:
             'sdf_enabled': jnp.asarray(sdf_enabled),
             'sdf_margin': jnp.asarray(sdf_margin),
         }
+        if use_defaults:
+            self._default_jax_inputs = {
+                key: value for key, value in result.items() if key != 'u_safe_prev'}
+            self._default_jax_inputs_key = defaults_key
+        return result
 
     def _normalise_obstacle_inputs(self, obs_pos, obs_radii, obs_enabled,
                                    obs_d_safe, obs_vel, obs_radius_dot,

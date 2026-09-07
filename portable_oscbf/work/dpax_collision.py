@@ -20,7 +20,8 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from dpax.endpoints import proximity
+from dpax.endpoints import lagrangian as _segment_lagrangian
+from dpax.qp_utils import get_cost_terms, cost, eval_boundaries, in_0_1
 
 from work.nineaxis_manipulator_jax import JOINT_CHAIN, _twist_exp_jax
 from work.obb_collision_model import (
@@ -164,8 +165,8 @@ def _point_face_distances(corners, faces):
     return jnp.linalg.norm(corners[:, None, :] - closest, axis=-1)
 
 
-def _obb_pair_distance(transform_i, center_i, rotation_i, half_i,
-                       transform_j, center_j, rotation_j, half_j) -> jnp.ndarray:
+def _obb_pair_distance_impl(transform_i, center_i, rotation_i, half_i,
+                            transform_j, center_j, rotation_j, half_j) -> jnp.ndarray:
     """Exact distance between two disjoint OBBs (scalar)."""
 
     corners_i = _obb_corners_world(
@@ -179,8 +180,65 @@ def _obb_pair_distance(transform_i, center_i, rotation_i, half_i,
     return jnp.minimum(edge_min, face_min)
 
 
+@jax.custom_jvp
+def _obb_pair_distance(*args):
+    """Exact OBB distance with a scalar reverse-mode linearization.
+
+    CBF construction pushes nine joint tangents through this scalar output.
+    Compute the distance gradient once, then contract each tangent with it,
+    instead of differentiating all edge/face candidates in every direction.
+    The original minimum (including its tie derivative) is unchanged.
+    """
+    return _obb_pair_distance_impl(*args)
+
+
+@_obb_pair_distance.defjvp
+def _obb_pair_distance_jvp(primals, tangents):
+    value, gradients = jax.value_and_grad(
+        _obb_pair_distance_impl, argnums=tuple(range(8)), allow_int=True)(*primals)
+    tangent = sum(jnp.sum(gradient * direction)
+                  for gradient, direction in zip(gradients, tangents)
+                  if direction.dtype != jax.dtypes.float0)
+    return value, tangent
+
+
+def _segment_solution(a1, b1, a2, b2):
+    """dpax's box QP with an explicit 2x2 Cholesky solve.
+
+    Thousands of edge pairs share this tiny system. Keeping its factorization
+    in XLA avoids calling a general-purpose linear solver for every pair.
+    The regularization and active-set boundary selection match dpax exactly.
+    """
+    Q, q, r = get_cost_terms(a1, b1, a2, b2)
+    reg = jnp.where(jnp.abs(jnp.linalg.det(Q)) < 1e-5, 1e-5, 0.0)
+    l00 = jnp.sqrt(Q[0, 0] + reg)
+    l10 = Q[1, 0] / l00
+    l11 = jnp.sqrt(Q[1, 1] + reg - l10 * l10)
+    y0 = -q[0] / l00
+    y1 = (-q[1] - l10 * y0) / l11
+    z1 = y1 / l11
+    z = jnp.array([(y0 - l10 * z1) / l00, z1])
+    return jnp.where(in_0_1(z), z, eval_boundaries(Q, q)), Q, q, r
+
+
+@jax.custom_jvp
+def _segment_proximity(R1, a1, b1, R2, a2, b2):
+    z, Q, q, r = _segment_solution(a1, b1, a2, b2)
+    return cost(z, Q, q) + r - (R1 + R2)**2
+
+
+@_segment_proximity.defjvp
+def _segment_proximity_jvp(primals, tangents):
+    R1, a1, b1, R2, a2, b2 = primals
+    z, Q, q, r = _segment_solution(a1, b1, a2, b2)
+    value = cost(z, Q, q) + r - (R1 + R2)**2
+    gradients = jax.grad(_segment_lagrangian, argnums=tuple(range(6)))(
+        *primals, z)
+    return value, sum(jnp.sum(g * t) for g, t in zip(gradients, tangents))
+
+
 _proximity_batch = jax.jit(
-    jax.vmap(proximity, in_axes=(None, 0, 0, None, 0, 0)))
+    jax.vmap(_segment_proximity, in_axes=(None, 0, 0, None, 0, 0)))
 _pair_distance_vmap = jax.jit(
     jax.vmap(_obb_pair_distance,
              in_axes=(0, 0, 0, 0, 0, 0, 0, 0)))
