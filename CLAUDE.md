@@ -21,6 +21,36 @@ pytest portable_oscbf/tests  # 控制核心测试
 
 改 AEB C++ 代码后必须重新构建并重启整个 launch（move_group 不会热加载 `.so`）。
 
+## Environment Setup（Ubuntu 22.04 / ROS Humble）
+
+```bash
+# 1) ROS 系统包（MoveIt2 2.5.9 + 控制器/参数化工具）
+sudo apt-get install -y ros-humble-moveit ros-humble-moveit-configs-utils \
+  ros-humble-controller-manager ros-humble-controller-manager-msgs \
+  ros-humble-xacro ros-humble-joint-state-publisher
+
+# 2) Python 依赖（用户态安装到 ~/.local；版本约束重要！）
+python3 -m pip install --user "jax==0.6.2" "jaxlib==0.6.2" "cbfpy==0.0.1" \
+  qpax python-fcl trimesh mujoco matplotlib
+# 注意：cbfpy 必须锁 0.0.1 —— 0.0.3+ 将 relax_cbf 改名为 relax_qp，
+# 会使 JAX 内核构造抛 TypeError（CBFConfig unexpected keyword 'relax_cbf'）。
+# cbfpy 0.0.1 带 numpy<2 约束，会自动回退 numpy 1.26.x。
+
+# 3) pymoveit2（非 PyPI，需 colcon 构建进本仓库 install/ 前缀）
+git clone --branch 3.2.0 --depth 1 https://github.com/AndrejOrsula/pymoveit2 \
+  ~/robot/pymoveit2_ws/src/pymoveit2
+source /opt/ros/humble/setup.bash
+cd ~/robot/pymoveit2_ws && colcon build --symlink-install \
+  --install-base /home/lsn/robot/robot_safecontrol/install
+```
+
+已知未实施事项（均在 tracker，详见 `.scratch/oscbf-wayfinder/issues/`）：
+`run_all_tests.sh` 的 `set -u` 与 ROS setup.bash 冲突（issue #10）；
+主包 4 个必现失败：settle harness 缺方法 ×2、perf p95 预算、e2e 步数
+（issue #9，pytest tests/ 需绕过脚本另行运行）；
+`test_tool_axis_path_kernel_ignores_roll_only_reference_at_path_start` 容差
+回归（issue #11, JAX 数值精度级，atol 1e-8 → 1e-6 待改）。
+
 ## Code Conventions
 
 - 每个 ROS 节点一个模块，小写下划线命名，`main()` 注册为 console_scripts

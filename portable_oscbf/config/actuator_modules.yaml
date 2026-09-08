@@ -100,7 +100,7 @@ control_limit_profile:
     simulation_velocity_limit_m_s: 0.50
     simulation_acceleration_limit_m_s2: 5.0
     hardware_validated: false
-    note: "Linear transmission ratio/screw lead is missing; never use this as a hardware limit."
+    note: "Lead measured 5 mm/rev (single-start screw, 2026-09-06); linear transmission ratio and braking capability still missing; never use this as a hardware limit."
   revolute_simulation_acceleration_limit_rad_s2: 31.4
 
 constraint_notes:

@@ -21,7 +21,7 @@
 | 6 | CAN 通道 | 先 `vcan0` 虚拟 CAN 验证，后购 CANable 2.0（candleLight/candleusb 固件，内核 `gs_usb` 驱动） |
 | 7 | 运行载体 | 本 VMware VM（USB 透传 CANable 与 Orbbec），实测 p99 进阶段门 |
 | 8 | 失效模式 | 超时/故障/限幅 → 零速度帧（保持位置）+ 锁存 stop_reason + 人工确认恢复；物理急停为独立链路 |
-| 9 | J1 传动 | 待实测；未标定前 J1 禁止运动（fail-closed，网关 `require_hardware_executable=True` 语义） |
+| 9 | J1 传动 | 导程已实测（单头丝杠 5 mm/rev，2026-09-06）；二级传动比/效率/行程/正方向/回零方式待实测；未标定前 J1 禁止运动（fail-closed，网关 `require_hardware_executable=True` 语义） |
 | 10 | 零位标定 | 机械零位标记法：手动摆零 → `set_zero`（0x08 order 0x05）→ ±5° 正方向验证，偏移存 `hardware_joint_zero.yaml` |
 | 11 | 感知传感器 | Orbbec Gemini 335L（PID 0x0804，SN CP28563000GD），官方 `orbbec_camera` ROS2 驱动 |
 | 12 | 感知管线 | 固定安装 + 手动测量外参 → 静态 TF（替换占位 `camera_to_world_static`/`use_tf:true`）→ 聚类 → 解析障碍物（球/圆柱）→ 控制器 `obs_*`；`sdf_*` 不启用；不把稠密点云直接塞进 CBF |
@@ -35,7 +35,7 @@
 | # | 事项 | 阻塞 | 说明 |
 |---|------|------|------|
 | P1 | 获取 DrEmpower 厂商包（`DrEmpower_socketcan.py`、`interface_enums.py`、协议 PDF）| H1 后半 | 本机磁盘上没有；参考项目文档有协议摘要（`real_robot_hardware_source_review.md`），但帧字段单位（0x19 速度字段 rpm 还是 deg/s）需以厂商库为准确认 |
-| P2 | 实测 J1 丝杆导程/二级传动比/效率/行程/正方向/回零方式 | H2(J1) / H4 | 未标定前 J1 保持 fail-closed；测量公式见参考项目 `docs/实机计划.md` §3 |
+| P2 | 实测 J1 丝杆导程/二级传动比/效率/行程/正方向/回零方式 | H2(J1) / H4 | 导程已测：单头丝杠 5 mm/rev（2026-09-06）；其余待测；未标定前 J1 保持 fail-closed；测量公式见参考项目 `docs/实机计划.md` §3 |
 | P3 | 采购 CANable 2.0 | H2 | H1 全部可在 vcan0 完成 |
 | P4 | 确认物理急停按钮/断电链路与制动器现状 | H2 / H4 | 阶段门要求：任何运动命令前完成急停触发试验；软件零速≠物理停止 |
 | P5 | 确认 9 个电机已配置的 node_id 与波特率（推荐 J1–J9=1–9，1Mbps）| H2 | 用厂商工具或实读 property 31001 |

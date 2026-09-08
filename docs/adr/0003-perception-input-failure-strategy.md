@@ -56,3 +56,6 @@ current→latest→static→identity 兜底、`perception_valid` 无人订阅、
 
 本策略与 ISO/PAS 21448 SOTIF 的感知不确定性处理对齐：把不确定性显式建模为
 失效条件，而非依赖回退猜测。
+
+
+2026-09-07 范围补充：[连续障碍观测与覆盖失效边界](0006-continuous-obstacle-observation.md)增加经校验固定几何来源，并明确覆盖失效停车的恢复条件；本文“唯一障碍数据源”措辞按该补充理解。既有故障处理要求其余部分保留。
