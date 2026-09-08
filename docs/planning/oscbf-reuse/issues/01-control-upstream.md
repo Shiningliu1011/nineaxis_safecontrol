@@ -1,11 +1,11 @@
 ---
 title: 核验 OSCBF 上游能否承接九轴控制与碰撞模型
 label: wayfinder:research
-status: resolved-local-unpublished
+status: published-repository-record
 assignee: codex-research
 parent: ../MAP.md
 blocked_by: []
-tracker_id: unpublished
+tracker_id: docs-only-parent-issue-1
 ---
 
 ## Question
@@ -16,7 +16,7 @@ tracker_id: unpublished
 
 本地离线研究草案；GitHub 未登录，未进行远端领取。研究产物见下方；完成状态只在本地有效。
 
-## Resolution comment（待发布）
+## Resolution comment（已发布为仓库决策记录）
 
 研究事实已核验，结论与证据仅存于 [控制与机器人模型上游核验](../research/control-upstream.md)。CBFpy/QP 已有实质复用；上游 OSCBF 的固定 6D、原 Manipulator 和依赖版本阻止无缝替换现有 5D；frax 为候选，需九轴对照。最终选型留给控制接入决策。
 

@@ -1,11 +1,11 @@
 ---
 title: 核验双传感器感知与环境距离链的复用方案
 label: wayfinder:research
-status: resolved-local-unpublished
+status: published-repository-record
 assignee: codex-research
 parent: ../MAP.md
 blocked_by: []
-tracker_id: unpublished
+tracker_id: docs-only-parent-issue-1
 ---
 
 ## Question
@@ -16,7 +16,7 @@ tracker_id: unpublished
 
 本地离线研究草案；GitHub 未登录，未进行远端领取。研究产物见下方；完成状态只在本地有效。
 
-## Resolution comment（待发布）
+## Resolution comment（已发布为仓库决策记录）
 
 研究事实已核验，完整答案见 [双传感器感知与环境距离链上游核验](../research/perception-upstream.md)。官方驱动有型号支持依据；自体过滤存在 Humble 工具链兼容门槛；PCL/MoveIt 可复用，nvblox 需锁发行版并核算力。距离观测与动态跟踪应分别定义，最近点不构成真实障碍距离的保守保证。最终表示与过滤选型留给观测契约决策。
 
