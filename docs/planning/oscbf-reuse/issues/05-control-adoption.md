@@ -1,11 +1,11 @@
 ---
 title: 确定上游控制接入方式与九轴扩展边界
 label: wayfinder:grilling
-status: resolved-local-unpublished
+status: published-repository-record
 assignee: codex-local
 parent: ../MAP.md
 blocked_by: ['01-control-upstream', '03-reuse-boundary', '04-safety-observation']
-tracker_id: unpublished
+tracker_id: docs-only-parent-issue-1
 ---
 
 ## Question
@@ -76,7 +76,7 @@ tracker_id: unpublished
 - 此次指定针对自碰撞，不据此改变已确认的环境观测与 CPU/PCL 距离查询路线，也不自动决定环境碰撞包络。
 - `robot_geometry.py`、`obb_collision_model.py`、`dpax_collision.py` 中与 OBB 自碰撞相关的能力保留；未来内部实现优化应保持上述表示与验证契约，不把文件整体删除当作复用完成的标准。
 
-通用择优原则的完整决议见[独有能力与上游维护边界](03-reuse-boundary.md#用户补充决议按实际效果择优保留待发布)。因此前文“frax 通过一致性验证后替代”的提案还须满足比较收益，不能仅以功能可用触发替换。本次答复没有批准全部控制底座候选、依赖升级或运行代码修改；整票保持 open。
+通用择优原则的完整决议见[独有能力与上游维护边界](03-reuse-boundary.md#用户补充决议按实际效果择优保留已发布)。因此前文“frax 通过一致性验证后替代”的提案还须满足比较收益，不能仅以功能可用触发替换。本次答复没有批准全部控制底座候选、依赖升级或运行代码修改；整票保持 open。
 
 ## 下一轮提案：统一控制入口与适配分工（待确认）
 
@@ -120,7 +120,7 @@ Stanford OSCBF 按模块评估直接复用、组合或最小补丁，不将整�
 
 两项提案仍待用户确认；确认后再整理整票是否满足收敛条件，不能从“继续下一步”推定接受。
 
-## Resolution comment（待发布）
+## Resolution comment（已发布为仓库决策记录）
 
 用户对本轮“环境侧优先复用 OBB，并按几何查询—九轴适配—统一求解分工接入”回复“接受推荐”。结合此前明确接受的各阶段路线，本票规划决策已本地收敛。上文待确认措辞为访谈历史，当前结论以本节为准；未关闭任何远端票据。
 

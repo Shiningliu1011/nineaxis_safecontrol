@@ -17,11 +17,11 @@
 
 | 决策 | 涉及改动 | 状态 |
 |---|---|---|
-| [确定本项目独有能力与上游维护边界](issues/03-reuse-boundary.md) | AEB-RRT*、项目扩展、上游补丁维护范围 | 用户已确认；本地已解决 |
-| [确定连续障碍观测契约与距离表示](issues/04-safety-observation.md) | 感知输出、静动态覆盖、距离/有效性接口 | 本地已解决；待远端发布 |
-| [确定上游控制接入方式与九轴扩展边界](issues/05-control-adoption.md) | CBFpy/OSCBF、机器人模型、5D 任务适配 | 本地已解决；待远端发布 |
-| [确定端到端验证门与故障处理边界](issues/06-validation-contract.md) | 控制后处理、执行端、失败锁存和验收 | 本地已解决；待远端发布 |
-| [确定渐进迁移顺序与旧实现退役条件](issues/07-migration-order.md) | 依赖、接入入口、旧模块及原实施票 | 本地已解决；待远端发布 |
+| [确定本项目独有能力与上游维护边界](issues/03-reuse-boundary.md) | AEB-RRT*、项目扩展、上游补丁维护范围 | 决议已发布；实施证据待补 |
+| [确定连续障碍观测契约与距离表示](issues/04-safety-observation.md) | 感知输出、静动态覆盖、距离/有效性接口 | 决议已发布；实施证据待补 |
+| [确定上游控制接入方式与九轴扩展边界](issues/05-control-adoption.md) | CBFpy/OSCBF、机器人模型、5D 任务适配 | 决议已发布；选型待实测 |
+| [确定端到端验证门与故障处理边界](issues/06-validation-contract.md) | 控制后处理、执行端、失败锁存和验收 | 决议已发布；数值/实机证据待补 |
+| [确定渐进迁移顺序与旧实现退役条件](issues/07-migration-order.md) | 依赖、接入入口、旧模块及原实施票 | 决议已发布；退役须逐项验收 |
 
 每张待决票都包含问题、推荐/选项、影响文件、决策后的验证门和决议记录要求。答案只在对应票的 resolution 中记录，地图只索引；推荐不是已接受决定。
 
@@ -39,9 +39,9 @@
 
 ## 文档与 tracker 的关系
 
-远程仓库为 [nineaxis_safecontrol](https://github.com/Shiningliu1011/nineaxis_safecontrol)，接续既有 [OSCBF Wayfinder Map — 从当前仓库到可验证的 9DOF LiDAR+depth OSCBF 系统](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/1)。GitHub 是正式 tracker，本目录是仓库内的可审阅、待发布材料；本地文件名不是远端 issue 身份。
+远程仓库为 [nineaxis_safecontrol](https://github.com/Shiningliu1011/nineaxis_safecontrol)，接续既有 [OSCBF Wayfinder Map — 9DOF LiDAR+depth OSCBF 复用与迁移地图](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/1)。GitHub 是正式 tracker，本目录是仓库内已经发布的可审阅决策与交接材料；本地文件名不是远端 issue 身份。
 
-2026-09-07 检查 gh 仍未认证，因此未远端领取、更新或关闭票据。恢复写入能力后按 [发布接续](REBASE.md#发布接续)重新读取远端最新状态，优先更新原票，创建确有必要的新票并绑定原生依赖。研究的历史分支提交保留原临时路径，当前阅读以本目录为准。
+2026-09-07 已恢复 GitHub 写入并完成同步：PR #29 将窗口顺序合入 `main`，地图 #1 和全部开放原票均已补同步记录，#8、#16–#19、#22、#25 的过时正文已修正。未有证据的票保持开放；创建新票前仍须按[同步与接续](REBASE.md#tracker-同步与后续接续)核对现有 backlog 和依赖。研究的历史分支提交保留原临时路径，当前阅读以本目录为准。
 
 ## 后续访谈与落档规则
 
