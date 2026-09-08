@@ -185,6 +185,14 @@ fusion_timer (20Hz)
 `perception_valid = (camera_used or lidar_used) and fusion_age < perception_timeout`。
 `alive` 仅表示传感器在线（buffer 中有新鲜数据），`used` 表示本次融合实际采用。
 
+### 标定身份状态（已决策，待实施）
+
+保留上述 `/perception/status` 十字段接口。根据 ADR 0004 的 2026-09-09 补充决议，
+新增 `/perception/calibration_status`，类型为 `diagnostic_msgs/msg/DiagnosticArray`，
+报告实际加载的 resolved 路径、文件 SHA-256、逐源 calibration_id 和检查结果。
+身份来自实际使用的加载快照；启动自检需核对节点实例与报告新鲜度。
+标定身份一致不等于标定精度通过，也不代表整机允许运动。
+
 ### 线程模型
 
 - 传感器回调：`ReentrantCallbackGroup`，可并行执行，只写各自缓冲（加锁）

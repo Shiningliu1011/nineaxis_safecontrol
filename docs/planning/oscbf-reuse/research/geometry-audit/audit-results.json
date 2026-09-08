@@ -1,0 +1,445 @@
+{
+  "python": "/usr/bin/python3",
+  "versions": {
+    "jax": "0.6.2",
+    "jaxlib": "0.6.2",
+    "numpy": "1.26.4",
+    "trimesh": "5.1.0",
+    "python-fcl": "0.7.0.11"
+  },
+  "meshes": [
+    {
+      "link": "base_link",
+      "vertices": 60417,
+      "max_excess_m": 2.9934388301455783e-14,
+      "outside_1um": 0,
+      "sha256": "270e1f8fad8d036548a7e026656c92f8152c17ca87359bc74861070d7a6cea9e",
+      "portable_same": true
+    },
+    {
+      "link": "Link1",
+      "vertices": 42475,
+      "max_excess_m": 4.6448955792754987e-14,
+      "outside_1um": 0,
+      "sha256": "1f22430ea24c38de90bf5446181a431a53737e4ea7c14f014938e67928091f37",
+      "portable_same": true
+    },
+    {
+      "link": "Link2",
+      "vertices": 5585,
+      "max_excess_m": 8.517908600680357e-13,
+      "outside_1um": 0,
+      "sha256": "3ae18dfbf09ed2a6bf2434e8fd04cd706c0a26bcb48e50ad926dc86135e3f6a4",
+      "portable_same": true
+    },
+    {
+      "link": "Link3",
+      "vertices": 38968,
+      "max_excess_m": 1.5404344466674047e-13,
+      "outside_1um": 0,
+      "sha256": "30aedaa83b64cdba385c4cc37d90eae4716817b16877d59b78c5b61b572b3b82",
+      "portable_same": true
+    },
+    {
+      "link": "Link4",
+      "vertices": 35939,
+      "max_excess_m": -4.5102810375396984e-15,
+      "outside_1um": 0,
+      "sha256": "c3e34e7bc222f57228ef591dd93721cd1910b58da34397bb2cfdc68edb7c6842",
+      "portable_same": true
+    },
+    {
+      "link": "Link5",
+      "vertices": 49059,
+      "max_excess_m": 7.901457266257239e-13,
+      "outside_1um": 0,
+      "sha256": "396ee31ba138967a70e20eff23582f994f154a32a0381a0220d13739195af5cb",
+      "portable_same": true
+    },
+    {
+      "link": "Link6",
+      "vertices": 32647,
+      "max_excess_m": 2.8754776337791554e-14,
+      "outside_1um": 0,
+      "sha256": "d5e01454e20ceecdc12d56c1714c7876aa74ba4e00f71fc4204f41e09a07a97d",
+      "portable_same": true
+    },
+    {
+      "link": "Link7",
+      "vertices": 35743,
+      "max_excess_m": 2.5680846338360652e-14,
+      "outside_1um": 0,
+      "sha256": "20b12ecf0336b1271d7ec39779b4c80635705c1c97894ef4acaf225e3e023a8a",
+      "portable_same": true
+    },
+    {
+      "link": "Link8",
+      "vertices": 28026,
+      "max_excess_m": 1.2025103135471227e-14,
+      "outside_1um": 0,
+      "sha256": "ffad5ca923c0f66c7c0910438c0974af8d15f5b776f1151b068b65dcd0057d3b",
+      "portable_same": true
+    },
+    {
+      "link": "Link9",
+      "vertices": 24654,
+      "max_excess_m": 5.159761506945415e-14,
+      "outside_1um": 0,
+      "sha256": "7ebcf726b70288929d68b13c489b2b49ca52bab369109429a20f04850c5bb369",
+      "portable_same": true
+    }
+  ],
+  "urdf": {
+    "models/ninezzhou/urdf/ninezzhou.urdf": {
+      "sha256": "766ea5870c41f110d7d57b46e6b31153335f45358faf15e641d465b3b31587a3",
+      "collisions": {
+        "base_link": [
+          "<collision>\n      <origin xyz=\"0 0 0\" rpy=\"0 0 0\" />\n      <geometry>\n        <mesh filename=\"package://ninezzhou/meshes/base_link.STL\" />\n      </geometry>\n    </collision>\n  "
+        ],
+        "Link1": [
+          "<collision>\n      <origin xyz=\"0 0 0\" rpy=\"0 0 0\" />\n      <geometry>\n        <mesh filename=\"package://ninezzhou/meshes/Link1.STL\" />\n      </geometry>\n    </collision>\n  "
+        ],
+        "Link2": [
+          "<collision>\n      <origin xyz=\"0 0 0\" rpy=\"0 0 0\" />\n      <geometry>\n        <mesh filename=\"package://ninezzhou/meshes/Link2.STL\" />\n      </geometry>\n    </collision>\n  "
+        ],
+        "Link3": [
+          "<collision>\n      <origin xyz=\"0 0 0\" rpy=\"0 0 0\" />\n      <geometry>\n        <mesh filename=\"package://ninezzhou/meshes/Link3.STL\" />\n      </geometry>\n    </collision>\n  "
+        ],
+        "Link4": [
+          "<collision>\n      <origin xyz=\"0 0 0\" rpy=\"0 0 0\" />\n      <geometry>\n        <mesh filename=\"package://ninezzhou/meshes/Link4.STL\" />\n      </geometry>\n    </collision>\n  "
+        ],
+        "Link5": [
+          "<collision>\n      <origin xyz=\"0 0 0\" rpy=\"0 0 0\" />\n      <geometry>\n        <mesh filename=\"package://ninezzhou/meshes/Link5.STL\" />\n      </geometry>\n    </collision>\n  "
+        ],
+        "Link6": [
+          "<collision>\n      <origin xyz=\"0 0 0\" rpy=\"0 0 0\" />\n      <geometry>\n        <mesh filename=\"package://ninezzhou/meshes/Link6.STL\" />\n      </geometry>\n    </collision>\n  "
+        ],
+        "Link7": [
+          "<collision>\n      <origin xyz=\"0 0 0\" rpy=\"0 0 0\" />\n      <geometry>\n        <mesh filename=\"package://ninezzhou/meshes/Link7.STL\" />\n      </geometry>\n    </collision>\n  "
+        ],
+        "Link8": [
+          "<collision>\n      <origin xyz=\"0 0 0\" rpy=\"0 0 0\" />\n      <geometry>\n        <mesh filename=\"package://ninezzhou/meshes/Link8.STL\" />\n      </geometry>\n    </collision>\n  "
+        ],
+        "Link9": [
+          "<collision>\n      <origin xyz=\"0 0 0\" rpy=\"0 0 0\" />\n      <geometry>\n        <mesh filename=\"package://ninezzhou/meshes/Link9.STL\" />\n      </geometry>\n    </collision>\n  "
+        ],
+        "tool0": []
+      },
+      "fixed_joints": [
+        "<joint name=\"tool0_fixed\" type=\"fixed\">\n    <origin xyz=\"0.235 0 0\" rpy=\"0 0 0\" />\n    <parent link=\"Link9\" />\n    <child link=\"tool0\" />\n  </joint>\n"
+      ]
+    },
+    "portable_oscbf/urdf/ninezzhou.urdf": {
+      "sha256": "ee72efc0b1d4b5cd4f6950fc2cc3aa2f5b1958970c0539484413bcbfd046b3fe",
+      "collisions": {
+        "base_link": [
+          "<collision>\n      <origin xyz=\"0 0 0\" rpy=\"0 0 0\" />\n      <geometry>\n        <mesh filename=\"package://ninezzhou/meshes/base_link.STL\" />\n      </geometry>\n    </collision>\n  "
+        ],
+        "Link1": [
+          "<collision>\n      <origin xyz=\"0 0 0\" rpy=\"0 0 0\" />\n      <geometry>\n        <mesh filename=\"package://ninezzhou/meshes/Link1.STL\" />\n      </geometry>\n    </collision>\n  "
+        ],
+        "Link2": [
+          "<collision>\n      <origin xyz=\"0 0 0\" rpy=\"0 0 0\" />\n      <geometry>\n        <mesh filename=\"package://ninezzhou/meshes/Link2.STL\" />\n      </geometry>\n    </collision>\n  "
+        ],
+        "Link3": [
+          "<collision>\n      <origin xyz=\"0 0 0\" rpy=\"0 0 0\" />\n      <geometry>\n        <mesh filename=\"package://ninezzhou/meshes/Link3.STL\" />\n      </geometry>\n    </collision>\n  "
+        ],
+        "Link4": [
+          "<collision>\n      <origin xyz=\"0 0 0\" rpy=\"0 0 0\" />\n      <geometry>\n        <mesh filename=\"package://ninezzhou/meshes/Link4.STL\" />\n      </geometry>\n    </collision>\n  "
+        ],
+        "Link5": [
+          "<collision>\n      <origin xyz=\"0 0 0\" rpy=\"0 0 0\" />\n      <geometry>\n        <mesh filename=\"package://ninezzhou/meshes/Link5.STL\" />\n      </geometry>\n    </collision>\n  "
+        ],
+        "Link6": [
+          "<collision>\n      <origin xyz=\"0 0 0\" rpy=\"0 0 0\" />\n      <geometry>\n        <mesh filename=\"package://ninezzhou/meshes/Link6.STL\" />\n      </geometry>\n    </collision>\n  "
+        ],
+        "Link7": [
+          "<collision>\n      <origin xyz=\"0 0 0\" rpy=\"0 0 0\" />\n      <geometry>\n        <mesh filename=\"package://ninezzhou/meshes/Link7.STL\" />\n      </geometry>\n    </collision>\n  "
+        ],
+        "Link8": [
+          "<collision>\n      <origin xyz=\"0 0 0\" rpy=\"0 0 0\" />\n      <geometry>\n        <mesh filename=\"package://ninezzhou/meshes/Link8.STL\" />\n      </geometry>\n    </collision>\n  "
+        ],
+        "Link9": [
+          "<collision>\n      <origin xyz=\"0 0 0\" rpy=\"0 0 0\" />\n      <geometry>\n        <mesh filename=\"package://ninezzhou/meshes/Link9.STL\" />\n      </geometry>\n    </collision>\n  "
+        ]
+      },
+      "fixed_joints": []
+    }
+  },
+  "cases": [
+    {
+      "name": "gap",
+      "translation": [
+        3.0,
+        0.0,
+        0.0
+      ],
+      "half_a": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "half_b": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "analytic_solid_unsigned_m": 1.0,
+      "kernel_m": 1.0,
+      "fcl_unsigned_return": 1.0,
+      "fcl_collision": false
+    },
+    {
+      "name": "unequal_separated",
+      "translation": [
+        3.1,
+        0.17,
+        0.23
+      ],
+      "half_a": [
+        1.0,
+        0.7,
+        0.6
+      ],
+      "half_b": [
+        0.4,
+        0.3,
+        0.2
+      ],
+      "analytic_solid_unsigned_m": 1.7000000000000002,
+      "kernel_m": 1.5065855435387667,
+      "fcl_unsigned_return": 1.7000000000000002,
+      "fcl_collision": false
+    },
+    {
+      "name": "unequal_separated_robot_scale",
+      "translation": [
+        0.31,
+        0.017,
+        0.023
+      ],
+      "half_a": [
+        0.1,
+        0.07,
+        0.06
+      ],
+      "half_b": [
+        0.04,
+        0.03,
+        0.02
+      ],
+      "analytic_solid_unsigned_m": 0.16999999999999998,
+      "kernel_m": 0.15065855435387665,
+      "fcl_unsigned_return": 0.17,
+      "fcl_collision": false
+    },
+    {
+      "name": "touch",
+      "translation": [
+        2.0,
+        0.0,
+        0.0
+      ],
+      "half_a": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "half_b": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "analytic_solid_unsigned_m": 0.0,
+      "kernel_m": 0.0,
+      "fcl_unsigned_return": 0.0,
+      "fcl_collision": true
+    },
+    {
+      "name": "overlap",
+      "translation": [
+        1.5,
+        0.0,
+        0.0
+      ],
+      "half_a": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "half_b": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "analytic_solid_unsigned_m": 0.0,
+      "kernel_m": 0.0,
+      "fcl_unsigned_return": -1.0,
+      "fcl_collision": true
+    },
+    {
+      "name": "contained",
+      "translation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "half_a": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "half_b": [
+        0.2,
+        0.2,
+        0.2
+      ],
+      "analytic_solid_unsigned_m": 0.0,
+      "kernel_m": 0.2,
+      "fcl_unsigned_return": -1.0,
+      "fcl_collision": true
+    },
+    {
+      "name": "identical",
+      "translation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "half_a": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "half_b": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "analytic_solid_unsigned_m": 0.0,
+      "kernel_m": 0.0,
+      "fcl_unsigned_return": -1.0,
+      "fcl_collision": true
+    }
+  ],
+  "omitted_nonadjacent": [
+    [
+      "base_link",
+      "Link2"
+    ],
+    [
+      "base_link",
+      "Link3"
+    ],
+    [
+      "base_link",
+      "Link6"
+    ],
+    [
+      "Link1",
+      "Link3"
+    ],
+    [
+      "Link1",
+      "Link4"
+    ],
+    [
+      "Link1",
+      "Link6"
+    ],
+    [
+      "Link2",
+      "Link4"
+    ],
+    [
+      "Link2",
+      "Link5"
+    ],
+    [
+      "Link2",
+      "Link6"
+    ],
+    [
+      "Link3",
+      "Link5"
+    ],
+    [
+      "Link3",
+      "Link6"
+    ],
+    [
+      "Link3",
+      "Link7"
+    ],
+    [
+      "Link4",
+      "Link6"
+    ],
+    [
+      "Link4",
+      "Link7"
+    ],
+    [
+      "Link4",
+      "Link8"
+    ],
+    [
+      "Link4",
+      "Link9"
+    ],
+    [
+      "Link5",
+      "Link7"
+    ],
+    [
+      "Link5",
+      "Link8"
+    ],
+    [
+      "Link5",
+      "Link9"
+    ],
+    [
+      "Link6",
+      "Link8"
+    ],
+    [
+      "Link6",
+      "Link9"
+    ],
+    [
+      "Link7",
+      "Link9"
+    ]
+  ],
+  "translation_derivative": {
+    "jax": [
+      0.9292535734224481,
+      -0.3517888527956409,
+      -0.1128379339155829
+    ],
+    "central_difference": [
+      0.9292535734228834,
+      -0.3517888527926338,
+      -0.11283793390770568
+    ],
+    "eps": 1e-05,
+    "max_error": 7.877226648744795e-12,
+    "analytic_gradient": [
+      1.0,
+      0.0,
+      0.0
+    ],
+    "analytic_gradient_max_error": 0.3517888527956409
+  },
+  "link6_in_link5_obb_zero": {
+    "outside_1um": 5122,
+    "vertices": 32647,
+    "max_excess_m": 0.11387902972365149
+  },
+  "source_hashes": {
+    "portable_oscbf/work/dpax_collision.py": "91a7c144fd0f4a3ff9fe603796197f2ed1513e094626b870f29540637dda4dcb",
+    "portable_oscbf/work/obb_collision_model.py": "1ea08f39ade0fe943068522b2e14e2a8601170d0d6639cd8b1f7b112d651a0a7",
+    "docs/planning/oscbf-reuse/research/geometry-audit/audit_geometry.py": "4f926c6979e7d79d44ed0211d4a0ad5baa2ce853ebeced76c6597290649b516d"
+  }
+}

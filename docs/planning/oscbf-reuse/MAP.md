@@ -29,6 +29,8 @@ tracker_target: https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/1
 
 ## Decisions so far
 
+- [[B0] 可复现基线与证据目录](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/30#issuecomment-5585757007)：已固定同机代码/环境/输入快照及恢复交接；主包250通过，内核146通过/34跳过/1容差失败，入口故障与依赖缺口留证。
+
 本轮复用与迁移规划已收敛并发布；实施证据仍待逐票完成。此前已定的需求从原票读取，不复制答案：
 
 - [选定目标跟踪语义与验收标准](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/14)：保留既有任务与验收约束作为迁移基线。

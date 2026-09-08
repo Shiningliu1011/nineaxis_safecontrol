@@ -15,7 +15,7 @@ resolved 绝对路径**——源码树 `config/` 与 `setup.py` 安装进
 `share/<pkg>/config/` 的是两个物理副本，T7 必须令 bridge/launch 经
 `get_package_share_directory('robot_safecontrol_moveit')/config/sensor_extrinsics.yaml`
 （ament_index_python，与 launch 同一解析机制）解析出唯一路径加载，
-启动时记录该路径 + `calibration_id` + 内容 hash（日志与 `/perception/status`），
+启动时记录该路径 + `calibration_id` + 内容 hash（日志与 `/perception/calibration_status`），
 T6 校对的是节点**实际加载**的 ID/hash，而不是自己再读一份源码树副本。
 
 **Considered Options**：A（本决定）sensor_extrinsics.yaml 唯一真源——标定产物
@@ -50,7 +50,7 @@ timeout / fusion 参数，**不再持有任何 calibration matrix**（T7 移除�
   （ament_index_python 包索引，与 launch 现有解析一致）得到 **resolved
   绝对路径**；源码树路径只属于开发生成（T5 写入目标）与测试，不是运行时真源。
 - **启动记录**：bridge/T7 启动时把 resolved 路径、`calibration_id`、
-  内容 sha256 hash 写入日志与 `/perception/status`（可检索、可断言）。
+  内容 sha256 hash 写入日志与 `/perception/calibration_status`（可检索、可断言）。
 - **T6 校对**：T6 比较「自检校验通过的 record」与「bridge 实际加载的 record」，
   以 bridge 上报的 path + hash + calibration_id 为准——不是再次读取源码树副本
   去比较，否则 source/install 分叉时 T6 必然误报通过。
@@ -59,3 +59,19 @@ timeout / fusion 参数，**不再持有任何 calibration matrix**（T7 移除�
   生效，节点继续读旧 install 副本的风险是显式的、被检查的。
 - **开发模式**：仅当节点以源码树方式运行（如测试直接 import）时不被视为违反
   ——但那不是生产路径；生产路径（launch）必须走 ament share 唯一路径。
+
+## 状态接口补充决议（2026-09-09）
+
+用户在阅读研究建议后确认：“可以接受”。保留 `/perception/status` 的
+Float32MultiArray 十字段健康接口，新增 `/perception/calibration_status`，使用
+`diagnostic_msgs/msg/DiagnosticArray` 上报实际加载的标定文件路径、SHA-256、
+逐源 calibration_id 与检查结果。该补充替代原先要求把文件身份写入健康数组话题的约定；
+这是目标契约，尚未实施。
+
+选择现成诊断消息可以表达字符串身份及检查状态，同时保持现有健康接口兼容；
+不采用 String 包装 JSON 或将身份塞入数组布局标签，也不整体迁移健康话题类型。
+研究依据见[标定文件身份的状态接口研究](../planning/oscbf-reuse/research/calibration-status-interface.md)。
+
+身份应描述节点实际加载的同一份内容。自检仍须验证当前节点实例与报告新鲜度；
+文件内容一致不代表标定准确，不能替代标定实测验收。具体键名、报告周期和超时
+作为实施契约细化，不将研究中的候选数值或传输细节视为已获实测验证。

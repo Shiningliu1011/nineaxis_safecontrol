@@ -1,0 +1,3 @@
+An NVIDIA GPU may be present on this machine, but a CUDA-enabled jaxlib is not installed. Falling back to cpu.
+...........                                                              [100%]
+11 passed in 10.19s
