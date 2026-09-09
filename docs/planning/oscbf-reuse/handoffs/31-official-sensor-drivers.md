@@ -51,3 +51,45 @@
 未来驱动在独立 workspace 部署，保留旧依赖/参数/标定与模型快照；停止相关节点后切回已记录版本并重新核验实际解析路径和身份，旧假定标定不会因回退获得准入。
 
 下一研究窗口为[感知时间同步与延迟模型](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/7)；本票未完成仍是其整票原生阻塞，可先研究测量方法，不得声称已获得设备时钟证据。本窗口不自动开展下一票。
+
+
+## 2026-09-09 在线验证（进行中）
+
+以下实测更新此前“未连接/未构建”的历史状态；尚未达到双源准入。
+证据目录：`.scratch/oscbf-reuse-wayfinder/31/online-2026-09-09/`。
+
+- 实物 SDK 身份：MID-360S（type 35），IP `192.168.1.115`，固件版本字节 `[35,1,1,8]`；Gemini 335L，固件 `1.4.60`，USB 3.2。序列号见原始查询日志。
+- 被动 ARP 确认雷达向主机 `192.168.1.5` 请求连接；使用独立网卡临时 NetworkManager 配置，不修改 Wi-Fi 默认路由。
+- Livox SDK 1.3.1 与 ROS driver2 1.2.6 在 scratch 独立前缀构建成功。启动需 source ROS/driver overlay，并将 `livox_sdk_install/lib` 加入 `LD_LIBRARY_PATH`；首次遗漏该路径导致动态库加载失败，补充后正常。
+- 直接启动官方节点，`xfer_format=0`，配置使用实际 IP。官方初始化会设置点云类型、扫描模式、零安装外参、Normal 工作模式并启用 IMU；这一步不是只读查询。启动前读到点云类型 1、模式 0、安装外参全零。
+- `/livox/lidar` 实测 PointCloud2，`livox_frame`，point_step 26；字段 x/y/z/intensity float32、tag/line uint8、timestamp float64。12 秒采样 121 帧，约 10 Hz，每帧 19872–20064 点，采样窗口内 header 时间无回退；不能据此声称硬件同步或长期稳定。见 `lidar-ros-sample.json`、`lidar-ros-summary.json`、`lidar-ros-run.log`。
+- 相机 SDK 深度流此前 10 秒采到 298 帧，frame index 无缺口；这不替代 ROS 注册点云与双源并发验收。
+- 用户已安装 camera_info_manager、image_publisher、diagnostic_updater、camera_calibration_parsers、gflags、nlohmann-json、glog 开发依赖；相机 ROS 驱动构建继续进行。相机重连后 USB 编号改变，临时 ACL 必须对应当前设备。
+
+### 本轮相机与并发结果
+
+- Orbbec ROS2 v2.9.3 三个包全部构建成功（约 75 秒，`CMAKE_BUILD_PARALLEL_LEVEL=2`）。用户安装依赖后，缺包问题消失。
+- 官方 `gemini_330_series.launch.py` 参数：`depth_registration:=true enable_colored_point_cloud:=true color_width:=640 color_height:=480 color_fps:=30 depth_width:=640 depth_height:=480 depth_fps:=30 time_domain:=global`。实际注册点云 topic 为 `/camera/depth_registered/points`，frame 为 `camera_color_optical_frame`，字段 xyz/rgb float32，point_step 20，小端。12 秒窗口收到 313 帧，约 26.26 Hz，无 header 时间回退。
+- 双设备同时发布的 12 秒探针：相机 244 帧，约 20.63 Hz；雷达 121 帧，约 10.00 Hz；各自 header 无回退。相机点云发布未达到请求的 30 Hz，不能宣称双源性能验收通过；此数据是订阅端观测频率，尚未区分驱动处理、同步等待和消息丢失。
+- 原始证据：`camera-ros-build.log`、`camera-ros-run.log`、`camera-ros-sample.json`、`camera-concurrent-sample.json`、`lidar-concurrent-sample.json` 与 `probe_ros.py`。雷达 topic info 查询发生在限时节点退出后，返回 Unknown topic；不拿这次查询充当 QoS 证据。
+- 下一步：量化相机注册点云吞吐/延迟及并发负载，补充 QoS、点云单位实测、时间域和重连/断流测试；正式 observation 接线仍等待规格与标定 SSOT 前置。保持 OPEN。
+
+### 重连持久配置
+
+用户要求消除每次重连手动配置。已保存 NetworkManager `robot-mid360s`，绑定网卡 MAC `6c:1f:xx:xx:xx:xx`，自动连接，主机 `192.168.1.5/24`，never-default，IPv6 disabled；不再清理此持久配置。用户已安装 `/etc/udev/rules.d/99-robot-gemini335l.rules`，针对 USB `2bc5:0804` 将设备节点 owner 设置为 lsn、权限 0660，不依赖 bus/device 编号。核验当前节点 owner=lsn，普通用户 SDK 成功打开 Gemini 335L（固件 1.4.60 / USB3.2）。规则重载并触发已通过，安装后的物理拔插与整机重启尚未实测。上述配置解决主机网络与 USB 权限持久性，不负责自动启动 ROS 节点或驱动运行中热插拔恢复。
+
+### 用户提供的 Python 驱动评估（补充）
+
+用户提供 `~/robot/tmbs-main.zip`，要求评估其 MID-360 驱动对本项目的可复用性并做适配。已落地为项目内纯 Python 模块 `src/robot_safecontrol_moveit/livox_mid360/`（协议层/设备控制/发现/连续流接收/ROS 节点/CLI，57 个新测试全过），补的是官方驱动不提供的设备控制面与免 SDK 备用通道；**官方 C++ 驱动仍按本票结论保持主路径**。字段布局对齐官方 `lddc.cpp`（point_step 26），`perception_bridge` 无需改动。**2026-09-10 已对该真机完成验证，见下节**；许可来源待用户确认。详见[复用与适配记录](../research/tmbs-mid360-python-driver-reuse.md)。
+
+## 2026-09-10 纯 Python 模块真机验证
+
+对 MID-360S（SN `ARMCP7D****`、`192.168.1.115`）完成发现、连续流与 `perception_bridge` 端到端验证。证据目录 `.scratch/livox-hw-test/`（脚本、日志、逐帧统计 JSONL）；详细表格见[复用与适配记录](../research/tmbs-mid360-python-driver-reuse.md)。
+
+- 广播发现修复：设备对发现广播的应答是广播目的地址，只有 `INADDR_ANY` 绑定能收到（绑定 `host_ip` 收不到）。改为 any-bind 后 `discover_subnet` 5/5、CLI `discover` 2/2 返回 SN。
+- **真机暴露并修复一个丢帧缺陷**：Fast-DDS（`rmw_fastrtps_cpp`）共享内存单样本上限 512 KiB（524,288 B）；本模块按 0.1 s 切帧加 96 点包粒度会产出 20,064–20,544 点（521,664–534,144 B）的帧，越过上限后订阅端只剩 4.6–7.25 Hz。尺寸扫描确认悬崖：20,100 点（522,600 B）→ 10 Hz 稳定，20,160 点（524,160 B）→ 3.57 Hz。修复为 `MAX_FRAME_POINTS=20,000` 的硬切帧规则，回归测试锁定“载荷 + 4 KiB < 512 KiB”。
+- 修复后：C++ 订阅端 9.969 Hz（std dev 0.5 ms）、Python 订阅端 10.00 Hz；14 s 采集 0 丢包、200,318 点/s；与官方驱动逐帧内容一致（零返回 34.96% vs 35.48%，最大距离 18.10 vs 18.46 m，point_step 26）。
+- bridge 端到端（本轮 LiDAR-only，相机未运行）：`lidar_alive=1` 持续、`/perception/status` 19.99 Hz、`/perception/tracks` 10.00 Hz、`/perception/cloud_world` 3.64 Hz、`/perception/esdf` 2.14 Hz、`/collision_object` 29.90 Hz；`/perception/status` 采样 `lidar_used=1, source_count=1, perception_valid=1`。`lidar_used` 每两拍为 0 是 FusionEngine 重复帧保护的既定行为，不是掉流。
+- 回归：主包 `tests/` 307 通过；`portable_oscbf/tests` 146 通过 / 34 跳过 / 1 既有 JAX 容差失败（与本改动无关）。
+- 与官方驱动的能力对比已写入[复用与适配记录](../research/tmbs-mid360-python-driver-reuse.md#与官方驱动的能力对比)：官方独有 `/livox/imu`、CustomMsg（`xfer_format=1`）、多雷达；本模块独有设备控制面、免构建部署、只读启动；官方切帧只有 `publish_freq` 没有点数上限，`publish_freq=5` 时单帧 ~40,000 点会越过 512 KiB 上限（源码推断，未实测）。
+- 仍未做：PTP/GPS 同步实测（设备未同步，两驱动都退回主机时间）、长时间稳定性与断线重连、写命令（configure/mode/reboot）真机演练。设备只向最近一次配置的主机:端口推流，两个驱动同时运行会抢同一 UDP 端口并重复发布同一话题，接入时二选一或改用不同话题名。本票仍保持 OPEN，双源准入未因此节完成。
