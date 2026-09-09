@@ -31,8 +31,7 @@ robot_safecontrol/
 │   └── mujoco_viewer.launch.py         # ROS2 launch: MuJoCo 可视化
 ├── data/
 │   └── nurbs/                          # NURBS 轨迹数据
-│       ├── ik_input.mat                #   逆运动学输入 (末端轨迹)
-│       └── *.m                         #   MATLAB 脚本
+│       └── ik_input.mat                #   逆运动学输入 (末端轨迹)
 ├── output/                             # 生成文件 (已 gitignore)
 │   ├── ninezzhou_env.xml               #   MuJoCo 环境文件
 │   └── transition_path.npy             #   过渡路径
