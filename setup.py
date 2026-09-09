@@ -68,6 +68,8 @@ setup(
             "oscbf_controller = robot_safecontrol_moveit.oscbf_controller:main",
             "oscbf_plant = robot_safecontrol_moveit.oscbf_plant:main",
             "hardware_bridge = robot_safecontrol_moveit.hardware_bridge:main",
+            "livox_mid360_node = robot_safecontrol_moveit.livox_mid360.ros_node:main",
+            "livox_mid360_tool = robot_safecontrol_moveit.livox_mid360.cli:main",
         ],
     },
 )
