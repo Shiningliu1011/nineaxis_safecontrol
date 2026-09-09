@@ -130,6 +130,10 @@ zip 根目录**没有 LICENSE**（仅 `vendor/victorialogs/LICENSE.txt` 等第�
 - 新增入口点：`livox_mid360_node`（ROS 2 节点）、`livox_mid360_tool`（discover/info/sn/configure/mode/ip/fov/pattern/reboot/stream）。
 - **已做（本模块维度）**：真机发现（广播 + unicast）、只读查询（sn/info）、连续流采集与发布、与官方驱动的逐帧内容对比与能力对比、`perception_bridge` 端到端集成。**未做**：PTP/GPS 同步实测（设备未同步，两驱动都退回主机时间）、长时间稳定性与断流重连、`configure` 类写命令的真机演练（会改设备状态，需显式授权）。注意官方节点启动会写入设备配置（点云类型、扫描模式、外参、工作模式、IMU 使能，见 #31 在线记录），本模块的只读命令（sn/info/stream）可用于对照而不改状态。
 
+## 独立打包（`xy-mid-360-s/`）
+
+2026-09-10 按用户要求把本模块抽成独立包，落在仓库根目录 `xy-mid-360-s/`：发行名 `xy-mid-360-s`、包名 `xy_mid_360_s`、入口 `xy-mid-360-s`（CLI）与 `xy-mid-360-s-node`（ROS 节点），自带 `pyproject.toml`、README、测试与无 ROS 示例。与 `src/robot_safecontrol_moveit/livox_mid360/` 同源，只改 import 路径、CLI/节点名和测试的路径引导；57 个测试在独立包内同样全过，wheel 可构建，console script 已对真机跑通只读发现。**两处是独立副本，改动需手动同步**；仓内模块仍是 `perception_bridge` 的集成路径。
+
 ## 与官方驱动的分工（建议）
 
 | 场景 | 用哪个 |

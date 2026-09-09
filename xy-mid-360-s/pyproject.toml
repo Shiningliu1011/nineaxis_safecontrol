@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "xy-mid-360-s"
+version = "0.1.0"
+description = "Pure-Python Livox MID-360/MID-360S driver: discovery, device control, continuous point-cloud streaming (no vendor SDK; ROS 2 optional)"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = ["numpy>=1.20"]
+keywords = ["livox", "mid-360", "mid-360s", "lidar", "point-cloud", "udp"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: POSIX :: Linux",
+    "Topic :: Scientific/Engineering",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=7"]
+
+[project.scripts]
+xy-mid-360-s = "xy_mid_360_s.cli:main"
+xy-mid-360-s-node = "xy_mid_360_s.ros_node:main"
+
+[tool.setuptools.packages.find]
+include = ["xy_mid_360_s*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
