@@ -80,7 +80,7 @@
 
 ### 用户提供的 Python 驱动评估（补充）
 
-用户提供 `~/robot/tmbs-main.zip`，要求评估其 MID-360 驱动对本项目的可复用性并做适配。已落地为项目内纯 Python 模块 `src/robot_safecontrol_moveit/livox_mid360/`（协议层/设备控制/发现/连续流接收/ROS 节点/CLI，57 个新测试全过），补的是官方驱动不提供的设备控制面与免 SDK 备用通道；**官方 C++ 驱动仍按本票结论保持主路径**。字段布局对齐官方 `lddc.cpp`（point_step 26），`perception_bridge` 无需改动。**2026-09-10 已对该真机完成验证，见下节**；许可来源待用户确认。详见[复用与适配记录](../research/tmbs-mid360-python-driver-reuse.md)。
+用户提供 `~/robot/tmbs-main.zip`，要求评估其 MID-360 驱动对本项目的可复用性并做适配。已落地为项目内纯 Python 模块 `src/robot_safecontrol_moveit/livox_mid360/`（协议层/设备控制/发现/连续流接收/ROS 节点/CLI，57 个新测试全过），补的是官方驱动不提供的设备控制面与免 SDK 备用通道；**官方 C++ 驱动仍按本票结论保持主路径**。字段布局对齐官方 `lddc.cpp`（point_step 26），`perception_bridge` 无需改动。**2026-09-10 已对该真机完成验证，见下节**；同日用户确认来源可用于本项目，模块与测试已入库。详见[复用与适配记录](../research/tmbs-mid360-python-driver-reuse.md)。
 
 ## 2026-09-10 纯 Python 模块真机验证
 
