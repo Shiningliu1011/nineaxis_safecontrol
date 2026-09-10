@@ -1,0 +1,7 @@
+{
+  "replay_steps": 24623,
+  "aligned_node_callbacks": 6000,
+  "budget_cases_passed": 28,
+  "csv_json_consistent": true,
+  "product_sources_still_unchanged": true
+}
