@@ -1,0 +1,136 @@
+{
+  "cpu": {
+    "full_disabled": {
+      "n": 1705,
+      "p50": 7.389517,
+      "p95": 8.251271399999998,
+      "p99": 8.956602440000001,
+      "maximum": 12.655333,
+      "qp_iterations_p50": 15.0,
+      "qp_iterations_max": 18,
+      "initial_cross_track_m": 0.5351979778248432,
+      "cross_track_p95_m": 0.011905517023310344,
+      "final_cross_track_m": 5.6166673043921425e-08,
+      "last_progress_m": 1.8167634936276817
+    },
+    "full_far8": {
+      "n": 1597,
+      "p50": 11.044388,
+      "p95": 12.006391199999996,
+      "p99": 12.44290612,
+      "maximum": 13.005821,
+      "qp_iterations_p50": 14.0,
+      "qp_iterations_max": 16,
+      "initial_cross_track_m": 0.5351979778248432,
+      "cross_track_p95_m": 0.012307205963431484,
+      "final_cross_track_m": 1.053089519792428e-06,
+      "last_progress_m": 1.8167634936816308
+    },
+    "moving_near8": {
+      "n": 3000,
+      "p50": 11.0927645,
+      "p95": 12.13316805,
+      "p99": 12.680788839999996,
+      "maximum": 14.872946,
+      "qp_iterations_p50": 16.0,
+      "qp_iterations_max": 19,
+      "initial_cross_track_m": 0.5351979778248432,
+      "cross_track_p95_m": 0.1221885202266143,
+      "final_cross_track_m": 0.1063598446775947,
+      "last_progress_m": 0.0
+    },
+    "far8_unloaded": {
+      "n": 3000,
+      "p50": 11.120833,
+      "p95": 12.191063349999999,
+      "p99": 12.902088589999995,
+      "maximum": 18.504134,
+      "qp_iterations_p50": 14.0,
+      "qp_iterations_max": 16,
+      "initial_cross_track_m": 0.5351979778248432,
+      "cross_track_p95_m": 0.009048202511144049,
+      "final_cross_track_m": 1.3243840432440854e-08,
+      "last_progress_m": 1.8167634936816308
+    },
+    "far8_fusion_load": {
+      "n": 3000,
+      "p50": 11.260716500000001,
+      "p95": 12.52996295,
+      "p99": 13.765687149999994,
+      "maximum": 17.690885,
+      "qp_iterations_p50": 14.0,
+      "qp_iterations_max": 16,
+      "initial_cross_track_m": 0.5351979778248432,
+      "cross_track_p95_m": 0.009048202511144049,
+      "final_cross_track_m": 1.3243840432440854e-08,
+      "last_progress_m": 1.8167634936816308
+    }
+  },
+  "gpu": {
+    "full_disabled": {
+      "n": 1723,
+      "p50": 15.764123,
+      "p95": 16.819103199999997,
+      "p99": 18.764876939999997,
+      "maximum": 22.536258,
+      "qp_iterations_p50": 15.0,
+      "qp_iterations_max": 18,
+      "initial_cross_track_m": 0.5351979778248434,
+      "cross_track_p95_m": 0.011608410426169493,
+      "final_cross_track_m": 4.899815766899816e-08,
+      "last_progress_m": 1.8167634936816308
+    },
+    "full_far8": {
+      "n": 1598,
+      "p50": 18.370093,
+      "p95": 19.4606878,
+      "p99": 20.19644993,
+      "maximum": 22.274423,
+      "qp_iterations_p50": 14.0,
+      "qp_iterations_max": 16,
+      "initial_cross_track_m": 0.5351979778248434,
+      "cross_track_p95_m": 0.012276439253246977,
+      "final_cross_track_m": 1.0507709810450908e-06,
+      "last_progress_m": 1.8167634936816308
+    },
+    "moving_near8": {
+      "n": 3000,
+      "p50": 19.243036500000002,
+      "p95": 20.7867708,
+      "p99": 22.34516477999998,
+      "maximum": 29.768619,
+      "qp_iterations_p50": 16.0,
+      "qp_iterations_max": 19,
+      "initial_cross_track_m": 0.5351979778248434,
+      "cross_track_p95_m": 0.12218852022563585,
+      "final_cross_track_m": 0.10635984467759492,
+      "last_progress_m": 0.0
+    },
+    "far8_unloaded": {
+      "n": 3000,
+      "p50": 18.331226,
+      "p95": 19.4745998,
+      "p99": 20.225540779999992,
+      "maximum": 22.594908,
+      "qp_iterations_p50": 14.0,
+      "qp_iterations_max": 16,
+      "initial_cross_track_m": 0.5351979778248434,
+      "cross_track_p95_m": 0.009203283460513315,
+      "final_cross_track_m": 1.331273347218714e-08,
+      "last_progress_m": 1.8167634936816308
+    },
+    "far8_fusion_load": {
+      "n": 3000,
+      "p50": 18.6873125,
+      "p95": 19.97750734999999,
+      "p99": 21.377387339999995,
+      "maximum": 33.202804,
+      "qp_iterations_p50": 14.0,
+      "qp_iterations_max": 16,
+      "initial_cross_track_m": 0.5351979778248434,
+      "cross_track_p95_m": 0.009203283460513315,
+      "final_cross_track_m": 1.331273347218714e-08,
+      "last_progress_m": 1.8167634936816308
+    }
+  }
+}
