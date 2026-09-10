@@ -79,24 +79,20 @@ PlanningScene/FCL 做状态与路径碰撞检查。
 
 ## 测试与已知问题
 
-`run_all_tests.sh` 是双套件入口，但当前在加载 ROS setup 时会因 `set -u` 与未定义可选变量退出。修复实施前，可在新的 Bash 终端中分别运行：
+`run_all_tests.sh` 已修复 ROS setup 与 `set -u` 的兼容问题；两个套件分别执行并汇总退出码，首套失败仍会运行第二套，只有两套均通过才返回成功：
 
 ```bash
-# 加载 ROS/colcon 环境时不要启用 nounset（set -u）。
-source /opt/ros/humble/setup.bash
-source install/setup.bash
-python3 -m pytest tests/ -q
-python3 -m pytest portable_oscbf/tests -q
+bash run_all_tests.sh
 ```
 
 截至 2026-09-11 已发布的诊断：
 
 | 项目 | 结论与状态 |
 |---|---|
-| [测试入口退出](docs/planning/oscbf-reuse/handoffs/10-test-entrypoint.md) | 已复现；需局部关闭 nounset 并分别汇总两个套件退出码，待实施。 |
+| [测试入口退出](docs/planning/oscbf-reuse/handoffs/10-test-entrypoint.md) | 已实施局部关闭 nounset 与双套件退出码汇总；验收记录见链接。 |
 | [roll-only 路径起点测试](docs/planning/oscbf-reuse/handoffs/11-roll-only-tolerance.md) | 已修订精度、纯 roll / 倾斜对照与执行后报告断言；内核 148 passed、34 skipped，修订已归档。 |
 
-roll-only 测试已完成修订与内核验收；其他诊断状态见各自交接文档。[可复现基线](docs/planning/oscbf-reuse/handoffs/30-baseline.md)保留此前运行结果及适用代码版本。
+入口修复不表示当前全量测试通过；既有测试失败继续由对应修复票处理。[可复现基线](docs/planning/oscbf-reuse/handoffs/30-baseline.md)保留此前运行结果及适用代码版本。
 
 ## 真机运行（shadow/live 模式）
 

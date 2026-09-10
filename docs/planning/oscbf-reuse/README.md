@@ -39,10 +39,10 @@
 
 ## 测试工具诊断交接（2026-09-11）
 
-- [run_all_tests.sh 在 set -euo pipefail 下直接退出](handoffs/10-test-entrypoint.md)：环境加载和双套件结果汇总方案已核验，待实施与真实双套件验收。
+- [run_all_tests.sh 在 set -euo pipefail 下直接退出](handoffs/10-test-entrypoint.md)：环境加载与双套件结果汇总已实施，验收记录见交接文档。
 - [portable 测试容差回归修复（roll-only 参考起点）](handoffs/11-roll-only-tolerance.md)：已修订精度与执行后报告断言，并加入倾斜对照；完整内核套件 148 passed、34 skipped，修订已归档。
 
-portable 测试容差修复已完成本机验收并关闭；其他票据状态见各自交接文档。
+入口修复与 portable 测试容差修复均已完成本机验收并关闭；代码合入状态与本机验收分开记录。
 
 ## 文档与 tracker 的关系
 

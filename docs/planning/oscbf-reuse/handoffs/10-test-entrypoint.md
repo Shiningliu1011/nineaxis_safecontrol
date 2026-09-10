@@ -2,7 +2,7 @@
 
 - Tracker：https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/10
 - 日期：2026-09-11
-- 状态：已领取；诊断与实施范围明确，尚未实施，不关闭原实施票。
+- 状态：2026-09-11 用户授权实施；入口修复已完成，验收结果见文末。
 - 起点：HEAD `786e0aec61b7abbf8e8c0a5c5aa99d20c3e54f21`。工作区已有 CONTEXT.md、README.md、MAP.md 修改及传感器等未跟踪资产，本轮保留。
 
 ## 选择与授权范围
@@ -37,6 +37,20 @@
 - 实际运行 `bash run_all_tests.sh` 一次，确认两个套件均有真实结果；既有测试失败保留归属，不为入口验收放宽断言。
 - 回退只撤销本票对入口脚本的补丁，保留已有用户改动。
 
-## 下一步
+## 实施记录（2026-09-11）
 
-收到实施指令后在本票完成脚本修改和上述验证，再发布 resolution、关闭原票并更新地图索引。本轮没有新增取舍或新增票，不启动下一票。
+用户明确要求使用 wayfinder 开始实施本票，沿用已领取票据及既定方案。
+诊断阶段已完成，此次先重跑原入口复现 `AMENT_TRACE_SETUP_FILES: unbound variable`，再以真实脚本和受控 setup/pytest 替身建立失败反馈，随后修复。
+
+- 仅在每个 setup 的 source 周围关闭 nounset，随后恢复；始终保留 errexit 与 pipefail。
+- 捕获两个 pytest 的原始退出码，首套失败仍执行内核套件；两套均为 0 才输出全部通过并退出 0，否则退出 1。
+- 未改变测试断言、依赖、控制参数或生成的 setup。
+- `bash -n run_all_tests.sh`、`git diff --check` 通过。
+- 独立 Bash 进程验证 0/0、7/0、0/3、7/3 四种退出组合，两种 setup 失败（退出 9），以及工作区 setup 缺失（退出 1），七项均通过；替身还检查测试阶段 nounset、errexit、pipefail 均已启用。
+- 本机回归探针：`.scratch/test-entrypoint-10/check.py`，运行 `python3 .scratch/test-entrypoint-10/check.py`；它读取并执行正式入口，只替换外部 setup 和 pytest。实际运行日志：`.scratch/test-entrypoint-10/actual.log`。这些是本机证据，不是已发布的远程资产。
+
+实际运行 `bash run_all_tests.sh` 完成：主包 **307 passed in 116.76s**，退出码 0；控制内核 **146 passed, 34 skipped, 1 failed in 429.47s**，退出码 1。脚本输出两套汇总并整体退出 1，未误报全部通过。失败为 `test_tool_axis_path_kernel_ignores_roll_only_reference_at_path_start`，归属既有 [portable 测试容差回归修复](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/11)，未在本票改动。
+
+实现与本机验收完成；代码留在当前工作区，尚未提交、推送或合入。
+
+本次无新决策或新票，不继续下一票。回退仅撤销本票补丁及状态文档，保留工作区原有修改。
