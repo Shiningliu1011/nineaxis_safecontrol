@@ -37,6 +37,13 @@
 
 补充研究：[双传感器协作、冲突与自体过滤](research/dual-sensor-cooperation.md)，回应用户的互补合作目标；两项协作推荐已由用户确认。
 
+## 测试工具诊断交接（2026-09-11）
+
+- [run_all_tests.sh 在 set -euo pipefail 下直接退出](handoffs/10-test-entrypoint.md)：环境加载和双套件结果汇总方案已核验，待实施与真实双套件验收。
+- [portable 测试容差回归修复（roll-only 参考起点）](handoffs/11-roll-only-tolerance.md)：已核验初始化精度和执行后误差语义；[隔离证据](research/11-roll-only-evidence/README.md)已归档，待修订测试及全量验收。
+
+两张原实施票均保持开放，研究发布不等于修复完成。
+
 ## 文档与 tracker 的关系
 
 远程仓库为 [nineaxis_safecontrol](https://github.com/Shiningliu1011/nineaxis_safecontrol)，接续既有 [OSCBF Wayfinder Map — 9DOF LiDAR+depth OSCBF 复用与迁移地图](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/1)。GitHub 是正式 tracker，本目录是仓库内已经发布的可审阅决策与交接材料；本地文件名不是远端 issue 身份。
