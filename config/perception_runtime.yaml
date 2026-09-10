@@ -24,8 +24,9 @@
 #
 # LiDAR is OFF by default (source_topic_lidar: "") to keep single-Camera
 # behavior unchanged and until the calibration gate (T5/T6/T7) is passed; use
-# config/perception_dual_sensor_real.yaml (or dual_sensor_calibrated profile)
-# to enable the dual-sensor runtime.
+# config/perception_dual_sensor_real.yaml as the deployment template. Loading
+# that file alone still leaves LiDAR OFF; enable its source topic only after
+# the calibration gate and SSOT wiring have been implemented and verified.
 #
 # Keep workspace/voxel consistent with
 # portable_oscbf/config/obstacle_params.yaml so the ESDF grid shape matches.
