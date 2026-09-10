@@ -31,6 +31,8 @@ tracker_target: https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/1
 
 ## Decisions so far
 
+- [[04] portable 测试容差回归修复（roll-only 参考起点）](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/11#issuecomment-5617873811)：测试精度与起点/执行后报告语义已修订，倾斜对照及完整内核验收通过（148 passed、34 skipped）；修订已归档。
+
 - [[B0] 可复现基线与证据目录](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/30#issuecomment-5585757007)：已固定同机代码/环境/输入快照及恢复交接；主包250通过，内核146通过/34跳过/1容差失败，入口故障与依赖缺口留证。
 
 本轮复用与迁移规划已收敛并发布；实施证据仍待逐票完成。此前已定的需求从原票读取，不复制答案：

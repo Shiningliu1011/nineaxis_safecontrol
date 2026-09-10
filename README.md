@@ -94,9 +94,9 @@ python3 -m pytest portable_oscbf/tests -q
 | 项目 | 结论与状态 |
 |---|---|
 | [测试入口退出](docs/planning/oscbf-reuse/handoffs/10-test-entrypoint.md) | 已复现；需局部关闭 nounset 并分别汇总两个套件退出码，待实施。 |
-| [roll-only 路径起点测试](docs/planning/oscbf-reuse/handoffs/11-roll-only-tolerance.md) | 已区分初始化精度与执行后误差语义；不能仅放宽容差，待修订测试和全量验收。 |
+| [roll-only 路径起点测试](docs/planning/oscbf-reuse/handoffs/11-roll-only-tolerance.md) | 已修订精度、纯 roll / 倾斜对照与执行后报告断言；内核 148 passed、34 skipped，修订已归档。 |
 
-上述研究没有修改正式测试或控制代码，也不表示当前全量测试通过。[可复现基线](docs/planning/oscbf-reuse/handoffs/30-baseline.md)保留此前运行结果及适用代码版本。
+roll-only 测试已完成修订与内核验收；其他诊断状态见各自交接文档。[可复现基线](docs/planning/oscbf-reuse/handoffs/30-baseline.md)保留此前运行结果及适用代码版本。
 
 ## 真机运行（shadow/live 模式）
 

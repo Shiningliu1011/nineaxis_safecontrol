@@ -1,0 +1,32 @@
+An NVIDIA GPU may be present on this machine, but a CUDA-enabled jaxlib is not installed. Falling back to cpu.
+....s.s.................................................sssss........... [ 39%]
+...sssss.ss.........s................................................... [ 79%]
+.........sssssssssssssssssss..........                                   [100%]
+=========================== short test summary info ============================
+SKIPPED [1] portable_oscbf/tests/test_cbfpy_migration.py:92: depends on work.unified_qp_solver, excluded from the portable core (not in OSCBF_PORTING_GUIDE.md Appendix A); qpax path covers the same solver contract
+SKIPPED [1] portable_oscbf/tests/test_cbfpy_osqp_consistency.py: depends on work.unified_qp_solver, excluded from the portable core (not in OSCBF_PORTING_GUIDE.md Appendix A); qpax consistency is covered by the qpax tests
+SKIPPED [5] portable_oscbf/tests/test_jax_dynamic_obstacle_contract.py: depends on newaxis (excluded by OSCBF_PORTING_GUIDE.md §4.7); portable DCOL obstacle contract lands in M3/M7
+SKIPPED [3] portable_oscbf/tests/test_jax_qp_benchmark.py: depends on work.jax_qp_benchmark, excluded from the portable core (not in OSCBF_PORTING_GUIDE.md Appendix A); performance benchmarking lands in M6
+SKIPPED [2] portable_oscbf/tests/test_jax_qp_health.py: depends on newaxis (excluded by OSCBF_PORTING_GUIDE.md §4.7); portable QP-health coverage lands in M5/M7
+SKIPPED [2] portable_oscbf/tests/test_jax_rate_limit.py: depends on newaxis (excluded by OSCBF_PORTING_GUIDE.md §4.7); rate-limit contract is re-evaluated in M7
+SKIPPED [1] portable_oscbf/tests/test_jax_tracking_hard_stop.py: depends on newaxis and HARD_STOP semantics (OSCBF_PORTING_GUIDE.md §4.7/§5.5); M7 removes HARD_STOP and re-establishes this contract
+SKIPPED [1] portable_oscbf/tests/test_safety_snapshot.py:122: could not import 'newaxis': No module named 'newaxis'
+SKIPPED [1] portable_oscbf/tests/test_safety_snapshot.py:143: could not import 'newaxis': No module named 'newaxis'
+SKIPPED [1] portable_oscbf/tests/test_safety_snapshot.py:163: could not import 'newaxis': No module named 'newaxis'
+SKIPPED [1] portable_oscbf/tests/test_safety_snapshot.py:171: could not import 'newaxis': No module named 'newaxis'
+SKIPPED [1] portable_oscbf/tests/test_safety_snapshot.py:187: could not import 'newaxis': No module named 'newaxis'
+SKIPPED [1] portable_oscbf/tests/test_safety_snapshot.py:210: could not import 'newaxis': No module named 'newaxis'
+SKIPPED [1] portable_oscbf/tests/test_safety_snapshot.py:242: could not import 'newaxis': No module named 'newaxis'
+SKIPPED [1] portable_oscbf/tests/test_safety_snapshot.py:259: could not import 'newaxis': No module named 'newaxis'
+SKIPPED [1] portable_oscbf/tests/test_safety_snapshot.py:281: could not import 'newaxis': No module named 'newaxis'
+SKIPPED [1] portable_oscbf/tests/test_safety_snapshot.py:304: could not import 'newaxis': No module named 'newaxis'
+SKIPPED [1] portable_oscbf/tests/test_safety_snapshot.py:333: could not import 'newaxis': No module named 'newaxis'
+SKIPPED [1] portable_oscbf/tests/test_safety_snapshot.py:355: could not import 'newaxis': No module named 'newaxis'
+SKIPPED [1] portable_oscbf/tests/test_safety_snapshot.py:383: could not import 'newaxis': No module named 'newaxis'
+SKIPPED [1] portable_oscbf/tests/test_safety_snapshot.py:408: could not import 'newaxis': No module named 'newaxis'
+SKIPPED [1] portable_oscbf/tests/test_safety_snapshot.py:438: could not import 'newaxis': No module named 'newaxis'
+SKIPPED [1] portable_oscbf/tests/test_safety_snapshot.py:466: could not import 'newaxis': No module named 'newaxis'
+SKIPPED [1] portable_oscbf/tests/test_safety_snapshot.py:487: could not import 'newaxis': No module named 'newaxis'
+SKIPPED [1] portable_oscbf/tests/test_safety_snapshot.py:512: could not import 'newaxis': No module named 'newaxis'
+SKIPPED [1] portable_oscbf/tests/test_safety_snapshot.py:537: could not import 'newaxis': No module named 'newaxis'
+148 passed, 34 skipped in 469.64s (0:07:49)

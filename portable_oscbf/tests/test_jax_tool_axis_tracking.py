@@ -1,11 +1,28 @@
 """JAX integration coverage for the roll-free 5-D tool-axis task."""
 
 import numpy as np
+import jax
+import pytest
 from scipy.spatial.transform import Rotation
 
 from work.jax_control_facade import JaxControlLoop
+from work.nineaxis_kinematics import NineaxisKinematics
 from work.path_following import PathFollowingConfig, PathGeometry
-from work.tool_axis_task import rotation_error_rotvec, rotation_error_rotvec_jax
+from work.tool_axis_task import (
+    rotation_error_rotvec, rotation_error_rotvec_jax,
+    task_error_5d, task_error_5d_jax, task_error_report_6d,
+)
+
+
+@pytest.fixture
+def x64_before_construction():
+    # init_cbf enables x64 too late for robot/path arrays already constructed.
+    previous = jax.config.x64_enabled
+    jax.config.update('jax_enable_x64', True)
+    try:
+        yield
+    finally:
+        jax.config.update('jax_enable_x64', previous)
 
 
 def test_rotation_error_rotvec_has_no_180_degree_blind_spot():
@@ -95,16 +112,19 @@ def test_invalid_task_mode_is_rejected_before_kernel_initialization():
         raise AssertionError('invalid task mode must be rejected')
 
 
-def test_tool_axis_path_kernel_ignores_roll_only_reference_at_path_start():
+@pytest.mark.parametrize('tilt_rad', [0.0, 0.001], ids=['pure-roll', 'axis-tilt'])
+def test_tool_axis_path_kernel_ignores_roll_only_reference_at_path_start(
+        x64_before_construction, tilt_rad):
     loop = JaxControlLoop(dt=0.01, task_mode='tool_axis_5d')
     q = np.array([0.25, 0.16, -0.98, 0.53, -2.64, -0.85, -0.16, -0.97, 1.18])
     position = np.asarray(loop.robot.ee_position(q))
     current_rotation = np.asarray(loop.robot.ee_rotation(q))
     roll_only_target = current_rotation @ Rotation.from_rotvec(
         [0.7, 0.0, 0.0]).as_matrix()
+    target = roll_only_target @ Rotation.from_rotvec([0.0, tilt_rad, 0.0]).as_matrix()
     geometry = PathGeometry.from_samples(
         np.array([position, position + np.array([0.001, 0.0, 0.0])]),
-        np.array([roll_only_target, roll_only_target]),
+        np.array([target, target]),
         np.zeros(2),
         np.array([0.0, 0.1]),
     )
@@ -122,5 +142,28 @@ def test_tool_axis_path_kernel_ignores_roll_only_reference_at_path_start():
     )
 
     assert result.qp_ok
-    np.testing.assert_allclose(result.err_6d, np.zeros(6), atol=1.0e-8)
-    np.testing.assert_allclose(result.u_nom, np.zeros(9), atol=1.0e-8)
+    # Zero feed holds the reference at the start for both orientation cases.
+    np.testing.assert_allclose(result.reference_position_m, position, rtol=0, atol=1e-12)
+    np.testing.assert_allclose(result.reference_rotation, target, rtol=0, atol=1e-12)
+    kinematics = NineaxisKinematics()
+    start_position, start_rotation = kinematics.ee_pose(q)
+    start_error = task_error_5d(start_position, position, start_rotation, target)
+    np.testing.assert_allclose(
+        task_error_5d_jax(position, position, current_rotation, target),
+        start_error, rtol=0, atol=1e-12)
+    if tilt_rad == 0.0:
+        np.testing.assert_allclose(start_error, np.zeros(5), rtol=0, atol=1e-8)
+        np.testing.assert_allclose(result.u_nom, np.zeros(9), rtol=0, atol=1e-8)
+    else:
+        # Reject an implementation that simply ignores all orientation feedback.
+        np.testing.assert_allclose(
+            np.linalg.norm(start_error[3:]), np.sin(tilt_rad), rtol=0, atol=1e-12)
+        assert np.linalg.norm(result.u_nom) > 1e-5
+
+    # The safe command can move the joints even when the nominal command is
+    # zero. Telemetry describes q_next, not the error at the path start.
+    next_position, next_rotation = kinematics.ee_pose(result.q_next)
+    expected_report = task_error_report_6d(task_error_5d(
+        next_position, result.reference_position_m,
+        next_rotation, result.reference_rotation))
+    np.testing.assert_allclose(result.err_6d, expected_report, rtol=0, atol=1e-12)

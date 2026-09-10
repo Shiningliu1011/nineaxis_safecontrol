@@ -48,8 +48,9 @@ cd ~/robot/pymoveit2_ws && colcon build --symlink-install \
 `run_all_tests.sh` 的 `set -u` 与 ROS setup.bash 冲突（issue #10）；
 主包 4 个必现失败：settle harness 缺方法 ×2、perf p95 预算、e2e 步数
 （issue #9，pytest tests/ 需绕过脚本另行运行）；
-`test_tool_axis_path_kernel_ignores_roll_only_reference_at_path_start` 容差
-回归（issue #11, JAX 数值精度级，atol 1e-8 → 1e-6 待改）。
+`test_tool_axis_path_kernel_ignores_roll_only_reference_at_path_start` 已在工作区修复：
+构造前固定并恢复 x64，区分起点与执行后误差并加入倾斜对照；内核套件
+148 passed、34 skipped，修订已归档，详见 [实施记录](docs/planning/oscbf-reuse/handoffs/11-roll-only-tolerance.md)。
 
 ## Code Conventions
 

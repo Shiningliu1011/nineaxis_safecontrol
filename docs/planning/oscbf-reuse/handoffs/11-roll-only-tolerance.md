@@ -2,9 +2,10 @@
 
 - Tracker：https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/11
 - 日期：2026-09-11
-- 状态：已领取；诊断和修订方案完成，待实施；原实施票保持 OPEN。
+- 状态：测试修订及本机验收完成；修复票已完成，测试修订及验收日志随本提交归档。
 - 起点：沿用当前工作区及前一窗口 HEAD `786e0aec61b7abbf8e8c0a5c5aa99d20c3e54f21`，保留已有未提交修改。
-- 用户指令：使用 wayfinder 继续下一张 ticket；本轮按既有窗口约定研究并交接，不修改正式测试或控制代码。
+- 前轮范围：研究并交接，不修改正式测试或控制代码。
+- 本轮用户指令：调用 wayfinder 处理本票；按 ready-for-agent 交接修订测试并验收。
 
 ## 结论
 
@@ -62,4 +63,27 @@ PYTHONPATH=portable_oscbf:portable_oscbf/vendor/dpax JAX_ENABLE_X64=1 python3 do
 
 ## 下一步
 
-等待本票实施指令；完成测试修改与全量验收后再发布 resolution、关闭原实施票并更新地图索引。本轮不自动启动下一票。
+本票测试修订与全量验收已完成；发布 resolution 并关闭原实施票，本次按用户指令提交至仓库。本轮不自动启动下一票。
+
+
+## 实施记录（2026-09-11）
+
+基于 HEAD `3ec19a41aebfa1567d55caa851feed3bf4d9cbee` 的现有工作区实施，保留其他未提交修改。正式代码变更仅在 `portable_oscbf/tests/test_jax_tool_axis_tracking.py`，未修改生产控制代码、求解器或生产精度设置。
+
+- pytest fixture 在机器人与路径构造前启用 x64，并在 finally 中恢复原设置。
+- 同一路径入口参数化覆盖纯 roll 和 0.001 rad 工具轴倾斜：纯 roll 起点误差与名义命令保留 1e-8 绝对容差；倾斜时核对非零工具轴误差和名义命令。
+- 零进给参考仍位于路径起点；执行后报告用已有 NumPy `NineaxisKinematics.ee_pose(q_next)` 与 `task_error_5d` 独立计算，以 1e-12 绝对容差核对。该容差用于双精度实现对照，不是实机安全阈值。
+- 原测试独立复现：1 failed in 21.62s，最大误差 8.5742118e-8。
+
+验收日志已归档至 [实施验收证据](../research/11-roll-only-evidence/implementation/)，本机原始目录为 `output/ticket-11-implementation/`。
+
+| 验证命令 | 结果 | 日志 |
+|---|---|---|
+| `python3 -m pytest portable_oscbf/tests/test_jax_tool_axis_tracking.py::test_tool_axis_path_kernel_ignores_roll_only_reference_at_path_start -q` | 2 passed in 43.03s | [default.txt](../research/11-roll-only-evidence/implementation/default.txt) |
+| 上述命令前加 `JAX_ENABLE_X64=1` | 2 passed in 30.60s | [x64.txt](../research/11-roll-only-evidence/implementation/x64.txt) |
+| `python3 -m pytest portable_oscbf/tests/test_jax_tool_axis_tracking.py -q` | 6 passed in 53.83s | [module.txt](../research/11-roll-only-evidence/implementation/module.txt) |
+| `python3 -m pytest portable_oscbf/tests -q -rs` | 148 passed, 34 skipped in 469.64s；退出码 0 | [full.txt](../research/11-roll-only-evidence/implementation/full.txt) |
+
+回退仅撤销本票测试修改及相应状态说明；测试修订及验收日志随本提交归档。
+
+34 个跳过项来自既有 portable 范围排除和缺少 `newaxis`，不是通过项。本轮未执行主包套件或真机验收；没有新增待决取舍或需要新增票据的范围。
