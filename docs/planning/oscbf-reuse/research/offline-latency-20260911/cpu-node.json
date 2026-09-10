@@ -1,0 +1,79 @@
+{
+  "domain_id": 182,
+  "output_topic": "/wayfinder_offline3/output",
+  "scope": "manual unpaced real _control_tick through publish return; ideal smoothed-command feedback; no DDS delivery or timer scheduling or actuator",
+  "callback": {
+    "n": 2,
+    "p50_ms": 8.100635500000001,
+    "p95_ms": 8.581694950000001,
+    "p99_ms": 8.62445579,
+    "max_ms": 8.635146
+  },
+  "nested_step_once": {
+    "n": 2,
+    "p50_ms": 7.607040000948473,
+    "p95_ms": 7.940501699522429,
+    "p99_ms": 7.970142739395669,
+    "max_ms": 7.977552999363979
+  },
+  "nested_publish": {
+    "n": 2,
+    "p50_ms": 0.19351000000000002,
+    "p95_ms": 0.2198458,
+    "p99_ms": 0.22218676,
+    "max_ms": 0.222772
+  },
+  "samples_ms": [
+    7.566125,
+    8.635146
+  ],
+  "hold": true,
+  "progress_m": 0.0,
+  "qp_failures": 0,
+  "parameters": {
+    "dt": 0.01,
+    "dt_path": 0.01,
+    "publish_frequency_hz": 100.0,
+    "trajectory_mat": "/home/lsn/robot/robot_safecontrol/data/nurbs/ik_input.mat",
+    "portable_oscbf_root": "/home/lsn/robot/robot_safecontrol/portable_oscbf",
+    "portable_config_yaml": "/home/lsn/robot/robot_safecontrol/portable_oscbf/config/nineaxis.yaml",
+    "joint_names": [
+      "J1",
+      "J2",
+      "J3",
+      "J4",
+      "J5",
+      "J6",
+      "J7",
+      "J8",
+      "J9"
+    ],
+    "joint_state_topic": "/wayfinder_offline3/input",
+    "publish_joint_state_topic": "/wayfinder_offline3/output",
+    "kp_pos": 160.0,
+    "kp_orient": 10.0,
+    "kp_joint": 0.45,
+    "max_tool_axis_speed_rad_s": 2.0,
+    "reference_feedrate_scale": 3.5,
+    "nullspace_speed_limit": 0.18,
+    "damping": 0.05,
+    "w_pos": 40.0,
+    "w_orient": 10.0,
+    "w_joint": 0.1,
+    "temporal_lambda": 0.2,
+    "enable_x64": true,
+    "solver_tol": 0.001,
+    "task_mode": "tool_axis_5d",
+    "use_nullspace_policy": false,
+    "reference_lead_m": 0.01,
+    "orientation_mode": "surface_normal",
+    "cylinder_axis_direction": [
+      0.0,
+      1.0,
+      0.0
+    ],
+    "wait_for_start": false,
+    "telemetry_period_s": 1.0,
+    "perf_report_path": "/home/lsn/robot/robot_safecontrol/docs/planning/oscbf-reuse/research/offline-latency-20260911/cpu-node-report.md"
+  }
+}

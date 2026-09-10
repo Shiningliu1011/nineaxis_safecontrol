@@ -1,0 +1,169 @@
+{
+  "passed_cases": 28,
+  "example_result": {
+    "status": "offline_arithmetic_only",
+    "robot_admission": false,
+    "remaining_time_s": 0.01999999999999602,
+    "most_restrictive_remaining_time_s": 0.2580000000000057,
+    "arithmetic_feasible": true,
+    "sources": [
+      {
+        "id": "camera",
+        "age_s": 0.05199999999999716,
+        "available_remaining_time_s": 0.3080000000000029,
+        "zero_speed_note": null,
+        "space_after_age_m": 0.15400000000000144,
+        "margin_m": 0.14400000000000343,
+        "arithmetic_feasible": true
+      },
+      {
+        "id": "lidar",
+        "age_s": 0.10199999999999432,
+        "available_remaining_time_s": 0.2580000000000057,
+        "zero_speed_note": null,
+        "space_after_age_m": 0.12900000000000286,
+        "margin_m": 0.11900000000000485,
+        "arithmetic_feasible": true
+      }
+    ]
+  },
+  "cases": [
+    {
+      "case": "two_sources_independent_age",
+      "outcome": "passed"
+    },
+    {
+      "case": "missing_relative_speed_m_s",
+      "outcome": "rejected_as_expected",
+      "reason": "relative_speed_m_s: missing bound object"
+    },
+    {
+      "case": "missing_clock_error_s",
+      "outcome": "rejected_as_expected",
+      "reason": "clock_error_s: missing bound object"
+    },
+    {
+      "case": "missing_available_separation_m",
+      "outcome": "rejected_as_expected",
+      "reason": "available_separation_m: missing bound object"
+    },
+    {
+      "case": "missing_geometry_error_m",
+      "outcome": "rejected_as_expected",
+      "reason": "geometry_error_m: missing bound object"
+    },
+    {
+      "case": "missing_stop_relative_displacement_m",
+      "outcome": "rejected_as_expected",
+      "reason": "stop_relative_displacement_m: missing bound object"
+    },
+    {
+      "case": "nan",
+      "outcome": "rejected_as_expected",
+      "reason": "relative_speed_m_s: must be finite and nonnegative"
+    },
+    {
+      "case": "infinity",
+      "outcome": "rejected_as_expected",
+      "reason": "relative_speed_m_s: must be finite and nonnegative"
+    },
+    {
+      "case": "negative",
+      "outcome": "rejected_as_expected",
+      "reason": "relative_speed_m_s: must be finite and nonnegative"
+    },
+    {
+      "case": "boolean",
+      "outcome": "rejected_as_expected",
+      "reason": "relative_speed_m_s: missing or not numeric"
+    },
+    {
+      "case": "future",
+      "outcome": "rejected_as_expected",
+      "reason": "future or reversed acquisition interval; no clamping"
+    },
+    {
+      "case": "zero_stamp",
+      "outcome": "rejected_as_expected",
+      "reason": "acquisition_start_s: must be finite and positive"
+    },
+    {
+      "case": "reversed_scan",
+      "outcome": "rejected_as_expected",
+      "reason": "future or reversed acquisition interval; no clamping"
+    },
+    {
+      "case": "clock_untrusted",
+      "outcome": "rejected_as_expected",
+      "reason": "untrusted clock or session"
+    },
+    {
+      "case": "session_untrusted",
+      "outcome": "rejected_as_expected",
+      "reason": "untrusted clock or session"
+    },
+    {
+      "case": "session_changed",
+      "outcome": "rejected_as_expected",
+      "reason": "clock domain or session mismatch"
+    },
+    {
+      "case": "clock_domain_mismatch",
+      "outcome": "rejected_as_expected",
+      "reason": "clock domain or session mismatch"
+    },
+    {
+      "case": "source_missing",
+      "outcome": "rejected_as_expected",
+      "reason": "source coverage mismatch or duplicate source"
+    },
+    {
+      "case": "source_duplicate",
+      "outcome": "rejected_as_expected",
+      "reason": "source coverage mismatch or duplicate source"
+    },
+    {
+      "case": "overlap",
+      "outcome": "rejected_as_expected",
+      "reason": "interval overlap, uncovered gap, or reversed endpoints"
+    },
+    {
+      "case": "uncovered_gap",
+      "outcome": "rejected_as_expected",
+      "reason": "interval overlap, uncovered gap, or reversed endpoints"
+    },
+    {
+      "case": "missing_phase",
+      "outcome": "rejected_as_expected",
+      "reason": "provide all four ordered consumption-to-brake intervals"
+    },
+    {
+      "case": "double_compensation",
+      "outcome": "rejected_as_expected",
+      "reason": "unsupported geometry baseline; potential double motion compensation"
+    },
+    {
+      "case": "reject_p95",
+      "outcome": "rejected_as_expected",
+      "reason": "interval: sample statistics are not bounds"
+    },
+    {
+      "case": "reject_p99",
+      "outcome": "rejected_as_expected",
+      "reason": "interval: sample statistics are not bounds"
+    },
+    {
+      "case": "reject_sample_max",
+      "outcome": "rejected_as_expected",
+      "reason": "interval: sample statistics are not bounds"
+    },
+    {
+      "case": "exhausted_space",
+      "outcome": "infeasible_as_expected"
+    },
+    {
+      "case": "zero_speed_keeps_spatial_check",
+      "outcome": "passed"
+    }
+  ]
+}

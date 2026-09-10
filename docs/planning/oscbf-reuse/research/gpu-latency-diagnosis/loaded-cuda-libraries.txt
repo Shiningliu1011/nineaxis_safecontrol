@@ -1,0 +1,11 @@
+/home/lsn/robot/robot_safecontrol/.scratch/latency-3-gpu-venv/lib/python3.10/site-packages/nvidia/cublas/lib/libcublas.so.12
+/home/lsn/robot/robot_safecontrol/.scratch/latency-3-gpu-venv/lib/python3.10/site-packages/nvidia/cublas/lib/libcublasLt.so.12
+/home/lsn/robot/robot_safecontrol/.scratch/latency-3-gpu-venv/lib/python3.10/site-packages/nvidia/cuda_cupti/lib/libcupti.so.12
+/home/lsn/robot/robot_safecontrol/.scratch/latency-3-gpu-venv/lib/python3.10/site-packages/nvidia/cuda_runtime/lib/libcudart.so.12
+/home/lsn/robot/robot_safecontrol/.scratch/latency-3-gpu-venv/lib/python3.10/site-packages/nvidia/cudnn/lib/libcudnn.so.9
+/home/lsn/robot/robot_safecontrol/.scratch/latency-3-gpu-venv/lib/python3.10/site-packages/nvidia/cudnn/lib/libcudnn_graph.so.9
+/home/lsn/robot/robot_safecontrol/.scratch/latency-3-gpu-venv/lib/python3.10/site-packages/nvidia/cufft/lib/libcufft.so.11
+/home/lsn/robot/robot_safecontrol/.scratch/latency-3-gpu-venv/lib/python3.10/site-packages/nvidia/cusolver/lib/libcusolver.so.11
+/home/lsn/robot/robot_safecontrol/.scratch/latency-3-gpu-venv/lib/python3.10/site-packages/nvidia/cusparse/lib/libcusparse.so.12
+/home/lsn/robot/robot_safecontrol/.scratch/latency-3-gpu-venv/lib/python3.10/site-packages/nvidia/nvjitlink/lib/libnvJitLink.so.12
+/usr/lib/x86_64-linux-gnu/libcuda.so.610.43.02

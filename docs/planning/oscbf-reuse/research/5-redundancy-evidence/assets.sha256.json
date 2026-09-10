@@ -1,0 +1,12 @@
+{
+  "default-roll_test_start.json": "1ffdf4fc6214b309b90f9ca48761ee1f882f5ca8aaea4f12520e8eb816789b0e",
+  "joint_midpoint-roll_test_start.json": "5c1bf2277ebf3eaedc0a3f1449da790ff720c6dda4f1fe8313b91aeb2d8df29a",
+  "summary.json": "b2e18d1eaf4acf0d4e80eb47dcf28f2cf75f7de23fa633284bcb490c0bfbb936",
+  "joint_midpoint-tracking_start.json": "6eaa7efc3ba00f85e9c0eebd88775a623996221fb51e284fe6e28a1d0290bf49",
+  "existing_manipulability-tracking_start.json": "8ed9c0bb5607819933c9f70eb7ab209d93159a842aff0de05e3996fed2922118",
+  "metadata.json": "2cc8f69852248ec58a0302b6a058e42256370aaa0ad973b49f37413dd96d10aa",
+  "default-tracking_start.json": "c72f93d1e8e64f57a1df990ac08c0fad6e18d394f0064f8cd9d7d556e4026b30",
+  "run.log": "f9246f08a92bae129306d7273211a98247cbca4a2d57075e11f7a6e1d0aa5db0",
+  "existing_manipulability-roll_test_start.json": "0a4e864fa2d9b122f861b0dc74dafec3509aacded92d6caf625f1ae4943071ef",
+  "compare.py": "5a2cefe7912f1e4f90971c8f6198553f32e143f09c86339a0a03a65cab9cf07c"
+}

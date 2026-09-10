@@ -1,0 +1,117 @@
+{
+  "purpose": "offline_draft",
+  "clock_domain": "synthetic_monotonic",
+  "session": "example-1",
+  "consume_s": 100.0,
+  "minimum_clearance_m": {
+    "value": 0.1,
+    "basis": "synthetic_assumption",
+    "evidence": "pure synthetic example; not a production threshold"
+  },
+  "required_sources": [
+    "camera",
+    "lidar"
+  ],
+  "sources": [
+    {
+      "id": "camera",
+      "clock_domain": "synthetic_monotonic",
+      "session": "example-1",
+      "clock_trusted": true,
+      "session_trusted": true,
+      "acquisition_start_s": 99.95,
+      "acquisition_end_s": 99.96000000000001,
+      "clock_error_s": {
+        "value": 0.002,
+        "basis": "synthetic_assumption",
+        "evidence": "pure synthetic example; not a production threshold"
+      },
+      "geometry_reference": "acquisition_without_motion_inflation",
+      "relative_speed_m_s": {
+        "value": 0.5,
+        "basis": "synthetic_assumption",
+        "evidence": "pure synthetic example; not a production threshold"
+      },
+      "available_separation_m": {
+        "value": 0.4,
+        "basis": "synthetic_assumption",
+        "evidence": "pure synthetic example; not a production threshold"
+      },
+      "geometry_error_m": {
+        "value": 0.02,
+        "basis": "synthetic_assumption",
+        "evidence": "pure synthetic example; not a production threshold"
+      },
+      "stop_relative_displacement_m": {
+        "value": 0.1,
+        "basis": "synthetic_assumption",
+        "evidence": "pure synthetic example; not a production threshold"
+      }
+    },
+    {
+      "id": "lidar",
+      "clock_domain": "synthetic_monotonic",
+      "session": "example-1",
+      "clock_trusted": true,
+      "session_trusted": true,
+      "acquisition_start_s": 99.9,
+      "acquisition_end_s": 99.91000000000001,
+      "clock_error_s": {
+        "value": 0.002,
+        "basis": "synthetic_assumption",
+        "evidence": "pure synthetic example; not a production threshold"
+      },
+      "geometry_reference": "acquisition_without_motion_inflation",
+      "relative_speed_m_s": {
+        "value": 0.5,
+        "basis": "synthetic_assumption",
+        "evidence": "pure synthetic example; not a production threshold"
+      },
+      "available_separation_m": {
+        "value": 0.4,
+        "basis": "synthetic_assumption",
+        "evidence": "pure synthetic example; not a production threshold"
+      },
+      "geometry_error_m": {
+        "value": 0.02,
+        "basis": "synthetic_assumption",
+        "evidence": "pure synthetic example; not a production threshold"
+      },
+      "stop_relative_displacement_m": {
+        "value": 0.1,
+        "basis": "synthetic_assumption",
+        "evidence": "pure synthetic example; not a production threshold"
+      }
+    }
+  ],
+  "intervals": [
+    {
+      "name": "remaining_control",
+      "start_s": 100.0,
+      "end_s": 100.01,
+      "basis": "synthetic_assumption",
+      "evidence": "synthetic only"
+    },
+    {
+      "name": "final_command",
+      "start_s": 100.01,
+      "end_s": 100.012,
+      "basis": "synthetic_assumption",
+      "evidence": "synthetic only"
+    },
+    {
+      "name": "transport",
+      "start_s": 100.012,
+      "end_s": 100.017,
+      "basis": "synthetic_assumption",
+      "evidence": "synthetic only"
+    },
+    {
+      "name": "actuator_reaction",
+      "start_s": 100.017,
+      "end_s": 100.02,
+      "basis": "synthetic_assumption",
+      "evidence": "synthetic only"
+    }
+  ]
+}

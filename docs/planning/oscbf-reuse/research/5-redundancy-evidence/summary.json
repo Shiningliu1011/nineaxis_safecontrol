@@ -1,0 +1,128 @@
+[
+  {
+    "strategy": "default",
+    "scene": "tracking_start",
+    "steps": 300,
+    "max_position_error_m": 1.876673553289524e-09,
+    "max_axis_error_rad": 6.664001874625058e-08,
+    "max_axis_speed_rad_s": 4.3169954357430706e-08,
+    "initial_normalized_limit_margin": 0.14849959218890083,
+    "min_normalized_limit_margin": 0.1483773688837295,
+    "final_normalized_limit_margin": 0.1483773688837295,
+    "sigma5_start": 0.3782550028356739,
+    "sigma5_end": 0.37807702677835575,
+    "ranks": [
+      5
+    ],
+    "qp_failures": 0,
+    "active_step_fraction": 0.0,
+    "max_delta_slack": 7.727466235708151e-11,
+    "min_h": 0.17816501849980926,
+    "max_qp_correction_norm": 0.0013425879951499678
+  },
+  {
+    "strategy": "default",
+    "scene": "roll_test_start",
+    "steps": 300,
+    "max_position_error_m": 9.556482819523883e-09,
+    "max_axis_error_rad": 9.996002811937589e-08,
+    "max_axis_speed_rad_s": 6.525481657440902e-07,
+    "initial_normalized_limit_margin": 0.07983193277310922,
+    "min_normalized_limit_margin": 0.07941957369746051,
+    "final_normalized_limit_margin": 0.07941957369746051,
+    "sigma5_start": 0.4753242597080941,
+    "sigma5_end": 0.47731882711952517,
+    "ranks": [
+      5
+    ],
+    "qp_failures": 0,
+    "active_step_fraction": 0.0,
+    "max_delta_slack": 4.0608684807544144e-10,
+    "min_h": 0.16458934705695683,
+    "max_qp_correction_norm": 0.007199841289786474
+  },
+  {
+    "strategy": "joint_midpoint",
+    "scene": "tracking_start",
+    "steps": 300,
+    "max_position_error_m": 3.0546893439031134e-05,
+    "max_axis_error_rad": 0.0009342269456801262,
+    "max_axis_speed_rad_s": 0.009184968948736641,
+    "initial_normalized_limit_margin": 0.14849959218890083,
+    "min_normalized_limit_margin": 0.13390122742613042,
+    "final_normalized_limit_margin": 0.13391271836372357,
+    "sigma5_start": 0.3782550028356739,
+    "sigma5_end": 0.3252012278508399,
+    "ranks": [
+      5
+    ],
+    "qp_failures": 0,
+    "active_step_fraction": 0.0,
+    "max_delta_slack": 1.4330728862001274e-10,
+    "min_h": 0.16405951261103954,
+    "max_qp_correction_norm": 0.30545127855013254
+  },
+  {
+    "strategy": "joint_midpoint",
+    "scene": "roll_test_start",
+    "steps": 300,
+    "max_position_error_m": 0.000493209690966508,
+    "max_axis_error_rad": 0.001761949150957917,
+    "max_axis_speed_rad_s": 0.011876417603354318,
+    "initial_normalized_limit_margin": 0.07983193277310922,
+    "min_normalized_limit_margin": 0.07191877375642892,
+    "final_normalized_limit_margin": 0.07196168876168674,
+    "sigma5_start": 0.4753242597080941,
+    "sigma5_end": 0.4948438096404849,
+    "ranks": [
+      5
+    ],
+    "qp_failures": 0,
+    "active_step_fraction": 0.0,
+    "max_delta_slack": 6.985013600339193e-09,
+    "min_h": 0.10514238348388963,
+    "max_qp_correction_norm": 0.3117294402398488
+  },
+  {
+    "strategy": "existing_manipulability",
+    "scene": "tracking_start",
+    "steps": 300,
+    "max_position_error_m": 0.00046337601210401857,
+    "max_axis_error_rad": 0.0007704778271476584,
+    "max_axis_speed_rad_s": 0.003723354328635995,
+    "initial_normalized_limit_margin": 0.14849959218890083,
+    "min_normalized_limit_margin": 0.13829923558837906,
+    "final_normalized_limit_margin": 0.13829923558837906,
+    "sigma5_start": 0.3782550028356739,
+    "sigma5_end": 0.33625626894805033,
+    "ranks": [
+      5
+    ],
+    "qp_failures": 0,
+    "active_step_fraction": 0.0,
+    "max_delta_slack": 3.654737840311203e-09,
+    "min_h": 0.17314962399071976,
+    "max_qp_correction_norm": 0.18649402129070336
+  },
+  {
+    "strategy": "existing_manipulability",
+    "scene": "roll_test_start",
+    "steps": 300,
+    "max_position_error_m": 5.829006948665483e-05,
+    "max_axis_error_rad": 0.00013085966884033567,
+    "max_axis_speed_rad_s": 0.0007904739889048868,
+    "initial_normalized_limit_margin": 0.07983193277310922,
+    "min_normalized_limit_margin": 0.07208263730795192,
+    "final_normalized_limit_margin": 0.07208263730795192,
+    "sigma5_start": 0.4753242597080941,
+    "sigma5_end": 0.5074476389980519,
+    "ranks": [
+      5
+    ],
+    "qp_failures": 0,
+    "active_step_fraction": 0.0,
+    "max_delta_slack": 4.747792196766202e-09,
+    "min_h": 0.1263294126744797,
+    "max_qp_correction_norm": 0.237323762039942
+  }
+]

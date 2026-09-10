@@ -1,0 +1,30 @@
+{
+  "date": "2026-09-11",
+  "scope": "Nominal FOV membership of tool0 joint-configuration samples; NOT volume coverage, collision-free reachability or actual detection. No occlusion rejection.",
+  "method": "8192 scrambled Sobol poses seed42 plus zero pose and both all-joint limit vectors; voxel-selected display capped at3000. Y-up base_link.",
+  "counts": {
+    "samples": 8195,
+    "both": 8194,
+    "camera_only": 1,
+    "lidar_only": 0,
+    "neither": 0
+  },
+  "sample_bounds_base_link_m": {
+    "min": [
+      -1.322750098306842,
+      -0.2310080120293339,
+      -0.9333601990119378
+    ],
+    "max": [
+      1.327097445973927,
+      0.912003159388389,
+      1.8358888103845097
+    ]
+  },
+  "sources_sha256": {
+    "config/sensor_placement_preview.json": "b106a5b1af389d4568af4cfd907bc301f307067412c4580f6bc2306956e6e43e",
+    "models/ninezzhou/urdf/ninezzhou.urdf": "766ea5870c41f110d7d57b46e6b31153335f45358faf15e641d465b3b31587a3",
+    "scripts/preview_sensor_placement.py": "c68bc4d2b8eb29e62e5d946967a04a91f21e2327925958403424187bc14be5e0",
+    "scripts/sensor_placement_geometry.py": "38db42710abbb45aecdffd63f69437ba9907b8ac2b677c69e37df2f93417b722"
+  }
+}

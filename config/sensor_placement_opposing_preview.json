@@ -1,0 +1,34 @@
+{
+  "description": "Candidate only; positions in base_link metres (+Y up, +Z rail). FOV is geometric, without occlusion or detection simulation.",
+  "camera": {
+    "position": [
+      -2.1,
+      1.35,
+      0.55
+    ],
+    "look_at": [
+      0,
+      0.3,
+      0.5
+    ],
+    "horizontal_fov_deg": 90,
+    "vertical_fov_deg": 65,
+    "near_m": 0.25,
+    "display_far_m": 3.72,
+    "evaluation_far_m": 6.0,
+    "placement_note": "Candidate moved outside lateral arm envelope; nominal sample coverage only, without occlusion or depth-mode calibration."
+  },
+  "lidar": {
+    "position": [
+      1.9,
+      0.15,
+      0.55
+    ],
+    "elevation_min_deg": -7,
+    "elevation_max_deg": 52,
+    "display_radius_m": 3.43,
+    "placement_note": "Moved outward: model-only conservative lateral bound 1.392 m; shell inner X=1.8675 m (~0.476 m clearance). Excludes extra tools/payloads. Display radius is not detection range.",
+    "evaluation_near_m": 0.2,
+    "evaluation_far_m": 40.0
+  }
+}

@@ -1,0 +1,276 @@
+{
+  "steps": 20,
+  "gpu_events": 52220,
+  "gpu_events_per_step": 2611.0,
+  "sum_device_event_us_per_step": 12382.704800000605,
+  "mean_profiled_host_step_us": 16199.274150000001,
+  "top_device_events": [
+    {
+      "name": "void cutlass::Kernel2<cutlass_80_tensorop_d884gemm_32x32_16x5_nt_align1>(cutlass_80_tensorop_d884gemm_32x32_16x5_nt_align1::Params)",
+      "count": 1900,
+      "count_per_step": 95.0,
+      "total_us": 56114.23699999917,
+      "mean_us": 29.533808947367984
+    },
+    {
+      "name": "void cutlass::Kernel2<cutlass_80_tensorop_d884gemm_32x32_16x5_nn_align1>(cutlass_80_tensorop_d884gemm_32x32_16x5_nn_align1::Params)",
+      "count": 3320,
+      "count_per_step": 166.0,
+      "total_us": 39664.56200000017,
+      "mean_us": 11.947157228915716
+    },
+    {
+      "name": "void geqr2_smem<double, double, 8, 5, 5>(int, int, double*, unsigned long, double*, int)",
+      "count": 360,
+      "count_per_step": 18.0,
+      "total_us": 23153.281000000094,
+      "mean_us": 64.3146694444447
+    },
+    {
+      "name": "void cutlass::Kernel2<cutlass_80_tensorop_d884gemm_32x32_16x5_tn_align1>(cutlass_80_tensorop_d884gemm_32x32_16x5_tn_align1::Params)",
+      "count": 1820,
+      "count_per_step": 91.0,
+      "total_us": 20533.360999999917,
+      "mean_us": 11.282066483516438
+    },
+    {
+      "name": "void gesvdbj_batch_32x16<double, double>(long, int const*, int const*, int const*, int, double const*, int, double, double*, double*, int*, double, int, double)",
+      "count": 120,
+      "count_per_step": 6.0,
+      "total_us": 8681.811999999998,
+      "mean_us": 72.34843333333332
+    },
+    {
+      "name": "void svd_column_rotate_batch<double, 5, 3>(long, int const*, int const*, int, double*, int, double*, int, double const*, int*)",
+      "count": 240,
+      "count_per_step": 12.0,
+      "total_us": 8394.40400000002,
+      "mean_us": 34.97668333333342
+    },
+    {
+      "name": "void gemmSN_TN_kernel<double, 128, 16, 2, 4, 2, 2, true, cublasGemvTensorStridedBatched<double const>, cublasGemvTensorStridedBatched<double const>, cublasGemvTensorStridedBatched<double> >(cublasGemmSmallNParams<cublasGemvTensorStridedBatched<double const>, cublasGemvTensorStridedBatched<double const>, cublasGemvTensorStridedBatched<double>, double>)",
+      "count": 60,
+      "count_per_step": 3.0,
+      "total_us": 6211.486999999999,
+      "mean_us": 103.52478333333332
+    },
+    {
+      "name": "MemcpyD2D",
+      "count": 4340,
+      "count_per_step": 217.0,
+      "total_us": 4273.564000000173,
+      "mean_us": 0.9846921658986574
+    },
+    {
+      "name": "void svd_row_rotate_batch_32x16<double>(long, int const*, int const*, int, double*, int, double const*, int*)",
+      "count": 120,
+      "count_per_step": 6.0,
+      "total_us": 4255.463999999997,
+      "mean_us": 35.462199999999974
+    },
+    {
+      "name": "void trsv_ln_exec_up<double, 32u, 32u, 4u, false>(int, double const*, long, double*, long, int*)",
+      "count": 620,
+      "count_per_step": 31.0,
+      "total_us": 3524.772000000005,
+      "mean_us": 5.685116129032266
+    },
+    {
+      "name": "void cutlass::Kernel2<cutlass_80_tensorop_d884gemm_32x32_16x5_tt_align1>(cutlass_80_tensorop_d884gemm_32x32_16x5_tt_align1::Params)",
+      "count": 360,
+      "count_per_step": 18.0,
+      "total_us": 2532.152999999999,
+      "mean_us": 7.0337583333333304
+    },
+    {
+      "name": "void gemmSN_NN_kernel<double, 128, 2, 4, 8, 5, 4, false, cublasGemvTensorStridedBatched<double const>, cublasGemvTensorStridedBatched<double const>, cublasGemvTensorStridedBatched<double> >(cublasGemmSmallNParams<cublasGemvTensorStridedBatched<double const>, cublasGemvTensorStridedBatched<double const>, cublasGemvTensorStridedBatched<double>, double>)",
+      "count": 20,
+      "count_per_step": 1.0,
+      "total_us": 2109.0880000000006,
+      "mean_us": 105.45440000000004
+    },
+    {
+      "name": "loop_select_fusion_19",
+      "count": 1680,
+      "count_per_step": 84.0,
+      "total_us": 2097.2869999999875,
+      "mean_us": 1.2483851190476116
+    },
+    {
+      "name": "loop_add_fusion_32",
+      "count": 1980,
+      "count_per_step": 99.0,
+      "total_us": 1969.7169999999396,
+      "mean_us": 0.9948065656565351
+    },
+    {
+      "name": "loop_dynamic_update_slice_fusion_2",
+      "count": 1940,
+      "count_per_step": 97.0,
+      "total_us": 1884.8279999999763,
+      "mean_us": 0.9715608247422558
+    },
+    {
+      "name": "loop_multiply_fusion_21",
+      "count": 620,
+      "count_per_step": 31.0,
+      "total_us": 1718.5530000000078,
+      "mean_us": 2.7718596774193673
+    },
+    {
+      "name": "void larft_T_32<double, 256>(int, double*, int, long, double const*, long)",
+      "count": 320,
+      "count_per_step": 16.0,
+      "total_us": 1414.397,
+      "mean_us": 4.419990625
+    },
+    {
+      "name": "memcpy32_post",
+      "count": 1520,
+      "count_per_step": 76.0,
+      "total_us": 1365.7029999999995,
+      "mean_us": 0.8984888157894734
+    },
+    {
+      "name": "input_reduce_fusion_2",
+      "count": 300,
+      "count_per_step": 15.0,
+      "total_us": 1322.8870000000013,
+      "mean_us": 4.409623333333338
+    },
+    {
+      "name": "void gemmSN_NN_kernel<double, 128, 2, 4, 8, 2, 4, false, cublasGemvTensorStridedBatched<double const>, cublasGemvTensorStridedBatched<double const>, cublasGemvTensorStridedBatched<double> >(cublasGemmSmallNParams<cublasGemvTensorStridedBatched<double const>, cublasGemvTensorStridedBatched<double const>, cublasGemvTensorStridedBatched<double>, double>)",
+      "count": 60,
+      "count_per_step": 3.0,
+      "total_us": 1173.845,
+      "mean_us": 19.564083333333333
+    },
+    {
+      "name": "void gemmSN_TN_kernel<double, 128, 16, 2, 4, 4, 4, true, cublasGemvTensorStridedBatched<double const>, cublasGemvTensorStridedBatched<double const>, cublasGemvTensorStridedBatched<double> >(cublasGemmSmallNParams<cublasGemvTensorStridedBatched<double const>, cublasGemvTensorStridedBatched<double const>, cublasGemvTensorStridedBatched<double>, double>)",
+      "count": 20,
+      "count_per_step": 1.0,
+      "total_us": 1143.503,
+      "mean_us": 57.175149999999995
+    },
+    {
+      "name": "copy_info_kernel(int, int*)",
+      "count": 1120,
+      "count_per_step": 56.0,
+      "total_us": 996.9759999999973,
+      "mean_us": 0.8901571428571404
+    },
+    {
+      "name": "input_reduce_fusion_5",
+      "count": 600,
+      "count_per_step": 30.0,
+      "total_us": 976.7609999999928,
+      "mean_us": 1.627934999999988
+    },
+    {
+      "name": "void gemmSN_NN_kernel<double, 128, 2, 4, 8, 4, 4, false, cublasGemvTensorStridedBatched<double const>, cublasGemvTensorStridedBatched<double const>, cublasGemvTensorStridedBatched<double> >(cublasGemmSmallNParams<cublasGemvTensorStridedBatched<double const>, cublasGemvTensorStridedBatched<double const>, cublasGemvTensorStridedBatched<double>, double>)",
+      "count": 140,
+      "count_per_step": 7.0,
+      "total_us": 934.9350000000002,
+      "mean_us": 6.678107142857144
+    },
+    {
+      "name": "loop_add_fusion_30",
+      "count": 300,
+      "count_per_step": 15.0,
+      "total_us": 774.0679999999968,
+      "mean_us": 2.580226666666656
+    },
+    {
+      "name": "loop_divide_fusion",
+      "count": 300,
+      "count_per_step": 15.0,
+      "total_us": 748.9099999999983,
+      "mean_us": 2.496366666666661
+    },
+    {
+      "name": "loop_add_divide_subtract_fusion",
+      "count": 300,
+      "count_per_step": 15.0,
+      "total_us": 745.2699999999995,
+      "mean_us": 2.4842333333333317
+    },
+    {
+      "name": "loop_reduce_slice_fusion",
+      "count": 20,
+      "count_per_step": 1.0,
+      "total_us": 731.8000000000001,
+      "mean_us": 36.59
+    },
+    {
+      "name": "loop_reduce_fusion_5",
+      "count": 600,
+      "count_per_step": 30.0,
+      "total_us": 707.5690000000018,
+      "mean_us": 1.1792816666666697
+    },
+    {
+      "name": "loop_add_fusion_99",
+      "count": 20,
+      "count_per_step": 1.0,
+      "total_us": 667.929,
+      "mean_us": 33.39645
+    }
+  ],
+  "d2h_examples": [
+    {
+      "ph": "X",
+      "pid": 1,
+      "tid": 13,
+      "ts": 13509.617,
+      "dur": 1.184,
+      "name": "MemcpyD2H",
+      "args": {
+        "context_id": "$$1",
+        "correlation_id": "4",
+        "hlo_module": "jit_path_tracking_step",
+        "hlo_op": "conditional.0",
+        "memcpy_details": "kind_src:device kind_dst:pinned size:4 dest:0 async:1",
+        "name": "jit(path_tracking_step)/jit(main)",
+        "scope_range_id": "5",
+        "tf_op": "XlaModule:"
+      }
+    },
+    {
+      "ph": "X",
+      "pid": 1,
+      "tid": 13,
+      "ts": 13545.264,
+      "dur": 0.896,
+      "name": "MemcpyD2H",
+      "args": {
+        "context_id": "$$1",
+        "correlation_id": "9",
+        "hlo_module": "jit_path_tracking_step",
+        "hlo_op": "conditional.1",
+        "memcpy_details": "kind_src:device kind_dst:pinned size:4 dest:0 async:1",
+        "name": "jit(path_tracking_step)/jit(main)",
+        "scope_range_id": "10",
+        "tf_op": "XlaModule:"
+      }
+    },
+    {
+      "ph": "X",
+      "pid": 1,
+      "tid": 13,
+      "ts": 13583.12,
+      "dur": 0.992,
+      "name": "MemcpyD2H",
+      "args": {
+        "context_id": "$$1",
+        "correlation_id": "16",
+        "hlo_module": "jit_path_tracking_step",
+        "hlo_op": "conditional.2",
+        "memcpy_details": "kind_src:device kind_dst:pinned size:4 dest:0 async:1",
+        "name": "jit(path_tracking_step)/jit(main)",
+        "scope_range_id": "17",
+        "tf_op": "XlaModule:"
+      }
+    }
+  ],
+  "host_graph_execute_per_step": 57.0
+}

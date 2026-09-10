@@ -1,0 +1,53 @@
+{
+  "description": "Candidate only; positions in base_link metres (+Y up, +Z rail). FOV is geometric, without occlusion or detection simulation.",
+  "camera": {
+    "position": [
+      -0.2,
+      1.48,
+      -1.9
+    ],
+    "look_at": [
+      0,
+      0.3,
+      0.5
+    ],
+    "horizontal_fov_deg": 90,
+    "vertical_fov_deg": 65,
+    "near_m": 0.25,
+    "display_far_m": 4.06,
+    "evaluation_far_m": 6.0,
+    "placement_note": "Shared rear stand: lower left camera with independent tilt mount. Candidate only."
+  },
+  "lidar": {
+    "position": [
+      0.2,
+      1.6,
+      -1.9
+    ],
+    "elevation_min_deg": -7,
+    "elevation_max_deg": 52,
+    "display_radius_m": 4.14,
+    "placement_note": "Shared rear stand: upper right LiDAR, local up tilted 50deg toward base +Z. Candidate only.",
+    "evaluation_near_m": 0.2,
+    "evaluation_far_m": 40.0,
+    "tilt_toward_positive_z_deg": 50
+  },
+  "viewer": {
+    "lookat_world": [
+      0,
+      0,
+      0.7
+    ],
+    "distance": 6.6,
+    "azimuth": 140,
+    "elevation": -23
+  },
+  "shared_stand": {
+    "enabled": true,
+    "mast_x": 0,
+    "mast_z": -2.1,
+    "beam_height_m": 1.35,
+    "beam_half_width_m": 0.3,
+    "note": "Single mast + crossbar + independent camera/LiDAR adapters. Display concept; anchoring, stiffness and detailed mounting hardware unverified."
+  }
+}

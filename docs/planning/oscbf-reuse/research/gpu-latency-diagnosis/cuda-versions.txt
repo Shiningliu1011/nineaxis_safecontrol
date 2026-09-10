@@ -1,0 +1,15 @@
+cublas_build_version 120803
+cublas_get_version 120902
+cuda_driver_get_version 13030
+cuda_runtime_build_version 12080
+cuda_runtime_get_version 12090
+cudnn_build_version 90800
+cudnn_get_version 92501
+cufft_build_version 11303
+cufft_get_version 11401
+cupti_build_version 26
+cupti_get_version 28
+cusolver_build_version 11702
+cusolver_get_version 11705
+cusparse_build_version 12507
+cusparse_get_version 12510

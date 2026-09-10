@@ -31,7 +31,15 @@ tracker_target: https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/1
 
 ## Decisions so far
 
+- [[T0] spec 与参数文件坐标系/术语修订 (impl)](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/20#issuecomment-5618602929)：剩余 J1 用词与双源模板注释已提交并通过双轴审查；参数解析结果不变，已推送远端 main（提交 5b23222）。
+
 - [[04] portable 测试容差回归修复（roll-only 参考起点）](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/11#issuecomment-5617873811)：测试精度与起点/执行后报告语义已修订，倾斜对照及完整内核验收通过（148 passed、34 skipped）；修订已归档。
+
+- [[03] run_all_tests.sh 在 set -euo pipefail 下直接退出](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/10#issuecomment-5616759377)：入口修复及本机验收完成，双套件如实汇总退出码；内核既有失败保留原票，代码尚未合入。
+
+- [[07B] 选定冗余目标与优先级](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/16#issuecomment-5614751672)：外障下利用九轴协调保持末端精度；满足精度及经验证余量时优先保持进给，必要时降速/暂缓，无法兼顾则任务冲突处理；数值与实现交后续验证。
+
+- [[07A] 冗余策略对比：9-DOF 对 5D 工具轴任务](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/5#issuecomment-5614572282)：三候选六组局部对比与复用审计完成；中点/现有梯度未改善最小限位余量，生产目标与优先关系交后续人审。
 
 - [[B0] 可复现基线与证据目录](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/30#issuecomment-5585757007)：已固定同机代码/环境/输入快照及恢复交接；主包250通过，内核146通过/34跳过/1容差失败，入口故障与依赖缺口留证。
 

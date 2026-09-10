@@ -1,0 +1,45 @@
+{
+  "description": "Candidate only; positions in base_link metres (+Y up, +Z rail). FOV is geometric, without occlusion or detection simulation.",
+  "camera": {
+    "position": [
+      -0.25,
+      1.5,
+      -1.9
+    ],
+    "look_at": [
+      0,
+      0.3,
+      0.5
+    ],
+    "horizontal_fov_deg": 90,
+    "vertical_fov_deg": 65,
+    "near_m": 0.25,
+    "display_far_m": 4.08,
+    "evaluation_far_m": 6.0,
+    "placement_note": "Rear overhead candidate, rear = base_link -Z. Approx 26 degree downward optical axis; uncalibrated."
+  },
+  "lidar": {
+    "position": [
+      0.25,
+      1.5,
+      -1.9
+    ],
+    "elevation_min_deg": -7,
+    "elevation_max_deg": 52,
+    "display_radius_m": 4.1,
+    "placement_note": "Rear overhead candidate; local display +Y (sensor up) tilted 50 degrees toward base_link +Z. Not an optical-axis pitch or calibrated extrinsic.",
+    "evaluation_near_m": 0.2,
+    "evaluation_far_m": 40.0,
+    "tilt_toward_positive_z_deg": 50
+  },
+  "viewer": {
+    "lookat_world": [
+      0,
+      0,
+      0.7
+    ],
+    "distance": 6.6,
+    "azimuth": 140,
+    "elevation": -23
+  }
+}

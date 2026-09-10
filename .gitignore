@@ -24,6 +24,23 @@ dist/
 # ZCode 本地配置
 .zcode/
 
+# 本地实验、运行日志和外部厂商资料不进入版本库
+.scratch/
+Log/
+大然电机/
+
+# 研究复现产生的编译缓存
+docs/planning/oscbf-reuse/research/3-latency-evidence/**/jit-cache/
+docs/planning/oscbf-reuse/research/3-latency-evidence/**/__pycache__/
+docs/planning/oscbf-reuse/research/3-latency-evidence/*.log
+docs/planning/oscbf-reuse/research/offline-latency-20260911/__pycache__/
+docs/planning/oscbf-reuse/research/offline-latency-20260911/*.csv
+docs/planning/oscbf-reuse/research/offline-latency-20260911/*.log
+docs/planning/oscbf-reuse/research/gpu-latency-diagnosis/*.log
+docs/planning/oscbf-reuse/research/gpu-latency-diagnosis/xla-flags.txt
+docs/planning/oscbf-reuse/research/gpu-latency-diagnosis/*power.csv
+docs/planning/oscbf-reuse/research/5-redundancy-evidence/*.log
+
 # data/nurbs: 仅保留被代码引用的 ik_input.mat（OSCBF 默认轨迹），其余研究文件仅本地保留
 data/nurbs/*.m
 data/nurbs/control_points.txt
