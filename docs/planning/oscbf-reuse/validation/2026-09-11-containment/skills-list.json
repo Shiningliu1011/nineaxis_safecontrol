@@ -1,0 +1,32 @@
+{
+  "id": 2,
+  "result": {
+    "data": [
+      {
+        "cwd": "/home/lsn/robot/robot_safecontrol",
+        "skills": [
+          {
+            "name": "retro",
+            "description": "仅在用户明确调用 $retro 或指定本 skill 时，基于 coding session 的真实证据提出 agent 环境的永久改进；默认只提案。",
+            "interface": {
+              "displayName": "Retro",
+              "shortDescription": "Evidence-based coding session environment review",
+              "iconSmall": null,
+              "iconLarge": null,
+              "iconSmallUrl": null,
+              "iconLargeUrl": null,
+              "brandColor": null,
+              "defaultPrompt": "使用 $retro 复盘本次 coding session，读取真实证据并提出永久改进，先不要 apply。"
+            },
+            "path": "/home/lsn/robot/robot_safecontrol/.agents/skills/retro/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          }
+        ],
+        "errors": []
+      }
+    ]
+  },
+  "archive_note": "Excerpt of actual skills/list response; unrelated skill entries removed. Does not prove desktop invocation policy behavior."
+}

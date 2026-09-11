@@ -1,0 +1,35 @@
+fast-check is heuristic feedback; it does not replace bash run_all_tests.sh.
+
+[check] compileall
+[PASS] compileall
+
+[check] shell syntax: build_aeb_moveit.sh
+[PASS] shell syntax: build_aeb_moveit.sh
+
+[check] shell syntax: run_all_tests.sh
+[PASS] shell syntax: run_all_tests.sh
+
+[check] shell syntax: run_demo.sh
+[PASS] shell syntax: run_demo.sh
+
+[check] shell syntax: scripts/agent_check.sh
+[PASS] shell syntax: scripts/agent_check.sh
+
+[check] shell syntax: scripts/launch_clean_demo.sh
+[PASS] shell syntax: scripts/launch_clean_demo.sh
+
+[check] shell syntax: scripts/vcan_integration_test.sh
+[PASS] shell syntax: scripts/vcan_integration_test.sh
+
+[check] unstaged diff
+[PASS] unstaged diff
+
+[check] staged diff
+[PASS] staged diff
+
+[check] pure contracts
+..............................................................           [100%]
+62 passed in 0.15s
+[PASS] pure contracts
+
+fast-check is heuristic feedback; it does not replace bash run_all_tests.sh.
