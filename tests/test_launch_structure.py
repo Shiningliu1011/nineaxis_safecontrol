@@ -279,6 +279,23 @@ class TestFinalLaunchDescription(unittest.TestCase):
         self.assertIn("wait_for_start", keys)
         self.assertIn("enable_perception_obstacles", keys)
 
+    def test_hardware_mode_is_forwarded_without_unconsumed_hardware_yaml(self) -> None:
+        description = self._description()
+        bridge = next(
+            node for node in _all_nodes(description.entities)
+            if _node_identity(node)[1] == "hardware_bridge"
+        )
+        self.assertEqual(len(bridge._Node__parameters), 1)
+        parameters = bridge._Node__parameters[0]
+        self.assertIsInstance(parameters, dict)
+        key, value = next(iter(parameters.items()))
+        self.assertEqual(_render(key), "hardware_mode")
+        for mode in ("sim", "shadow", "live"):
+            context = LaunchContext()
+            context.launch_configurations["hardware_mode"] = mode
+            rendered = "".join(item.perform(context) for item in value)
+            self.assertEqual(yaml.safe_load(rendered), mode)
+
 
 class TestViewerOnlyLaunchDescription(unittest.TestCase):
     """The standalone Viewer launch should construct only the Viewer node."""

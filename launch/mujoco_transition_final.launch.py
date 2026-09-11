@@ -52,7 +52,7 @@ def generate_launch_description() -> LaunchDescription:
             # joint-state stream.
             DeclareLaunchArgument("start_oscbf_plant", default_value="false"),
             # 真机模式：sim=仿真执行端（默认），shadow=真机桥记录不发送，
-            # live=真机桥发送 CAN 帧。
+            # live=拒绝启动（containment，真实反馈链路尚未验收）。
             DeclareLaunchArgument("hardware_mode", default_value="sim"),
             # 感知障碍物管线（Orbbec 相机 → perception_bridge → obs_*）。
             DeclareLaunchArgument("start_perception", default_value="false"),
@@ -174,14 +174,13 @@ def generate_launch_description() -> LaunchDescription:
             ),
 
             # 4c. 真机执行端桥接节点（shadow/live 模式）。
-            #     hardware_mode=sim 时节点自行跳过（不启动 CAN 轮询）。
+            #     sim 无控制实体；shadow 只记录；live 在节点创建控制实体前拒绝。
             Node(
                 package="robot_safecontrol_moveit",
                 executable="hardware_bridge",
                 name="hardware_bridge",
                 output="screen",
                 parameters=[
-                    str(share_dir / "config" / "drempower.yaml"),
                     {
                         "hardware_mode":
                             LaunchConfiguration("hardware_mode"),
