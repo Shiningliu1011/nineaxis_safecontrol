@@ -170,6 +170,142 @@ def test_tracking_sentinels_reach_the_actual_facade_call(controller_fixture):
     assert captured["damping"] == 0.05
 
 
+def test_production_config_refactor_preserves_control_outputs_from_8479740(
+    tmp_path,
+):
+    """The production adapter preserves the fixed pre-refactor control trace."""
+    from robot_safecontrol_moveit.oscbf_controller import OscbfController
+
+    # Independent oracle captured from commit 8479740 with the same production
+    # values, butterfly-start state and four-step closed-loop input sequence.
+    expected_error = np.array([
+        [
+            4.457766750095031e-07,
+            1.5039047116647275e-03,
+            6.220079452390337e-06,
+            1.5193879973138107e-05,
+            -6.21704712916953e-04,
+            0.0,
+        ],
+        [
+            1.7418858300584795e-05,
+            2.055429349486715e-03,
+            -2.565122984909962e-06,
+            2.0407244408316567e-06,
+            -7.585493913718724e-04,
+            0.0,
+        ],
+        [
+            -2.184359590800129e-05,
+            2.728103432054152e-03,
+            5.392183351826674e-06,
+            -1.7768585092381408e-05,
+            -9.392779293722351e-04,
+            0.0,
+        ],
+        [
+            -4.4287010849552286e-05,
+            3.5164888272071204e-03,
+            -8.463069507413934e-07,
+            -4.0770336378216545e-05,
+            -1.1456759773757876e-03,
+            0.0,
+        ],
+    ])
+    expected_feedrate = np.array([
+        0.19041816565166111,
+        0.06851274130661066,
+        0.08232689411665096,
+        0.09632983216366355,
+    ])
+    expected_progress = np.array([
+        0.0024754361534715945,
+        0.003366101790457533,
+        0.0044363514139739955,
+        0.0056886392321016215,
+    ])
+
+    context = Context()
+    rclpy.init(context=context, domain_id=_DOMAIN_ID + 1)
+    node = OscbfController(
+        node_name="oscbf_config_regression",
+        context=context,
+        parameter_overrides=[
+            rclpy.parameter.Parameter(
+                "production_config_yaml",
+                value=str(REPO_ROOT / "config" / "oscbf_controller.yaml"),
+            ),
+            rclpy.parameter.Parameter(
+                "portable_oscbf_root",
+                value=str(REPO_ROOT / "portable_oscbf"),
+            ),
+            rclpy.parameter.Parameter(
+                "trajectory_mat",
+                value=str(REPO_ROOT / "data" / "nurbs" / "ik_input.mat"),
+            ),
+            rclpy.parameter.Parameter(
+                "portable_config_yaml",
+                value=str(REPO_ROOT / "portable_oscbf" / "config" / "nineaxis.yaml"),
+            ),
+            rclpy.parameter.Parameter(
+                "perf_report_path", value=str(tmp_path / "perf.md")
+            ),
+            rclpy.parameter.Parameter("dt", value=0.012),
+            rclpy.parameter.Parameter("dt_path", value=0.013),
+            rclpy.parameter.Parameter("kp_pos", value=161.0),
+            rclpy.parameter.Parameter("w_pos", value=41.0),
+            rclpy.parameter.Parameter("publish_frequency_hz", value=80.0),
+            rclpy.parameter.Parameter("telemetry_period_s", value=0.5),
+            rclpy.parameter.Parameter("wait_for_start", value=True),
+        ],
+    )
+    q = np.array([
+        0.027276550053036794,
+        -0.03528867367370082,
+        0.5059981669275009,
+        -0.7240440926105509,
+        1.4877532069125114,
+        -0.2066365806668871,
+        0.3853811558742877,
+        0.22248106729961423,
+        -0.12343186955927415,
+    ])
+    observed = []
+    try:
+        for _ in range(4):
+            step = node.step_once(q)
+            observed.append(step)
+            q = step["q_next"]
+    finally:
+        node.destroy_node()
+        rclpy.shutdown(context=context)
+
+    np.testing.assert_allclose(
+        np.stack([step["err_6d"] for step in observed]),
+        expected_error,
+        rtol=1e-5,
+        atol=1e-7,
+    )
+    np.testing.assert_allclose(
+        [step["feedrate_m_s"] for step in observed],
+        expected_feedrate,
+        rtol=1e-5,
+        atol=1e-7,
+    )
+    np.testing.assert_allclose(
+        [step["path_progress_m"] for step in observed],
+        expected_progress,
+        rtol=1e-5,
+        atol=1e-7,
+    )
+    np.testing.assert_allclose(
+        [step["qp_primal_residual"] for step in observed],
+        np.zeros(4),
+        atol=1e-12,
+    )
+    assert all(step["qp_ok"] for step in observed)
+
+
 def test_runtime_single_managed_parameter_change_is_rejected(controller_fixture):
     node = controller_fixture["node"]
     before = node.runtime_configuration_diagnostics()

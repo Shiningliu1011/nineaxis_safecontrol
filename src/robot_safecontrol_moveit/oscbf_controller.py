@@ -513,7 +513,11 @@ class OscbfController(Node):
             "ee_pos": np.asarray(result.ee_pos, dtype=float),
             "reference_position_m": np.asarray(
                 result.reference_position_m, dtype=float),
+            "path_progress_m": float(result.path_state[0]),
             "qp_ok": bool(result.qp_ok),
+            "qp_primal_residual": float(
+                self._loop.last_qp_primal_residual
+            ),
             "min_obs_dist": float(result.min_obs_dist),
             "delta_slack": float(result.delta_slack),
             # TrackingEvaluator 依赖这些键计算完成度/横偏/速率统计,
