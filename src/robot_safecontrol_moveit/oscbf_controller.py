@@ -10,7 +10,6 @@ vendored ``dpax``) to ``sys.path`` before importing ``work``.
 
 from __future__ import annotations
 
-import math
 import time
 from pathlib import Path
 from typing import List, Optional, Sequence
@@ -23,15 +22,21 @@ from ament_index_python.packages import (
 )
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
+from rcl_interfaces.msg import SetParametersResult
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Float32MultiArray
 from std_srvs.srv import Trigger
 
 from .oscbf_trajectory import bootstrap_portable
-from .robot_spec import DEFAULT_JOINT_NAMES
+from .production_config import (
+    MANAGED_PARAMETERS,
+    build_effective_configuration,
+    collect_software_identity,
+    load_production_profile,
+    persist_runtime_snapshot,
+    sha256_bytes,
+)
 from .ros_conventions import (
-    JOINT_STATE_TOPIC,
-    OSCBF_COMMAND_TOPIC,
     state_stream_qos,
 )
 from .tracking_evaluator import TrackingEvaluator
@@ -60,9 +65,32 @@ class OscbfController(Node):
             context=context,
             parameter_overrides=parameter_overrides,
         )
-        self._declare_parameters()
-        self._resolve_empty_path_parameters()
-        self._validate_parameters()
+        share_dir = _default_share_dir()
+        self.declare_parameter(
+            "production_config_yaml",
+            str(share_dir / "config" / "oscbf_controller.yaml"),
+        )
+        self._production_profile = load_production_profile(
+            Path(str(self.get_parameter("production_config_yaml").value)),
+            node_name=node_name,
+        )
+        explicit_overrides = {
+            name: parameter.value
+            for name, parameter in self._parameter_overrides.items()
+            if name != "production_config_yaml"
+            and name != "use_sim_time"
+            and not name.startswith("qos_overrides.")
+        }
+        self._effective = build_effective_configuration(
+            self._production_profile,
+            explicit_overrides,
+            share_dir=share_dir,
+        )
+        self._runtime_config = self._effective.values
+        self._declare_parameters(self._runtime_config)
+        self.add_on_set_parameters_callback(
+            self._reject_runtime_configuration_changes
+        )
         self._step_durations: List[float] = []
         self._qp_fail_count = 0
         self._latest_q: Optional[np.ndarray] = None
@@ -82,23 +110,23 @@ class OscbfController(Node):
         self._pos_err_hist: deque = deque()
         self._src_hist: deque = deque()
         self._tracking_started = not bool(
-            self.get_parameter("wait_for_start").value
+            self._runtime_config["wait_for_start"]
         )
         self._log_throttle = 0.0
         self._evaluator: TrackingEvaluator | None = None
 
         portable_root = Path(
-            str(self.get_parameter("portable_oscbf_root").value)
+            str(self._runtime_config["portable_oscbf_root"])
         )
         bootstrap_portable(portable_root)
         self._build_controller(portable_root)
 
-        joint_state_topic = str(
-            self.get_parameter("joint_state_topic").value
-        )
-        publish_topic = str(
-            self.get_parameter("publish_joint_state_topic").value
-        )
+        # This snapshot is a startup gate.  Command-facing ROS entities must
+        # not exist unless the exact effective configuration can be persisted.
+        self.runtime_snapshot_path = self._write_runtime_snapshot(portable_root)
+
+        joint_state_topic = str(self._runtime_config["joint_state_topic"])
+        publish_topic = str(self._runtime_config["publish_joint_state_topic"])
         # Same QoS as the MuJoCo viewer, which owns the joint-state stream.
         self.create_subscription(
             JointState,
@@ -110,18 +138,20 @@ class OscbfController(Node):
             JointState, publish_topic, qos_profile_sensor_data
         )
         period_s = 1.0 / float(
-            self.get_parameter("publish_frequency_hz").value
+            self._runtime_config["publish_frequency_hz"]
         )
         self._timer = self.create_timer(period_s, self._control_tick)
-        self._telemetry_timer = self.create_timer(1.0, self._telemetry_tick)
+        self._telemetry_timer = self.create_timer(
+            float(self._runtime_config["telemetry_period_s"]),
+            self._telemetry_tick,
+        )
 
         # 感知障碍物订阅（默认 disabled，不影响现有行为）
         self._obs_state: dict = {}
         self._enable_obs = bool(
-            self.get_parameter("enable_perception_obstacles").value)
+            self._runtime_config["enable_perception_obstacles"])
         if self._enable_obs:
-            tracks_topic = str(
-                self.get_parameter("perception_tracks_topic").value)
+            tracks_topic = str(self._runtime_config["perception_tracks_topic"])
             self.create_subscription(
                 Float32MultiArray, tracks_topic,
                 self._tracks_callback, qos_profile_sensor_data)
@@ -136,9 +166,9 @@ class OscbfController(Node):
             self._start_service = None
         self.get_logger().info(
             "oscbf_controller ready: trajectory="
-            f"{self.get_parameter('trajectory_mat').value}, "
+            f"{self._runtime_config['trajectory_mat']}, "
             f"subscribe={joint_state_topic}, publish={publish_topic} @ "
-            f"{float(self.get_parameter('publish_frequency_hz').value):.1f} Hz, "
+            f"{float(self._runtime_config['publish_frequency_hz']):.1f} Hz, "
             f"tracking={'auto-start' if self._tracking_started else 'waiting for /oscbf_controller/start_tracking'}"
         )
 
@@ -146,113 +176,146 @@ class OscbfController(Node):
     # Parameter handling
     # ------------------------------------------------------------------
 
-    def _declare_parameters(self) -> None:
-        share_dir = _default_share_dir()
-        default_portable_root = share_dir / "portable_oscbf"
-        defaults = {
-            "dt": 0.002,
-            "publish_frequency_hz": 100.0,
-            "trajectory_mat": str(share_dir / "data" / "nurbs" / "ik_input.mat"),
-            "portable_oscbf_root": str(default_portable_root),
-            "portable_config_yaml": str(
-                default_portable_root / "config" / "nineaxis.yaml"
-            ),
-            "joint_names": list(DEFAULT_JOINT_NAMES),
-            "joint_state_topic": JOINT_STATE_TOPIC,
-            "publish_joint_state_topic": OSCBF_COMMAND_TOPIC,
-            "kp_pos": 160.0,
-            "kp_orient": 10.0,
-            "kp_joint": 0.45,
-            "dt_path": 0.01,
-            "reference_feedrate_scale": 3.5,
-            "nullspace_speed_limit": 0.18,
-            # PathFollowingConfig.maximum_tool_axis_speed_rad_s 的默认值
-            # (0.15) 会让圆柱曲率把 feedrate 压到 ~0.04 m/s; 显式提升到
-            # 0.6 使名义进给 (feedrate_scale=3.0) 成为实际限额。
-            "max_tool_axis_speed_rad_s": 2.0,
-            "damping": 5e-2,
-            "w_pos": 40.0,
-            "w_orient": 10.0,
-            "w_joint": 0.1,
-            "temporal_lambda": 0.2,
-            "enable_x64": True,
-            "solver_tol": 1e-3,
-            "task_mode": "tool_axis_5d",
-            "use_nullspace_policy": False,
-            "reference_lead_m": 0.01,
-            "orientation_mode": "surface_normal",
-            "cylinder_axis_direction": [0.0, 1.0, 0.0],
-            "cylinder_center": [],
-            "wait_for_start": False,
-            "telemetry_period_s": 1.0,
-            "perf_report_path": "output/oscbf_m10_perf.md",
-            # 01B 定案(2026-09-04, 见 .scratch/oscbf-wayfinder/issues/01b):
-            # 50Hz 预算(20ms) + 100Hz 目标; miss rate<=1%(超预算步数占比)。
-            "latency_budget_ms": 20.0,
-            # 感知障碍物（默认 disabled，不影响现有行为）
-            "enable_perception_obstacles": False,
-            "perception_tracks_topic": "/perception/tracks",
-        }
+    def _declare_parameters(self, defaults) -> None:
         for name, value in defaults.items():
-            self.declare_parameter(name, value)
-        self._default_parameters = defaults
+            self.declare_parameter(name, value, ignore_override=True)
 
-    def _resolve_empty_path_parameters(self) -> None:
-        """Empty path overrides fall back to the computed defaults."""
-        for name in (
-            "trajectory_mat",
-            "portable_oscbf_root",
-            "portable_config_yaml",
-        ):
-            value = str(self.get_parameter(name).value)
-            if not value:
-                default = self._default_parameters[name]
-                self.set_parameters([rclpy.parameter.Parameter(
-                    name, rclpy.parameter.Parameter.Type.STRING, default
-                )])
+    def effective_configuration(self) -> dict:
+        """Return the fixed startup values and provenance for diagnostics."""
+        return {
+            "production_config_path": str(self._production_profile.path),
+            "values": dict(self._effective.values),
+            "sources": dict(self._effective.sources),
+            "override_chains": {
+                name: [dict(entry) for entry in chain]
+                for name, chain in self._effective.override_chains.items()
+            },
+            "resources": {
+                name: dict(resource)
+                for name, resource in self._effective.resources.items()
+            },
+        }
 
-    def _validate_parameters(self) -> None:
-        dt = float(self.get_parameter("dt").value)
-        frequency_hz = float(self.get_parameter("publish_frequency_hz").value)
-        if not 0.0 < dt <= 0.1:
-            raise ValueError(f"dt must be in (0, 0.1], got {dt}")
-        if not 1.0 <= frequency_hz <= 1000.0:
-            raise ValueError(
-                f"publish_frequency_hz must be in [1, 1000], got {frequency_hz}"
+    def _reject_runtime_configuration_changes(self, parameters) -> SetParametersResult:
+        managed = sorted(
+            parameter.name
+            for parameter in parameters
+            if parameter.name in MANAGED_PARAMETERS
+            or parameter.name == "production_config_yaml"
+        )
+        if managed:
+            return SetParametersResult(
+                successful=False,
+                reason=(
+                    "managed production parameters are immutable at runtime; "
+                    "restart with an explicit override: " + ", ".join(managed)
+                ),
             )
-        for name in ("kp_pos", "kp_orient", "kp_joint", "nullspace_speed_limit",
-                     "w_pos", "w_orient", "w_joint"):
-            value = float(self.get_parameter(name).value)
-            if not math.isfinite(value) or value <= 0.0:
-                raise ValueError(f"{name} must be positive, got {value}")
-        damping = float(self.get_parameter("damping").value)
-        solver_tol = float(self.get_parameter("solver_tol").value)
-        if not math.isfinite(damping) or damping <= 0.0:
-            raise ValueError(f"damping must be positive, got {damping}")
-        if not 0.0 < solver_tol < 1.0:
-            raise ValueError(f"solver_tol must be in (0, 1), got {solver_tol}")
-        joint_names = [
-            str(name) for name in self.get_parameter("joint_names").value
-        ]
-        if len(joint_names) != 9 or len(set(joint_names)) != 9:
-            raise ValueError(
-                "joint_names must contain exactly 9 unique joint names"
-            )
-        cylinder_center = list(self.get_parameter("cylinder_center").value)
-        if cylinder_center and len(cylinder_center) != 3:
-            raise ValueError(
-                f"cylinder_center must be empty or a 3-vector, got {cylinder_center}"
-            )
-        task_mode = str(self.get_parameter("task_mode").value)
-        if task_mode not in ("pose6d", "tool_axis_5d"):
-            raise ValueError(
-                f"task_mode must be 'pose6d' or 'tool_axis_5d', got {task_mode!r}"
-            )
-        trajectory_mat = Path(str(self.get_parameter("trajectory_mat").value))
-        if not trajectory_mat.is_file():
-            raise FileNotFoundError(
-                f"trajectory_mat not found: {trajectory_mat}"
-            )
+        return SetParametersResult(successful=True)
+
+    def runtime_configuration_diagnostics(self) -> dict:
+        """Report values at the real facade, tracking and timer consumers."""
+        return {
+            "facade": {
+                "dt": self._loop.dt,
+                "dt_path": self._loop.dt_path,
+                "w_pos": self._loop.w_pos,
+                "w_orient": self._loop.w_orient,
+                "w_joint": self._loop.w_joint,
+                "temporal_lambda": self._loop.temporal_lambda,
+                "enable_x64": self._loop.enable_x64,
+                "solver_tol": self._loop.solver_tol,
+                "task_mode": self._loop.task_mode,
+            },
+            "path_tracking_step": {
+                name: self._runtime_config[name]
+                for name in (
+                    "kp_pos",
+                    "kp_orient",
+                    "kp_joint",
+                    "nullspace_speed_limit",
+                    "damping",
+                )
+            },
+            "timer_period_s": self._timer.timer_period_ns / 1.0e9,
+            "telemetry_period_s": self._telemetry_timer.timer_period_ns / 1.0e9,
+        }
+
+    def _write_runtime_snapshot(self, portable_root: Path) -> Path:
+        """Persist the configuration consumed by the warmed control kernel."""
+        perf_path = Path(str(self._runtime_config["perf_report_path"]))
+        if not perf_path.is_absolute():
+            perf_path = Path.cwd() / perf_path
+        snapshot_dir = perf_path.resolve().parent / "runtime_snapshots"
+
+        center = list(self._runtime_config["cylinder_center"])
+        if self._surface_centre is not None:
+            resolved_center = self._surface_centre.tolist()
+            center_source = "trajectory_fit" if not center else "explicit_config"
+        else:
+            resolved_center = center or None
+            center_source = "explicit_config" if center else "unavailable"
+        geometry = {
+            "cylinder_center_source": center_source,
+            "resolved_center": resolved_center,
+            "resolved_axis_direction": (
+                self._surface_axis.tolist()
+                if self._surface_axis is not None
+                else list(self._runtime_config["cylinder_axis_direction"])
+            ),
+            "resolved_radius_m": self._surface_radius,
+        }
+
+        repository_hint = Path(__file__).resolve().parents[2]
+        software = collect_software_identity(
+            repository_hint=repository_hint,
+            source_paths=(
+                Path(__file__),
+                Path(__file__).with_name("production_config.py"),
+                portable_root / "work",
+            ),
+        )
+        payload = {
+            "schema_version": 1,
+            "node_name": self.get_name(),
+            "final_values": dict(self._effective.values),
+            "parameter_sources": dict(self._effective.sources),
+            "override_chains": {
+                name: [dict(entry) for entry in chain]
+                for name, chain in self._effective.override_chains.items()
+            },
+            "resources": {
+                name: dict(resource)
+                for name, resource in self._effective.resources.items()
+            },
+            "production_config": {
+                "path": str(self._production_profile.path),
+                "sha256": sha256_bytes(self._production_profile.content),
+            },
+            "software": software,
+            "geometry": geometry,
+            "obstacle_alpha_contract": {
+                "baseline_value": float(
+                    self._loop._config.obstacle_h_baseline_alpha
+                ),
+                "baseline_source": "NineaxisOSCBFVelocityConfig",
+                "runtime_value_source": "perception track slot 10",
+            },
+        }
+        try:
+            snapshot_path = persist_runtime_snapshot(payload, snapshot_dir)
+        except Exception as exc:
+            raise RuntimeError(
+                f"runtime snapshot persistence failed: {exc}"
+            ) from exc
+        self.get_logger().info(
+            "runtime configuration locked: "
+            f"dt={self._runtime_config['dt']}, "
+            f"dt_path={self._runtime_config['dt_path']}, "
+            f"publish_frequency_hz={self._runtime_config['publish_frequency_hz']}; "
+            f"snapshot={snapshot_path}"
+        )
+        return snapshot_path
 
     # ------------------------------------------------------------------
     # Controller construction
@@ -266,28 +329,28 @@ class OscbfController(Node):
         from work.path_following import PathFollowingConfig
 
         self.get_logger().info("Loading repository trajectory ...")
-        trajectory_mat = str(self.get_parameter("trajectory_mat").value)
-        config_yaml = str(self.get_parameter("portable_config_yaml").value)
+        trajectory_mat = str(self._runtime_config["trajectory_mat"])
+        config_yaml = str(self._runtime_config["portable_config_yaml"])
         trajectory = load_repository_trajectory(
             trajectory_mat,
             config_yaml_path=config_yaml,
             feedrate_scale=float(
-                self.get_parameter("reference_feedrate_scale").value
+                self._runtime_config["reference_feedrate_scale"]
             ),
         )
         self._trajectory_duration_s = float(
             trajectory.num_points * trajectory.Ts
         )
         orientation_mode = str(
-            self.get_parameter("orientation_mode").value
+            self._runtime_config["orientation_mode"]
         )
         if orientation_mode == "surface_normal":
-            center = list(self.get_parameter("cylinder_center").value)
+            center = list(self._runtime_config["cylinder_center"])
             axis_point = (
                 None if len(center) == 0 else center
             )
             trajectory.set_surface_normal_orientation(
-                self.get_parameter("cylinder_axis_direction").value,
+                self._runtime_config["cylinder_axis_direction"],
                 axis_point=axis_point,
             )
         elif orientation_mode != "fixed":
@@ -298,30 +361,30 @@ class OscbfController(Node):
         geometry = trajectory.path_geometry()
 
         policy = None
-        if bool(self.get_parameter("use_nullspace_policy").value):
+        if bool(self._runtime_config["use_nullspace_policy"]):
             robot = NineaxisManipulatorJAX()
             policy = ManipulabilityGradientPolicy(robot)
 
         self._loop = JaxControlLoop(
-            dt=float(self.get_parameter("dt").value),
-            dt_path=float(self.get_parameter("dt_path").value),
-            w_pos=float(self.get_parameter("w_pos").value),
-            w_orient=float(self.get_parameter("w_orient").value),
-            w_joint=float(self.get_parameter("w_joint").value),
-            temporal_lambda=float(self.get_parameter("temporal_lambda").value),
-            enable_x64=bool(self.get_parameter("enable_x64").value),
-            solver_tol=float(self.get_parameter("solver_tol").value),
-            task_mode=str(self.get_parameter("task_mode").value),
+            dt=float(self._runtime_config["dt"]),
+            dt_path=float(self._runtime_config["dt_path"]),
+            w_pos=float(self._runtime_config["w_pos"]),
+            w_orient=float(self._runtime_config["w_orient"]),
+            w_joint=float(self._runtime_config["w_joint"]),
+            temporal_lambda=float(self._runtime_config["temporal_lambda"]),
+            enable_x64=bool(self._runtime_config["enable_x64"]),
+            solver_tol=float(self._runtime_config["solver_tol"]),
+            task_mode=str(self._runtime_config["task_mode"]),
             nullspace_policy=policy,
         )
         self._loop.configure_path(
             geometry,
             PathFollowingConfig(
                 reference_lead_m=float(
-                    self.get_parameter("reference_lead_m").value
+                    self._runtime_config["reference_lead_m"]
                 ),
                 maximum_tool_axis_speed_rad_s=float(
-                    self.get_parameter("max_tool_axis_speed_rad_s").value
+                    self._runtime_config["max_tool_axis_speed_rad_s"]
                 ),
             ),
         )
@@ -339,7 +402,7 @@ class OscbfController(Node):
         self.get_logger().info("JAX control kernel warm-up complete")
         self._path_state = self._loop.initial_path_state()
         self._joint_names = [
-            str(name) for name in self.get_parameter("joint_names").value
+            str(name) for name in self._runtime_config["joint_names"]
         ]
         self._limits = (
             np.asarray(self._loop.robot.joint_lower_limits, dtype=float),
@@ -392,14 +455,14 @@ class OscbfController(Node):
         kwargs = dict(
             q=np.asarray(q, dtype=float),
             path_state=self._path_state,
-            kp_pos=float(self.get_parameter("kp_pos").value),
-            kp_orient=float(self.get_parameter("kp_orient").value),
-            kp_joint=float(self.get_parameter("kp_joint").value),
+            kp_pos=float(self._runtime_config["kp_pos"]),
+            kp_orient=float(self._runtime_config["kp_orient"]),
+            kp_joint=float(self._runtime_config["kp_joint"]),
             q_des=np.asarray(q, dtype=float),
             nullspace_speed_limit=float(
-                self.get_parameter("nullspace_speed_limit").value
+                self._runtime_config["nullspace_speed_limit"]
             ),
-            damping=float(self.get_parameter("damping").value),
+            damping=float(self._runtime_config["damping"]),
         )
         if obs_kwargs:
             kwargs.update(obs_kwargs)
@@ -580,7 +643,7 @@ class OscbfController(Node):
         # 一阶低通 (tau=0.02 s): QP 输出逐 tick 的高频微抖 (20-50 Hz,
         # 0.1-0.9 rad/s) 直接下发对电机是颤振; 平滑后仅引入约 2-3 tick
         # 相位滞后, 由位置环与参考前馈吸收, 稳态无偏差。
-        dt = 1.0 / float(self.get_parameter("publish_frequency_hz").value)
+        dt = 1.0 / float(self._runtime_config["publish_frequency_hz"])
         alpha = dt / (dt + 0.02)
         target = np.asarray(positions, dtype=float)
         if self._q_cmd_smooth is None:
@@ -651,7 +714,7 @@ class OscbfController(Node):
         if self._last_state_time is None:
             self.get_logger().warn(
                 "waiting for joint states on "
-                f"{self.get_parameter('joint_state_topic').value}"
+                f"{self._runtime_config['joint_state_topic']}"
             )
             return
         if now - self._last_state_time > 5.0:
@@ -719,7 +782,7 @@ class OscbfController(Node):
         from pathlib import Path
         report = self._evaluator.report()
         if path is None:
-            path = str(Path(self.get_parameter("perf_report_path").value).parent
+            path = str(Path(self._runtime_config["perf_report_path"]).parent
                        / "tracking_report.md")
         Path(path).parent.mkdir(parents=True, exist_ok=True)
         Path(path).write_text(report.markdown(), encoding="utf-8")
@@ -751,7 +814,7 @@ class OscbfController(Node):
 
     def write_perf_report(self) -> None:
         """Write the M10 performance evidence file (p95 step latency)."""
-        report_path = Path(str(self.get_parameter("perf_report_path").value))
+        report_path = Path(str(self._runtime_config["perf_report_path"]))
         if not report_path.is_absolute():
             report_path = Path.cwd() / report_path
         report_path.parent.mkdir(parents=True, exist_ok=True)
@@ -759,18 +822,18 @@ class OscbfController(Node):
             p95 = float(np.percentile(self._step_durations, 95))
             p50 = float(np.percentile(self._step_durations, 50))
             maximum = float(np.max(self._step_durations))
-            budget = float(self.get_parameter("latency_budget_ms").value)
+            budget = float(self._runtime_config["latency_budget_ms"])
             miss_count = int(np.count_nonzero(
                 np.asarray(self._step_durations) > budget))
             miss_rate = miss_count / len(self._step_durations)
         else:
             p95 = p50 = maximum = float("nan")
-            budget = float(self.get_parameter("latency_budget_ms").value)
+            budget = float(self._runtime_config["latency_budget_ms"])
             miss_count = 0
             miss_rate = 0.0
         report_path.write_text(
             "# M10 oscbf_controller 性能证据\n\n"
-            f"- 控制频率: {self.get_parameter('publish_frequency_hz').value} Hz\n"
+            f"- 控制频率: {self._runtime_config['publish_frequency_hz']} Hz\n"
             f"- 步数: {len(self._step_durations)}\n"
             f"- `path_tracking_step` 延迟 p50: {p50:.3f} ms\n"
             f"- `path_tracking_step` 延迟 p95: {p95:.3f} ms（01B 口径: "
@@ -787,14 +850,16 @@ class OscbfController(Node):
 
 def main(args: Optional[Sequence[str]] = None) -> None:
     rclpy.init(args=args)
-    node = OscbfController()
+    node: OscbfController | None = None
     try:
+        node = OscbfController()
         rclpy.spin(node)
     except KeyboardInterrupt:
         pass
     finally:
-        node.write_perf_report()
-        node.destroy_node()
+        if node is not None:
+            node.write_perf_report()
+            node.destroy_node()
         if rclpy.ok():
             try:
                 rclpy.shutdown()

@@ -72,6 +72,20 @@ source install/setup.bash
 bash run_demo.sh
 ```
 
+`config/oscbf_controller.yaml` 是 OSCBF 控制器的必需生产配置。launch 将其
+作为独立的 `production_config_yaml` 来源加载；文件缺失、字段不全、值非法、
+资源不可读或启动快照无法落盘时，控制器会在建立命令 publisher 前退出。直接
+启动节点使用同一契约，例如：
+
+```bash
+ros2 run robot_safecontrol_moveit oscbf_controller --ros-args \
+  -p production_config_yaml:=$(ros2 pkg prefix robot_safecontrol_moveit)/share/robot_safecontrol_moveit/config/oscbf_controller.yaml
+```
+
+显式 `-p` 覆盖优先于已验证的 YAML 基础值；所有生产参数在启动后不可修改。
+每次成功启动的最终值、来源链、资源路径、配置/软件哈希及拟合几何会原子写入
+性能报告同目录下的 `runtime_snapshots/`。
+
 依赖包含 ROS 2 Humble、MoveIt2、pymoveit2、MuJoCo，以及 JAX/CBFpy/qpax 等控制内核依赖。环境与构建说明见 [项目入门](docs/ONBOARDING.md)和 [控制内核 README](portable_oscbf/README.md)。
 
 最终闭环默认使用 `AEBRRTstarFaithfulConfigDefault`。AEB-RRT* 由 MoveIt

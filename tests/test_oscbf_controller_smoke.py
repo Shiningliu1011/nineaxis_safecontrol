@@ -9,6 +9,7 @@ domain.  The node's JAX warm-up runs once in a module-scoped fixture.
 from __future__ import annotations
 
 import os
+import json
 import re
 import sys
 import time
@@ -56,6 +57,10 @@ def controller_fixture(tmp_path_factory):
         context=context,
         parameter_overrides=[
             rclpy.parameter.Parameter(
+                "production_config_yaml",
+                value=str(REPO_ROOT / "config" / "oscbf_controller.yaml"),
+            ),
+            rclpy.parameter.Parameter(
                 "portable_oscbf_root",
                 value=str(REPO_ROOT / "portable_oscbf"),
             ),
@@ -68,7 +73,12 @@ def controller_fixture(tmp_path_factory):
                 value=str(REPO_ROOT / "portable_oscbf" / "config" / "nineaxis.yaml"),
             ),
             rclpy.parameter.Parameter("perf_report_path", value=str(perf_path)),
-            rclpy.parameter.Parameter("publish_frequency_hz", value=100.0),
+            rclpy.parameter.Parameter("dt", value=0.012),
+            rclpy.parameter.Parameter("dt_path", value=0.013),
+            rclpy.parameter.Parameter("kp_pos", value=161.0),
+            rclpy.parameter.Parameter("w_pos", value=41.0),
+            rclpy.parameter.Parameter("publish_frequency_hz", value=80.0),
+            rclpy.parameter.Parameter("telemetry_period_s", value=0.5),
             rclpy.parameter.Parameter("wait_for_start", value=True),
         ],
     )
@@ -104,6 +114,104 @@ def test_node_starts_without_move_group(controller_fixture):
     node = controller_fixture["node"]
     assert node.get_name() == "oscbf_controller_smoke"
     assert node._loop.path_is_configured
+
+
+def test_production_values_reach_actual_consumers_and_provenance(
+    controller_fixture,
+):
+    node = controller_fixture["node"]
+
+    effective = node.effective_configuration()
+    diagnostics = node.runtime_configuration_diagnostics()
+
+    assert effective["values"]["dt"] == 0.012
+    assert effective["values"]["dt_path"] == 0.013
+    assert effective["values"]["kp_pos"] == 161.0
+    assert effective["sources"]["kp_pos"] == "explicit_override"
+    assert effective["override_chains"]["kp_pos"] == [
+        {"source": "production_yaml", "value": 160.0},
+        {"source": "explicit_override", "value": 161.0},
+    ]
+    assert diagnostics["facade"] == {
+        "dt": 0.012,
+        "dt_path": 0.013,
+        "w_pos": 41.0,
+        "w_orient": 10.0,
+        "w_joint": 0.1,
+        "temporal_lambda": 0.2,
+        "enable_x64": True,
+        "solver_tol": 0.001,
+        "task_mode": "tool_axis_5d",
+    }
+    assert diagnostics["path_tracking_step"]["kp_pos"] == 161.0
+    assert diagnostics["timer_period_s"] == pytest.approx(1.0 / 80.0)
+    assert diagnostics["telemetry_period_s"] == pytest.approx(0.5)
+
+
+def test_runtime_single_managed_parameter_change_is_rejected(controller_fixture):
+    node = controller_fixture["node"]
+    before = node.runtime_configuration_diagnostics()
+
+    result = node.set_parameters(
+        [rclpy.parameter.Parameter("kp_pos", value=170.0)]
+    )[0]
+
+    assert not result.successful
+    assert "restart" in result.reason
+    assert node.get_parameter("kp_pos").value == 161.0
+    assert node.runtime_configuration_diagnostics() == before
+
+
+def test_runtime_atomic_batch_change_is_rejected_without_partial_update(
+    controller_fixture,
+):
+    node = controller_fixture["node"]
+    before = node.runtime_configuration_diagnostics()
+
+    result = node.set_parameters_atomically(
+        [
+            rclpy.parameter.Parameter("dt", value=0.02),
+            rclpy.parameter.Parameter("dt_path", value=0.03),
+            rclpy.parameter.Parameter("publish_frequency_hz", value=50.0),
+        ]
+    )
+
+    assert not result.successful
+    assert "restart" in result.reason
+    assert node.get_parameter("dt").value == 0.012
+    assert node.get_parameter("dt_path").value == 0.013
+    assert node.get_parameter("publish_frequency_hz").value == 80.0
+    assert node.runtime_configuration_diagnostics() == before
+
+
+def test_runtime_snapshot_matches_consumers_and_records_version_identity(
+    controller_fixture,
+):
+    node = controller_fixture["node"]
+    path = node.runtime_snapshot_path
+    snapshot = json.loads(path.read_text(encoding="utf-8"))
+    diagnostics = node.runtime_configuration_diagnostics()
+
+    assert path.is_absolute()
+    assert snapshot["snapshot_path"] == str(path)
+    assert snapshot["final_values"]["dt"] == diagnostics["facade"]["dt"]
+    assert snapshot["final_values"]["dt_path"] == diagnostics["facade"]["dt_path"]
+    assert snapshot["final_values"]["publish_frequency_hz"] == 80.0
+    assert snapshot["parameter_sources"]["kp_pos"] == "explicit_override"
+    assert snapshot["override_chains"]["kp_pos"][0]["value"] == 160.0
+    assert snapshot["resources"]["trajectory_mat"]["resolved_path"] == str(
+        REPO_ROOT / "data" / "nurbs" / "ik_input.mat"
+    )
+    assert snapshot["production_config"]["sha256"]
+    assert snapshot["software"]["source_sha256"]
+    assert isinstance(snapshot["software"]["git_dirty"], bool)
+    assert snapshot["geometry"]["cylinder_center_source"] == "trajectory_fit"
+    assert len(snapshot["geometry"]["resolved_center"]) == 3
+    assert snapshot["obstacle_alpha_contract"] == {
+        "baseline_source": "NineaxisOSCBFVelocityConfig",
+        "baseline_value": 10.0,
+        "runtime_value_source": "perception track slot 10",
+    }
 
 
 def test_step_once_returns_valid_safe_state(controller_fixture):

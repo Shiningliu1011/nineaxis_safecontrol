@@ -69,7 +69,7 @@ portable_oscbf/
 ├── config/                        # 机器人配置 (YAML)
 │   ├── nineaxis.yaml              # 机器人参数
 │   ├── actuator_modules.yaml      # 执行器限位
-│   ├── controller_params.yaml     # 控制器增益
+│   ├── controller_params.yaml     # 遗留 torque 配置（生产 ROS 不消费）
 │   ├── fcl_params.yaml            # FCL 碰撞参数
 │   ├── obb_model.yaml             # OBB 包络数据
 │   ├── dcol_alpha.yaml            # DCOL alpha 校准
@@ -240,7 +240,8 @@ cp -r portable_oscbf/ /path/to/new_project/oscbf_controller/
 
 编辑 `config/` 下的 YAML 文件:
 - `nineaxis.yaml` — 关节限位, 速度限制
-- `controller_params.yaml` — 控制增益
+- `controller_params.yaml` — 兼容保留的旧 torque 控制配置；生产 ROS
+  `oscbf_controller` 的参数基础文件是仓库根目录 `config/oscbf_controller.yaml`
 - `fcl_params.yaml` — 碰撞检测参数
 
 ### 步骤 6: 集成到新控制框架

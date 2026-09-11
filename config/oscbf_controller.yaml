@@ -1,9 +1,9 @@
 # oscbf_controller node parameters (M10).
 #
-# All values shown here are also declared as node defaults, so the node can
-# start without this file; launch supplies overrides such as the installed
-# portable_oscbf location.  The trajectory path and portable config default
-# to the package share directory at runtime.
+# This file is the authoritative production profile.  The controller refuses
+# to start if it is absent, malformed, incomplete, or invalid.  Launch/CLI
+# overrides are applied only after this complete base has passed validation.
+# Empty resource paths independently resolve against the package share.
 /**:
   ros__parameters:
     dt: 0.01
@@ -12,7 +12,8 @@
     publish_frequency_hz: 100.0
     trajectory_mat: ""                     # default: <share>/data/nurbs/ik_input.mat
     portable_oscbf_root: ""                # default: <share>/portable_oscbf
-    portable_config_yaml: ""               # default: <portable_oscbf_root>/config/nineaxis.yaml
+    # Root-only overrides deliberately do not redirect this fallback.
+    portable_config_yaml: ""               # default: <share>/portable_oscbf/config/nineaxis.yaml
     joint_names: ["J1", "J2", "J3", "J4", "J5", "J6", "J7", "J8", "J9"]
     joint_state_topic: /mujoco_joint_states
     publish_joint_state_topic: /oscbf_command
@@ -56,5 +57,8 @@
     # itself (same convention as the transition planner and MuJoCo viewer).
     # To pin an explicit axis point, set e.g. cylinder_center: [-0.0001, 0.0, 1.637]
     wait_for_start: false
+    enable_perception_obstacles: false
+    perception_tracks_topic: /perception/tracks
     telemetry_period_s: 1.0
     perf_report_path: output/oscbf_m10_perf.md
+    latency_budget_ms: 20.0

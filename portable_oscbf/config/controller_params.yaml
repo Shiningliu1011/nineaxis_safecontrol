@@ -1,3 +1,8 @@
+# LEGACY COMPATIBILITY ASSET.
+#
+# These torque-controller fields are not consumed by the production ROS
+# oscbf_controller.  The file remains packaged for offline or external users;
+# production tracking parameters belong in config/oscbf_controller.yaml.
 control:
   dt: 0.005
   mode: torque
@@ -30,4 +35,3 @@ qp:
   torque_weight: 0.001
   dynamics_penalty: 100.0
   max_projection_iterations: 8
-

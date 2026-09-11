@@ -27,10 +27,12 @@ def generate_launch_description() -> LaunchDescription:
 
     # --- Runtime config for our own nodes ----------------------------------
     runtime_yaml = str(share_dir / "config" / "mujoco_transition_runtime.yaml")
+    oscbf_production_yaml = str(share_dir / "config" / "oscbf_controller.yaml")
 
     # --- Validate required config files exist ------------------------------
     for path_str, label in [
         (runtime_yaml, "runtime YAML"),
+        (oscbf_production_yaml, "OSCBF production YAML"),
     ]:
         if not Path(path_str).is_file():
             raise FileNotFoundError(
@@ -148,8 +150,8 @@ def generate_launch_description() -> LaunchDescription:
             ),
 
             # 4. OSCBF safe controller (JAX kernel, no MoveIt dependency).
-            #    It consumes /mujoco_joint_states and publishes the safe
-            #    state back onto the same stream after its JIT warm-up.
+            #    It consumes plant state and publishes safe commands on the
+            #    dedicated /oscbf_command stream after its startup gates.
             Node(
                 package="robot_safecontrol_moveit",
                 executable="oscbf_controller",
@@ -159,8 +161,10 @@ def generate_launch_description() -> LaunchDescription:
                     LaunchConfiguration("start_oscbf_controller")
                 ),
                 parameters=[
-                    str(share_dir / "config" / "oscbf_controller.yaml"),
                     {
+                        # Keep the authoritative file separate from launch
+                        # overrides so provenance remains auditable.
+                        "production_config_yaml": oscbf_production_yaml,
                         "wait_for_start":
                             LaunchConfiguration("oscbf_wait_for_start"),
                         "enable_perception_obstacles":

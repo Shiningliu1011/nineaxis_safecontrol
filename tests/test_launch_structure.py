@@ -37,6 +37,7 @@ def _make_share_directory() -> tempfile.TemporaryDirectory[str]:
     config = Path(temporary.name) / "config"
     config.mkdir()
     (config / "mujoco_transition_runtime.yaml").touch()
+    (config / "oscbf_controller.yaml").touch()
     return temporary
 
 
@@ -243,6 +244,40 @@ class TestFinalLaunchDescription(unittest.TestCase):
                 )]
             ),
         )
+
+    def test_oscbf_launch_preserves_production_yaml_as_a_separate_source(self) -> None:
+        description = self._description()
+        controller = next(
+            node
+            for node in _all_nodes(description.entities)
+            if _node_identity(node)
+            == (
+                "robot_safecontrol_moveit",
+                "oscbf_controller",
+                "oscbf_controller",
+            )
+        )
+
+        self.assertTrue(
+            all(isinstance(parameter_set, dict)
+                for parameter_set in controller._Node__parameters)
+        )
+        rendered = {
+            _render(key): _render(value)
+            for key, value in controller._Node__parameters[0].items()
+            if _render(key) == "production_config_yaml"
+        }
+        self.assertEqual(list(rendered), ["production_config_yaml"])
+        self.assertTrue(
+            yaml.safe_load(rendered["production_config_yaml"]).endswith(
+                "/config/oscbf_controller.yaml"
+            )
+        )
+        keys = {
+            _render(key) for key in controller._Node__parameters[0]
+        }
+        self.assertIn("wait_for_start", keys)
+        self.assertIn("enable_perception_obstacles", keys)
 
 
 class TestViewerOnlyLaunchDescription(unittest.TestCase):

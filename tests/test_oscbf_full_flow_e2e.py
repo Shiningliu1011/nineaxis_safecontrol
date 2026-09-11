@@ -69,6 +69,10 @@ def closed_loop():
         node_name="oscbf_plant_e2e",
         context=context,
         parameter_overrides=[
+            rclpy.parameter.Parameter(
+                "production_config_yaml",
+                value=str(REPO_ROOT / "config" / "oscbf_controller.yaml"),
+            ),
             rclpy.parameter.Parameter("portable_oscbf_root", value=portable),
         ],
     )
