@@ -1,0 +1,6 @@
+interface:
+  display_name: "Retro"
+  short_description: "Evidence-based coding session environment review"
+  default_prompt: "使用 $retro 复盘本次 coding session，读取真实证据并提出永久改进，先不要 apply。"
+policy:
+  allow_implicit_invocation: false
