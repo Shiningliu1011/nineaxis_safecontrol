@@ -11,7 +11,7 @@
 - [OSCBF 移植指南](OSCBF_PORTING_GUIDE.md)、[真机运行手册](docs/real_robot_runbook.md)
 - [独立 MID-360 / MID-360S 驱动](xy-mid-360-s/README.md)：安装、设备接口、来源许可及已验证范围
 
-最新发布的测试工具诊断见下方“测试与已知问题”；两项修复均待实施和完整验收。
+测试入口与 roll-only 测试修订已实施；当前验证方法与历史记录见下方“测试与已知问题”。
 
 ## 目录结构
 
@@ -99,16 +99,16 @@ PlanningScene/FCL 做状态与路径碰撞检查。
 bash run_all_tests.sh
 ```
 
-截至 2026-09-11 已发布的诊断：
+已实施的测试工具修订（链接保留各自历史验收记录）：
 
 | 项目 | 结论与状态 |
 |---|---|
 | [测试入口退出](docs/planning/oscbf-reuse/handoffs/10-test-entrypoint.md) | 已实施局部关闭 nounset 与双套件退出码汇总；验收记录见链接。 |
-| [roll-only 路径起点测试](docs/planning/oscbf-reuse/handoffs/11-roll-only-tolerance.md) | 已修订精度、纯 roll / 倾斜对照与执行后报告断言；内核 148 passed、34 skipped，修订已归档。 |
+| [roll-only 路径起点测试](docs/planning/oscbf-reuse/handoffs/11-roll-only-tolerance.md) | 已修订精度、纯 roll / 倾斜对照与执行后报告断言；修订已归档，历史验收环境见链接。 |
 
-入口修复不表示当前全量测试通过；既有测试失败继续由对应修复票处理。[可复现基线](docs/planning/oscbf-reuse/handoffs/30-baseline.md)保留此前运行结果及适用代码版本。
+当前测试真值请运行 `bash scripts/agent_check.sh`（快速反馈）与 `bash run_all_tests.sh`（完整回归）。当前 HEAD 的验收进展见 [#13 最新评论](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/13)；记录应注明 commit、日期、环境和退出码。[可复现基线](docs/planning/oscbf-reuse/handoffs/30-baseline.md)仅保留历史结果，不表示当前仍有同样失败。
 
-## 真机运行（shadow/live 模式）
+## 硬件模式（当前 containment）
 
 当前处于 fail-closed containment：sim 不创建控制接口，shadow 只记录且不收发 CAN、不发布关节状态；live 无条件拒绝启动。真实 backend、配置、标定和真实反馈 freshness/watchdog 链路完成独立验收前，不提供启用 live 的参数。反馈不可用时不会报告 healthy，人工确认不能解除这一条件。禁止发送不等于物理制动，物理急停仍是独立链路。以下 live 命令仅用于说明参数形式，不是可用的真机运行入口；后续验收见[真机运行手册](docs/real_robot_runbook.md)。
 
@@ -117,16 +117,16 @@ bash run_all_tests.sh
 ros2 launch robot_safecontrol_moveit mujoco_transition_final.launch.py \
     hardware_mode:=shadow start_oscbf_plant:=false
 
-# live 参数形式：当前将报错退出
+# live 参数形式：当前 hardware_bridge 将报错退出
 ros2 launch robot_safecontrol_moveit mujoco_transition_final.launch.py \
     hardware_mode:=live start_oscbf_plant:=false
 
-# 即使启用感知，live 当前仍报错退出
+# 即使启用感知，live 当前 hardware_bridge 仍报错退出
 ros2 launch robot_safecontrol_moveit mujoco_transition_final.launch.py \
     hardware_mode:=live start_oscbf_plant:=false start_perception:=true
 ```
 
-零位标定：`python3 scripts/calibrate_zero.py --interface can0`（详见[真机运行手册](docs/real_robot_runbook.md)）。
+这里的退出仅指 hardware_bridge；当前 launch 未配置联动 shutdown，其他仿真/控制节点可能继续运行。标定与实机操作属于后续独立准入流程，参见[真机运行手册](docs/real_robot_runbook.md)，不是当前 containment 的运行步骤。
 
 话题约定：OSCBF 控制器订阅植物状态 `/mujoco_joint_states`，把安全命令发布到
 `/oscbf_command`；`oscbf_plant` 节点把命令经 jerk 限幅积分后作为植物状态发回
@@ -154,4 +154,4 @@ ros2 launch robot_safecontrol_moveit mujoco_transition_final.launch.py \
 
 ## 传感器安装方案
 
-深度相机与雷达共用支架的布局、布线及标定方案已在本地记录，包含安装坐标、MuJoCo 图示、几何验证结果和实机待办。`docs/sensor_layout_and_calibration.md` 与 `docs/adr/0007-shared-rear-sensor-stand.md` 尚未随本次 README 更新发布到远端；远端已发布的驱动核验见[双传感器驱动交接](docs/planning/oscbf-reuse/handoffs/31-official-sensor-drivers.md)。
+深度相机与雷达共用支架的[布局与标定方案](docs/sensor_layout_and_calibration.md)及 [ADR 0007](docs/adr/0007-shared-rear-sensor-stand.md)已纳入仓库，包含安装坐标、MuJoCo 图示、几何验证结果和实机待办；文档存在不代表实机标定完成。驱动核验见[双传感器驱动交接](docs/planning/oscbf-reuse/handoffs/31-official-sensor-drivers.md)。

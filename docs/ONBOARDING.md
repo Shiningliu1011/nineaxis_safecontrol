@@ -1,14 +1,12 @@
 # robot_safecontrol — Onboarding Guide
-**Generated:** 2026-09-03  **Stack:** ROS 2 Humble / MoveIt 2 / MuJoCo / JAX / C++ OMPL
+**Updated:** 2026-09-11  **Stack:** ROS 2 Humble / MoveIt 2 / MuJoCo / JAX / C++ OMPL
 
 ## Overview
 
-9-DOF 冗余机械臂（1 棱柱关节 J1 + 8 旋转关节 J2-J9）的安全控制项目：在 MuJoCo
-物理仿真或真机上，机械臂从任意随机工作位姿出发，自动规划无碰撞过渡（AEB-RRT*）
-到蝴蝶形参考轨迹起点，随后 OSCBF 安全控制器接管，在保证碰撞/关节限位安全的前提
-下完成末端轨迹跟踪（基于 Morton & Pavone, *Safe, Task-Consistent Manipulation
-with OSCBF*, IROS 2025）。全流程无需键盘，一键运行。支持仿真、shadow（影子记录）
-和 live（真机 CAN 发送）三种硬件模式。
+9-DOF 冗余机械臂（1 棱柱关节 J1 + 8 旋转关节 J2-J9）的安全控制项目。
+当前仿真演示从随机位姿经 AEB-RRT* 过渡到蝴蝶轨迹起点，再由 OSCBF 控制器跟踪。
+真机执行端处于 fail-closed containment：sim inert，shadow 仅记录且无 CAN I/O，
+live 无条件拒绝。仿真验证不代表真实硬件能力或实机验收完成。
 
 ## Tech Stack
 
@@ -30,18 +28,29 @@ with OSCBF*, IROS 2025）。全流程无需键盘，一键运行。支持仿真�
 其 `src/aeb_rrtstar_ompl` 是嵌套的 ament_cmake 包（MoveIt2 OMPL 插件），普通
 `colcon build` 发现不了它，必须用 `build_aeb_moveit.sh` 指定 `--base-paths`。
 
-**控制闭环（单条链路）**：MuJoCo 查看器发布 `/mujoco_joint_states` →
-`oscbf_controller` 节点订阅植物状态、运行纯 JAX OSCBF 内核 → 安全命令发布到
-`/oscbf_command` → `oscbf_plant` 节点（带加速度/jerk 限幅的 S 曲线驱动仿真器）
-积分后把状态发回 `/mujoco_joint_states`。控制器独立于 MoveIt，不依赖 move_group。
+**仿真闭环（`run_demo.sh` 配置）**：脚本启用 `oscbf_plant`，它订阅
+`/oscbf_command`，通过带加速度/jerk 限幅的执行器仿真积分并持续发布
+`/mujoco_joint_states`。`oscbf_controller` 订阅该状态流，运行 JAX 内核后
+发布命令。viewer 只订阅状态做 MuJoCo 显示，不发布关节状态。
+过渡服务器经 `trajectory_execution.py` 将回放发送到 `/transition_replay_viz`，
+并向命令流发送过渡命令；回放及收敛完成后交接给控制器。
+
+**默认 launch 与 demo 的差别**：直接启动最终 launch 时 `start_oscbf_plant=false`，
+`transition_replay_topic=/mujoco_joint_states`；过渡回放会向此状态话题发布，
+但没有被控对象持续积分形成上述闭环。不能把 demo 的状态 ownership 套到所有配置。
+当前 containment 的 hardware bridge 在 sim/shadow 都不发布硬件状态。
 
 **自主过渡流程**：`transition_planning_server` 监听开始信号后，调用 move_group
 的 AEB-RRT* 规划器从随机位姿规划无碰撞过渡到轨迹起点，经 Ruckig 平滑后回放；
 回放结束 → OSCBF 控制器接管（`oscbf_wait_for_start`）。
 
-**真机部署链路**：`hardware_bridge` 节点订阅 `/oscbf_command`，经安全网关校验后
-换算为 DrEmpower CAN 帧发送给电机，反馈帧解码后发布到 `/mujoco_joint_states`。
-支持 shadow（仅记录）和 live（实际发送）两种模式。
+**真机目标与当前实现**：未来目标是 command → 安全网关 → CAN → 真实反馈 →
+硬件状态流。当前 `hardware_bridge.py` 未接通该链路：sim 不创建控制订阅、
+polling timer 或状态 publisher；shadow 订阅命令并记录请求/拒绝，不创建 CAN
+backend、不收发 CAN；live 在创建硬件控制实体之前无条件失败。
+无真实反馈时 `feedback_ok`、`watchdog_ok` 均为 false，acknowledge 不能制造健康状态。
+节点拒绝 live 尚不导致整个 launch 联动退出；其他节点可能继续运行。
+剩余实现及真机准入见 [GitHub #13](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/13)。
 
 **感知管线**：`perception_bridge` 接收点云 → `obstacle_extractor` 聚类拟合球/
 圆柱几何 → 发布到 `/perception/tracks` → `oscbf_controller` 经 `obs_*` 接口注入
@@ -61,14 +70,14 @@ euler 旋转自动转换。圆柱轴心拟合口径在轨迹生成端、过渡�
 | `portable_oscbf/` | 可移植 JAX OSCBF 控制核心（work/ 为 Python 包，随包分发） |
 | `portable_oscbf/work/` | 控制内核 Python 包（零 ROS 依赖，统一 `from work.X` import） |
 | `portable_oscbf/vendor/dpax/` | 内嵌的 DCOL 可微碰撞库 |
-| `portable_oscbf/tests/` | 控制核心独立测试（36+ 个单测文件） |
+| `portable_oscbf/tests/` | 控制核心独立测试 |
 | `portable_oscbf/scripts/` | 内核调试/标定脚本 |
 | `models/ninezzhou/` | 9 轴机械臂 URDF + STL 网格 |
 | `models/ninezzhou_moveit_config/` | MoveIt2 配置（SRDF、控制器、运动学） |
 | `config/` | 节点 YAML 参数（oscbf_controller.yaml、drempower.yaml 等） |
 | `launch/` | launch 文件（mujoco_transition_final.launch.py 为完整闭环） |
 | `data/nurbs/` | NURBS 轨迹数据（ik_input.mat 逆运动学输入） |
-| `tests/` | 主包 pytest 测试（24 个文件，含 launch 集成测试） |
+| `tests/` | 主包 pytest 测试（含 launch 集成测试） |
 | `scripts/` | 辅助脚本（零位标定、vcan 测试、清场启动） |
 | `docs/` | 文档（本指南、ADR、specs、runbook） |
 | `output/` | 生成文件（已 gitignore） |
@@ -76,20 +85,21 @@ euler 旋转自动转换。圆柱轴心拟合口径在轨迹生成端、过渡�
 
 ## Request Lifecycle（闭环数据流）
 
-1. `mujoco_viewer_with_cylinder.py` 加载 `models/ninezzhou` URDF → MuJoCo 仿真，
-   发布关节状态到 `/mujoco_joint_states`（transient local QoS）。
-2. `oscbf_controller.py` 订阅状态（BEST_EFFORT），加载仓库蝴蝶轨迹
-   （`oscbf_trajectory.py` 统一变换），经 `portable_oscbf/work` 的
-   `JaxControlLoop` facade（输入归一化 → JIT 内核：OSC + CBF + QP + 积分）
-   计算安全关节速度/命令，发布到 `/oscbf_command`。
-3. `oscbf_plant.py` 的 `SCurveDriverSimulator` 对命令做位置环 + 加速度/jerk
-   限幅，持续发布状态回 `/mujoco_joint_states`（即使命令丢失也不会卡死，
-   模拟真实编码器行为）。
-4. `transition_planning_server.py` 在开始前用 move_group(AEB-RRT* 插件 +
-   FCL 碰撞检查) 规划任意位姿→轨迹起点的无碰撞过渡路径，经 Ruckig 平滑后回放。
-5. `tracking_evaluator.py` 订阅状态与命令，实时计算跟踪误差、完成度等指标。
-6. 轨迹变换统一：查看器、过渡服务器、控制器共用 `oscbf_trajectory.py`，
-   保证 tool0 与显示的蝴蝶曲线重合。
+1. `run_demo.sh` 启用被控对象并设置随机起始位姿；`oscbf_plant.py` 持续发布仿真状态。
+2. `transition_planning_server.py` 调用 MoveIt/AEB-RRT* 与 FCL 规划过渡，经 Ruckig
+   平滑并回放命令；回放后等待被控对象收敛，再交接给 OSCBF 控制器。
+3. `oscbf_controller.py` 订阅状态，经 `portable_oscbf/work` 的 JAX facade 计算并
+   发布 `/oscbf_command`；被控对象积分后继续发布 `/mujoco_joint_states`。
+4. `mujoco_viewer_with_cylinder.py` 订阅状态驱动显示；它不拥有控制状态 publisher。
+5. `tracking_evaluator.py` 可订阅状态与命令计算跟踪指标；查看器、过渡服务器和
+   控制器共用 `oscbf_trajectory.py` 的轨迹变换。
+
+**当前 QoS**：canonical [ros_conventions.py](../src/robot_safecontrol_moveit/ros_conventions.py)
+的 `state_stream_qos()` 是 KEEP_LAST / depth 20 / BEST_EFFORT / VOLATILE。
+被控对象的状态发布和命令订阅、控制器的状态订阅及 shadow bridge 的命令订阅使用它。
+viewer、过渡服务器的状态订阅、过渡回放发布和控制器的命令发布仍使用
+`qos_profile_sensor_data`（depth 5 / BEST_EFFORT / VOLATILE）。深度差异仍存在，
+这里记录当前实体，不代表全面 QoS 已统一；不存在 viewer 发布 transient-local 状态的链路。
 
 ## Conventions Detected
 
@@ -103,9 +113,9 @@ euler 旋转自动转换。圆柱轴心拟合口径在轨迹生成端、过渡�
   （统一 `from work.X`），节点经 `oscbf_trajectory.bootstrap_portable` 引导。
 - **错误处理**：launch 文件对必需配置文件做启动时 `FileNotFoundError` 校验；
   内核侧有 QP 健康检查（`qp_solver_health.py`、`safety_snapshot.py`）；
-  真机侧有安全网关（超时/故障/限幅违例 → 零速保持 + 锁存停车原因）。
+  硬件合同网关可生成拒绝/保持结果并锁存原因；当前 bridge 无 CAN 发送能力，不能据此推断物理停车。
 - **测试**：pytest（`testpaths = tests`），主包含 launch 集成测试
-  （launch_testing）；`portable_oscbf/tests` 有独立 conftest 与 36+ 个单测文件；
+  （launch_testing）；`portable_oscbf/tests` 有独立 conftest；
   C++ 包有自测可执行文件（test_aeb_full.cpp 等）。全量入口：`bash run_all_tests.sh`。
 - **Git**：单 main 分支；提交信息中英混合、多为 feat:/fix:/perf: 前缀或中文摘要。
 
@@ -119,19 +129,13 @@ source install/setup.bash
 # 全自动演示：随机起始位姿 → 无碰撞过渡 → OSCBF 跟踪蝴蝶轨迹（无需键盘）
 bash run_demo.sh
 
-# 真机模式
+# shadow 记录模式：无 CAN I/O，不提供真实硬件反馈
 ros2 launch robot_safecontrol_moveit mujoco_transition_final.launch.py \
-    hardware_mode:=shadow start_oscbf_plant:=false   # shadow 模式
-ros2 launch robot_safecontrol_moveit mujoco_transition_final.launch.py \
-    hardware_mode:=live start_oscbf_plant:=false      # live 模式
+    hardware_mode:=shadow start_oscbf_plant:=false
 
-# 测试
-pytest                                   # 主包测试（24 个文件）
-pytest portable_oscbf/tests              # 控制核心测试（36+ 个文件）
-bash run_all_tests.sh                    # 全量入口
-
-# 零位标定
-python3 scripts/calibrate_zero.py --interface can0
+# 测试：结果以当前 checkout 实际执行为准
+bash scripts/agent_check.sh              # 快速启发式检查
+bash run_all_tests.sh                    # 完整主包 + 内核回归
 
 # 独立脚本（无 ROS）
 python3 src/aeb_rrtstar/single_run.py    # 查看 aeb_rrtstar 用法
@@ -148,12 +152,12 @@ launch——运行中的 move_group 不会自动加载新编译的 `.so` 插件�
 - `src/robot_safecontrol_moveit/transition_executor.py` — 过渡管线相位机（纯逻辑，无 ROS）
 - `src/robot_safecontrol_moveit/mujoco_viewer_with_cylinder.py` — MuJoCo 查看器/仿真
 - `src/robot_safecontrol_moveit/oscbf_trajectory.py` — 统一轨迹变换（三端共享）
-- `src/robot_safecontrol_moveit/hardware_bridge.py` — 真机执行端（CAN 通信 + 安全网关）
+- `src/robot_safecontrol_moveit/hardware_bridge.py` — containment 入口（sim inert / shadow 记录 / live disabled）
 - `src/robot_safecontrol_moveit/perception_bridge.py` — 感知桥接节点
 - `src/robot_safecontrol_moveit/obstacle_extractor.py` — 点云→几何障碍物提取
 - `src/robot_safecontrol_moveit/tracking_evaluator.py` — 跟踪评价指标
 - `src/robot_safecontrol_moveit/drempower_can.py` — DrEmpower CAN 协议编解码
-- `src/robot_safecontrol_moveit/socketcan_backend.py` — SocketCAN 后端
+- `src/robot_safecontrol_moveit/socketcan_backend.py` — SocketCAN 抽象与替身测试入口，当前 bridge 不接入
 - `portable_oscbf/work/jax_control_facade.py` — JAX 控制内核主机端入口
 - `src/aeb_rrtstar_ompl/src/AEBRRTstar.cpp` — C++ AEB-RRT* 插件实现
 - `launch/mujoco_transition_final.launch.py` — 完整闭环 launch
