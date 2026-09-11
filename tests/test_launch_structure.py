@@ -106,8 +106,8 @@ class TestFinalLaunchDescription(unittest.TestCase):
         }
         return module.generate_launch_description()
 
-    def test_contained_live_fails_before_any_process_starts(self) -> None:
-        for mode in (None, "sim", "shadow", "live"):
+    def test_hardware_mode_is_validated_before_any_process_starts(self) -> None:
+        for mode in (None, "sim", "shadow", "live", "foo", "", "LIVE", "lve"):
             with self.subTest(mode=mode):
                 actions = [SetLaunchConfiguration("start_viewer", "false")]
                 if mode is not None:
@@ -118,8 +118,9 @@ class TestFinalLaunchDescription(unittest.TestCase):
                 # Never start ROS processes or hardware, including on regression.
                 with patch.object(Node, "execute", return_value=[]) as start:
                     result = service.run()
-                self.assertEqual(result, 1 if mode == "live" else 0)
-                if mode == "live":
+                rejected = mode not in (None, "sim", "shadow")
+                self.assertEqual(result, 1 if rejected else 0)
+                if rejected:
                     start.assert_not_called()
                 else:
                     self.assertGreater(start.call_count, 0)

@@ -19,8 +19,13 @@ from launch_ros.actions import Node
 from robot_safecontrol_moveit.moveit_runtime_config import build_moveit_params
 
 
-def _reject_contained_live(context):
-    if LaunchConfiguration("hardware_mode").perform(context) == "live":
+def _validate_hardware_mode(context):
+    mode = LaunchConfiguration("hardware_mode").perform(context)
+    if mode not in {"sim", "shadow", "live"}:
+        raise RuntimeError(
+            f"invalid hardware_mode: {mode!r}; expected sim, shadow, or live"
+        )
+    if mode == "live":
         raise RuntimeError("live disabled by containment; refusing entire launch")
     return []
 
@@ -88,7 +93,7 @@ def generate_launch_description() -> LaunchDescription:
             # Show OBB collision envelopes in the MuJoCo viewer.
             DeclareLaunchArgument("show_obb", default_value="false"),
             # Refuse before any Node or TimerAction can start a process.
-            OpaqueFunction(function=_reject_contained_live),
+            OpaqueFunction(function=_validate_hardware_mode),
             # Log startup info.
             LogInfo(
                 msg=f"Starting unified MoveIt transition demo. "

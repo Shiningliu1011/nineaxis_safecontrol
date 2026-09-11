@@ -108,9 +108,19 @@ bash run_all_tests.sh
 
 最近一次 containment 产品代码完整验收基于 `e4d9a268`，对应证据见[验证归档](docs/planning/oscbf-reuse/validation/2026-09-11-containment/REPORT.md)。当前 checkout 的测试真值仍以实际运行 `bash scripts/agent_check.sh`（快速反馈）与 `bash run_all_tests.sh`（完整回归）为准；验证记录应注明 commit、日期、环境和退出码。[可复现基线](docs/planning/oscbf-reuse/handoffs/30-baseline.md)仅保留历史结果，不表示当前仍有同样失败。
 
+最小纯软件 CI 入口：[Pure software checks](.github/workflows/pure-checks.yml)。
+
 ## 硬件模式（当前 containment）
 
-当前处于 fail-closed containment：sim 不创建控制接口，shadow 只记录且不收发 CAN、不发布关节状态；final launch 在启动任何节点前拒绝 `hardware_mode=live`，`hardware_bridge` 自身也保留独立拒绝。真实 backend、配置、标定和真实反馈 freshness/watchdog 链路完成独立验收前，不提供启用 live 的参数。反馈不可用时不会报告 healthy，人工确认不能解除这一条件。禁止发送不等于物理制动，物理急停仍是独立链路。以下 live 命令仅用于说明参数形式，不是可用的真机运行入口；后续验收见[真机运行手册](docs/real_robot_runbook.md)。
+当前处于 fail-closed containment：
+
+- `sim`：hardware bridge 不创建真实硬件控制 I/O。
+- `shadow`：仅记录命令请求与安全拒绝，不收发 CAN、不发布真实硬件状态。
+- `live`：final launch 在启动任何 Node/TimerAction 前拒绝 `hardware_mode=live`；`hardware_bridge` 自身也保留独立拒绝，用于保护直接启动节点的入口。
+
+`hardware_mode` 仅接受 `sim` / `shadow` / `live`；非法值与 `live` 都会在 final launch 启动节点前失败，其中 `live` 是 containment 禁用，`sim`/`shadow` 为允许模式。
+
+真实 backend、配置、标定、真实 feedback freshness/watchdog 和 real-hardware acceptance 完成前，live 仍不可用。反馈不可用时不会报告 healthy，人工确认不能解除这一条件。禁止发送不等于物理制动，物理急停仍是独立链路。以下 live 命令仅用于说明拒绝行为；后续准入见[真机运行手册](docs/real_robot_runbook.md)。
 
 ```bash
 # shadow 模式：记录请求及拒绝结果；真实反馈 unavailable；不收发 CAN
@@ -126,7 +136,7 @@ ros2 launch robot_safecontrol_moveit mujoco_transition_final.launch.py \
     hardware_mode:=live start_oscbf_plant:=false start_perception:=true
 ```
 
-这里的退出仅指 hardware_bridge；当前 launch 未配置联动 shutdown，其他仿真/控制节点可能继续运行。标定与实机操作属于后续独立准入流程，参见[真机运行手册](docs/real_robot_runbook.md)，不是当前 containment 的运行步骤。
+标定与实机操作属于后续独立准入流程，参见[真机运行手册](docs/real_robot_runbook.md)，不是当前 containment 的运行步骤。
 
 话题约定：OSCBF 控制器订阅植物状态 `/mujoco_joint_states`，把安全命令发布到
 `/oscbf_command`；`oscbf_plant` 节点把命令经 jerk 限幅积分后作为植物状态发回
