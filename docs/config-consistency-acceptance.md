@@ -6,7 +6,7 @@
 
 固定基线：`84797408ac0cbe344bcb9f06fc70da5ae29dd417`
 
-验收实现：`d6f71d799d177f4aa6bdb45b147c99a99b95e359`
+验收实现：`c3691492a6565c37cc37254747856e5e791a1c66`
 
 ## 结论
 
@@ -31,8 +31,14 @@
 | 唯一、原子、可追溯启动快照 | PASS | 唯一文件/无临时残留测试；快照与实际消费者、配置哈希、Git/dirty/source、资源及几何比对 |
 | 快照失败阻止 publisher 和 timer | PASS | `/proc` 不可持久化门禁用例同时断言 0 command publisher、0 timer |
 | 遗留资产与离线入口兼容 | PASS | `nineaxis.yaml` 同含 kinematics/controller 时仍合法；facade 独立默认签名保持；portable 全量回归通过 |
-| 任务误差、路径进给、约束/QP 健康回归 | PASS | 真实 `step_once` 与完整闭环测试；portable tracking、path following、CBF/残差、QP health/baseline 套件 |
+| 任务误差、路径进给、约束/QP 健康回归 | PASS | `test_production_config_refactor_preserves_control_outputs_from_8479740` 固定基线对照；portable tracking、path following、CBF/残差、QP health 套件 |
 | 真机发送与反馈准入 | SKIP（范围外） | 未接通；由 #13 负责 |
+
+## 固定基线控制回归
+
+审查发现原报告只证明当前实现可运行，没有完成规格要求的同输入前后对照。修复时从固定提交 `84797408ac0cbe344bcb9f06fc70da5ae29dd417` 的 detached worktree 独立采集真值：使用与生产传播测试相同的 `dt=0.012`、`dt_path=0.013`、`kp_pos=161`、`w_pos=41`、80 Hz 等有效配置，从蝴蝶轨迹起点执行四步闭环。
+
+当前生产控制器通过公开的 `step_once` 边界重放同一初始状态和配置。四步 `err_6d`、`feedrate_m_s` 与路径进度均在 `rtol=1e-5, atol=1e-7` 内匹配；QP primal residual 均为 0，`qp_ok` 全部为 true。测试期望值是固定提交的独立字面量，不由当前实现重新生成。为使这些验收量可通过公开边界观察，`step_once` 新增 `path_progress_m` 与 `qp_primal_residual` 两个诊断字段；控制计算与命令不变。
 
 ## 真实生产入口
 
@@ -50,8 +56,8 @@
 
 执行 `bash run_all_tests.sh`：
 
-- PASS：主包 `346 passed in 108.39s`。
-- PASS：portable OSCBF `148 passed, 34 skipped in 448.87s`。
+- PASS：主包原验收 `346 passed in 108.39s`；固定基线门补齐后总入口复验 `347 passed in 121.61s`。
+- PASS：portable OSCBF 总入口复验 `148 passed, 34 skipped in 468.13s`。
 - PASS：主包退出码 0、portable 退出码 0、总入口退出码 0。
 - SKIP：34 项为测试套件已有的可选/归档依赖条件（包括 `newaxis` 对照路径）；本验收使用的 ROS、JAX、cbfpy、qpax、MoveIt 依赖均可用。
 - MISSING（非阻塞）：检测到 NVIDIA GPU，但环境没有 CUDA-enabled jaxlib，JAX 按设计回退 CPU；本轮生产链与数值回归均在 CPU 上通过。
