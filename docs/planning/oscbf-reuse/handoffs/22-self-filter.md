@@ -62,3 +62,29 @@ python3 -m pytest portable_oscbf/tests/test_dual_sensor_fusion.py -k 'SelfFilter
 可以开始隔离 C++ 构建探针、带版本的输入/输出封装和上述回放。正式接线前需标定 SSOT、时间状态历史及模型可信范围就绪；启用前还须观测与健康契约落实。没有新的架构取舍待用户重选，运行参数和几何可信范围不能自行定案。
 
 回退时停用新适配节点、恢复成对的生产者/消费者及模型/配置快照；旧路径未过滤这一事实必须保留在状态中，不能因回退获得避障准入。本轮仅新增交接、研究和隔离审计资产；未修改控制或自碰撞实现，未提交、部署或启动实机。整票不关闭，地图不追加已解决索引，不自动开始下一票。
+
+## 续研窗口：模型实体与构建前置核验（2026-09-11）
+
+用户指令：“wayfinder 开始ticket#22”。起点 HEAD 为 `84797408ac0cbe344bcb9f06fc70da5ae29dd417`；再次认领原票，原生依赖仍为开放的「标定 SSOT 接线」及「感知时间同步与延迟模型」。本轮保留时间模型交接和陈旧度预算研究的已有未提交改动，只推进本票的独立离线核验。
+
+### 新增可复现证据
+
+- [几何审计脚本](../../../../.scratch/oscbf-reuse-wayfinder/22/geometry-probe/audit.py)与[完整结果](../../../../.scratch/oscbf-reuse-wayfinder/22/geometry-probe/results.json)：读取实际 URDF 的每个 collision mesh，应用显式/default scale，用 trimesh 5.1.0 默认 `process=True` 处理，记录拓扑、体积可用性、局部包围盒及 URDF、各 mesh、脚本 SHA256。运行 `python3 .scratch/oscbf-reuse-wayfinder/22/geometry-probe/audit.py`，退出0。
+- 十个网格（base_link、Link1–Link9）均为 `watertight=False`、`is_volume=False`、`is_convex=False`，但绕序一致。**这是此加载器及默认处理下的拓扑诊断，不是物理机器人非封闭或实际误删比例的证明。** 导出接缝、重复面、多组件或建模问题仍需定位；本轮未自动修补、填洞或改变合并容差。
+- 因封闭体条件不成立，报告将凸包/实体体积比设为 null，不能拿有符号网格体积推导“误删百分比”。即使修复拓扑，仍须验证模型与实物的一致性以及误差域，才可能作为可信删点依据。
+- 十个 collision origin 当前都是零 xyz/rpy，mesh scale 都是默认1；这仅为当前文件事实，后续适配仍必须消费这些字段。`tool0` 无 collision，工具/附件/线缆覆盖仍未证明。
+- [CMake 探针](../../../../.scratch/oscbf-reuse-wayfinder/22/build-probe/CMakeLists.txt)及[配置日志](../../../../.scratch/oscbf-reuse-wayfinder/22/build-probe/configure.log)：显式指定 `/opt/ros/humble` 后，`find_package(moveit_ros_perception REQUIRED)` 失败，退出1，找不到包配置。编译器探测成功（GNU 11.4.0）。dpkg 再确认 perception 包未安装、geometric_shapes 为 `2.3.4-1jammy.20260726.110819`。这证明当前前缀的依赖发现门未通过，**没有完成 ShapeMask 编译、链接、ABI或运行测试**，也不代表上游接口不可用。
+
+资产位于本地 scratch，未提交或推送，远端不能据此假定可访问。无需把已有上游核验再做一遍；继续直接依赖公共库，不复制上游几何算法。
+
+### 对实施入口的影响
+
+可继续独立编写离线输入/输出校验、故障回放及依赖准备后的链接探针。正式删点接线仍缺三个具体输入：
+
+1. 与实际机器人对应的可信过滤几何记录：link/collision身份、原始模型及版本、几何有效性证据、可删除区域、工具附件缺口与适用误差域。不能通过本次拓扑失败直接决定改用球、OBB、凸包或自动修复模型。
+2. 标定 SSOT 与逐源采集区间对应的机器人状态历史，缺失时明确 unknown/invalid；不能 latest 回退。
+3. 可构建的 MoveIt perception 依赖和离线运行证据；安装后依次核验公共target/链接、简单解析形状、完整快照与回调失败、再接本项目已验证模型。
+
+推荐先核查 CAD/STL 导出实体与工具附件清单；没有可信实体的区域继续保留或未知，沿用已定决议，不新增 padding 或容差数值。几何拓扑修复也不能自动授权删点。后续验收须区分“模型有效”“候选包含”“可信剔除”和“观测有效”，分别覆盖边界外障、凹陷、不同源时刻、缺状态和空输出。
+
+本轮是离线审计，不是产品修复验收；未改生产代码、配置、模型或 OBB，未安装包、启动 ROS 或访问硬件。停止使用探针即可回退。整票保持 OPEN，依赖不变，不追加地图已解决索引；本轮不自动启动其他票。
