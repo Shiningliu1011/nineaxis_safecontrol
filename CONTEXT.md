@@ -17,7 +17,7 @@ _Avoid_: 过渡状态机、pipeline orchestrator
 _Avoid_: handoff moment、接管点
 
 **状态流**:
-被控对象与查看器发布、控制器订阅的关节状态话题流（BEST_EFFORT、深度 20），约定统一在共享模块中。
+控制器及显示/评估消费者读取的关节状态话题流。`run_demo` 仿真闭环中由被控对象持续发布；默认最终 launch 未启用被控对象时，过渡回放可向该状态话题发布。viewer 只订阅状态，不拥有状态 publisher。具体实体和 QoS 见 [ONBOARDING](docs/ONBOARDING.md)，共享约定见 `ros_conventions.py`。
 _Avoid_: joint-state topic、传感器流
 
 **命令流**:
@@ -91,7 +91,7 @@ _Avoid_: cylinder fitting、轴线拟合
 ## 真机部署
 
 **真机执行端**:
-订阅命令流（/oscbf_command）、经安全网关校验后换算为 DrEmpower CAN 帧发送给电机，并把反馈帧解码换算后发布状态流（/mujoco_joint_states）的 ROS 2 节点。
+目标职责是订阅命令流，经安全网关和硬件传输发送真实执行命令，并将真实反馈转换成状态流。当前 `hardware_bridge` 仅提供 fail-closed containment：sim 不创建硬件控制 I/O；shadow 只记录请求/拒绝，不收发 CAN、不发布真实硬件状态；live 禁用。真实 SocketCAN、反馈 freshness/watchdog 和真机准入见 [GitHub #13](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/13)。
 _Avoid_: hardware bridge、CAN bridge
 
 **安全网关**:

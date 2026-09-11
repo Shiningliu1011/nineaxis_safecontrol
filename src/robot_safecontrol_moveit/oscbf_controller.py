@@ -131,7 +131,8 @@ class OscbfController(Node):
 
         joint_state_topic = str(self._runtime_config["joint_state_topic"])
         publish_topic = str(self._runtime_config["publish_joint_state_topic"])
-        # Same QoS as the MuJoCo viewer, which owns the joint-state stream.
+        # Subscribe to the configured joint-state stream using the canonical
+        # state-stream QoS.
         self.create_subscription(
             JointState,
             joint_state_topic,
