@@ -270,6 +270,13 @@ class JaxControlLoop:
         return self._path_geometry is not None and self._path_config is not None
 
     @property
+    def obstacle_h_baseline_alpha(self) -> float:
+        """Configured baseline used to reconstruct obstacle CBF upper bounds."""
+        if self._config is None:
+            raise RuntimeError("control kernel has not been initialised")
+        return float(self._config.obstacle_h_baseline_alpha)
+
+    @property
     def path_posture_reference_enabled(self) -> bool:
         """Whether the compiled path kernel owns static null-space targets."""
         return self._path_posture_reference is not None

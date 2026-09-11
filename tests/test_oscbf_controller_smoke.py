@@ -148,6 +148,28 @@ def test_production_values_reach_actual_consumers_and_provenance(
     assert diagnostics["telemetry_period_s"] == pytest.approx(0.5)
 
 
+def test_tracking_sentinels_reach_the_actual_facade_call(controller_fixture):
+    node = controller_fixture["node"]
+    captured = {}
+    original = node._loop.path_tracking_step
+
+    def _capture_path_tracking_step(**kwargs):
+        captured.update(kwargs)
+        return original(**kwargs)
+
+    node._loop.path_tracking_step = _capture_path_tracking_step
+    try:
+        node.step_once(_START_Q)
+    finally:
+        node._loop.path_tracking_step = original
+
+    assert captured["kp_pos"] == 161.0
+    assert captured["kp_orient"] == 10.0
+    assert captured["kp_joint"] == 0.45
+    assert captured["nullspace_speed_limit"] == 0.18
+    assert captured["damping"] == 0.05
+
+
 def test_runtime_single_managed_parameter_change_is_rejected(controller_fixture):
     node = controller_fixture["node"]
     before = node.runtime_configuration_diagnostics()

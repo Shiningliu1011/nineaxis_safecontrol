@@ -14,6 +14,7 @@ from rclpy.qos import (
 
 JOINT_STATE_TOPIC = "/mujoco_joint_states"
 OSCBF_COMMAND_TOPIC = "/oscbf_command"
+PERCEPTION_TRACKS_TOPIC = "/perception/tracks"
 
 
 def state_stream_qos() -> QoSProfile:

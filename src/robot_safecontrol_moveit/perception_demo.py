@@ -43,6 +43,8 @@ from sensor_msgs_py import point_cloud2 as pc2
 import mujoco
 
 from .oscbf_trajectory import bootstrap_portable, default_portable_root
+from .robot_spec import DEFAULT_JOINT_NAMES
+from .ros_conventions import PERCEPTION_TRACKS_TOPIC
 
 bootstrap_portable(default_portable_root())
 
@@ -55,7 +57,6 @@ from work.safety_snapshot import MAX_DYNAMIC_TRACKS  # noqa: E402
 
 from .mujoco_viewer_with_cylinder import MuJoCoJointStateViewer  # noqa: E402
 
-DEFAULT_JOINT_NAMES = ("J1", "J2", "J3", "J4", "J5", "J6", "J7", "J8", "J9")
 N_OBS_GEOMS = 120  # display-only obstacle spheres in the MuJoCo scene
 
 
@@ -183,7 +184,7 @@ class PerceptionDemo(Node):
             Float32MultiArray, "/perception/esdf_meta", self._meta_cb,
             qos_profile_sensor_data, callback_group=group)
         self.create_subscription(
-            Float32MultiArray, "/perception/tracks", self._tracks_cb,
+            Float32MultiArray, PERCEPTION_TRACKS_TOPIC, self._tracks_cb,
             qos_profile_sensor_data, callback_group=group)
         self.create_subscription(
             PointCloud2, "/perception/cloud_world", self._cloud_cb,

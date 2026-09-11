@@ -127,12 +127,14 @@ def test_legacy_control_field_has_an_explicit_error(tmp_path):
 @pytest.mark.parametrize(
     ("name", "value", "message"),
     [
-        ("dt", "0.01", "dt must be a number"),
+        ("dt", "0.01", "dt must be a floating-point number"),
+        ("kp_pos", 160, "kp_pos must be a floating-point number"),
         ("enable_x64", 1, "enable_x64 must be a boolean"),
         ("kp_pos", float("nan"), "kp_pos must be finite"),
         ("dt_path", 0.0, "dt_path must be positive"),
         ("temporal_lambda", -0.1, "temporal_lambda must be non-negative"),
         ("cylinder_axis_direction", [0.0, 0.0, 0.0], "non-zero 3-vector"),
+        ("reference_lead_m", 0.0, "reference_lead_m must be positive"),
     ],
 )
 def test_invalid_yaml_values_are_rejected_strictly(
@@ -157,6 +159,16 @@ def test_other_node_parameter_sections_are_outside_controller_validation(tmp_pat
     config.write_text(yaml.safe_dump(document), encoding="utf-8")
 
     with pytest.raises(FileNotFoundError, match="trajectory_mat"):
+        _construct_with_config(config)
+
+
+def test_joint_names_must_match_the_canonical_kernel_order(tmp_path):
+    config = _write_profile(
+        tmp_path,
+        joint_names=["J2", "J1", "J3", "J4", "J5", "J6", "J7", "J8", "J9"],
+    )
+
+    with pytest.raises(ValueError, match="canonical order"):
         _construct_with_config(config)
 
 
@@ -317,8 +329,27 @@ def test_offline_facade_keeps_its_independent_defaults():
     assert signature.parameters["task_mode"].default == "pose6d"
 
 
+def test_production_transport_baseline_matches_shared_conventions():
+    from robot_safecontrol_moveit.robot_spec import DEFAULT_JOINT_NAMES
+    from robot_safecontrol_moveit.ros_conventions import (
+        JOINT_STATE_TOPIC,
+        OSCBF_COMMAND_TOPIC,
+        PERCEPTION_TRACKS_TOPIC,
+    )
+
+    document = yaml.safe_load(
+        (REPO_ROOT / "config" / "oscbf_controller.yaml").read_text(
+            encoding="utf-8"
+        )
+    )["/**"]["ros__parameters"]
+    assert document["joint_names"] == list(DEFAULT_JOINT_NAMES)
+    assert document["joint_state_topic"] == JOINT_STATE_TOPIC
+    assert document["publish_joint_state_topic"] == OSCBF_COMMAND_TOPIC
+    assert document["perception_tracks_topic"] == PERCEPTION_TRACKS_TOPIC
+
+
 def test_atomic_runtime_snapshots_are_unique_and_leave_no_partial_files(tmp_path):
-    from robot_safecontrol_moveit.production_config import persist_runtime_snapshot
+    from robot_safecontrol_moveit.runtime_snapshot import persist_runtime_snapshot
 
     first = persist_runtime_snapshot({"final_values": {"dt": 0.01}}, tmp_path)
     second = persist_runtime_snapshot({"final_values": {"dt": 0.01}}, tmp_path)
@@ -344,7 +375,7 @@ def test_snapshot_failure_prevents_command_publisher_creation(monkeypatch):
     def _fake_build_controller(node, portable_root):
         del portable_root
         node._loop = SimpleNamespace(
-            _config=SimpleNamespace(obstacle_h_baseline_alpha=10.0)
+            obstacle_h_baseline_alpha=10.0
         )
         node._surface_axis = None
         node._surface_centre = None

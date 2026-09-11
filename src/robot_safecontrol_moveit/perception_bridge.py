@@ -43,7 +43,10 @@ from std_msgs.msg import Float32MultiArray, MultiArrayDimension, MultiArrayLayou
 from moveit_msgs.msg import CollisionObject
 from shape_msgs.msg import SolidPrimitive
 from geometry_msgs.msg import Pose, Point, Quaternion
-from robot_safecontrol_moveit.ros_conventions import JOINT_STATE_TOPIC
+from robot_safecontrol_moveit.ros_conventions import (
+    JOINT_STATE_TOPIC,
+    PERCEPTION_TRACKS_TOPIC,
+)
 
 # --- portable_oscbf on path (pure-python calculation core) --------------------
 _REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -229,7 +232,7 @@ class PerceptionBridge(Node):
         self._esdf_meta_pub = self.create_publisher(
             Float32MultiArray, "/perception/esdf_meta", qos_profile_sensor_data)
         self._tracks_pub = self.create_publisher(
-            Float32MultiArray, "/perception/tracks", qos_profile_sensor_data)
+            Float32MultiArray, PERCEPTION_TRACKS_TOPIC, qos_profile_sensor_data)
         self._collision_pub = self.create_publisher(
             CollisionObject, "/collision_object", 10)
         self._instant_pub = self.create_publisher(

@@ -31,8 +31,10 @@ from .oscbf_trajectory import bootstrap_portable
 from .production_config import (
     MANAGED_PARAMETERS,
     build_effective_configuration,
-    collect_software_identity,
     load_production_profile,
+)
+from .runtime_snapshot import (
+    collect_software_identity,
     persist_runtime_snapshot,
     sha256_bytes,
 )
@@ -182,19 +184,9 @@ class OscbfController(Node):
 
     def effective_configuration(self) -> dict:
         """Return the fixed startup values and provenance for diagnostics."""
-        return {
-            "production_config_path": str(self._production_profile.path),
-            "values": dict(self._effective.values),
-            "sources": dict(self._effective.sources),
-            "override_chains": {
-                name: [dict(entry) for entry in chain]
-                for name, chain in self._effective.override_chains.items()
-            },
-            "resources": {
-                name: dict(resource)
-                for name, resource in self._effective.resources.items()
-            },
-        }
+        diagnostics = self._effective.diagnostics()
+        diagnostics["production_config_path"] = str(self._production_profile.path)
+        return diagnostics
 
     def _reject_runtime_configuration_changes(self, parameters) -> SetParametersResult:
         managed = sorted(
@@ -272,22 +264,18 @@ class OscbfController(Node):
             source_paths=(
                 Path(__file__),
                 Path(__file__).with_name("production_config.py"),
+                Path(__file__).with_name("runtime_snapshot.py"),
                 portable_root / "work",
             ),
         )
+        effective = self._effective.diagnostics()
         payload = {
             "schema_version": 1,
             "node_name": self.get_name(),
-            "final_values": dict(self._effective.values),
-            "parameter_sources": dict(self._effective.sources),
-            "override_chains": {
-                name: [dict(entry) for entry in chain]
-                for name, chain in self._effective.override_chains.items()
-            },
-            "resources": {
-                name: dict(resource)
-                for name, resource in self._effective.resources.items()
-            },
+            "final_values": effective["values"],
+            "parameter_sources": effective["sources"],
+            "override_chains": effective["override_chains"],
+            "resources": effective["resources"],
             "production_config": {
                 "path": str(self._production_profile.path),
                 "sha256": sha256_bytes(self._production_profile.content),
@@ -296,7 +284,7 @@ class OscbfController(Node):
             "geometry": geometry,
             "obstacle_alpha_contract": {
                 "baseline_value": float(
-                    self._loop._config.obstacle_h_baseline_alpha
+                    self._loop.obstacle_h_baseline_alpha
                 ),
                 "baseline_source": "NineaxisOSCBFVelocityConfig",
                 "runtime_value_source": "perception track slot 10",

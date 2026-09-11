@@ -8,18 +8,15 @@ input so a required YAML value cannot be supplied accidentally by an override.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
-import hashlib
-import json
 import math
 import os
 from pathlib import Path
-import subprocess
 from types import MappingProxyType
-from typing import Any, Mapping, Sequence
-from uuid import uuid4
+from typing import Any, Mapping
 
 import yaml
+
+from .robot_spec import DEFAULT_JOINT_NAMES
 
 
 REQUIRED_PARAMETERS = frozenset(
@@ -106,6 +103,38 @@ class EffectiveConfiguration:
     override_chains: Mapping[str, list[dict[str, Any]]]
     resources: Mapping[str, Mapping[str, str]]
 
+    def diagnostics(self) -> dict[str, Any]:
+        """Return a JSON-compatible view of values and provenance."""
+        return {
+            "values": dict(self.values),
+            "sources": dict(self.sources),
+            "override_chains": {
+                name: [dict(entry) for entry in chain]
+                for name, chain in self.override_chains.items()
+            },
+            "resources": {
+                name: dict(resource)
+                for name, resource in self.resources.items()
+            },
+        }
+
+
+def _reject_unrecognized_parameters(
+    names, *, allowed: frozenset[str], source: str
+) -> None:
+    unknown = sorted(set(names) - allowed)
+    if not unknown:
+        return
+    legacy = sorted(set(unknown) & LEGACY_CONTROL_PARAMETERS)
+    if legacy:
+        raise ValueError(
+            f"{source} contains legacy, unconsumed control parameters: "
+            + ", ".join(legacy)
+        )
+    raise ValueError(
+        f"{source} contains unknown parameters: " + ", ".join(unknown)
+    )
+
 
 def load_production_profile(path: Path, *, node_name: str) -> ProductionProfile:
     """Load the ROS parameter block for ``node_name`` and check its schema."""
@@ -146,17 +175,9 @@ def load_production_profile(path: Path, *, node_name: str) -> ProductionProfile:
         raise ValueError(
             "production config missing required parameters: " + ", ".join(missing)
         )
-    unknown = sorted(values.keys() - MANAGED_PARAMETERS)
-    if unknown:
-        legacy = sorted(set(unknown) & LEGACY_CONTROL_PARAMETERS)
-        if legacy:
-            raise ValueError(
-                "production config contains legacy, unconsumed control parameters: "
-                + ", ".join(legacy)
-            )
-        raise ValueError(
-            "production config contains unknown parameters: " + ", ".join(unknown)
-        )
+    _reject_unrecognized_parameters(
+        values, allowed=MANAGED_PARAMETERS, source="production config"
+    )
 
     merged = dict(OPTIONAL_DEFAULTS)
     merged.update(values)
@@ -170,12 +191,11 @@ def load_production_profile(path: Path, *, node_name: str) -> ProductionProfile:
 
 
 def _number(name: str, value: Any, *, source: str) -> float:
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        raise ValueError(f"{source}: {name} must be a number")
-    result = float(value)
-    if not math.isfinite(result):
+    if type(value) is not float:
+        raise ValueError(f"{source}: {name} must be a floating-point number")
+    if not math.isfinite(value):
         raise ValueError(f"{source}: {name} must be finite")
-    return result
+    return value
 
 
 def _number_vector(
@@ -247,8 +267,8 @@ def validate_parameter_values(values: Mapping[str, Any], *, source: str) -> None
             raise ValueError(f"{source}: {name} must be positive")
     if numeric["temporal_lambda"] < 0.0:
         raise ValueError(f"{source}: temporal_lambda must be non-negative")
-    if numeric["reference_lead_m"] < 0.0:
-        raise ValueError(f"{source}: reference_lead_m must be non-negative")
+    if numeric["reference_lead_m"] <= 0.0:
+        raise ValueError(f"{source}: reference_lead_m must be positive")
     if not 0.0 < numeric["solver_tol"] < 1.0:
         raise ValueError(f"{source}: solver_tol must be in (0, 1)")
 
@@ -284,12 +304,11 @@ def validate_parameter_values(values: Mapping[str, Any], *, source: str) -> None
     if (
         not isinstance(joint_names, (list, tuple))
         or any(not isinstance(name, str) for name in joint_names)
-        or len(joint_names) != 9
-        or len(set(joint_names)) != 9
-        or set(joint_names) != {f"J{index}" for index in range(1, 10)}
+        or tuple(joint_names) != DEFAULT_JOINT_NAMES
     ):
         raise ValueError(
-            f"{source}: joint_names must contain each of J1 through J9 exactly once"
+            f"{source}: joint_names must match the canonical order "
+            f"{list(DEFAULT_JOINT_NAMES)!r}"
         )
 
     axis = _number_vector(
@@ -321,15 +340,11 @@ def build_effective_configuration(
     share_dir: Path,
 ) -> EffectiveConfiguration:
     """Merge explicit ROS overrides, resolve resources and retain provenance."""
-    unknown = sorted(set(explicit_overrides) - MANAGED_PARAMETERS)
-    if unknown:
-        legacy = sorted(set(unknown) & LEGACY_CONTROL_PARAMETERS)
-        if legacy:
-            raise ValueError(
-                "explicit override contains legacy, unconsumed control parameters: "
-                + ", ".join(legacy)
-            )
-        raise ValueError("explicit override contains unknown parameters: " + ", ".join(unknown))
+    _reject_unrecognized_parameters(
+        explicit_overrides,
+        allowed=MANAGED_PARAMETERS,
+        source="explicit override",
+    )
 
     values = dict(profile.values)
     values.update(explicit_overrides)
@@ -387,115 +402,3 @@ def build_effective_configuration(
         override_chains=MappingProxyType(chains),
         resources=MappingProxyType(resources),
     )
-
-
-def persist_runtime_snapshot(payload: Mapping[str, Any], directory: Path) -> Path:
-    """Atomically persist one uniquely named JSON runtime snapshot."""
-    output_dir = directory.expanduser().resolve()
-    output_dir.mkdir(parents=True, exist_ok=True)
-    run_id = (
-        datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S.%fZ")
-        + "-"
-        + uuid4().hex
-    )
-    final_path = output_dir / f"oscbf-runtime-{run_id}.json"
-    temporary_path = output_dir / f".{final_path.name}.{uuid4().hex}.tmp"
-    document = dict(payload)
-    document["run_id"] = run_id
-    document["created_at_utc"] = datetime.now(timezone.utc).isoformat()
-    document["snapshot_path"] = str(final_path)
-    try:
-        with temporary_path.open("x", encoding="utf-8") as stream:
-            json.dump(
-                document,
-                stream,
-                ensure_ascii=False,
-                indent=2,
-                sort_keys=True,
-                allow_nan=False,
-            )
-            stream.write("\n")
-            stream.flush()
-            os.fsync(stream.fileno())
-        os.replace(temporary_path, final_path)
-    except Exception:
-        try:
-            temporary_path.unlink()
-        except FileNotFoundError:
-            pass
-        raise
-    return final_path
-
-
-def sha256_bytes(content: bytes) -> str:
-    """Return the lowercase SHA-256 identity for an exact byte sequence."""
-    return hashlib.sha256(content).hexdigest()
-
-
-def collect_software_identity(
-    *, repository_hint: Path, source_paths: Sequence[Path]
-) -> dict[str, Any]:
-    """Identify the loaded control source and its surrounding Git checkout.
-
-    Git metadata is diagnostic rather than a prerequisite: installed packages
-    may not live inside a checkout, while the source digest remains available.
-    """
-    files: list[Path] = []
-    for candidate in source_paths:
-        resolved = candidate.expanduser().resolve()
-        if resolved.is_file():
-            files.append(resolved)
-        elif resolved.is_dir():
-            files.extend(sorted(resolved.rglob("*.py")))
-
-    file_hashes: dict[str, str] = {}
-    aggregate = hashlib.sha256()
-    for source in sorted(set(files), key=str):
-        content = source.read_bytes()
-        label = str(source)
-        digest = sha256_bytes(content)
-        file_hashes[label] = digest
-        aggregate.update(label.encode("utf-8"))
-        aggregate.update(b"\0")
-        aggregate.update(content)
-        aggregate.update(b"\0")
-
-    result: dict[str, Any] = {
-        "source_sha256": aggregate.hexdigest(),
-        "source_files": file_hashes,
-        "git_head": None,
-        "git_dirty": False,
-        "git_root": None,
-        "git_status": None,
-    }
-    try:
-        root = subprocess.run(
-            ["git", "-C", str(repository_hint), "rev-parse", "--show-toplevel"],
-            check=True,
-            capture_output=True,
-            text=True,
-        ).stdout.strip()
-        head = subprocess.run(
-            ["git", "-C", root, "rev-parse", "HEAD"],
-            check=True,
-            capture_output=True,
-            text=True,
-        ).stdout.strip()
-        status = subprocess.run(
-            ["git", "-C", root, "status", "--porcelain=v1"],
-            check=True,
-            capture_output=True,
-            text=True,
-        ).stdout.rstrip()
-    except (OSError, subprocess.CalledProcessError):
-        return result
-
-    result.update(
-        {
-            "git_head": head,
-            "git_dirty": bool(status),
-            "git_root": root,
-            "git_status": status,
-        }
-    )
-    return result
