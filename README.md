@@ -110,18 +110,18 @@ bash run_all_tests.sh
 
 ## 硬件模式（当前 containment）
 
-当前处于 fail-closed containment：sim 不创建控制接口，shadow 只记录且不收发 CAN、不发布关节状态；live 无条件拒绝启动。真实 backend、配置、标定和真实反馈 freshness/watchdog 链路完成独立验收前，不提供启用 live 的参数。反馈不可用时不会报告 healthy，人工确认不能解除这一条件。禁止发送不等于物理制动，物理急停仍是独立链路。以下 live 命令仅用于说明参数形式，不是可用的真机运行入口；后续验收见[真机运行手册](docs/real_robot_runbook.md)。
+当前处于 fail-closed containment：sim 不创建控制接口，shadow 只记录且不收发 CAN、不发布关节状态；final launch 在启动任何节点前拒绝 `hardware_mode=live`，`hardware_bridge` 自身也保留独立拒绝。真实 backend、配置、标定和真实反馈 freshness/watchdog 链路完成独立验收前，不提供启用 live 的参数。反馈不可用时不会报告 healthy，人工确认不能解除这一条件。禁止发送不等于物理制动，物理急停仍是独立链路。以下 live 命令仅用于说明参数形式，不是可用的真机运行入口；后续验收见[真机运行手册](docs/real_robot_runbook.md)。
 
 ```bash
 # shadow 模式：记录请求及拒绝结果；真实反馈 unavailable；不收发 CAN
 ros2 launch robot_safecontrol_moveit mujoco_transition_final.launch.py \
     hardware_mode:=shadow start_oscbf_plant:=false
 
-# live 参数形式：当前 hardware_bridge 将报错退出
+# live 参数形式：final launch 在启动任何节点前报错退出
 ros2 launch robot_safecontrol_moveit mujoco_transition_final.launch.py \
     hardware_mode:=live start_oscbf_plant:=false
 
-# 即使启用感知，live 当前 hardware_bridge 仍报错退出
+# 即使启用感知，final launch 仍在启动任何节点前拒绝 live
 ros2 launch robot_safecontrol_moveit mujoco_transition_final.launch.py \
     hardware_mode:=live start_oscbf_plant:=false start_perception:=true
 ```

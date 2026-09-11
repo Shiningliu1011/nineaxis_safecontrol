@@ -21,7 +21,7 @@ bash run_demo.sh             # 仿真演示；会清理旧 demo 进程
 
 - sim：hardware bridge 不创建真实控制 I/O。
 - shadow：仅记录命令请求与安全拒绝，不收发 CAN；无真实反馈时不发布硬件状态或报告健康。
-- live：当前 containment 阶段禁用，无条件拒绝启动硬件执行路径，无参数可绕过。
+- live：final launch 与 direct hardware bridge 均 fail closed。
 - command、补零、重打时间戳及人工 acknowledgement 均不能替代真实反馈。
 - containment、测试通过不等于真机准入或物理停车能力；硬件后续工作见 [#13](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/13)。
 

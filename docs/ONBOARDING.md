@@ -49,7 +49,7 @@ live 无条件拒绝。仿真验证不代表真实硬件能力或实机验收完
 polling timer 或状态 publisher；shadow 订阅命令并记录请求/拒绝，不创建 CAN
 backend、不收发 CAN；live 在创建硬件控制实体之前无条件失败。
 无真实反馈时 `feedback_ok`、`watchdog_ok` 均为 false，acknowledge 不能制造健康状态。
-节点拒绝 live 尚不导致整个 launch 联动退出；其他节点可能继续运行。
+final launch 在启动任何节点前拒绝 `hardware_mode=live`；`hardware_bridge` 自身也保留独立拒绝，保护 direct node 入口。未来解除 live containment 时，两层必须独立审查。
 剩余实现及真机准入见 [GitHub #13](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/13)。
 
 **感知管线**：`perception_bridge` 接收点云 → `obstacle_extractor` 聚类拟合球/

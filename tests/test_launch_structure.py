@@ -7,10 +7,11 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import yaml
-from launch import LaunchContext
-from launch.actions import TimerAction
+from launch import LaunchContext, LaunchDescription, LaunchService
+from launch.actions import SetLaunchConfiguration, TimerAction
 from launch_ros.actions import Node
 
 
@@ -104,6 +105,24 @@ class TestFinalLaunchDescription(unittest.TestCase):
             "robot_description": "<robot name='test_robot'/>"
         }
         return module.generate_launch_description()
+
+    def test_contained_live_fails_before_any_process_starts(self) -> None:
+        for mode in (None, "sim", "shadow", "live"):
+            with self.subTest(mode=mode):
+                actions = [SetLaunchConfiguration("start_viewer", "false")]
+                if mode is not None:
+                    actions.append(SetLaunchConfiguration("hardware_mode", mode))
+                actions.append(self._description())
+                service = LaunchService()
+                service.include_launch_description(LaunchDescription(actions))
+                # Never start ROS processes or hardware, including on regression.
+                with patch.object(Node, "execute", return_value=[]) as start:
+                    result = service.run()
+                self.assertEqual(result, 1 if mode == "live" else 0)
+                if mode == "live":
+                    start.assert_not_called()
+                else:
+                    self.assertGreater(start.call_count, 0)
 
     def test_final_launch_creates_the_expected_node_topology(self) -> None:
         description = self._description()

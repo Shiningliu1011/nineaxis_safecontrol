@@ -11,12 +11,18 @@ from pathlib import Path
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, LogInfo, TimerAction
+from launch.actions import DeclareLaunchArgument, LogInfo, OpaqueFunction, TimerAction
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
 from robot_safecontrol_moveit.moveit_runtime_config import build_moveit_params
+
+
+def _reject_contained_live(context):
+    if LaunchConfiguration("hardware_mode").perform(context) == "live":
+        raise RuntimeError("live disabled by containment; refusing entire launch")
+    return []
 
 
 def generate_launch_description() -> LaunchDescription:
@@ -81,6 +87,8 @@ def generate_launch_description() -> LaunchDescription:
             DeclareLaunchArgument("auto_plan_once", default_value="true"),
             # Show OBB collision envelopes in the MuJoCo viewer.
             DeclareLaunchArgument("show_obb", default_value="false"),
+            # Refuse before any Node or TimerAction can start a process.
+            OpaqueFunction(function=_reject_contained_live),
             # Log startup info.
             LogInfo(
                 msg=f"Starting unified MoveIt transition demo. "
