@@ -2,19 +2,92 @@
 
 - Tracker：https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/13
 - 日期：2026-09-09；执行者 Codex；已认领给 Shiningliu1011。
-- 当前状态（2026-09-12 复核）：containment 已进入当前 main；通信/诊断准备位于开放草稿 PR，尚未合入。完整执行会话及实机验收未完成，原票保持 OPEN。下方 2026-09-09 记录为历史核验。
+- 当前状态（2026-09-15 复核）：containment 已进入当前 main；本分支包含通信/诊断准备及其 freshness、响应隔离和运动许可修复，PR 仍为草稿、尚未合入。完整执行会话及实机验收未完成，原票保持 OPEN。
 
 ## 2026-09-12 与几何票联合对齐
 
 用户本轮明确按 HTML 标题票号处理「11 真机执行链路」与「12 自碰撞 OBB 与环境几何模型核对」，使用 grill-with-docs；不是重新处理已经关闭的测试容差与配置一致性票。本轮只读核对当前代码、正式票据和 PR，未重跑历史测试、未操作 CAN 或设备。
 
-- [准备 SocketCAN 传输与笔记本非运动诊断入口](https://github.com/Shiningliu1011/nineaxis_safecontrol/pull/43)仍为 OPEN / draft，分支 `codex/ticket13-socketcan-review`；协议修正、python-can 薄适配、doctor/probe 与相关验证属于该草稿，不能当作当前 main 已具备的功能。
-- 当前 main 的 `hardware_bridge` 明确拒绝 live；sim 不创建硬件 I/O，shadow 不收发 CAN。`SocketCANBus._create_backend` 在本工作树仍未实现，与草稿中的进展分开记录。
+- [准备 SocketCAN 传输与笔记本非运动诊断入口](https://github.com/Shiningliu1011/nineaxis_safecontrol/pull/43)仍为 OPEN / draft，分支 `codex/ticket13-socketcan-review`；协议修正、python-can 薄适配、doctor/probe 与本轮 freshness、响应隔离、运动许可修复属于该分支，尚未进入当前 main。
+- 当前 main 的 `hardware_bridge` 明确拒绝 live；sim 不创建硬件 I/O，shadow 不收发 CAN。PR 分支实现了 `SocketCANBus._create_backend` 与非运动诊断，但位置/使能/失能仍要求安全 owner 注入的 motion permit。
 - 已有架构方向继续沿用 python-can、既有编解码/总线边界及 CommandSafetyGate，不重新投票。可独立推进的工程缺口是完整执行会话：真实反馈身份与时间、命令产生时间和独立断流检查、全轴映射/标定拒绝门、发送失败锁存与人工恢复。
 - Linux vcan 通过证据、实际电机/适配器身份、J1 传动与全轴标定、设备独立看门狗及承重停车能力仍缺。协议读取成功和软件保持命令均不等于物理停止；这些事实不能由访谈投票代替实测。
 - [选定不可行/裕度/降级策略](18-infeasibility-margin-degradation.md)的失败锁存、人工恢复及低通预算决议作为后续接线输入；控制器到执行端的连接缺口见[命令链事实核验](../research/18-recovery-command-chain-20260912.md)。该连接未因单模块网关测试通过而完成。
 
 2026-09-12，用户已接受首版限定在经认证的任务关节范围内，覆盖过渡与停车所需范围，范围外拒绝运行；具体含义及待验证的确定方法见[几何票联合对齐](8-obb-environment-geometry.md#本轮已接受决策首版认证的有效范围)。执行端后续必须保留真实位置/速度与时间依据，使准入和停止范围检查能够成立；该范围尚未计算或获证，不意味着只检查位置上下限即可准入。本票不关闭、草稿未合入、live 限制未解除；实际反应与制动证据仍是明确缺口。
+
+## 2026-09-11 实施接续：笔记本连接准备
+
+用户目标：出差回去后，笔记本不需要大量调整即可连接控制机械臂电机。
+本轮已接续认领，基线 `73b99ef`，起始工作区 clean。目标笔记本暂按当前 Ubuntu 22.04；
+已询问适配器、电机型号/固件与节点/标定信息，本轮尚未收到补充，未假定设备已到货。
+
+### 已落地
+
+- 复用 python-can 4.6.1（LGPL-3.0-only）的 SocketCAN/virtual 与错误处理，增加同步薄适配；
+  禁止隐式环境配置覆盖，不管理网络，不自动使能/恢复。`setup.py[hardware]` 声明可选依赖。
+  当前用户环境已安装 python-can 4.6.1、wrapt 1.17.3（BSD），保留 PyYAML 5.4.1（MIT）。
+- 保留现有 codec / backend seam / SocketCANBus；修正属性类型码、requested_state=30003/u32、
+  mode0 绝对值截断和带宽边界；clear-error 发送失败不继续使能；释放旧连接并清空旧节点缓存。
+  离线/坏反馈返回 NaN 与无效时间，拒绝错节点/属性响应；轮询 latency 改为请求调用实耗时，
+  不再把两次轮询间隔称为延迟。旧串行 quick-state 层仍非经资格验证的 live loop。
+- 修复轮询路径丢弃底层接收时间的问题：反馈保留 python-can 的原始时间，并拒绝超时、未来、
+  轮询前及类型化属性响应帧；位置、使能、失能接口默认需要安全 owner 注入的 motion permit，
+  缺少许可时不发送。
+- 新增 `hardware_probe`：doctor 仅检查依赖、接口类型/UP/bitrate；probe 显式选节点，
+  只发类型化属性读。每个属性采用所有节点共享期限，检查响应节点/地址/类型/长度及原始时间，
+  保留实际 RX 时间与缺失项，不发布控制反馈。CAN 无事务 ID，不宣称设备采样年龄已知。
+- 新增 `scripts/hardware_check.sh`，复用 `config/drempower.yaml` 的 can/node_ids，
+  不依赖 ROS source 或重编译；安全/命令/轮询候选字段仍未接入 live。
+- 修正 vcan 脚本仓库根目录及假通过问题：仅在实际 UP 的 Linux vcan0 上运行双端测试，
+  缺依赖/接口 exit 2，绝不回退 Fake。无自动 sudo、无物理 CAN 测试。
+- [笔记本快速入口](../../../hardware_laptop_quickstart.md)集中依赖、现场配置和待确认事实；
+  修正标定表 J1 offset 的注释（仍为输出轴 deg，随后才转换成 m），标明旧 runbook 不适用于当前 live。
+
+### 协议独立证据
+
+除下方历史源码指纹外，新核验本地《DrEmpower电机CAN通讯协议说明 v2.0.pdf》印刷页 7–9：
+属性响应沿用请求 ID；布局为地址 u16、类型 u16、值；快速反馈 bit0=1；输出轴位置示例是度。
+PDF SHA256：`464e65de8a4c6fdd00d3609e5052782777170da5a382946a88b7f14562f7ab98`。
+独立 golden test 使用 PDF 例子：节点4 `0x9E / 7794000038f0b8c2` → 约 -92.47 度，
+以及厂家枚举推导的 `3375030008000000` 使能 payload。未把厂家库导入运行链。
+本地资料不能替代实际固件与已知角度回读。
+
+### 本轮验证
+
+证据目录 `output/ticket13-implementation/` 被 gitignore，仅本机可访问。
+
+- 原 PR focused：source ROS Humble/install 后，以 localhost/domain217 运行 codec、CAN、probe、
+  conversion、hardware bridge/contract/stack、launch structure：**140 passed / 1 skipped**，exit 0；
+  该历史结果未覆盖本轮修复。
+- 本轮修复定向测试：`drempower_can`、`socketcan_backend`、`python_can_backend`、`hardware_probe`
+  **70 passed / 1 skipped**，exit 0；新增覆盖真实时间戳、过期/属性混入拒绝及 motion permit 默认拒绝。
+- 另运行 hardware bridge、contract、launch structure、final launch runtime：**51 passed**，exit 0；
+  其中 final launch runtime 证明 live 仍在 Node 启动前拒绝。
+- `bash scripts/agent_check.sh`：exit 0，pure contracts **69 passed**。
+- Python virtual 双端：九节点逆序、错地址/节点、过期队列、缺帧、错误帧、发送失败、关闭与缺接口均有验证。
+- Linux vcan：**NOT RUN**，vcan0 不存在；模块文件存在，但 `sudo -n true` 提示需要密码；
+  未请求或使用密码、未改网络。脚本 exit 2 如实报告。
+- `bash scripts/hardware_check.sh`：exit 2，python-can 4.6.1 已就绪，can0 缺失，0发送/未开CAN；
+  该失败是当前设备环境事实，不是转为 shadow 的隐式成功。
+- `git diff --check` 通过。本轮未重复与驱动无关的完整 portable/JAX 回归。
+
+### 未完成与下一步
+
+本票不关闭，不向地图 Decisions so far 写入完成结论。
+`hardware_bridge` 与 final launch 的 sim/shadow/live containment 保持原有运行边界。
+**当前不能直接控制实机**；本轮没有引入 motion-ready 开关来绕过资格验证。
+
+1. Linux vcan 实收发待管理员创建虚拟接口后运行固定脚本。
+2. 设备型号/固件、适配器驱动、真实接口/bitrate、节点物理身份和全轴标定待现场事实。
+   无设备身份时无法可靠生成自动联网规则；不默认刷固件或把占位表当标定完成。
+3. 完整执行会话仍需实现/接线并验证：真实反馈 freshness、命令产生时间/断流定时器、
+   全轴映射与标定门、发送失败后的锁存和人工恢复；单纯诊断读取不能代替此链路。
+4. 独立硬件看门狗和承重/制动策略，以及受控低速运动准入，仍接续原有执行保护与实机验收票。
+   没有已验证的物理停止策略前，不将软件 estop/disable 视为受控制动。
+
+回退：移除本轮软件提交/变更即可恢复之前 containment；现场配置和设备未被修改。
+当前机器新增的 python-can/wrapt 是用户级可选依赖，可独立卸载；不修改系统 ROS 包。
 
 ## 起点（2026-09-09 历史记录）
 

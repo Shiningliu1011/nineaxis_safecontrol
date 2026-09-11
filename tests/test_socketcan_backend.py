@@ -259,3 +259,51 @@ def test_metrics_no_global_leak() -> None:
     m2 = CANBusMetrics()
     m1.record_send(True)
     assert m2.sent == 0  # 无状态泄漏
+
+
+def test_failed_clear_error_never_enables():
+    backend = FakeCANBackend(loss_rate=1.0)
+    bus = SocketCANBus(_config(), backend=backend)
+    assert not bus.send_enable(1)
+    assert backend.sent_count == 1
+    assert bus.metrics.lost == 1
+
+
+def test_enable_and_disable_independent_vendor_frames():
+    backend = FakeCANBackend()
+    bus = SocketCANBus(_config(), backend=backend)
+    assert bus.send_enable(1)
+    assert backend.sent_frames == [(0x28, bytes.fromhex("0400000000000000")),
+                                   (0x3F, bytes.fromhex("3375030008000000"))]
+    assert bus.send_disable(1)
+    assert backend.sent_frames[-1] == (0x3F, bytes.fromhex("3375030001000000"))
+
+
+def test_node_status_reads_current_state_and_error_values():
+    class Replies(FakeCANBackend):
+        def recv(self, node_id, timeout_s=.01):
+            fid, request = self.sent_frames[-1]
+            values = {bytes.fromhex("3275030000000000"): bytes.fromhex("3275030008000000"),
+                      bytes.fromhex("3175030000000000"): bytes.fromhex("3175030010000000")}
+            return fid, values[request]
+    assert check_node_status(1, Replies()) == CANNodeStatus(1, True, 8, 16)
+
+
+@pytest.mark.parametrize("frame_id", [0x5B, 0x3E])
+def test_wrong_node_or_property_is_not_quick_feedback(frame_id):
+    class Wrong(FakeCANBackend):
+        def recv(self, *args, **kwargs):
+            return frame_id, bytes.fromhex("3275030008000000")
+    state = poll_node_state(1, Wrong(), 100)
+    assert not state.online
+    assert np.isnan(state.pos_deg)
+    assert state.stamp_s == float("-inf")
+
+
+def test_disconnected_bus_rejects_poll_and_close_clears_cache():
+    bus = SocketCANBus(_config(), backend=FakeCANBackend())
+    bus.poll_all()
+    bus.close()
+    assert not bus.node_states
+    with pytest.raises(RuntimeError, match="disconnected"):
+        bus.poll_all()

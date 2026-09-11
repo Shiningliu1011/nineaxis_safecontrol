@@ -1,6 +1,7 @@
 """DrEmpower CAN 帧编解码器（纯函数，无 I/O / 无 ROS）。
 
-协议事实来源：参考项目对新协议的摘要审查（real_robot_hardware_source_review.md）：
+协议事实来源：本地厂家 CAN 通讯协议 v2.0（第7–9页）与
+linux-socketcan v1.0 的 interface_enums.py；设备固件兼容性仍待现场核验。
 
     CAN ID = (node_id << 5) | cmd_byte      # 11-bit standard frame
     node_id 1..63，0 = 广播
@@ -8,8 +9,8 @@
                   data[4:6] int16  速度/时间 (*100)
                   data[6:8] int16  滤波/加速度 (*100)
     系统命令 0x08: data[0:4] uint32 order_num
-    属性读 0x1E / 属性写 0x1F：地址 u16 + 类型化值（布局为本模块假定，见
-    ``encode_property_write`` docstring；待厂商库确认（P1）后锁定）
+    属性读 0x1E / 属性写 0x1F：地址 u16 + 类型码 u16 + 值/补零
+    本地厂家 linux-socketcan v1.0 profile；尚不证明设备固件兼容。
     反馈帧: data[0:4] float32 位置 (deg)
             data[4:6] int16  速度 (rpm * 0.01)
             data[6:8] int16  转矩 (Nm * 0.01)
@@ -51,10 +52,12 @@ PROP_AXIS_CURRENT_STATE = 30002
 PROP_AXIS_CONFIG_CAN_NODE_ID = 31001
 PROP_AXIS_ENCODER_POS = 35001
 
-# 使能/失能流程需要的属性地址：协议摘要只给了属性名
-# （axis.requested_state）未列地址。此常量是本模块对 30002 的沿用假定，
-# 待厂商库（P1）确认；不得作为已核实硬件参数执行。
-PROP_AXIS_REQUESTED_STATE = 30002
+# 厂家 interface_enums.py：current_state=30002，requested_state=30003。
+PROP_AXIS_REQUESTED_STATE = 30003
+PROP_AXIS_ERROR = 30001
+
+PROPERTY_TYPES = {"f32": (0, "f"), "u16": (1, "H"), "s16": (2, "h"),
+                  "u32": (3, "I"), "s32": (4, "i")}
 
 AXIS_STATE_IDLE = 1
 AXIS_STATE_CLOSED_LOOP = 8
@@ -95,10 +98,10 @@ def can_node_id(frame_id: int) -> tuple[int, int]:
 
 
 def _int16_scaled(value: float, name: str) -> int:
-    scaled = float(value) * 100.0
+    scaled = float(value) / 0.01
     if not math.isfinite(scaled):
         raise ValueError(f"{name} 必须是有限值，got {value}")
-    rounded = int(round(scaled))
+    rounded = int(scaled)
     if not -32768 <= rounded <= 32767:
         raise ValueError(f"{name}*100 超出 int16 范围: {rounded}")
     return rounded
@@ -109,16 +112,19 @@ def encode_position(
 ) -> bytes:
     """0x19 位置命令（轨迹跟踪模式）→ 8 字节数据。
 
-    ``speed``/``filter_accel`` 协议单位为 *100 编码。字段单位与取值范围
-    以厂商库（P1）为准，锁定后不许变动。
+    ``speed`` 为 rpm，历史参数名 ``filter_accel`` 在 mode0 表示输入滤波带宽。
+    按厂家源码取绝对值并截断；带宽超过300显式拒绝，避免厂家静默截断。
     """
     if not math.isfinite(target_deg):
         raise ValueError(f"target_deg 必须是有限值，got {target_deg}")
+    can_id(node_id, CMD_POSITION_ANGLE_MODE0)
+    if abs(filter_accel) > 300:
+        raise ValueError("mode0 input filter bandwidth must be <= 300")
     return struct.pack(
         "<fhh",
         float(target_deg),
-        _int16_scaled(speed, "speed"),
-        _int16_scaled(filter_accel, "filter_accel"),
+        _int16_scaled(abs(speed), "speed"),
+        _int16_scaled(abs(filter_accel), "filter_accel"),
     )
 
 
@@ -135,40 +141,54 @@ def _as_u16(value: int, name: str) -> int:
     return int(value)
 
 
-def encode_property_read(node_id: int, address: int) -> bytes:
-    """0x1E 属性读帧：地址 u16 写入 data[0:2]（布局假定，待厂商库确认）。"""
-    return struct.pack("<H", _as_u16(address, "address")) + b"\x00" * 6
+def _property_type(value_kind: str) -> tuple[int, str]:
+    try:
+        return PROPERTY_TYPES[value_kind]
+    except KeyError:
+        raise ValueError(f"unknown value_kind: {value_kind}") from None
+
+
+def encode_property_read(node_id: int, address: int, value_kind: str = "u32") -> bytes:
+    """Typed property read. Quick-state request is separately all-zero bytes."""
+    can_id(node_id, CMD_PROPERTY_READ)
+    code, _ = _property_type(value_kind)
+    return struct.pack("<HHI", _as_u16(address, "address"), code, 0)
 
 
 def encode_property_write(
     node_id: int, address: int, value: Value, value_kind: str
 ) -> bytes:
-    """0x1F 属性写帧：data[0:2]=u16 地址，随后是类型化值：
-    ``u16`` → data[2:4]；``u32`` → data[2:6]；``f32`` → data[2:6]。
+    """Vendor v1.0: address u16, type u16, value, zero padding to 8 bytes."""
+    can_id(node_id, CMD_PROPERTY_WRITE)
+    code, fmt = _property_type(value_kind)
+    if not math.isfinite(float(value)):
+        raise ValueError("property value must be finite")
+    if fmt != "f" and int(value) != value:
+        raise ValueError("integer property requires an integer value")
+    try:
+        body = struct.pack("<" + fmt, value if fmt == "f" else int(value))
+    except (struct.error, OverflowError) as exc:
+        raise ValueError("property value out of range") from exc
+    return (struct.pack("<HH", _as_u16(address, "address"), code) + body).ljust(8, b"\x00")
 
-    除地址外，值区布局为本模块假定（协议摘要未给出 0x1F 数据布局），
-    待厂商库（P1）确认后锁定。
-    """
-    address_value = _as_u16(address, "address")
-    if value_kind == "u16":
-        if not 0 <= int(value) <= 0xFFFF:
-            raise ValueError(f"u16 值越界: {value}")
-        body = struct.pack("<H", int(value)) + b"\x00" * 4
-    elif value_kind == "u32":
-        if not 0 <= int(value) <= 0xFFFFFFFF:
-            raise ValueError(f"u32 值越界: {value}")
-        body = struct.pack("<I", int(value)) + b"\x00" * 2
-    elif value_kind == "f32":
-        if not math.isfinite(float(value)):
-            raise ValueError(f"f32 值必须有限: {value}")
-        body = struct.pack("<f", float(value)) + b"\x00" * 2
-    else:
-        raise ValueError(f"未知 value_kind: {value_kind}")
-    return struct.pack("<H", address_value) + body
+
+def decode_property_reply(frame_id: int, data: bytes, *, node_id: int,
+                          address: int, value_kind: str = "u32") -> Value:
+    """Reject wrong node, command, address, type or frame length."""
+    code, fmt = _property_type(value_kind)
+    if (frame_id != can_id(node_id, CMD_PROPERTY_READ) or len(data) != 8
+            or data[:4] != struct.pack("<HH", address, code)):
+        raise ValueError("unexpected property response")
+    value = struct.unpack_from("<" + fmt, data, 4)[0]
+    if not math.isfinite(float(value)):
+        raise ValueError("nonfinite property response")
+    return value
 
 
 def decode_feedback(frame_id: int, data: bytes) -> MotorFeedback:
     """反馈帧解码：位置 (deg) / 速度 (rpm*0.01) / 转矩 (Nm*0.01) + 状态位。"""
+    if not 0 < frame_id <= 0x7FF or frame_id >> 5 == 0 or not frame_id & 1:
+        raise ValueError("feedback requires a nonbroadcast standard ID with bit0 set")
     if len(data) != _FRAME_LEN:
         raise ValueError(f"反馈帧长必须为 {_FRAME_LEN}，got {len(data)}")
     pos_deg, vel_code, torque_code = struct.unpack("<fhh", data)
@@ -192,7 +212,7 @@ def enable_sequence(node_id: int) -> list[tuple[int, bytes]]:
         (
             can_id(node_id, CMD_PROPERTY_WRITE),
             encode_property_write(
-                node_id, PROP_AXIS_REQUESTED_STATE, AXIS_STATE_CLOSED_LOOP, "u16"
+                node_id, PROP_AXIS_REQUESTED_STATE, AXIS_STATE_CLOSED_LOOP, "u32"
             ),
         ),
     ]
@@ -204,7 +224,7 @@ def disable_sequence(node_id: int) -> list[tuple[int, bytes]]:
         (
             can_id(node_id, CMD_PROPERTY_WRITE),
             encode_property_write(
-                node_id, PROP_AXIS_REQUESTED_STATE, AXIS_STATE_IDLE, "u16"
+                node_id, PROP_AXIS_REQUESTED_STATE, AXIS_STATE_IDLE, "u32"
             ),
         ),
     ]

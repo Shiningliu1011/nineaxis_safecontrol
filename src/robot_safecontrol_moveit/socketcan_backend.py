@@ -1,18 +1,14 @@
-"""CAN 总线后端（duck-type 抽象 + 轮询层）——无 ROS / 无 I/O。
+"""CAN management and legacy polling seam. Not a qualified live control loop.
 
-本模块不实现真实 SocketCAN（等 CANable 到货后接入），但定义了
-``CANBusBackend`` 抽象（send/recv/close），测试用 FakeCANBackend
-注入，生产用 SocketCANBackend（待实现）替换。
-
-职责：
-- 轮询 9 节点状态，超时检测，重连
-- 统计发送/丢失/延迟（CANBusMetrics）
-- send_position / send_enable / send_estop 高层接口
+Real transport uses the optional python-can adapter. No automatic enable or
+network configuration occurs; sim/shadow bridge never constructs this bus.
 """
 
 from __future__ import annotations
 
 import time
+import struct
+import math
 from dataclasses import dataclass, field
 from typing import Protocol, Sequence
 
@@ -20,6 +16,11 @@ import numpy as np
 
 from .drempower_can import (
     MAX_NODE_ID,
+    PROP_AXIS_REQUESTED_STATE,
+    PROP_AXIS_CURRENT_STATE,
+    PROP_AXIS_ERROR,
+    encode_property_read,
+    decode_property_reply,
     CMD_POSITION_ANGLE_MODE0,
     CMD_PROPERTY_WRITE,
     CMD_SYSTEM,
@@ -68,8 +69,13 @@ class CANBusConfig:
     poll_interval_s: float = 0.001
 
     def __post_init__(self) -> None:
-        if self.poll_interval_s <= 0.0:
+        if not math.isfinite(self.poll_interval_s) or self.poll_interval_s <= 0.0:
             raise ValueError("poll_interval_s 必须为正")
+        if not math.isfinite(self.feedback_timeout_s) or self.feedback_timeout_s <= 0:
+            raise ValueError("feedback timeout must be finite and positive")
+        if (not self.node_ids or len(set(self.node_ids)) != len(self.node_ids)
+                or any(type(n) is not int or not 1 <= n <= MAX_NODE_ID for n in self.node_ids)):
+            raise ValueError("unique non-broadcast node IDs required")
 
 
 @dataclass(frozen=True)
@@ -134,24 +140,26 @@ class CANBusMetrics:
 # --- 自由函数 ----------------------------------------------------------------
 
 def poll_node_state(
-    node_id: int, backend: CANBusBackend, now_s: float,
+    node_id: int, backend: CANBusBackend, now_s: float, *, timeout_s: float = 0.01,
 ) -> CANNodeState:
     """单节点轮询：发一帧读状态，离线返回 offline 状态。"""
     # 发一个无害的属性读帧（不改变电机状态）
-    backend.send(can_id(node_id, 0x1E), b"\x00" * 8)
-    result = backend.recv(node_id, timeout_s=0.01)
+    sent = backend.send(can_id(node_id, 0x1E), b"\x00" * 8)
+    result = backend.recv(node_id, timeout_s=timeout_s) if sent else None
     if result is None:
         return CANNodeState(
-            node_id=node_id, pos_deg=0.0, vel_rpm=0.0, torque_nm=0.0,
-            traj_done=False, axis_error=False, stamp_s=now_s, online=False,
+            node_id=node_id, pos_deg=math.nan, vel_rpm=math.nan, torque_nm=math.nan,
+            traj_done=False, axis_error=False, stamp_s=float("-inf"), online=False,
         )
     resp_id, data = result
     try:
+        if resp_id >> 5 != node_id or resp_id & 0x1F == 0x1E:
+            raise ValueError("wrong node or property reply in quick feedback")
         fb = decode_feedback(resp_id, data)
     except (ValueError, struct.error):
         return CANNodeState(
-            node_id=node_id, pos_deg=0.0, vel_rpm=0.0, torque_nm=0.0,
-            traj_done=False, axis_error=True, stamp_s=now_s, online=False,
+            node_id=node_id, pos_deg=math.nan, vel_rpm=math.nan, torque_nm=math.nan,
+            traj_done=False, axis_error=True, stamp_s=float("-inf"), online=False,
         )
     return CANNodeState(
         node_id=node_id,
@@ -165,9 +173,6 @@ def poll_node_state(
     )
 
 
-import struct  # noqa: E402  — 延迟导入避免循环（decode_feedback 用 struct）
-
-
 def discover_nodes(
     backend: CANBusBackend, *, timeout_s: float = 0.01,
     max_nodes: int = MAX_NODE_ID,
@@ -176,10 +181,14 @@ def discover_nodes(
     now = time.time()
     states = []
     for node_id in range(1, min(max_nodes, MAX_NODE_ID) + 1):
-        states.append(poll_node_state(node_id, backend, now))
+        states.append(poll_node_state(node_id, backend, now, timeout_s=timeout_s))
         if states[-1].online is False and node_id > 9:
             # 超出 9 关节后连续离线则提前终止（节省轮询时间）
-            offline_streak = sum(1 for s in reversed(states) if not s.online)
+            offline_streak = 0
+            for state in reversed(states):
+                if state.online:
+                    break
+                offline_streak += 1
             if offline_streak >= 5:
                 break
     return states
@@ -187,17 +196,18 @@ def discover_nodes(
 
 def check_node_status(node_id: int, backend: CANBusBackend) -> CANNodeStatus:
     """单节点诊断：使能状态 + 错误码。"""
-    # 读 requested_state（地址 30002）
-    backend.send(can_id(node_id, 0x1E), struct.pack("<H", 30002) + b"\x00" * 6)
-    result = backend.recv(node_id, timeout_s=0.01)
-    if result is None:
-        return CANNodeStatus(node_id=node_id, online=False, state=0, error_code=0)
-    _, data = result
-    if len(data) >= 4:
-        state = struct.unpack("<H", data[2:4])[0]
-    else:
-        state = 0
-    return CANNodeStatus(node_id=node_id, online=True, state=state, error_code=0)
+    values = []
+    for address in (PROP_AXIS_CURRENT_STATE, PROP_AXIS_ERROR):
+        if not backend.send(can_id(node_id, 0x1E), encode_property_read(node_id, address)):
+            return CANNodeStatus(node_id, False, 0, 0)
+        result = backend.recv(node_id, timeout_s=0.01)
+        if result is None:
+            return CANNodeStatus(node_id, False, 0, 0)
+        try:
+            values.append(decode_property_reply(*result, node_id=node_id, address=address))
+        except ValueError:
+            return CANNodeStatus(node_id, False, 0, 0)
+    return CANNodeStatus(node_id, True, *values)
 
 
 # --- 主类 --------------------------------------------------------------------
@@ -235,7 +245,9 @@ class SocketCANBus:
         return self._connected and self._backend is not None
 
     def reconnect(self, *, backend: CANBusBackend | None = None) -> None:
-        """重连（当前为 no-op，真实后端实现时替换）。"""
+        """Explicit transport replacement; never sends enable or motion."""
+        if self._backend is not None and self._backend is not backend:
+            self.close()
         if backend is not None:
             self._backend = backend
         elif self._backend is None:
@@ -245,15 +257,16 @@ class SocketCANBus:
         self.metrics.record_reconnect()
 
     def _create_backend(self) -> CANBusBackend:
-        """工厂方法：真实后端实现时替换（目前返回 None，调用方必须注入）。"""
-        raise NotImplementedError(
-            "真实 SocketCAN 后端未实现；请注入 backend 参数")
+        """Open the configured Linux interface without configuring it."""
+        from .python_can_backend import PythonCANBackend
+        return PythonCANBackend(self.config.interface)
 
     def close(self) -> None:
         if self._backend is not None:
             self._backend.close()
         self._backend = None
         self._connected = False
+        self._node_states.clear()
 
     def send_position(self, node_id: int, target_deg: float, *,
                       speed: float = 1.0, filter_accel: float = 1.0) -> bool:
@@ -272,10 +285,13 @@ class SocketCANBus:
             return False
         # clear_error
         data_clear = encode_system(node_id, SYSTEM_ORDER_CLEAR_ERROR)
-        self._backend.send(can_id(node_id, CMD_SYSTEM), data_clear)
+        cleared = self._backend.send(can_id(node_id, CMD_SYSTEM), data_clear)
+        self.metrics.record_send(cleared)
+        if not cleared:
+            return False
         # write requested_state = CLOSED_LOOP
         data_enable = encode_property_write(
-            node_id, 30002, AXIS_STATE_CLOSED_LOOP, "u16")
+            node_id, PROP_AXIS_REQUESTED_STATE, AXIS_STATE_CLOSED_LOOP, "u32")
         success = self._backend.send(
             can_id(node_id, CMD_PROPERTY_WRITE), data_enable)
         self.metrics.record_send(success)
@@ -286,7 +302,7 @@ class SocketCANBus:
         if not self.is_connected:
             return False
         data = encode_property_write(
-            node_id, 30002, AXIS_STATE_IDLE, "u16")
+            node_id, PROP_AXIS_REQUESTED_STATE, AXIS_STATE_IDLE, "u32")
         success = self._backend.send(
             can_id(node_id, CMD_PROPERTY_WRITE), data)
         self.metrics.record_send(success)
@@ -303,11 +319,16 @@ class SocketCANBus:
 
     def poll_all(self) -> list[CANNodeState]:
         """轮询所有配置节点并更新内部状态；返回状态列表。"""
+        if not self.is_connected:
+            raise RuntimeError("CAN bus disconnected")
         now = time.time()
         states = []
         for node_id in self.config.node_ids:
             prev = self._node_states.get(node_id)
+            requested_at = time.monotonic()
             state = poll_node_state(node_id, self._backend, now)
+            if state.online:
+                self.metrics.record_latency(time.monotonic() - requested_at)
             states.append(state)
             self._node_states[node_id] = state
             if state.axis_error:
@@ -315,10 +336,6 @@ class SocketCANBus:
             # 超时检测：之前在线、现在离线
             if prev is not None and prev.online and not state.online:
                 self.metrics.record_stale()
-            if state.online and prev is not None and prev.online:
-                dt = state.stamp_s - prev.stamp_s
-                if dt > 0:
-                    self.metrics.record_latency(dt)
         return states
 
     def get_node_state(self, node_id: int) -> CANNodeState | None:

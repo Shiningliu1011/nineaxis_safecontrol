@@ -52,6 +52,7 @@ setup(
         ),
     ],
     install_requires=["setuptools"],
+    extras_require={"hardware": ["python-can==4.6.1", "PyYAML>=5.4.1,<7"]},
     tests_require=["pytest"],
     zip_safe=True,
     maintainer="robot_safecontrol maintainers",

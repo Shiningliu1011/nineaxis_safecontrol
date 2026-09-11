@@ -1,11 +1,12 @@
 # DrEmpower 电机通信配置（真机）。
 # 来源：协议摘要（real_robot_hardware_source_review.md）+ 选型手册。
-# 前置 P1：厂商库到位后校验字段单位（0x19 速度字段单位）并锁定。
+# 本地厂家 v1.0 已核验字节布局，实际固件/单位回读仍待现场确认。
+# hardware_check 只消费 can/node_ids；其余候选参数未接入 live bridge。
 
 /**:
   ros__parameters:
     can:
-      interface: can0              # SocketCAN 接口名（CANable 到货后确认）
+      interface: can0              # SocketCAN 接口名（适配器驱动/接口名待确认）
       bitrate: 1000000             # 1 Mbps（厂商默认）
 
     node_ids:                      # 推荐分配，待前置 P5 实读确认
@@ -21,8 +22,8 @@
 
     # 命令参数（0x19 帧字段，待 P1 厂商库确认单位后锁定）
     command:
-      default_speed: 1.0           # 0x19 速度字段（单位待确认）
-      default_filter_accel: 1.0    # 0x19 滤波/加速度字段（单位待确认）
+      default_speed: 1.0           # mode0 最大速度 rpm（候选，非已验收）
+      default_filter_accel: 1.0    # mode0 输入滤波带宽（历史字段名，非加速度）
 
     # 安全网关参数（参考项目硬件合同，待实测调整）
     safety:
