@@ -224,6 +224,14 @@ def test_runtime_snapshot_matches_consumers_and_records_version_identity(
     assert snapshot["resources"]["trajectory_mat"]["resolved_path"] == str(
         REPO_ROOT / "data" / "nurbs" / "ik_input.mat"
     )
+    assert snapshot["topic_connections"]["joint_state_topic"] == {
+        "raw_value": "/mujoco_joint_states",
+        "resolved_topic": "/mujoco_joint_states",
+    }
+    assert snapshot["topic_connections"]["publish_joint_state_topic"] == {
+        "raw_value": "/oscbf_command",
+        "resolved_topic": "/oscbf_command",
+    }
     assert snapshot["production_config"]["sha256"]
     assert snapshot["software"]["source_sha256"]
     assert isinstance(snapshot["software"]["git_dirty"], bool)

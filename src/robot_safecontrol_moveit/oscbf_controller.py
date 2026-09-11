@@ -20,6 +20,7 @@ from ament_index_python.packages import (
     PackageNotFoundError,
     get_package_share_directory,
 )
+from rclpy.exceptions import InvalidTopicNameException
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 from rcl_interfaces.msg import SetParametersResult
@@ -89,6 +90,7 @@ class OscbfController(Node):
             share_dir=share_dir,
         )
         self._runtime_config = self._effective.values
+        self._topic_connections = self._resolve_topic_connections()
         self._declare_parameters(self._runtime_config)
         self.add_on_set_parameters_callback(
             self._reject_runtime_configuration_changes
@@ -127,8 +129,12 @@ class OscbfController(Node):
         # not exist unless the exact effective configuration can be persisted.
         self.runtime_snapshot_path = self._write_runtime_snapshot(portable_root)
 
-        joint_state_topic = str(self._runtime_config["joint_state_topic"])
-        publish_topic = str(self._runtime_config["publish_joint_state_topic"])
+        joint_state_topic = self._topic_connections["joint_state_topic"][
+            "resolved_topic"
+        ]
+        publish_topic = self._topic_connections["publish_joint_state_topic"][
+            "resolved_topic"
+        ]
         # Same QoS as the MuJoCo viewer, which owns the joint-state stream.
         self.create_subscription(
             JointState,
@@ -153,7 +159,9 @@ class OscbfController(Node):
         self._enable_obs = bool(
             self._runtime_config["enable_perception_obstacles"])
         if self._enable_obs:
-            tracks_topic = str(self._runtime_config["perception_tracks_topic"])
+            tracks_topic = self._topic_connections["perception_tracks_topic"][
+                "resolved_topic"
+            ]
             self.create_subscription(
                 Float32MultiArray, tracks_topic,
                 self._tracks_callback, qos_profile_sensor_data)
@@ -186,7 +194,47 @@ class OscbfController(Node):
         """Return the fixed startup values and provenance for diagnostics."""
         diagnostics = self._effective.diagnostics()
         diagnostics["production_config_path"] = str(self._production_profile.path)
+        diagnostics["topic_connections"] = {
+            name: dict(connection)
+            for name, connection in self._topic_connections.items()
+        }
         return diagnostics
+
+    def _resolve_topic_connections(self) -> dict[str, dict[str, str]]:
+        """Validate and record the final ROS topic names after remapping."""
+        connections: dict[str, dict[str, str]] = {}
+        for name in (
+            "joint_state_topic",
+            "publish_joint_state_topic",
+            "perception_tracks_topic",
+        ):
+            raw = str(self._runtime_config[name])
+            try:
+                resolved = self.resolve_topic_name(raw)
+            except InvalidTopicNameException as exc:
+                raise ValueError(
+                    f"{name} must be a valid ROS topic: {raw!r}: {exc}"
+                ) from exc
+            connections[name] = {
+                "raw_value": raw,
+                "resolved_topic": resolved,
+            }
+
+        state = connections["joint_state_topic"]["resolved_topic"]
+        command = connections["publish_joint_state_topic"]["resolved_topic"]
+        if state == command:
+            raise ValueError(
+                "final state and command topics must differ: " + state
+            )
+        perception = connections["perception_tracks_topic"]["resolved_topic"]
+        if bool(self._runtime_config["enable_perception_obstacles"]) and (
+            perception == state or perception == command
+        ):
+            raise ValueError(
+                "enabled perception topic must differ from state and command topics: "
+                + perception
+            )
+        return connections
 
     def _reject_runtime_configuration_changes(self, parameters) -> SetParametersResult:
         managed = sorted(
@@ -276,6 +324,10 @@ class OscbfController(Node):
             "parameter_sources": effective["sources"],
             "override_chains": effective["override_chains"],
             "resources": effective["resources"],
+            "topic_connections": {
+                name: dict(connection)
+                for name, connection in self._topic_connections.items()
+            },
             "production_config": {
                 "path": str(self._production_profile.path),
                 "sha256": sha256_bytes(self._production_profile.content),

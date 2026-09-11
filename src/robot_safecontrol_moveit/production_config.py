@@ -15,6 +15,8 @@ from types import MappingProxyType
 from typing import Any, Mapping
 
 import yaml
+from rclpy.exceptions import InvalidTopicNameException
+from rclpy.validate_topic_name import validate_topic_name
 
 from .robot_spec import DEFAULT_JOINT_NAMES
 
@@ -299,6 +301,32 @@ def validate_parameter_values(values: Mapping[str, Any], *, source: str) -> None
     ):
         if not values[name].strip():
             raise ValueError(f"{source}: {name} must not be empty")
+
+    topic_names = (
+        "joint_state_topic",
+        "publish_joint_state_topic",
+        "perception_tracks_topic",
+    )
+    for name in topic_names:
+        try:
+            validate_topic_name(values[name])
+        except InvalidTopicNameException as exc:
+            raise ValueError(
+                f"{source}: {name} must be a valid ROS topic: "
+                f"{values[name]!r}: {exc}"
+            ) from exc
+    if values["joint_state_topic"] == values["publish_joint_state_topic"]:
+        raise ValueError(
+            f"{source}: state and command topics must differ: "
+            f"{values['joint_state_topic']}"
+        )
+    if bool(values["enable_perception_obstacles"]) and values[
+        "perception_tracks_topic"
+    ] in (values["joint_state_topic"], values["publish_joint_state_topic"]):
+        raise ValueError(
+            f"{source}: enabled perception topic must differ from state and "
+            f"command topics: {values['perception_tracks_topic']}"
+        )
 
     joint_names = values["joint_names"]
     if (

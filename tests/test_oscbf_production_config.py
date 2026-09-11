@@ -172,6 +172,55 @@ def test_joint_names_must_match_the_canonical_kernel_order(tmp_path):
         _construct_with_config(config)
 
 
+def test_invalid_ros_topic_is_rejected_before_resource_construction(tmp_path):
+    config = _write_profile(tmp_path, joint_state_topic="bad topic")
+
+    with pytest.raises(ValueError, match=r"joint_state_topic.*valid ROS topic"):
+        _construct_with_config(config)
+
+
+def test_state_and_command_topics_must_resolve_to_distinct_names(tmp_path):
+    config = _write_profile(
+        tmp_path,
+        joint_state_topic="/same_stream",
+        publish_joint_state_topic="/same_stream",
+    )
+
+    with pytest.raises(ValueError, match=r"state and command topics must differ"):
+        _construct_with_config(config)
+
+
+def test_ros_remapping_cannot_collapse_final_state_and_command_topics():
+    from robot_safecontrol_moveit.oscbf_controller import OscbfController
+
+    context = Context()
+    rclpy.init(
+        args=[
+            "--ros-args",
+            "-r",
+            "/mujoco_joint_states:=/oscbf_command",
+        ],
+        context=context,
+    )
+    parameters = [
+        _parameter(
+            "production_config_yaml",
+            str(REPO_ROOT / "config" / "oscbf_controller.yaml"),
+        ),
+        _parameter("portable_oscbf_root", str(REPO_ROOT / "portable_oscbf")),
+        _parameter("trajectory_mat", str(REPO_ROOT / "data" / "nurbs" / "ik_input.mat")),
+        _parameter(
+            "portable_config_yaml",
+            str(REPO_ROOT / "portable_oscbf" / "config" / "nineaxis.yaml"),
+        ),
+    ]
+    try:
+        with pytest.raises(ValueError, match="final state and command topics must differ"):
+            OscbfController(context=context, parameter_overrides=parameters)
+    finally:
+        rclpy.shutdown(context=context)
+
+
 def _fake_share(tmp_path: Path) -> Path:
     share = tmp_path / "share"
     (share / "data" / "nurbs").mkdir(parents=True)
