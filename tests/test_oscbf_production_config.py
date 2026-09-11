@@ -221,6 +221,59 @@ def test_ros_remapping_cannot_collapse_final_state_and_command_topics():
         rclpy.shutdown(context=context)
 
 
+def test_chain_remap_is_applied_once_and_snapshot_matches_entities(
+    tmp_path, monkeypatch
+):
+    from types import SimpleNamespace
+
+    from robot_safecontrol_moveit.oscbf_controller import OscbfController
+
+    config = _write_profile(
+        tmp_path,
+        joint_state_topic="/a",
+        publish_joint_state_topic="/c",
+    )
+
+    def _fake_build_controller(node, portable_root):
+        del portable_root
+        node._loop = SimpleNamespace(obstacle_h_baseline_alpha=10.0)
+        node._surface_axis = None
+        node._surface_centre = None
+        node._surface_radius = None
+
+    monkeypatch.setattr(OscbfController, "_build_controller", _fake_build_controller)
+    context = Context()
+    rclpy.init(
+        args=["--ros-args", "-r", "/a:=/b", "-r", "/b:=/c"],
+        context=context,
+    )
+    parameters = [
+        _parameter("production_config_yaml", str(config)),
+        _parameter("portable_oscbf_root", str(REPO_ROOT / "portable_oscbf")),
+        _parameter("trajectory_mat", str(REPO_ROOT / "data" / "nurbs" / "ik_input.mat")),
+        _parameter(
+            "portable_config_yaml",
+            str(REPO_ROOT / "portable_oscbf" / "config" / "nineaxis.yaml"),
+        ),
+        _parameter("perf_report_path", str(tmp_path / "perf.md")),
+    ]
+    node = OscbfController(context=context, parameter_overrides=parameters)
+    try:
+        assert node.count_subscribers("/b") == 1
+        assert node.count_subscribers("/c") == 0
+        assert node.count_publishers("/c") == 1
+        snapshot = json.loads(
+            node.runtime_snapshot_path.read_text(encoding="utf-8")
+        )
+        assert snapshot["topic_connections"]["joint_state_topic"] == {
+            "raw_value": "/a",
+            "resolved_topic": "/b",
+        }
+    finally:
+        node.destroy_node()
+        rclpy.shutdown(context=context)
+
+
 def _fake_share(tmp_path: Path) -> Path:
     share = tmp_path / "share"
     (share / "data" / "nurbs").mkdir(parents=True)

@@ -129,12 +129,8 @@ class OscbfController(Node):
         # not exist unless the exact effective configuration can be persisted.
         self.runtime_snapshot_path = self._write_runtime_snapshot(portable_root)
 
-        joint_state_topic = self._topic_connections["joint_state_topic"][
-            "resolved_topic"
-        ]
-        publish_topic = self._topic_connections["publish_joint_state_topic"][
-            "resolved_topic"
-        ]
+        joint_state_topic = str(self._runtime_config["joint_state_topic"])
+        publish_topic = str(self._runtime_config["publish_joint_state_topic"])
         # Same QoS as the MuJoCo viewer, which owns the joint-state stream.
         self.create_subscription(
             JointState,
@@ -159,9 +155,7 @@ class OscbfController(Node):
         self._enable_obs = bool(
             self._runtime_config["enable_perception_obstacles"])
         if self._enable_obs:
-            tracks_topic = self._topic_connections["perception_tracks_topic"][
-                "resolved_topic"
-            ]
+            tracks_topic = str(self._runtime_config["perception_tracks_topic"])
             self.create_subscription(
                 Float32MultiArray, tracks_topic,
                 self._tracks_callback, qos_profile_sensor_data)
@@ -177,7 +171,10 @@ class OscbfController(Node):
         self.get_logger().info(
             "oscbf_controller ready: trajectory="
             f"{self._runtime_config['trajectory_mat']}, "
-            f"subscribe={joint_state_topic}, publish={publish_topic} @ "
+            "subscribe="
+            f"{self._topic_connections['joint_state_topic']['resolved_topic']}, "
+            "publish="
+            f"{self._topic_connections['publish_joint_state_topic']['resolved_topic']} @ "
             f"{float(self._runtime_config['publish_frequency_hz']):.1f} Hz, "
             f"tracking={'auto-start' if self._tracking_started else 'waiting for /oscbf_controller/start_tracking'}"
         )
