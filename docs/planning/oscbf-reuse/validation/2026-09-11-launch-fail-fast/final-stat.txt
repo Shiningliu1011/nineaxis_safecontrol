@@ -1,0 +1,8 @@
+ CLAUDE.md                                        |  2 +-
+ CONTEXT.md                                       |  4 ++--
+ README.md                                        |  8 ++++----
+ docs/ONBOARDING.md                               |  2 +-
+ launch/mujoco_transition_final.launch.py         | 10 +++++++++-
+ src/robot_safecontrol_moveit/oscbf_controller.py |  3 ++-
+ tests/test_launch_structure.py                   | 23 +++++++++++++++++++++--
+ 7 files changed, 40 insertions(+), 12 deletions(-)

@@ -1,0 +1,127 @@
+diff --git a/CONTEXT.md b/CONTEXT.md
+index 2222cd2..6a38cc2 100755
+--- a/CONTEXT.md
++++ b/CONTEXT.md
+@@ -17,7 +17,7 @@ _Avoid_: 过渡状态机、pipeline orchestrator
+ _Avoid_: handoff moment、接管点
+
+ **状态流**:
+-被控对象与查看器发布、控制器订阅的关节状态话题流（BEST_EFFORT、深度 20），约定统一在共享模块中。
++控制器及显示/评估消费者读取的关节状态话题流。`run_demo` 仿真闭环中由被控对象持续发布；默认最终 launch 未启用被控对象时，过渡回放可向该状态话题发布。viewer 只订阅状态，不拥有状态 publisher。具体实体和 QoS 见 [ONBOARDING](docs/ONBOARDING.md)，共享约定见 `ros_conventions.py`。
+ _Avoid_: joint-state topic、传感器流
+
+ **命令流**:
+@@ -91,7 +91,7 @@ _Avoid_: cylinder fitting、轴线拟合
+ ## 真机部署
+
+ **真机执行端**:
+-订阅命令流（/oscbf_command）、经安全网关校验后换算为 DrEmpower CAN 帧发送给电机，并把反馈帧解码换算后发布状态流（/mujoco_joint_states）的 ROS 2 节点。
++目标职责是订阅命令流，经安全网关和硬件传输发送真实执行命令，并将真实反馈转换成状态流。当前 `hardware_bridge` 仅提供 fail-closed containment：sim 不创建硬件控制 I/O；shadow 只记录请求/拒绝，不收发 CAN、不发布真实硬件状态；live 禁用。真实 SocketCAN、反馈 freshness/watchdog 和真机准入见 [GitHub #13](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/13)。
+ _Avoid_: hardware bridge、CAN bridge
+
+ **安全网关**:
+diff --git a/README.md b/README.md
+index a6d1caf..f305dc1 100755
+--- a/README.md
++++ b/README.md
+@@ -106,7 +106,7 @@ bash run_all_tests.sh
+ | [测试入口退出](docs/planning/oscbf-reuse/handoffs/10-test-entrypoint.md) | 已实施局部关闭 nounset 与双套件退出码汇总；验收记录见链接。 |
+ | [roll-only 路径起点测试](docs/planning/oscbf-reuse/handoffs/11-roll-only-tolerance.md) | 已修订精度、纯 roll / 倾斜对照与执行后报告断言；修订已归档，历史验收环境见链接。 |
+
+-当前测试真值请运行 `bash scripts/agent_check.sh`（快速反馈）与 `bash run_all_tests.sh`（完整回归）。当前 HEAD 的验收进展见 [#13 最新评论](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/13)；记录应注明 commit、日期、环境和退出码。[可复现基线](docs/planning/oscbf-reuse/handoffs/30-baseline.md)仅保留历史结果，不表示当前仍有同样失败。
++最近一次 containment 产品代码完整验收基于 `e4d9a268`，对应证据见[验证归档](docs/planning/oscbf-reuse/validation/2026-09-11-containment/REPORT.md)。当前 checkout 的测试真值仍以实际运行 `bash scripts/agent_check.sh`（快速反馈）与 `bash run_all_tests.sh`（完整回归）为准；验证记录应注明 commit、日期、环境和退出码。[可复现基线](docs/planning/oscbf-reuse/handoffs/30-baseline.md)仅保留历史结果，不表示当前仍有同样失败。
+
+ ## 硬件模式（当前 containment）
+
+diff --git a/launch/mujoco_transition_final.launch.py b/launch/mujoco_transition_final.launch.py
+index ba16abb..ed32d1a 100755
+--- a/launch/mujoco_transition_final.launch.py
++++ b/launch/mujoco_transition_final.launch.py
+@@ -11,7 +11,7 @@ from pathlib import Path
+
+ from ament_index_python.packages import get_package_share_directory
+ from launch import LaunchDescription
+-from launch.actions import DeclareLaunchArgument, LogInfo, TimerAction
++from launch.actions import DeclareLaunchArgument, LogInfo, OpaqueFunction, TimerAction
+ from launch.conditions import IfCondition
+ from launch.substitutions import LaunchConfiguration
+ from launch_ros.actions import Node
+@@ -19,6 +19,12 @@ from launch_ros.actions import Node
+ from robot_safecontrol_moveit.moveit_runtime_config import build_moveit_params
+
+
++def _reject_contained_live(context):
++    if LaunchConfiguration("hardware_mode").perform(context) == "live":
++        raise RuntimeError("live disabled by containment; refusing entire launch")
++    return []
++
++
+ def generate_launch_description() -> LaunchDescription:
+     share_dir = Path(get_package_share_directory("robot_safecontrol_moveit"))
+
+@@ -81,6 +87,8 @@ def generate_launch_description() -> LaunchDescription:
+             DeclareLaunchArgument("auto_plan_once", default_value="true"),
+             # Show OBB collision envelopes in the MuJoCo viewer.
+             DeclareLaunchArgument("show_obb", default_value="false"),
++            # Refuse before any Node or TimerAction can start a process.
++            OpaqueFunction(function=_reject_contained_live),
+             # Log startup info.
+             LogInfo(
+                 msg=f"Starting unified MoveIt transition demo. "
+diff --git a/src/robot_safecontrol_moveit/oscbf_controller.py b/src/robot_safecontrol_moveit/oscbf_controller.py
+index b363dbf..9f69db7 100755
+--- a/src/robot_safecontrol_moveit/oscbf_controller.py
++++ b/src/robot_safecontrol_moveit/oscbf_controller.py
+@@ -131,7 +131,8 @@ class OscbfController(Node):
+
+         joint_state_topic = str(self._runtime_config["joint_state_topic"])
+         publish_topic = str(self._runtime_config["publish_joint_state_topic"])
+-        # Same QoS as the MuJoCo viewer, which owns the joint-state stream.
++        # Subscribe to the configured joint-state stream using the canonical
++        # state-stream QoS.
+         self.create_subscription(
+             JointState,
+             joint_state_topic,
+diff --git a/tests/test_launch_structure.py b/tests/test_launch_structure.py
+index c36df69..4303fd7 100755
+--- a/tests/test_launch_structure.py
++++ b/tests/test_launch_structure.py
+@@ -7,10 +7,11 @@ import sys
+ import tempfile
+ import unittest
+ from pathlib import Path
++from unittest.mock import patch
+
+ import yaml
+-from launch import LaunchContext
+-from launch.actions import TimerAction
++from launch import LaunchContext, LaunchDescription, LaunchService
++from launch.actions import SetLaunchConfiguration, TimerAction
+ from launch_ros.actions import Node
+
+
+@@ -105,6 +106,24 @@ class TestFinalLaunchDescription(unittest.TestCase):
+         }
+         return module.generate_launch_description()
+
++    def test_contained_live_fails_before_any_process_starts(self) -> None:
++        for mode in (None, "sim", "shadow", "live"):
++            with self.subTest(mode=mode):
++                actions = [SetLaunchConfiguration("start_viewer", "false")]
++                if mode is not None:
++                    actions.append(SetLaunchConfiguration("hardware_mode", mode))
++                actions.append(self._description())
++                service = LaunchService()
++                service.include_launch_description(LaunchDescription(actions))
++                # Never start ROS processes or hardware, including on regression.
++                with patch.object(Node, "execute", return_value=[]) as start:
++                    result = service.run()
++                self.assertEqual(result, 1 if mode == "live" else 0)
++                if mode == "live":
++                    start.assert_not_called()
++                else:
++                    self.assertGreater(start.call_count, 0)
++
+     def test_final_launch_creates_the_expected_node_topology(self) -> None:
+         description = self._description()
+         nodes = _all_nodes(description.entities)

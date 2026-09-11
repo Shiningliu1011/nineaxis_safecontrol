@@ -1,0 +1,8 @@
+Phase 4, 2026-09-11, HEAD f16cc35c43f4c3472adaf43b875d64d723460a3e + Phase 1 diff
+Normal request A: isolated host injection trace unavailable; not observed.
+Explicit $retro B: isolated host injection trace unavailable; not observed.
+Repo path read explicitly for this user-requested review: /home/lsn/robot/robot_safecontrol/.agents/skills/retro/SKILL.md
+Metadata: disable-model-invocation=true; agents/openai.yaml policy.allow_implicit_invocation=false. Metadata is not behavioral acceptance.
+Available task tools provide task creation/messages but no skill-injection trace for an isolated A/B test. No new task, global installation, metadata change, or skills/list substitute used.
+runtime behavior acceptance not observable in this environment
+Phase 9 will execute the explicitly requested skill instructions report-only in this task; this is not proof of native $retro dispatch.
