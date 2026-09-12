@@ -1,0 +1,2405 @@
+{
+  "joint_limits": {
+    "lower": [
+      0.0,
+      -1.5708,
+      -1.5708,
+      -1.5708,
+      -3.1416,
+      -1.48353,
+      -1.48353,
+      -1.48353,
+      -1.48353
+    ],
+    "upper": [
+      0.585,
+      1.5708,
+      1.5708,
+      1.5708,
+      3.1416,
+      1.48353,
+      1.48353,
+      1.48353,
+      1.48353
+    ]
+  },
+  "declared_pairs": [
+    [
+      "base_link",
+      "Link4"
+    ],
+    [
+      "base_link",
+      "Link5"
+    ],
+    [
+      "base_link",
+      "Link7"
+    ],
+    [
+      "base_link",
+      "Link8"
+    ],
+    [
+      "base_link",
+      "Link9"
+    ],
+    [
+      "Link1",
+      "Link5"
+    ],
+    [
+      "Link1",
+      "Link7"
+    ],
+    [
+      "Link1",
+      "Link8"
+    ],
+    [
+      "Link1",
+      "Link9"
+    ],
+    [
+      "Link2",
+      "Link7"
+    ],
+    [
+      "Link2",
+      "Link8"
+    ],
+    [
+      "Link2",
+      "Link9"
+    ],
+    [
+      "Link3",
+      "Link8"
+    ],
+    [
+      "Link3",
+      "Link9"
+    ]
+  ],
+  "omitted_nonadjacent_pairs": [
+    [
+      "base_link",
+      "Link2"
+    ],
+    [
+      "base_link",
+      "Link3"
+    ],
+    [
+      "base_link",
+      "Link6"
+    ],
+    [
+      "Link1",
+      "Link3"
+    ],
+    [
+      "Link1",
+      "Link4"
+    ],
+    [
+      "Link1",
+      "Link6"
+    ],
+    [
+      "Link2",
+      "Link4"
+    ],
+    [
+      "Link2",
+      "Link5"
+    ],
+    [
+      "Link2",
+      "Link6"
+    ],
+    [
+      "Link3",
+      "Link5"
+    ],
+    [
+      "Link3",
+      "Link6"
+    ],
+    [
+      "Link3",
+      "Link7"
+    ],
+    [
+      "Link4",
+      "Link6"
+    ],
+    [
+      "Link4",
+      "Link7"
+    ],
+    [
+      "Link4",
+      "Link8"
+    ],
+    [
+      "Link4",
+      "Link9"
+    ],
+    [
+      "Link5",
+      "Link7"
+    ],
+    [
+      "Link5",
+      "Link8"
+    ],
+    [
+      "Link5",
+      "Link9"
+    ],
+    [
+      "Link6",
+      "Link8"
+    ],
+    [
+      "Link6",
+      "Link9"
+    ],
+    [
+      "Link7",
+      "Link9"
+    ]
+  ],
+  "sat_per_pair": [
+    {
+      "pair": [
+        "base_link",
+        "Link2"
+      ],
+      "declared": false,
+      "sat_collision_configs": 0,
+      "sat_collision_rate": 0.0,
+      "max_sat_penetration_m": 0.0,
+      "min_sat_lower_bound_over_separated_m": 0.19299902563273963,
+      "sat_lower_bound_p05_m": 0.19299902563290455
+    },
+    {
+      "pair": [
+        "base_link",
+        "Link3"
+      ],
+      "declared": false,
+      "sat_collision_configs": 0,
+      "sat_collision_rate": 0.0,
+      "max_sat_penetration_m": 0.0,
+      "min_sat_lower_bound_over_separated_m": 0.19299902563252475,
+      "sat_lower_bound_p05_m": 0.19299902563418422
+    },
+    {
+      "pair": [
+        "base_link",
+        "Link4"
+      ],
+      "declared": true,
+      "sat_collision_configs": 0,
+      "sat_collision_rate": 0.0,
+      "max_sat_penetration_m": 0.0,
+      "min_sat_lower_bound_over_separated_m": 0.19299902562888824,
+      "sat_lower_bound_p05_m": 0.19299902563710633
+    },
+    {
+      "pair": [
+        "base_link",
+        "Link5"
+      ],
+      "declared": true,
+      "sat_collision_configs": 0,
+      "sat_collision_rate": 0.0,
+      "max_sat_penetration_m": 0.0,
+      "min_sat_lower_bound_over_separated_m": 0.1947558939784866,
+      "sat_lower_bound_p05_m": 0.19787850792537046
+    },
+    {
+      "pair": [
+        "base_link",
+        "Link6"
+      ],
+      "declared": false,
+      "sat_collision_configs": 0,
+      "sat_collision_rate": 0.0,
+      "max_sat_penetration_m": 0.0,
+      "min_sat_lower_bound_over_separated_m": 0.08272018971313227,
+      "sat_lower_bound_p05_m": 0.21345259143620215
+    },
+    {
+      "pair": [
+        "base_link",
+        "Link7"
+      ],
+      "declared": true,
+      "sat_collision_configs": 0,
+      "sat_collision_rate": 0.0,
+      "max_sat_penetration_m": 0.0,
+      "min_sat_lower_bound_over_separated_m": 0.005545031467556305,
+      "sat_lower_bound_p05_m": 0.23126587772976015
+    },
+    {
+      "pair": [
+        "base_link",
+        "Link8"
+      ],
+      "declared": true,
+      "sat_collision_configs": 3,
+      "sat_collision_rate": 0.000999666777740753,
+      "max_sat_penetration_m": 0.04338434681733072,
+      "min_sat_lower_bound_over_separated_m": 0.003755453415836163,
+      "sat_lower_bound_p05_m": 0.24889393905734367
+    },
+    {
+      "pair": [
+        "base_link",
+        "Link9"
+      ],
+      "declared": true,
+      "sat_collision_configs": 8,
+      "sat_collision_rate": 0.0026657780739753416,
+      "max_sat_penetration_m": 0.10446549730314354,
+      "min_sat_lower_bound_over_separated_m": 0.005478752585132335,
+      "sat_lower_bound_p05_m": 0.2597850001092113
+    },
+    {
+      "pair": [
+        "Link1",
+        "Link3"
+      ],
+      "declared": false,
+      "sat_collision_configs": 0,
+      "sat_collision_rate": 0.0,
+      "max_sat_penetration_m": 0.0,
+      "min_sat_lower_bound_over_separated_m": 0.02700757314518823,
+      "sat_lower_bound_p05_m": 0.038172131246724
+    },
+    {
+      "pair": [
+        "Link1",
+        "Link4"
+      ],
+      "declared": false,
+      "sat_collision_configs": 0,
+      "sat_collision_rate": 0.0,
+      "max_sat_penetration_m": 0.0,
+      "min_sat_lower_bound_over_separated_m": 0.007489592574570825,
+      "sat_lower_bound_p05_m": 0.1582740742737841
+    },
+    {
+      "pair": [
+        "Link1",
+        "Link5"
+      ],
+      "declared": true,
+      "sat_collision_configs": 2,
+      "sat_collision_rate": 0.0006664445184938354,
+      "max_sat_penetration_m": 0.03340661298592948,
+      "min_sat_lower_bound_over_separated_m": 0.0016351564833546883,
+      "sat_lower_bound_p05_m": 0.17815698456142853
+    },
+    {
+      "pair": [
+        "Link1",
+        "Link6"
+      ],
+      "declared": false,
+      "sat_collision_configs": 2,
+      "sat_collision_rate": 0.0006664445184938354,
+      "max_sat_penetration_m": 0.03390471506957701,
+      "min_sat_lower_bound_over_separated_m": 0.012084875827687247,
+      "sat_lower_bound_p05_m": 0.21645464085407917
+    },
+    {
+      "pair": [
+        "Link1",
+        "Link7"
+      ],
+      "declared": true,
+      "sat_collision_configs": 1,
+      "sat_collision_rate": 0.0003332222592469177,
+      "max_sat_penetration_m": 0.03821449955478076,
+      "min_sat_lower_bound_over_separated_m": 0.016550803126535174,
+      "sat_lower_bound_p05_m": 0.2554261060197154
+    },
+    {
+      "pair": [
+        "Link1",
+        "Link8"
+      ],
+      "declared": true,
+      "sat_collision_configs": 3,
+      "sat_collision_rate": 0.000999666777740753,
+      "max_sat_penetration_m": 0.04042977476938131,
+      "min_sat_lower_bound_over_separated_m": 0.004987519268113305,
+      "sat_lower_bound_p05_m": 0.2790561100998723
+    },
+    {
+      "pair": [
+        "Link1",
+        "Link9"
+      ],
+      "declared": true,
+      "sat_collision_configs": 7,
+      "sat_collision_rate": 0.0023325558147284237,
+      "max_sat_penetration_m": 0.052358195045146494,
+      "min_sat_lower_bound_over_separated_m": 0.0011347978923106072,
+      "sat_lower_bound_p05_m": 0.29072032027599204
+    },
+    {
+      "pair": [
+        "Link2",
+        "Link4"
+      ],
+      "declared": false,
+      "sat_collision_configs": 0,
+      "sat_collision_rate": 0.0,
+      "max_sat_penetration_m": 0.0,
+      "min_sat_lower_bound_over_separated_m": 0.0648098550403423,
+      "sat_lower_bound_p05_m": 0.08142841713902976
+    },
+    {
+      "pair": [
+        "Link2",
+        "Link5"
+      ],
+      "declared": false,
+      "sat_collision_configs": 0,
+      "sat_collision_rate": 0.0,
+      "max_sat_penetration_m": 0.0,
+      "min_sat_lower_bound_over_separated_m": 0.09508394473268869,
+      "sat_lower_bound_p05_m": 0.11663631869963603
+    },
+    {
+      "pair": [
+        "Link2",
+        "Link6"
+      ],
+      "declared": false,
+      "sat_collision_configs": 0,
+      "sat_collision_rate": 0.0,
+      "max_sat_penetration_m": 0.0,
+      "min_sat_lower_bound_over_separated_m": 0.1112997250805493,
+      "sat_lower_bound_p05_m": 0.2654604094414586
+    },
+    {
+      "pair": [
+        "Link2",
+        "Link7"
+      ],
+      "declared": true,
+      "sat_collision_configs": 0,
+      "sat_collision_rate": 0.0,
+      "max_sat_penetration_m": 0.0,
+      "min_sat_lower_bound_over_separated_m": 0.10734336198343605,
+      "sat_lower_bound_p05_m": 0.3155664733956401
+    },
+    {
+      "pair": [
+        "Link2",
+        "Link8"
+      ],
+      "declared": true,
+      "sat_collision_configs": 0,
+      "sat_collision_rate": 0.0,
+      "max_sat_penetration_m": 0.0,
+      "min_sat_lower_bound_over_separated_m": 0.042487757724092495,
+      "sat_lower_bound_p05_m": 0.3240470950581502
+    },
+    {
+      "pair": [
+        "Link2",
+        "Link9"
+      ],
+      "declared": true,
+      "sat_collision_configs": 0,
+      "sat_collision_rate": 0.0,
+      "max_sat_penetration_m": 0.0,
+      "min_sat_lower_bound_over_separated_m": 0.007644595682940236,
+      "sat_lower_bound_p05_m": 0.3236707152474977
+    },
+    {
+      "pair": [
+        "Link3",
+        "Link5"
+      ],
+      "declared": false,
+      "sat_collision_configs": 1680,
+      "sat_collision_rate": 0.5598133955348217,
+      "max_sat_penetration_m": 0.0088527550416177,
+      "min_sat_lower_bound_over_separated_m": 1.936904203581058e-06,
+      "sat_lower_bound_p05_m": 0.0007191152147242863
+    },
+    {
+      "pair": [
+        "Link3",
+        "Link6"
+      ],
+      "declared": false,
+      "sat_collision_configs": 0,
+      "sat_collision_rate": 0.0,
+      "max_sat_penetration_m": 0.0,
+      "min_sat_lower_bound_over_separated_m": 0.183230458606627,
+      "sat_lower_bound_p05_m": 0.18475089014281965
+    },
+    {
+      "pair": [
+        "Link3",
+        "Link7"
+      ],
+      "declared": false,
+      "sat_collision_configs": 0,
+      "sat_collision_rate": 0.0,
+      "max_sat_penetration_m": 0.0,
+      "min_sat_lower_bound_over_separated_m": 0.18377385070264074,
+      "sat_lower_bound_p05_m": 0.21296901514710564
+    },
+    {
+      "pair": [
+        "Link3",
+        "Link8"
+      ],
+      "declared": true,
+      "sat_collision_configs": 0,
+      "sat_collision_rate": 0.0,
+      "max_sat_penetration_m": 0.0,
+      "min_sat_lower_bound_over_separated_m": 0.12975903803417066,
+      "sat_lower_bound_p05_m": 0.2433520102756021
+    },
+    {
+      "pair": [
+        "Link3",
+        "Link9"
+      ],
+      "declared": true,
+      "sat_collision_configs": 1,
+      "sat_collision_rate": 0.0003332222592469177,
+      "max_sat_penetration_m": 0.013432436795549813,
+      "min_sat_lower_bound_over_separated_m": 0.08929886099846723,
+      "sat_lower_bound_p05_m": 0.25657519186488276
+    },
+    {
+      "pair": [
+        "Link4",
+        "Link6"
+      ],
+      "declared": false,
+      "sat_collision_configs": 0,
+      "sat_collision_rate": 0.0,
+      "max_sat_penetration_m": 0.0,
+      "min_sat_lower_bound_over_separated_m": 0.11956500738057743,
+      "sat_lower_bound_p05_m": 0.11961846490555689
+    },
+    {
+      "pair": [
+        "Link4",
+        "Link7"
+      ],
+      "declared": false,
+      "sat_collision_configs": 0,
+      "sat_collision_rate": 0.0,
+      "max_sat_penetration_m": 0.0,
+      "min_sat_lower_bound_over_separated_m": 0.13979755669168265,
+      "sat_lower_bound_p05_m": 0.14576160360652332
+    },
+    {
+      "pair": [
+        "Link4",
+        "Link8"
+      ],
+      "declared": false,
+      "sat_collision_configs": 0,
+      "sat_collision_rate": 0.0,
+      "max_sat_penetration_m": 0.0,
+      "min_sat_lower_bound_over_separated_m": 0.07416687317820524,
+      "sat_lower_bound_p05_m": 0.17837046941260418
+    },
+    {
+      "pair": [
+        "Link4",
+        "Link9"
+      ],
+      "declared": false,
+      "sat_collision_configs": 0,
+      "sat_collision_rate": 0.0,
+      "max_sat_penetration_m": 0.0,
+      "min_sat_lower_bound_over_separated_m": 0.02795977448244269,
+      "sat_lower_bound_p05_m": 0.20154409972182263
+    },
+    {
+      "pair": [
+        "Link5",
+        "Link7"
+      ],
+      "declared": false,
+      "sat_collision_configs": 2470,
+      "sat_collision_rate": 0.8230589803398867,
+      "max_sat_penetration_m": 0.023319612452458394,
+      "min_sat_lower_bound_over_separated_m": 6.238322316415301e-06,
+      "sat_lower_bound_p05_m": 0.00034196988228646363
+    },
+    {
+      "pair": [
+        "Link5",
+        "Link8"
+      ],
+      "declared": false,
+      "sat_collision_configs": 0,
+      "sat_collision_rate": 0.0,
+      "max_sat_penetration_m": 0.0,
+      "min_sat_lower_bound_over_separated_m": 0.010092924739923514,
+      "sat_lower_bound_p05_m": 0.023172271851105153
+    },
+    {
+      "pair": [
+        "Link5",
+        "Link9"
+      ],
+      "declared": false,
+      "sat_collision_configs": 0,
+      "sat_collision_rate": 0.0,
+      "max_sat_penetration_m": 0.0,
+      "min_sat_lower_bound_over_separated_m": 0.04959795620445008,
+      "sat_lower_bound_p05_m": 0.10463497355787765
+    },
+    {
+      "pair": [
+        "Link6",
+        "Link8"
+      ],
+      "declared": false,
+      "sat_collision_configs": 2266,
+      "sat_collision_rate": 0.7550816394535155,
+      "max_sat_penetration_m": 0.020273706286315002,
+      "min_sat_lower_bound_over_separated_m": 6.48813989281849e-06,
+      "sat_lower_bound_p05_m": 0.0006478680849579311
+    },
+    {
+      "pair": [
+        "Link6",
+        "Link9"
+      ],
+      "declared": false,
+      "sat_collision_configs": 0,
+      "sat_collision_rate": 0.0,
+      "max_sat_penetration_m": 0.0,
+      "min_sat_lower_bound_over_separated_m": 0.02796819129001729,
+      "sat_lower_bound_p05_m": 0.03864988743430703
+    },
+    {
+      "pair": [
+        "Link7",
+        "Link9"
+      ],
+      "declared": false,
+      "sat_collision_configs": 239,
+      "sat_collision_rate": 0.07964011996001333,
+      "max_sat_penetration_m": 0.0013541231216679384,
+      "min_sat_lower_bound_over_separated_m": 2.051472702993551e-05,
+      "sat_lower_bound_p05_m": 0.0008981048306116887
+    }
+  ],
+  "blind_events_count": 6682,
+  "blind_events_per_pair": {
+    "Link6/Link8": 2266,
+    "Link5/Link7": 2470,
+    "Link3/Link5": 1680,
+    "Link3/Link9": 1,
+    "Link7/Link9": 239,
+    "Link1/Link9": 7,
+    "base_link/Link9": 8,
+    "base_link/Link8": 3,
+    "Link1/Link5": 2,
+    "Link1/Link6": 2,
+    "Link1/Link7": 1,
+    "Link1/Link8": 3
+  },
+  "blind_events_head": [
+    {
+      "cfg": 1,
+      "pair": [
+        "Link6",
+        "Link8"
+      ],
+      "declared": false,
+      "kernel_m": 0.0071226978262359944,
+      "sat_penetration_m": 0.00832117444069036
+    },
+    {
+      "cfg": 2,
+      "pair": [
+        "Link5",
+        "Link7"
+      ],
+      "declared": false,
+      "kernel_m": 0.015052366445028591,
+      "sat_penetration_m": 0.01993641009750924
+    },
+    {
+      "cfg": 3,
+      "pair": [
+        "Link3",
+        "Link5"
+      ],
+      "declared": false,
+      "kernel_m": 0.008848871619285768,
+      "sat_penetration_m": 0.008849246945840272
+    },
+    {
+      "cfg": 3,
+      "pair": [
+        "Link5",
+        "Link7"
+      ],
+      "declared": false,
+      "kernel_m": 0.01863512685726405,
+      "sat_penetration_m": 0.022537990159473775
+    },
+    {
+      "cfg": 3,
+      "pair": [
+        "Link6",
+        "Link8"
+      ],
+      "declared": false,
+      "kernel_m": 0.002772939446654241,
+      "sat_penetration_m": 0.006361957863425305
+    },
+    {
+      "cfg": 4,
+      "pair": [
+        "Link3",
+        "Link5"
+      ],
+      "declared": false,
+      "kernel_m": 0.0033469091027711114,
+      "sat_penetration_m": 0.003347252585849614
+    },
+    {
+      "cfg": 4,
+      "pair": [
+        "Link5",
+        "Link7"
+      ],
+      "declared": false,
+      "kernel_m": 0.017553859956595242,
+      "sat_penetration_m": 0.017992885213327037
+    },
+    {
+      "cfg": 4,
+      "pair": [
+        "Link6",
+        "Link8"
+      ],
+      "declared": false,
+      "kernel_m": 0.01157357786486795,
+      "sat_penetration_m": 0.01381320654378651
+    },
+    {
+      "cfg": 5,
+      "pair": [
+        "Link3",
+        "Link5"
+      ],
+      "declared": false,
+      "kernel_m": 0.005518281749140586,
+      "sat_penetration_m": 0.005518733139363519
+    },
+    {
+      "cfg": 6,
+      "pair": [
+        "Link3",
+        "Link5"
+      ],
+      "declared": false,
+      "kernel_m": 0.0020227902043114436,
+      "sat_penetration_m": 0.008321045860096188
+    },
+    {
+      "cfg": 6,
+      "pair": [
+        "Link5",
+        "Link7"
+      ],
+      "declared": false,
+      "kernel_m": 0.0029136129354015755,
+      "sat_penetration_m": 0.002913612935401322
+    },
+    {
+      "cfg": 6,
+      "pair": [
+        "Link6",
+        "Link8"
+      ],
+      "declared": false,
+      "kernel_m": 0.004281194490935604,
+      "sat_penetration_m": 0.015671418574745244
+    },
+    {
+      "cfg": 7,
+      "pair": [
+        "Link3",
+        "Link5"
+      ],
+      "declared": false,
+      "kernel_m": 0.0013531016789759022,
+      "sat_penetration_m": 0.008821059978927459
+    },
+    {
+      "cfg": 7,
+      "pair": [
+        "Link5",
+        "Link7"
+      ],
+      "declared": false,
+      "kernel_m": 0.00021156152632165637,
+      "sat_penetration_m": 0.00021156152631401914
+    },
+    {
+      "cfg": 7,
+      "pair": [
+        "Link6",
+        "Link8"
+      ],
+      "declared": false,
+      "kernel_m": 0.00010535395451995874,
+      "sat_penetration_m": 0.006730711996469518
+    },
+    {
+      "cfg": 8,
+      "pair": [
+        "Link3",
+        "Link5"
+      ],
+      "declared": false,
+      "kernel_m": 0.008405728349049157,
+      "sat_penetration_m": 0.008406185482387363
+    },
+    {
+      "cfg": 8,
+      "pair": [
+        "Link5",
+        "Link7"
+      ],
+      "declared": false,
+      "kernel_m": 0.016105685696185142,
+      "sat_penetration_m": 0.020182253040798875
+    },
+    {
+      "cfg": 8,
+      "pair": [
+        "Link6",
+        "Link8"
+      ],
+      "declared": false,
+      "kernel_m": 0.007372336444017865,
+      "sat_penetration_m": 0.007372336444017857
+    },
+    {
+      "cfg": 9,
+      "pair": [
+        "Link3",
+        "Link5"
+      ],
+      "declared": false,
+      "kernel_m": 0.001672093075278069,
+      "sat_penetration_m": 0.008657384450302674
+    },
+    {
+      "cfg": 9,
+      "pair": [
+        "Link5",
+        "Link7"
+      ],
+      "declared": false,
+      "kernel_m": 0.016407338463192027,
+      "sat_penetration_m": 0.020085102573871416
+    }
+  ],
+  "blind_qp_crosscheck": [
+    {
+      "pair": [
+        "Link6",
+        "Link8"
+      ],
+      "kernel_m": 0.0071226978262359944,
+      "ref_qp_m": 2.6120362484584923e-08,
+      "ref_qp_overlap": false,
+      "ref_gjk_m": 1.4063694861555186e-09,
+      "ref_gjk_overlap": false,
+      "ref_fcl_obb_m": -1.0,
+      "ref_fcl_obb_colliding": true
+    },
+    {
+      "pair": [
+        "Link5",
+        "Link7"
+      ],
+      "kernel_m": 0.015052366445028591,
+      "ref_qp_m": 0.0,
+      "ref_qp_overlap": true,
+      "ref_gjk_m": 0.0,
+      "ref_gjk_overlap": true,
+      "ref_fcl_obb_m": -1.0,
+      "ref_fcl_obb_colliding": true
+    },
+    {
+      "pair": [
+        "Link3",
+        "Link5"
+      ],
+      "kernel_m": 0.008848871619285768,
+      "ref_qp_m": 1.2412670766236366e-16,
+      "ref_qp_overlap": true,
+      "ref_gjk_m": 1.405132731118381e-09,
+      "ref_gjk_overlap": false,
+      "ref_fcl_obb_m": -1.0,
+      "ref_fcl_obb_colliding": true
+    },
+    {
+      "pair": [
+        "Link5",
+        "Link7"
+      ],
+      "kernel_m": 0.01863512685726405,
+      "ref_qp_m": 1.1609965360767871e-09,
+      "ref_qp_overlap": false,
+      "ref_gjk_m": 1.5359240420097504e-12,
+      "ref_gjk_overlap": true,
+      "ref_fcl_obb_m": -1.0,
+      "ref_fcl_obb_colliding": true
+    },
+    {
+      "pair": [
+        "Link6",
+        "Link8"
+      ],
+      "kernel_m": 0.002772939446654241,
+      "ref_qp_m": 6.205491797188021e-09,
+      "ref_qp_overlap": false,
+      "ref_gjk_m": 1.0581927745923958e-10,
+      "ref_gjk_overlap": true,
+      "ref_fcl_obb_m": -1.0,
+      "ref_fcl_obb_colliding": true
+    },
+    {
+      "pair": [
+        "Link3",
+        "Link5"
+      ],
+      "kernel_m": 0.0033469091027711114,
+      "ref_qp_m": 1.1188630228279524e-16,
+      "ref_qp_overlap": true,
+      "ref_gjk_m": 2.107056355043557e-10,
+      "ref_gjk_overlap": true,
+      "ref_fcl_obb_m": -1.0,
+      "ref_fcl_obb_colliding": true
+    },
+    {
+      "pair": [
+        "Link5",
+        "Link7"
+      ],
+      "kernel_m": 0.017553859956595242,
+      "ref_qp_m": 4.4857832724262964e-10,
+      "ref_qp_overlap": false,
+      "ref_gjk_m": 1.407949100879644e-17,
+      "ref_gjk_overlap": true,
+      "ref_fcl_obb_m": -1.0,
+      "ref_fcl_obb_colliding": true
+    },
+    {
+      "pair": [
+        "Link6",
+        "Link8"
+      ],
+      "kernel_m": 0.01157357786486795,
+      "ref_qp_m": 3.330929272233265e-15,
+      "ref_qp_overlap": true,
+      "ref_gjk_m": 1.4457465058543704e-14,
+      "ref_gjk_overlap": true,
+      "ref_fcl_obb_m": -1.0,
+      "ref_fcl_obb_colliding": true
+    },
+    {
+      "pair": [
+        "Link3",
+        "Link5"
+      ],
+      "kernel_m": 0.005518281749140586,
+      "ref_qp_m": 4.287069967632934e-08,
+      "ref_qp_overlap": false,
+      "ref_gjk_m": 1.3383446537944747e-10,
+      "ref_gjk_overlap": true,
+      "ref_fcl_obb_m": -1.0,
+      "ref_fcl_obb_colliding": true
+    },
+    {
+      "pair": [
+        "Link3",
+        "Link5"
+      ],
+      "kernel_m": 0.0020227902043114436,
+      "ref_qp_m": 3.057283611006033e-09,
+      "ref_qp_overlap": false,
+      "ref_gjk_m": 0.0,
+      "ref_gjk_overlap": true,
+      "ref_fcl_obb_m": -1.0,
+      "ref_fcl_obb_colliding": true
+    },
+    {
+      "pair": [
+        "Link5",
+        "Link7"
+      ],
+      "kernel_m": 0.0029136129354015755,
+      "ref_qp_m": 2.0921974050130626e-09,
+      "ref_qp_overlap": false,
+      "ref_gjk_m": 7.262599772786229e-11,
+      "ref_gjk_overlap": true,
+      "ref_fcl_obb_m": -1.0,
+      "ref_fcl_obb_colliding": true
+    },
+    {
+      "pair": [
+        "Link6",
+        "Link8"
+      ],
+      "kernel_m": 0.004281194490935604,
+      "ref_qp_m": 2.581404750437927e-09,
+      "ref_qp_overlap": false,
+      "ref_gjk_m": 2.940514556589956e-11,
+      "ref_gjk_overlap": true,
+      "ref_fcl_obb_m": -1.0,
+      "ref_fcl_obb_colliding": true
+    }
+  ],
+  "mesh_scan": {
+    "n_events": 6682,
+    "n_mesh_collisions": 3,
+    "mesh_collisions": [
+      {
+        "cfg": 196,
+        "pair": [
+          "base_link",
+          "Link9"
+        ],
+        "declared": true,
+        "kernel_m": 0.003168542594884198,
+        "sat_penetration_m": 0.10446549730314354,
+        "mesh_colliding": true,
+        "mesh_distance_m": 0.0
+      },
+      {
+        "cfg": 1371,
+        "pair": [
+          "base_link",
+          "Link9"
+        ],
+        "declared": true,
+        "kernel_m": 0.004305311358287972,
+        "sat_penetration_m": 0.08699390101503574,
+        "mesh_colliding": true,
+        "mesh_distance_m": 0.0
+      },
+      {
+        "cfg": 2039,
+        "pair": [
+          "base_link",
+          "Link9"
+        ],
+        "declared": true,
+        "kernel_m": 0.0009113319953453769,
+        "sat_penetration_m": 0.07663655455379252,
+        "mesh_colliding": true,
+        "mesh_distance_m": 0.0
+      }
+    ],
+    "min_mesh_clearance_at_noncolliding_events_m": 0.008512092934793106
+  },
+  "mesh_collision_detail": [
+    {
+      "cfg": 196,
+      "pair": [
+        "base_link",
+        "Link9"
+      ],
+      "q": [
+        0.14329339328270277,
+        -1.4618425887303508,
+        -0.9147667179289727,
+        -1.5535417564110803,
+        -0.42121936335795374,
+        -0.002084100515956866,
+        -1.3914541748249132,
+        -0.9170144472791932,
+        -0.5862754227014818
+      ],
+      "kernel_m": 0.003168542594884198,
+      "sat_penetration_m": 0.10446549730314354,
+      "joints_at_lower_limit": [],
+      "joints_at_upper_limit": [],
+      "contacts": [
+        {
+          "pos": [
+            0.01796177588403225,
+            -0.006825482938438654,
+            -0.2380000203847885
+          ],
+          "depth": 0.006228614150493056,
+          "normal": [
+            -0.6919649179428431,
+            -0.456363823387738,
+            -0.5593895002940976
+          ]
+        },
+        {
+          "pos": [
+            0.025287015363574028,
+            -0.0108081866055727,
+            -0.24849997460842133
+          ],
+          "depth": 0.00885093143434279,
+          "normal": [
+            -0.6919649179428431,
+            -0.456363823387738,
+            -0.5593895002940976
+          ]
+        },
+        {
+          "pos": [
+            0.02618853561580181,
+            -0.007048445288091898,
+            -0.23949997127056122
+          ],
+          "depth": 0.0014767937545810128,
+          "normal": [
+            -0.6919649179428431,
+            -0.456363823387738,
+            -0.5593895002940976
+          ]
+        },
+        {
+          "pos": [
+            0.026598939672112465,
+            -0.006819176021963358,
+            -0.2380000203847885
+          ],
+          "depth": 0.00024912157009877867,
+          "normal": [
+            -0.6919649179428431,
+            -0.456363823387738,
+            -0.5593895002940976
+          ]
+        },
+        {
+          "pos": [
+            0.018661411479115486,
+            -0.0063249715603888035,
+            -0.23749999701976776
+          ],
+          "depth": 0.00523636775692117,
+          "normal": [
+            -0.6919649179428431,
+            -0.456363823387738,
+            -0.5593895002940976
+          ]
+        },
+        {
+          "pos": [
+            0.02618853561580181,
+            -0.007048445288091898,
+            -0.23949997127056122
+          ],
+          "depth": 0.0014767937545810128,
+          "normal": [
+            -0.6919649179428431,
+            -0.456363823387738,
+            -0.5593895002940976
+          ]
+        },
+        {
+          "pos": [
+            0.02618853561580181,
+            -0.007048445288091898,
+            -0.23949997127056122
+          ],
+          "depth": 0.0014767937545810128,
+          "normal": [
+            -0.6919649179428431,
+            -0.456363823387738,
+            -0.5593895002940976
+          ]
+        },
+        {
+          "pos": [
+            0.02618853561580181,
+            -0.007048445288091898,
+            -0.23949997127056122
+          ],
+          "depth": 0.0014767937545810128,
+          "normal": [
+            -0.6919649179428431,
+            -0.456363823387738,
+            -0.5593895002940976
+          ]
+        }
+      ],
+      "ref_qp_m": 2.797157557069881e-17,
+      "ref_qp_overlap": true,
+      "max_mesh_penetration_m": 0.00885093143434279
+    },
+    {
+      "cfg": 1371,
+      "pair": [
+        "base_link",
+        "Link9"
+      ],
+      "q": [
+        0.022561689655064894,
+        0.9498128759136846,
+        -1.0839654954769915,
+        -0.9536770022492911,
+        -2.2743355592388492,
+        -1.348067818420812,
+        0.34002905078578993,
+        -1.1759008191934126,
+        1.1051968408101445
+      ],
+      "kernel_m": 0.004305311358287972,
+      "sat_penetration_m": 0.08699390101503574,
+      "joints_at_lower_limit": [],
+      "joints_at_upper_limit": [],
+      "contacts": [
+        {
+          "pos": [
+            0.03406723936138165,
+            -0.04521347240106485,
+            0.4581659307731718
+          ],
+          "depth": 0.017213473399442653,
+          "normal": [
+            0.0,
+            1.0,
+            0.0
+          ]
+        },
+        {
+          "pos": [
+            0.03539999946951866,
+            -0.0279999990016222,
+            0.550000011920929
+          ],
+          "depth": 0.00812008909374361,
+          "normal": [
+            -0.989947016720385,
+            -0.07867830846851309,
+            0.11753564507392275
+          ]
+        },
+        {
+          "pos": [
+            0.033473874164237916,
+            -0.046391026893413234,
+            0.4589861768395932
+          ],
+          "depth": 0.018391027891791034,
+          "normal": [
+            0.0,
+            1.0,
+            0.0
+          ]
+        },
+        {
+          "pos": [
+            0.03539999946951866,
+            -0.0279999990016222,
+            0.550000011920929
+          ],
+          "depth": 0.008120089345436489,
+          "normal": [
+            -0.9899470158226731,
+            -0.0786783142458233,
+            0.11753564876759597
+          ]
+        },
+        {
+          "pos": [
+            0.033864836501951046,
+            -0.043924281795042264,
+            0.45732417115299456
+          ],
+          "depth": 0.015924282793420064,
+          "normal": [
+            0.0,
+            1.0,
+            0.0
+          ]
+        },
+        {
+          "pos": [
+            0.033473874164237916,
+            -0.046391026893413234,
+            0.4589861768395932
+          ],
+          "depth": 0.0031115982582500604,
+          "normal": [
+            -0.965925671757816,
+            0.2588196218203173,
+            0.0
+          ]
+        },
+        {
+          "pos": [
+            0.033864836501951046,
+            -0.043924281795042264,
+            0.45732417115299456
+          ],
+          "depth": 0.002850796783450127,
+          "normal": [
+            -0.965925671757816,
+            0.2588196218203173,
+            0.0
+          ]
+        },
+        {
+          "pos": [
+            0.033473874164237916,
+            -0.046391026893413234,
+            0.4589861768395932
+          ],
+          "depth": 0.011719971229347065,
+          "normal": [
+            -0.7071127784197653,
+            0.7071007839024647,
+            0.0
+          ]
+        }
+      ],
+      "ref_qp_m": 5.959602043214372e-17,
+      "ref_qp_overlap": true,
+      "max_mesh_penetration_m": 0.018391027891791034
+    },
+    {
+      "cfg": 2039,
+      "pair": [
+        "base_link",
+        "Link9"
+      ],
+      "q": [
+        0.4605624220284042,
+        -1.0256725525421664,
+        -1.4395051413164734,
+        -1.4461312357981038,
+        -2.5459112082127553,
+        -0.7688248871702826,
+        1.0774349299249422,
+        -0.15668140972586797,
+        -1.3059193767769663
+      ],
+      "kernel_m": 0.0009113319953453769,
+      "sat_penetration_m": 0.07663655455379252,
+      "joints_at_lower_limit": [],
+      "joints_at_upper_limit": [],
+      "contacts": [
+        {
+          "pos": [
+            0.020584044978022575,
+            0.01823587156832218,
+            -0.19700001180171967
+          ],
+          "depth": 0.017771689211794346,
+          "normal": [
+            -0.5098634578895209,
+            -0.8464683457355708,
+            0.15339685126047076
+          ]
+        },
+        {
+          "pos": [
+            0.019067304208874702,
+            0.016324998810887337,
+            -0.1849999874830246
+          ],
+          "depth": 0.0019355654507583475,
+          "normal": [
+            0.9988909528095662,
+            -0.0024718060189527946,
+            0.04701866193546849
+          ]
+        },
+        {
+          "pos": [
+            0.044999998062849045,
+            0.0429999977350235,
+            -0.19700001180171967
+          ],
+          "depth": 0.02720933821391919,
+          "normal": [
+            0.9988909528095662,
+            -0.0024718060189527946,
+            0.04701866193546849
+          ]
+        },
+        {
+          "pos": [
+            0.019067304208874702,
+            0.0429999977350235,
+            -0.1849999874830246
+          ],
+          "depth": 0.004309929207128985,
+          "normal": [
+            0.8710806425336338,
+            0.4872846550558056,
+            -0.06141806859822388
+          ]
+        },
+        {
+          "pos": [
+            0.044999998062849045,
+            0.0429999977350235,
+            -0.19700001180171967
+          ],
+          "depth": 0.02763641514886294,
+          "normal": [
+            0.8710806425336338,
+            0.4872846550558056,
+            -0.06141806859822388
+          ]
+        },
+        {
+          "pos": [
+            0.019067304208874702,
+            0.0429999977350235,
+            -0.1849999874830246
+          ],
+          "depth": 0.006371811358721197,
+          "normal": [
+            0.5098631795512819,
+            0.8464685050024259,
+            -0.1533968975462527
+          ]
+        },
+        {
+          "pos": [
+            0.019067304208874702,
+            0.0429999977350235,
+            -0.1849999874830246
+          ],
+          "depth": 0.006371811358721197,
+          "normal": [
+            0.5098631795512819,
+            0.8464685050024259,
+            -0.1533968975462527
+          ]
+        },
+        {
+          "pos": [
+            0.044999998062849045,
+            0.0429999977350235,
+            -0.19700001180171967
+          ],
+          "depth": 0.021434703602405958,
+          "normal": [
+            0.5098631795512819,
+            0.8464685050024259,
+            -0.1533968975462527
+          ]
+        }
+      ],
+      "ref_qp_m": 0.0,
+      "ref_qp_overlap": true,
+      "max_mesh_penetration_m": 0.02763641514886294
+    }
+  ],
+  "focus_config_mesh_truth": [
+    {
+      "pair": [
+        "base_link",
+        "Link7"
+      ],
+      "q": [
+        0.03649398328391678,
+        -1.3693533778478508,
+        1.2196621189344665,
+        1.213560674010312,
+        1.1843509732421231,
+        1.3794900698739032,
+        -0.9127106004892523,
+        -1.2022393878455948,
+        -1.3037201164967895
+      ],
+      "kernel_m": 0.016645946381340825,
+      "ref_gjk_overlap": true,
+      "ref_fcl_obb_colliding": true,
+      "mesh_colliding": false,
+      "mesh_distance_m": 0.06167369657519229
+    },
+    {
+      "pair": [
+        "base_link",
+        "Link8"
+      ],
+      "q": [
+        0.03649398328391678,
+        -1.3693533778478508,
+        1.2196621189344665,
+        1.213560674010312,
+        1.1843509732421231,
+        1.3794900698739032,
+        -0.9127106004892523,
+        -1.2022393878455948,
+        -1.3037201164967895
+      ],
+      "kernel_m": 0.00022377743595043686,
+      "ref_gjk_overlap": true,
+      "ref_fcl_obb_colliding": true,
+      "mesh_colliding": false,
+      "mesh_distance_m": 0.07978972660049634
+    }
+  ],
+  "pair_minimum_clearance": [
+    {
+      "pair": [
+        "base_link",
+        "Link4"
+      ],
+      "declared": true,
+      "kernel_min_m": 0.19299902563781357,
+      "ref_qp_m": 0.1929990256381452,
+      "ref_qp_overlap": false,
+      "ref_gjk_m": 0.19299902563797455,
+      "ref_gjk_overlap": false,
+      "sat_colliding": false,
+      "mesh_colliding": false,
+      "mesh_distance_m": 0.24853849119113344,
+      "q": [
+        0.048098216244717946,
+        0.861073281235387,
+        -1.0097344919037037,
+        0.42888107676040504,
+        2.1035696468554037,
+        1.4144627875653777,
+        -1.002169898882256,
+        -0.009480780992275895,
+        0.6433391191777398
+      ]
+    },
+    {
+      "pair": [
+        "base_link",
+        "Link5"
+      ],
+      "declared": true,
+      "kernel_min_m": 0.1947548951294012,
+      "ref_qp_m": 0.1947548951294012,
+      "ref_qp_overlap": false,
+      "ref_gjk_m": 0.19475489512940122,
+      "ref_gjk_overlap": false,
+      "sat_colliding": false,
+      "mesh_colliding": false,
+      "mesh_distance_m": 0.2630453772839642,
+      "q": [
+        0.04533134909569007,
+        0.743646375713986,
+        -1.1243991727603309,
+        0.29104970427962684,
+        2.2474879133236216,
+        1.4144627875653777,
+        -1.002169898882256,
+        -0.009480780992275895,
+        0.6433391191777398
+      ]
+    },
+    {
+      "pair": [
+        "base_link",
+        "Link7"
+      ],
+      "declared": true,
+      "kernel_min_m": 0.0,
+      "ref_qp_m": 1.574117487986143e-09,
+      "ref_qp_overlap": false,
+      "ref_gjk_m": 1.615788072753603e-09,
+      "ref_gjk_overlap": false,
+      "sat_colliding": true,
+      "mesh_colliding": false,
+      "mesh_distance_m": 0.05917454662433224,
+      "q": [
+        5.089894909069876e-05,
+        -0.8116814478820875,
+        0.3133202359187816,
+        1.1445528245764172,
+        0.9284944198013011,
+        1.3221353833335872,
+        -0.10595100724004214,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "pair": [
+        "base_link",
+        "Link8"
+      ],
+      "declared": true,
+      "kernel_min_m": 0.0,
+      "ref_qp_m": 3.262856147183329e-08,
+      "ref_qp_overlap": false,
+      "ref_gjk_m": 3.6125484428521005e-09,
+      "ref_gjk_overlap": false,
+      "sat_colliding": true,
+      "mesh_colliding": false,
+      "mesh_distance_m": 0.09925076553692136,
+      "q": [
+        0.09678769830511941,
+        -0.8276379470420048,
+        -0.38792637126006535,
+        1.5706670901712456,
+        -2.5886958496887797,
+        -1.2641516387787857,
+        0.4277930610511136,
+        -1.10862379520537,
+        -1.0319303995536702
+      ]
+    },
+    {
+      "pair": [
+        "base_link",
+        "Link9"
+      ],
+      "declared": true,
+      "kernel_min_m": 0.0,
+      "ref_qp_m": 2.6058463416601544e-08,
+      "ref_qp_overlap": false,
+      "ref_gjk_m": 4.432102564495901e-11,
+      "ref_gjk_overlap": true,
+      "sat_colliding": false,
+      "mesh_colliding": false,
+      "mesh_distance_m": 0.030440530359974224,
+      "q": [
+        0.0008431426848990229,
+        -0.8849105868618017,
+        1.469335462026371,
+        -0.10161563954929381,
+        -1.1000767557757969,
+        -1.128942765498079,
+        -1.4834619161437024,
+        -1.175034500249198,
+        1.0029959666572517
+      ]
+    },
+    {
+      "pair": [
+        "Link1",
+        "Link5"
+      ],
+      "declared": true,
+      "kernel_min_m": 0.0,
+      "ref_qp_m": 1.0445307995459406e-10,
+      "ref_qp_overlap": true,
+      "ref_gjk_m": 4.8105859773536365e-09,
+      "ref_gjk_overlap": false,
+      "sat_colliding": false,
+      "mesh_colliding": false,
+      "mesh_distance_m": 0.08495418350421081,
+      "q": [
+        0.000515064853318382,
+        -1.56112529166046,
+        -1.5675910107495992,
+        -1.3015305116148195,
+        0.7162094519956074,
+        1.0001744679728026,
+        -1.111186697502843,
+        0.17943790088990408,
+        -0.6698150561701984
+      ]
+    },
+    {
+      "pair": [
+        "Link1",
+        "Link7"
+      ],
+      "declared": true,
+      "kernel_min_m": 0.0,
+      "ref_qp_m": 3.358799765738993e-10,
+      "ref_qp_overlap": false,
+      "ref_gjk_m": 7.424915103892029e-10,
+      "ref_gjk_overlap": true,
+      "sat_colliding": false,
+      "mesh_colliding": false,
+      "mesh_distance_m": 0.061580010166440685,
+      "q": [
+        1.031176877255317e-17,
+        0.2365111794247209,
+        1.4087092583371281,
+        1.5664416275056083,
+        0.1276027690385143,
+        0.9075165171918838,
+        0.26694024535943817,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "pair": [
+        "Link1",
+        "Link8"
+      ],
+      "declared": true,
+      "kernel_min_m": 1.4879680991431122e-15,
+      "ref_qp_m": 4.8676550490395666e-09,
+      "ref_qp_overlap": false,
+      "ref_gjk_m": 9.867384185157243e-12,
+      "ref_gjk_overlap": true,
+      "sat_colliding": true,
+      "mesh_colliding": false,
+      "mesh_distance_m": 0.06162778553037527,
+      "q": [
+        0.22278037829762287,
+        -0.2578958302113146,
+        1.5707268226473028,
+        1.5707192546067044,
+        -0.9678951472410737,
+        0.8243178914356694,
+        -1.4747163706823083,
+        -1.1717784034103897,
+        1.0098383505331716
+      ]
+    },
+    {
+      "pair": [
+        "Link1",
+        "Link9"
+      ],
+      "declared": true,
+      "kernel_min_m": 0.0,
+      "ref_qp_m": 2.0816681711721685e-17,
+      "ref_qp_overlap": true,
+      "ref_gjk_m": 0.0,
+      "ref_gjk_overlap": true,
+      "sat_colliding": true,
+      "mesh_colliding": false,
+      "mesh_distance_m": 0.03087585041743128,
+      "q": [
+        7.283201840671032e-18,
+        0.2013153363636474,
+        0.9966854485412275,
+        1.527018695499219,
+        0.08971697526711848,
+        1.2720418564037437,
+        0.2819595942330755,
+        0.549399829952227,
+        0.11938495738843566
+      ]
+    },
+    {
+      "pair": [
+        "Link2",
+        "Link7"
+      ],
+      "declared": true,
+      "kernel_min_m": 0.02842237904045133,
+      "ref_qp_m": 0.028422379040451362,
+      "ref_qp_overlap": false,
+      "ref_gjk_m": 0.028422379040451338,
+      "ref_gjk_overlap": false,
+      "sat_colliding": false,
+      "mesh_colliding": false,
+      "mesh_distance_m": 0.060105189616075284,
+      "q": [
+        0.0005150648533183154,
+        -1.1619166378198318,
+        -1.5281423332497908,
+        -1.5708,
+        2.0291614764216006,
+        1.48353,
+        -1.48353,
+        0.17943790088990408,
+        -0.6698150561701984
+      ]
+    },
+    {
+      "pair": [
+        "Link2",
+        "Link8"
+      ],
+      "declared": true,
+      "kernel_min_m": 0.0,
+      "ref_qp_m": 2.2604423564480955e-08,
+      "ref_qp_overlap": false,
+      "ref_gjk_m": 5.578369847782451e-18,
+      "ref_gjk_overlap": true,
+      "sat_colliding": true,
+      "mesh_colliding": false,
+      "mesh_distance_m": 0.09190488160187306,
+      "q": [
+        0.0005150648533183295,
+        -1.1619166378198322,
+        -1.33147826675732,
+        -1.5707999822989314,
+        1.6764956291017474,
+        1.4835269337013204,
+        -1.4835206780707304,
+        0.33601254944841774,
+        -0.6698150561701984
+      ]
+    },
+    {
+      "pair": [
+        "Link2",
+        "Link9"
+      ],
+      "declared": true,
+      "kernel_min_m": 0.0,
+      "ref_qp_m": 5.621549772893202e-09,
+      "ref_qp_overlap": false,
+      "ref_gjk_m": 2.1181275131794283e-10,
+      "ref_gjk_overlap": true,
+      "sat_colliding": true,
+      "mesh_colliding": false,
+      "mesh_distance_m": 0.03313824261149475,
+      "q": [
+        9.353303851291257e-18,
+        4.633846091531253e-16,
+        0.3161768365433283,
+        1.541397546815723,
+        0.15068852293511564,
+        1.483498682242787,
+        0.5414505498150677,
+        0.9364454801062269,
+        0.0844366433969245
+      ]
+    },
+    {
+      "pair": [
+        "Link3",
+        "Link8"
+      ],
+      "declared": true,
+      "kernel_min_m": 0.14428189320587528,
+      "ref_qp_m": 0.14428189320587523,
+      "ref_qp_overlap": false,
+      "ref_gjk_m": 0.14428189320587512,
+      "ref_gjk_overlap": false,
+      "sat_colliding": false,
+      "mesh_colliding": false,
+      "mesh_distance_m": 0.15075514159013403,
+      "q": [
+        0.35836803321342126,
+        -1.5214754102956465,
+        -0.9811544252677293,
+        1.5708,
+        -3.1416,
+        -1.48353,
+        1.0344281484405582,
+        -1.4620399715698873,
+        -1.0319303995536702
+      ]
+    },
+    {
+      "pair": [
+        "Link3",
+        "Link9"
+      ],
+      "declared": true,
+      "kernel_min_m": 5.858990982136608e-15,
+      "ref_qp_m": 7.419986665775232e-12,
+      "ref_qp_overlap": true,
+      "ref_gjk_m": 1.4575966109626581e-09,
+      "ref_gjk_overlap": false,
+      "sat_colliding": false,
+      "mesh_colliding": false,
+      "mesh_distance_m": 0.08365408319754959,
+      "q": [
+        0.35836803321342126,
+        -1.5214754102956463,
+        -0.9811544252677298,
+        1.5707997521344192,
+        -2.6325441347123832,
+        -1.482743284635851,
+        0.4123408189278618,
+        -1.4811378746287842,
+        -0.6668699321979976
+      ]
+    },
+    {
+      "pair": [
+        "base_link",
+        "Link2"
+      ],
+      "declared": false,
+      "kernel_min_m": 0.19299902563295035,
+      "ref_qp_m": 0.19299902563361626,
+      "ref_qp_overlap": false,
+      "ref_gjk_m": 0.19299902563329766,
+      "ref_gjk_overlap": false,
+      "sat_colliding": false,
+      "mesh_colliding": false,
+      "mesh_distance_m": 0.25500000978743126,
+      "q": [
+        0.04809821624471783,
+        1.3526537123680373,
+        -0.6682684964798123,
+        0.4352939655461585,
+        2.1035696468554037,
+        1.4144627875653777,
+        -1.002169898882256,
+        -0.009480780992275895,
+        0.6433391191777398
+      ]
+    },
+    {
+      "pair": [
+        "base_link",
+        "Link3"
+      ],
+      "declared": false,
+      "kernel_min_m": 0.19299902563493324,
+      "ref_qp_m": 0.1929990256349819,
+      "ref_qp_overlap": false,
+      "ref_gjk_m": 0.1929990256349333,
+      "ref_gjk_overlap": false,
+      "sat_colliding": false,
+      "mesh_colliding": false,
+      "mesh_distance_m": 0.28202023671060605,
+      "q": [
+        0.048098216244717516,
+        0.7327708106135248,
+        -0.4740321876765031,
+        0.4352939655461585,
+        2.1035696468554037,
+        1.4144627875653777,
+        -1.002169898882256,
+        -0.009480780992275895,
+        0.6433391191777398
+      ]
+    },
+    {
+      "pair": [
+        "base_link",
+        "Link6"
+      ],
+      "declared": false,
+      "kernel_min_m": 0.08035086013545557,
+      "ref_qp_m": 0.08035086013545559,
+      "ref_qp_overlap": false,
+      "ref_gjk_m": 0.08035086013545557,
+      "ref_gjk_overlap": false,
+      "sat_colliding": false,
+      "mesh_colliding": false,
+      "mesh_distance_m": 0.1411111583754509,
+      "q": [
+        1.3318890001642508e-17,
+        -0.75113861454023,
+        0.4672196623003218,
+        1.3000930369983486,
+        1.898456099714282,
+        1.2816959580869451,
+        -0.4734324028394239,
+        0.2894087785093393,
+        1.39623052745007
+      ]
+    },
+    {
+      "pair": [
+        "Link1",
+        "Link3"
+      ],
+      "declared": false,
+      "kernel_min_m": 0.03708571774375898,
+      "ref_qp_m": 0.03708571774378252,
+      "ref_qp_overlap": false,
+      "ref_gjk_m": 0.03708571774375901,
+      "ref_gjk_overlap": false,
+      "sat_colliding": false,
+      "mesh_colliding": false,
+      "mesh_distance_m": 0.1001416461400727,
+      "q": [
+        2.2380775295295655e-15,
+        0.8921299352964094,
+        0.7858015910463861,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "pair": [
+        "Link1",
+        "Link4"
+      ],
+      "declared": false,
+      "kernel_min_m": 0.0,
+      "ref_qp_m": 2.689217680540221e-10,
+      "ref_qp_overlap": false,
+      "ref_gjk_m": 6.11683963367146e-11,
+      "ref_gjk_overlap": true,
+      "sat_colliding": true,
+      "mesh_colliding": false,
+      "mesh_distance_m": 0.048005127389045076,
+      "q": [
+        0.0005150648533182871,
+        -1.519966593771277,
+        -1.5703332338911484,
+        -1.4580874111563447,
+        0.7582176506837079,
+        1.0001744679728026,
+        -1.111186697502843,
+        0.17943790088990408,
+        -0.6698150561701984
+      ]
+    },
+    {
+      "pair": [
+        "Link1",
+        "Link6"
+      ],
+      "declared": false,
+      "kernel_min_m": 0.0,
+      "ref_qp_m": 7.317628606571596e-09,
+      "ref_qp_overlap": false,
+      "ref_gjk_m": 3.512459545178859e-10,
+      "ref_gjk_overlap": true,
+      "sat_colliding": true,
+      "mesh_colliding": false,
+      "mesh_distance_m": 0.07061926673425077,
+      "q": [
+        6.942457708556368e-21,
+        0.4408263348407587,
+        1.5706275446477302,
+        1.5705938810732467,
+        0.33686233608831795,
+        0.2842373449378452,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "pair": [
+        "Link2",
+        "Link4"
+      ],
+      "declared": false,
+      "kernel_min_m": 0.09094358222528404,
+      "ref_qp_m": 0.09094358222528409,
+      "ref_qp_overlap": false,
+      "ref_gjk_m": 0.09094358222528409,
+      "ref_gjk_overlap": false,
+      "sat_colliding": false,
+      "mesh_colliding": false,
+      "mesh_distance_m": 0.13773823395831045,
+      "q": [
+        0.3583680332134204,
+        -1.5214754102956423,
+        -0.7847738026020239,
+        0.8861864850192648,
+        -2.6628287411684695,
+        -0.8868831793157599,
+        0.3860174711998514,
+        -1.191090236115258,
+        -1.0319303995536702
+      ]
+    },
+    {
+      "pair": [
+        "Link2",
+        "Link5"
+      ],
+      "declared": false,
+      "kernel_min_m": 0.11030045201603356,
+      "ref_qp_m": 0.11030045201603399,
+      "ref_qp_overlap": false,
+      "ref_gjk_m": 0.11030045201603365,
+      "ref_gjk_overlap": false,
+      "sat_colliding": false,
+      "mesh_colliding": false,
+      "mesh_distance_m": 0.16706605303642053,
+      "q": [
+        0.3583680332134215,
+        -1.5214754102956465,
+        -1.2812374553867563,
+        1.5708,
+        -2.4648709425580284,
+        -0.8868831793157599,
+        0.3860174711998514,
+        -1.191090236115258,
+        -1.0319303995536702
+      ]
+    },
+    {
+      "pair": [
+        "Link2",
+        "Link6"
+      ],
+      "declared": false,
+      "kernel_min_m": 0.11101424701426861,
+      "ref_qp_m": 0.11101424701426867,
+      "ref_qp_overlap": false,
+      "ref_gjk_m": 0.11101424701426867,
+      "ref_gjk_overlap": false,
+      "sat_colliding": false,
+      "mesh_colliding": false,
+      "mesh_distance_m": 0.1526248317254881,
+      "q": [
+        0.0005150648533181765,
+        -1.1619166378198327,
+        -1.5708,
+        -1.5708,
+        0.9704729991458705,
+        1.48353,
+        -1.111186697502843,
+        0.17943790088990408,
+        -0.6698150561701984
+      ]
+    },
+    {
+      "pair": [
+        "Link3",
+        "Link5"
+      ],
+      "declared": false,
+      "kernel_min_m": 0.0,
+      "ref_qp_m": 7.981505683212293e-09,
+      "ref_qp_overlap": false,
+      "ref_gjk_m": 1.35749865556973e-12,
+      "ref_gjk_overlap": true,
+      "sat_colliding": true,
+      "mesh_colliding": false,
+      "mesh_distance_m": 0.019506389358931824,
+      "q": [
+        2.2812304398480533e-16,
+        -2.883020990266163e-17,
+        -2.985147589371118e-17,
+        -0.3343301534633396,
+        1.0805868478365345e-06,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "pair": [
+        "Link3",
+        "Link6"
+      ],
+      "declared": false,
+      "kernel_min_m": 0.18321273441711328,
+      "ref_qp_m": 0.18321273441711336,
+      "ref_qp_overlap": false,
+      "ref_gjk_m": 0.18321273441711333,
+      "ref_gjk_overlap": false,
+      "sat_colliding": false,
+      "mesh_colliding": false,
+      "mesh_distance_m": 0.23169137372817894,
+      "q": [
+        7.54295236818141e-15,
+        1.8266362549550158e-14,
+        1.6902536411451146e-14,
+        -0.7858025007237146,
+        -4.965310751080336e-05,
+        -0.8153141473892375,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "pair": [
+        "Link3",
+        "Link7"
+      ],
+      "declared": false,
+      "kernel_min_m": 0.20335750250626813,
+      "ref_qp_m": 0.20335750250626836,
+      "ref_qp_overlap": false,
+      "ref_gjk_m": 0.20335750250626816,
+      "ref_gjk_overlap": false,
+      "sat_colliding": false,
+      "mesh_colliding": false,
+      "mesh_distance_m": 0.2405551832522414,
+      "q": [
+        0.10983806043715072,
+        -0.7643330266165557,
+        -0.01671542570351033,
+        0.7829800413247286,
+        1.5003826078420035,
+        1.48353,
+        -0.7307211789955234,
+        0.2894087785093393,
+        1.39623052745007
+      ]
+    },
+    {
+      "pair": [
+        "Link4",
+        "Link6"
+      ],
+      "declared": false,
+      "kernel_min_m": 0.11956495165756333,
+      "ref_qp_m": 0.11956495165756334,
+      "ref_qp_overlap": false,
+      "ref_gjk_m": 0.11956495165756334,
+      "ref_gjk_overlap": false,
+      "sat_colliding": false,
+      "mesh_colliding": false,
+      "mesh_distance_m": 0.14203160772514975,
+      "q": [
+        0.04809821624471783,
+        1.3526537123680353,
+        -0.6682684964798137,
+        0.43529396554615596,
+        2.1035594454311197,
+        0.8153172677542092,
+        -1.002169898882256,
+        -0.009480780992275895,
+        0.6433391191777398
+      ]
+    },
+    {
+      "pair": [
+        "Link4",
+        "Link7"
+      ],
+      "declared": false,
+      "kernel_min_m": 0.13970016283135633,
+      "ref_qp_m": 0.1397001628313568,
+      "ref_qp_overlap": false,
+      "ref_gjk_m": 0.13970016283135628,
+      "ref_gjk_overlap": false,
+      "sat_colliding": false,
+      "mesh_colliding": false,
+      "mesh_distance_m": 0.14896368022568324,
+      "q": [
+        0.2227803782976228,
+        -0.4486539767729553,
+        0.7778988553014253,
+        -0.347172186940013,
+        -1.0234605085099429,
+        1.48353,
+        -0.8037482545497299,
+        -1.1285142122548388,
+        1.0098383505331716
+      ]
+    },
+    {
+      "pair": [
+        "Link4",
+        "Link8"
+      ],
+      "declared": false,
+      "kernel_min_m": 0.05876510393886435,
+      "ref_qp_m": 0.058765103938864735,
+      "ref_qp_overlap": false,
+      "ref_gjk_m": 0.058765103938864485,
+      "ref_gjk_overlap": false,
+      "sat_colliding": false,
+      "mesh_colliding": false,
+      "mesh_distance_m": 0.10307331963540353,
+      "q": [
+        0.35836803321342126,
+        -1.521475410295647,
+        -0.9811544252677302,
+        1.124347426762397,
+        -2.942837880634076,
+        -1.48353,
+        1.48353,
+        -1.48353,
+        -1.0319303995536702
+      ]
+    },
+    {
+      "pair": [
+        "Link4",
+        "Link9"
+      ],
+      "declared": false,
+      "kernel_min_m": 0.0,
+      "ref_qp_m": 6.548943416423287e-08,
+      "ref_qp_overlap": false,
+      "ref_gjk_m": 3.597800861994801e-10,
+      "ref_gjk_overlap": true,
+      "sat_colliding": true,
+      "mesh_colliding": false,
+      "mesh_distance_m": 0.06487863694960863,
+      "q": [
+        1.7152489156102142e-19,
+        -1.6993509661226415e-15,
+        -1.726660167628688e-15,
+        -1.701085098925239e-15,
+        -0.20980174321391365,
+        -1.4834957131058404,
+        1.483421518028011,
+        -1.4833553418187533,
+        0.7477612723952647
+      ]
+    },
+    {
+      "pair": [
+        "Link5",
+        "Link7"
+      ],
+      "declared": false,
+      "kernel_min_m": 0.0,
+      "ref_qp_m": 2.547134394642749e-10,
+      "ref_qp_overlap": false,
+      "ref_gjk_m": 2.547133853146056e-10,
+      "ref_gjk_overlap": true,
+      "sat_colliding": false,
+      "mesh_colliding": false,
+      "mesh_distance_m": 0.0265453287250862,
+      "q": [
+        1.0967960171844833e-16,
+        1.3772208855742637e-16,
+        1.3780453465693705e-16,
+        1.3794421831295278e-16,
+        2.2392223715277054e-16,
+        0.25285688630953757,
+        -0.21656444681741915,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "pair": [
+        "Link5",
+        "Link8"
+      ],
+      "declared": false,
+      "kernel_min_m": 0.008844080470914856,
+      "ref_qp_m": 0.008844080470914874,
+      "ref_qp_overlap": false,
+      "ref_gjk_m": 0.008844080470914882,
+      "ref_gjk_overlap": false,
+      "sat_colliding": false,
+      "mesh_colliding": false,
+      "mesh_distance_m": 0.041522500211840604,
+      "q": [
+        0.2227803782976229,
+        -0.4486539767729504,
+        0.777898855301431,
+        -0.3471721869400082,
+        -1.0233373271011386,
+        0.7857955525346786,
+        -1.48353,
+        -0.7849748903356838,
+        1.0098383505331716
+      ]
+    },
+    {
+      "pair": [
+        "Link5",
+        "Link9"
+      ],
+      "declared": false,
+      "kernel_min_m": 0.06401045325192382,
+      "ref_qp_m": 0.0640104532519241,
+      "ref_qp_overlap": false,
+      "ref_gjk_m": 0.06401045325192385,
+      "ref_gjk_overlap": false,
+      "sat_colliding": false,
+      "mesh_colliding": false,
+      "mesh_distance_m": 0.10432899830719268,
+      "q": [
+        0.35836803321342137,
+        -1.521475410295644,
+        -0.9811544252677286,
+        1.124347426762399,
+        -2.662828741168469,
+        -0.1377526774773517,
+        1.48353,
+        -1.48353,
+        -1.48353
+      ]
+    },
+    {
+      "pair": [
+        "Link6",
+        "Link8"
+      ],
+      "declared": false,
+      "kernel_min_m": 0.0,
+      "ref_qp_m": 8.676152589289927e-09,
+      "ref_qp_overlap": false,
+      "ref_gjk_m": 9.4836021467988e-10,
+      "ref_gjk_overlap": true,
+      "sat_colliding": false,
+      "mesh_colliding": false,
+      "mesh_distance_m": 0.05500024524198429,
+      "q": [
+        8.898030844814618e-19,
+        -2.7877404207794374e-16,
+        -2.787733761426833e-16,
+        -2.7877272857933403e-16,
+        -1.2734409723328252e-16,
+        -2.787710568596017e-16,
+        0.40213534109938537,
+        -0.2638850970743449,
+        0.0
+      ]
+    },
+    {
+      "pair": [
+        "Link6",
+        "Link9"
+      ],
+      "declared": false,
+      "kernel_min_m": 0.026490695214520493,
+      "ref_qp_m": 0.026490695214520688,
+      "ref_qp_overlap": false,
+      "ref_gjk_m": 0.026490695214520608,
+      "ref_gjk_overlap": false,
+      "sat_colliding": false,
+      "mesh_colliding": false,
+      "mesh_distance_m": 0.055576660381956466,
+      "q": [
+        0.35836803321342076,
+        -1.521475410295647,
+        -0.9811544252677302,
+        1.1243474267623963,
+        -2.66282874116847,
+        -0.8868831793157559,
+        0.9997693534680784,
+        -1.48353,
+        -0.7849213230069789
+      ]
+    },
+    {
+      "pair": [
+        "Link7",
+        "Link9"
+      ],
+      "declared": false,
+      "kernel_min_m": 0.0,
+      "ref_qp_m": 2.8233473235006486e-08,
+      "ref_qp_overlap": false,
+      "ref_gjk_m": 0.0,
+      "ref_gjk_overlap": true,
+      "sat_colliding": true,
+      "mesh_colliding": false,
+      "mesh_distance_m": 0.036705112480136276,
+      "q": [
+        4.031806529525226e-16,
+        -2.8599547083245463e-16,
+        -3.719675582172435e-16,
+        -4.548238616896557e-16,
+        -6.5488731264772096e-15,
+        -5.87546330964349e-16,
+        1.276876349082509e-14,
+        -0.7715168604699537,
+        -0.5386021564535383
+      ]
+    }
+  ]
+}

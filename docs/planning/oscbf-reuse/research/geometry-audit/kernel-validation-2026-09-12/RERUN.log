@@ -1,0 +1,900 @@
+=== sanity_refs ===
+gap          analytic=1.000000000 qp=1.000000000(ov=False) fcl=1.000000000(coll=False) gjk=1.000000000(ov=False)
+unequal      analytic=1.700000000 qp=1.700000000(ov=False) fcl=1.700000000(coll=False) gjk=1.700000000(ov=False)
+robot_scale  analytic=0.170000000 qp=0.170000000(ov=False) fcl=0.170000000(coll=False) gjk=0.170000000(ov=False)
+touch        analytic=0.000000000 qp=0.000000000(ov=True) fcl=0.000000000(coll=True) gjk=0.000000000(ov=True)
+overlap      analytic=0.000000000 qp=0.000000000(ov=True) fcl=-1.000000000(coll=True) gjk=0.000000000(ov=True)
+contained    analytic=0.000000000 qp=0.000000000(ov=True) fcl=-1.000000000(coll=True) gjk=0.000000000(ov=True)
+identical    analytic=0.000000000 qp=0.000000000(ov=True) fcl=-1.000000000(coll=True) gjk=0.000000000(ov=True)
+corner       analytic=1.732050808 qp=1.732050808(ov=False) fcl=1.732050808(coll=False) gjk=1.732050808(ov=False)
+exit=0
+=== minrepro3 ===
+eager (correct transpose):
+ [[ 1.   0.   0. ]
+ [-1.   0.   0. ]
+ [ 0.   0.7  0. ]
+ [ 0.  -0.7  0. ]
+ [ 0.   0.   0.6]
+ [ 0.   0.  -0.6]]
+jit   (what actually ran):
+ [[ 1.  -1.   0. ]
+ [-0.   0.  -0. ]
+ [ 0.  -0.   0.7]
+ [-0.7  0.  -0. ]
+ [ 0.  -0.   0. ]
+ [-0.   0.6 -0.6]]
+jit == eager.reshape(6,3) : False
+jit == eager.T             : False
+
+pre-transpose nd (3,6):
+ [[ 1.  -1.   0.  -0.   0.  -0. ]
+ [ 0.  -0.   0.7 -0.7  0.  -0. ]
+ [ 0.  -0.   0.  -0.   0.6 -0.6]]
+nd.T           :
+ [[ 1.   0.   0. ]
+ [-1.  -0.  -0. ]
+ [ 0.   0.7  0. ]
+ [-0.  -0.7 -0. ]
+ [ 0.   0.   0.6]
+ [-0.  -0.  -0.6]]
+nd.reshape(6,3):
+ [[ 1.  -1.   0. ]
+ [-0.   0.  -0. ]
+ [ 0.  -0.   0.7]
+ [-0.7  0.  -0. ]
+ [ 0.  -0.   0. ]
+ [-0.   0.6 -0.6]]
+nd.ravel()->(6,3) same as reshape: False
+
+jit - Z3 == nd.reshape(6,3)? True
+nd.reshape(6,3,order=C) == jit: True
+nd.reshape(6,3,order=F) == jit: False
+
+nd.flatten()      : [ 1.  -1.   0.  -0.   0.  -0.   0.  -0.   0.7 -0.7  0.  -0.   0.  -0.
+  0.  -0.   0.6 -0.6]
+eager-0 flatten() : [ 1.   0.   0.  -1.   0.   0.   0.   0.7  0.   0.  -0.7  0.   0.   0.
+  0.6  0.   0.  -0.6]
+const nd, traced h, .T                         match=False
+traced nd (add 0*h), .T                        match=False
+no SIGN multiply, .T                           match=True
+SIGN as python list, .T                        match=False
+half literal const, .T                         match=False
+exit=0
+=== minrepro ===
+f1 const center closure    eager==jit: True
+f2 zeros(3) fresh const    eager==jit: True
+f3 transpose only          eager==jit: True
+f4 transpose only (dup)    eager==jit: True
+f5 einsum transpose        eager==jit: True
+g traced const ==   True
+vmap traced ==       True
+exit=0
+=== minrepro2 ===
+v1 verbatim (const rotation, .T)                     match=False  <-- jit == eager.reshape(6,3): False
+v2 literal rotation                                  match=False  <-- jit == eager.reshape(6,3): False
+v3 constant nd                                       match=True
+v4 swapaxes                                          match=False  <-- jit == eager.reshape(6,3): False
+v5 no centre add                                     match=False  <-- jit == eager.reshape(6,3): False
+v6 no gather on half                                 match=False  <-- jit == eager.reshape(6,3): False
+v7 add-then-transpose                                match=True
+v8 broadcast_to SIGN                                 match=False  <-- jit == eager.reshape(6,3): False
+exit=0
+=== facesbug ===
+--- eager
+  centers
+ [[ 1.   0.   0. ]
+ [-1.   0.   0. ]
+ [ 0.   0.7  0. ]
+ [ 0.  -0.7  0. ]
+ [ 0.   0.   0.6]
+ [ 0.   0.  -0.6]]
+  tangents
+ [[0. 1. 0. 0. 0. 1.]
+ [0. 1. 0. 0. 0. 1.]
+ [1. 0. 0. 0. 0. 1.]
+ [1. 0. 0. 0. 0. 1.]
+ [1. 0. 0. 0. 1. 0.]
+ [1. 0. 0. 0. 1. 0.]]
+  widths
+ [[0.7 0.6]
+ [0.7 0.6]
+ [1.  0.6]
+ [1.  0.6]
+ [1.  0.7]
+ [1.  0.7]]
+--- jit
+  centers
+ [[ 1.  -1.   0. ]
+ [-0.   0.  -0. ]
+ [ 0.  -0.   0.7]
+ [-0.7  0.  -0. ]
+ [ 0.  -0.   0. ]
+ [-0.   0.6 -0.6]]
+  tangents
+ [[0. 1. 0. 0. 0. 1.]
+ [0. 1. 0. 0. 0. 1.]
+ [1. 0. 0. 0. 0. 1.]
+ [1. 0. 0. 0. 0. 1.]
+ [1. 0. 0. 0. 1. 0.]
+ [1. 0. 0. 0. 1. 0.]]
+  widths
+ [[0.7 0.6]
+ [0.7 0.6]
+ [1.  0.6]
+ [1.  0.6]
+ [1.  0.7]
+ [1.  0.7]]
+centers differing entries: 8
+tangents differing entries: 0
+widths differing entries: 0
+
+FACE_NORMAL_AXIS [0 0 1 1 2 2] int32
+FACE_NORMAL_SIGN [ 1. -1.  1. -1.  1. -1.]
+FACE_TANGENT_AXES
+ [[1 2]
+ [1 2]
+ [0 2]
+ [0 2]
+ [0 1]
+ [0 1]]
+exit=0
+=== helperdiff ===
+corners_world(I,zero,R,a)              max|eager-jit| = 0.000e+00
+corners_world(I,t,R,b)                 max|eager-jit| = 0.000e+00
+faces_world(I,t,R,b)                   max|eager-jit| = 4.000e-01
+faces_world(I,zero,R,a)                max|eager-jit| = 1.000e+00
+point_face_distances                   max|eager-jit| = 0.000e+00
+corners_world(TR,zero,R,a) arg-I       max|eager-jit| = 0.000e+00
+faces_world(TR,t,R,b) arg-I            max|eager-jit| = 0.000e+00
+pair_impl                              max|eager-jit| = 1.934e-01
+jax 0.6.2 x64 True backend cpu
+exit=0
+=== hlo ===
+transpose occurrences: 3 | broadcast: 28 | reshape: 5
+--- [38] %28 = stablehlo.transpose %27, dims = [1, 0] : (tensor<3x6xf64>) -> tensor<6x3xf64>
+--- [50] %40 = stablehlo.transpose %39, dims = [1, 0] : (tensor<3x6xf64>) -> tensor<6x3xf64>
+--- [60] %50 = stablehlo.transpose %49, dims = [1, 0] : (tensor<3x6xf64>) -> tensor<6x3xf64>
+
+=== eager jaxpr of the same computation ===
+{ lambda a:f64[4,4] b:f64[3,3] c:f64[3] d:i32[6] e:f64[6] f:i32[6,2]; g:f64[3]. let
+    h:f64[3,3] = slice[limit_indices=(3, 3) start_indices=(0, 0) strides=None] a
+    i:f64[3,3] = dot_general[
+      dimension_numbers=(([1], [0]), ([], []))
+      preferred_element_type=float64
+    ] h b
+    j:f64[3,3] = slice[limit_indices=(3, 3) start_indices=(0, 0) strides=None] a
+    k:f64[3] = dot_general[
+      dimension_numbers=(([1], [0]), ([], []))
+      preferred_element_type=float64
+    ] j c
+    l:f64[3,1] = slice[limit_indices=(3, 4) start_indices=(0, 3) strides=None] a
+    m:f64[3] = squeeze[dimensions=(1,)] l
+    n:f64[3] = add k m
+    o:bool[6] = lt d 0:i32[]
+    p:i32[6] = add d 3:i32[]
+    q:i32[6] = select_n o d p
+    r:i32[6,1] = broadcast_in_dim[
+      broadcast_dimensions=(0,)
+      shape=(6, 1)
+      sharding=None
+    ] q
+    s:f64[3,6] = gather[
+      dimension_numbers=GatherDimensionNumbers(offset_dims=(0,), collapsed_slice_dims=(1,), start_index_map=(1,), operand_batching_dims=(), start_indices_batching_dims=())
+      fill_value=None
+      indices_are_sorted=False
+      mode=GatherScatterMode.PROMISE_IN_BOUNDS
+      slice_sizes=(3, 1)
+      unique_indices=False
+    ] i r
+    t:f64[1,6] = broadcast_in_dim[
+      broadcast_dimensions=(1,)
+      shape=(1, 6)
+      sharding=None
+    ] e
+    u:f64[3,6] = mul s t
+    v:f64[1,3] = broadcast_in_dim[
+      broadcast_dimensions=(1,)
+      shape=(1, 3)
+      sharding=None
+    ] n
+    w:bool[6] = lt d 0:i32[]
+    x:i32[6] = add d 3:i32[]
+    y:i32[6] = select_n w d x
+    z:i32[6,1] = broadcast_in_dim[
+      broadcast_dimensions=(0,)
+      shape=(6, 1)
+      sharding=None
+    ] y
+    ba:f64[6] = gather[
+      dimension_numbers=GatherDimensionNumbers(offset_dims=(), collapsed_slice_dims=(0,), start_index_map=(0,), operand_ba
+exit=0
+=== isolate ===
+gap                    edge=1.000000000 face=1.000000000 kernel=1.000000000 analytic=1.000000000 
+unequal_separated      edge=1.708478856 face=1.700000000 kernel=1.700000000 analytic=1.700000000 
+unequal_robot_scale    edge=0.170847886 face=0.170000000 kernel=0.170000000 analytic=0.170000000 
+touch                  edge=0.000000000 face=0.000000000 kernel=0.000000000 analytic=0.000000000 
+overlap                edge=0.000000000 face=0.000000000 kernel=0.000000000 analytic=0.000000000 
+contained              edge=1.131370850 face=0.800000000 kernel=0.800000000 analytic=0.000000000 
+identical              edge=0.000000000 face=0.000000000 kernel=0.000000000 analytic=0.000000000 
+exit=0
+=== callpath ===
+eager  impl split      : (1.7084788555905515, 1.7000000000000002)
+eager  custom_jvp     : 1.7000000000000002
+jitted custom_jvp     : 1.5065855435387667
+jitted impl           : 1.7000000000000002
+jitted edge / face    : 1.7084788555905515 1.5065855435387667
+vmap prod path        : [0.19299908 0.2239981  0.38540213]
+exit=0
+=== bisect_regimes ===
+reference (QP/FCL): 0.18000000000000005 0.18
+
+_obb_pair_distance_impl:
+  eager                                          0.180000000000   err_vs_ref=-5.551e-17
+  jit                                            0.180000000000   err_vs_ref=-5.551e-17
+  vmap(eager)                                    0.180000000000   err_vs_ref=-5.551e-17
+  jit(vmap(impl))                                0.180000000000   err_vs_ref=-5.551e-17
+
+_obb_pair_distance (custom_jvp):
+  eager                                          0.180000000000   err_vs_ref=-5.551e-17
+  jit                                            0.180000000000   err_vs_ref=-5.551e-17
+  jit(vmap)                                      0.180000000000   err_vs_ref=-5.551e-17
+
+edge term only:
+  eager                                          0.182482875909   err_vs_ref=+2.483e-03
+  jit                                            0.182482875909   err_vs_ref=+2.483e-03
+  jit(vmap)                                      0.182482875909   err_vs_ref=+2.483e-03
+
+face term only:
+  eager                                          0.180000000000   err_vs_ref=-5.551e-17
+  jit                                            0.180000000000   err_vs_ref=-5.551e-17
+  jit(vmap)                                      0.180000000000   err_vs_ref=-5.551e-17
+exit=0
+=== validate_kernel ===
+HARNESS SELF-CHECK (axis-aligned unequal boxes, expected 0.170000000):
+   analytic     1.700000000
+   eager        1.700000000
+   jit_traced   1.700000000
+   jit_const    1.506585544
+   prod         1.700000000
+
+case                    ref_qp         eager    jit_traced     jit_const          prod  overlap
+aa_gap             1.000000000   1.000000000   1.000000000   1.000000000   1.000000000    False
+aa_unequal_sep     1.700000000   1.700000000   1.700000000   1.506585544   1.700000000    False
+aa_robot_scale     0.170000000   0.170000000   0.170000000   0.150658554   0.170000000    False
+aa_touch           0.000000000   0.000000000   0.000000000   0.000000000   0.000000000     True
+aa_overlap         0.000000000   0.000000000   0.000000000   0.000000000   0.000000000     True
+aa_contained       0.000000000   0.800000000   0.800000000   0.200000000   0.800000000     True
+aa_identical       0.000000000   0.000000000   0.000000000   0.000000000   0.000000000     True
+rot_face90         0.180000000   0.180000000   0.180000000   0.082462113   0.180000000    False
+rot45_sep          0.460611648   0.460611648   0.460611648   0.445616217   0.460611648    False
+rot_edge_edge      0.125007809   0.125007809   0.125007809   0.110191133   0.125007809    False
+rot_near_contact   0.000100000   0.000100000   0.000100000   0.010000500   0.000100000    False
+rot_small_gap      0.050100000   0.050100000   0.050100000   0.004000000   0.050100000    False
+micro_scale        0.000100000   0.000100000   0.000100000   0.005001000   0.000100000    False
+
+{
+  "n_cases": 400,
+  "n_separated": 319,
+  "n_overlapping": 81,
+  "sep_err_eager": {
+    "n": 319,
+    "max_abs_err": 4.808107813238614e-06,
+    "p95_abs_err": 1.0180051246422275e-14,
+    "median_abs_err": 2.220446049250313e-16,
+    "max_overestimate_m": 4.808107813238614e-06,
+    "max_underestimate_m": -5.0022968623233965e-12,
+    "n_err_gt_1um": 3,
+    "n_err_gt_1mm": 0,
+    "n_overestimate_gt_1mm": 0,
+    "n_underestimate_gt_1mm": 0
+  },
+  "sep_err_prod": {
+    "n": 319,
+    "max_abs_err": 4.808107813238614e-06,
+    "p95_abs_err": 1.0182826803983837e-14,
+    "median_abs_err": 2.220446049250313e-16,
+    "max_overestimate_m": 4.808107813238614e-06,
+    "max_underestimate_m": -5.0022968623233965e-12,
+    "n_err_gt_1um": 3,
+    "n_err_gt_1mm": 0,
+    "n_overestimate_gt_1mm": 0,
+    "n_underestimate_gt_1mm": 0
+  },
+  "overlap_kernel_returns_positive_count": 81,
+  "overlap_kernel_returns_positive_max": 0.19084621809281102,
+  "overlap_examples": [
+    {
+      "k": 0,
+      "kernel_prod": 0.00011924606327337298,
+      "scale": 0.01769708892425253
+    },
+    {
+      "k": 2,
+      "kernel_prod": 0.19084621809281102,
+      "scale": 0.9895182919483126
+    },
+    {
+      "k": 3,
+      "kernel_prod": 0.000158835294797843,
+      "scale": 0.016870172437228225
+    },
+    {
+      "k": 7,
+      "kernel_prod": 0.006207894322797384,
+      "scale": 0.28622941832616255
+    },
+    {
+      "k": 10,
+      "kernel_prod": 0.0006582614618569588,
+      "scale": 0.09011141651724722
+    }
+  ]
+}
+
+wrote validate_kernel.json
+exit=0
+=== verify_qcase ===
+FK agreement (link transform vs link transform, fixed check):
+   max over 6 sampled q: 5.551e-16
+
+rows with |kernel - ref_qp| > 1um: 2
+
+--- q index 10, pair base_link/Link7 ---
+   q = [ 0.036494 -1.369353  1.219662  1.213561  1.184351  1.37949  -0.912711
+ -1.202239 -1.30372 ]
+   kernel      = 1.664594638e-02
+   ref_qp      = 0.000000000e+00  (overlap flag True)
+   ref_gjk     = 1.406225467e-10  overlapping=True
+   ref_fcl     = -1.000000000e+00  colliding=True
+   ref_qp multi-start values = ['1.387779e-17', '6.938894e-18', '1.551584e-17', '1.667832e-09', '6.938894e-18']
+   |FD kernel| max = 9.1243e-02   |FD ref_qp| max = 2.7756e-11
+
+--- q index 10, pair base_link/Link8 ---
+   q = [ 0.036494 -1.369353  1.219662  1.213561  1.184351  1.37949  -0.912711
+ -1.202239 -1.30372 ]
+   kernel      = 2.237774360e-04
+   ref_qp      = 7.230183256e-09  (overlap flag False)
+   ref_gjk     = 0.000000000e+00  overlapping=True
+   ref_fcl     = -1.000000000e+00  colliding=True
+   ref_qp multi-start values = ['0.000000e+00', '6.721895e-10', '6.157428e-10', '1.011496e-10', '5.805207e-10']
+   |FD kernel| max = 4.0177e-02   |FD ref_qp| max = 7.7289e-06
+
+wrote verify_qcase.json
+exit=0
+=== mech ===
+=== identity rotation, constant closed over ===
+eager (6,3):
+[[ 1.01  0.02  0.03]
+ [-0.99  0.02  0.03]
+ [ 0.01  1.02  0.03]
+ [ 0.01 -0.98  0.03]
+ [ 0.01  0.02  0.73]
+ [ 0.01  0.02 -0.67]]
+jit   (6,3):
+[[ 1.01 -0.98  0.03]
+ [ 0.01  0.02  0.03]
+ [ 0.01  0.02  1.03]
+ [-0.99  0.02  0.03]
+ [ 0.01  0.02  0.03]
+ [ 0.01  0.72 -0.67]]
+  jit                        shape=(6, 3) maxdiff-vs-eager=1.000e+00
+  difference:
+[[ 0.  -1.   0. ]
+ [ 1.   0.   0. ]
+ [ 0.  -1.   1. ]
+ [-1.   1.   0. ]
+ [ 0.   0.  -0.7]
+ [ 0.   0.7  0. ]]
+
+=== rotation passed as a traced argument ===
+  jit_traced                 shape=(6, 3) maxdiff-vs-eager=0.000e+00
+
+=== eager with a traced rotation (inside an outer jit, q-like) ===
+  maxdiff=0.000e+00
+
+=== is the jitted result a *permutation* of the eager one per column? ===
+  col 0 sorted-equal=True  [-0.99  0.01  0.01  0.01  0.01  1.01] vs [-0.99  0.01  0.01  0.01  0.01  1.01]
+  col 1 sorted-equal=False  [-0.98  0.02  0.02  0.02  0.02  1.02] vs [-0.98  0.02  0.02  0.02  0.02  0.72]
+  col 2 sorted-equal=False  [-0.67  0.03  0.03  0.03  0.03  0.73] vs [-0.67  0.03  0.03  0.03  0.03  1.03]
+
+=== FALSIFIABLE HYPOTHESIS ===
+  jit result == C-order-reshape(prod, (6,3)) + cen[None,:] ?
+  reconstruction:
+[[ 1.01 -0.98  0.03]
+ [ 0.01  0.02  0.03]
+ [ 0.01  0.02  1.03]
+ [-0.99  0.02  0.03]
+ [ 0.01  0.02  0.03]
+ [ 0.01  0.72 -0.67]]
+  maxdiff vs jit = 0.000e+00   exact = True
+
+=== does the same reconstruction hold for a non-identity constant rotation? ===
+  rot_z_0.4  reshape-reconstruction exact=True  maxdiff=0.000e+00
+  rot_xy_1.1 reshape-reconstruction exact=False  maxdiff=1.891e-01
+
+=== the same product without the transpose (jit, constant rot) ===
+  eager (3,6):
+[[ 1.  -1.   0.  -0.   0.  -0. ]
+ [ 0.  -0.   1.  -1.   0.  -0. ]
+ [ 0.  -0.   0.  -0.   0.7 -0.7]]
+  jit   (3,6):
+[[ 1.  -0.   0.  -1.   0.  -0. ]
+ [-1.   0.  -0.   0.  -0.   0.7]
+ [ 0.  -0.   1.  -0.   0.  -0.7]]
+  maxdiff=1.000e+00
+
+=== with the centre term removed (isolate the transpose from the add) ===
+  maxdiff=1.000e+00
+  jit:
+[[ 1.  -1.   0. ]
+ [-0.   0.  -0. ]
+ [ 0.  -0.   1. ]
+ [-1.   0.  -0. ]
+ [ 0.  -0.   0. ]
+ [-0.   0.7 -0.7]]
+  C-order reshape(prod):
+[[ 1.  -1.   0. ]
+ [-0.   0.  -0. ]
+ [ 0.  -0.   1. ]
+ [-1.   0.  -0. ]
+ [ 0.  -0.   0. ]
+ [-0.   0.7 -0.7]]
+  only_T == C-order reshape(prod): True
+
+=== do alternative transpose spellings avoid it? (constant rotation, traced half) ===
+  dotT       max|jit-eager|=1.000e+00
+  swapaxes   max|jit-eager|=1.000e+00
+  transpose  max|jit-eager|=1.000e+00
+  einsum     max|jit-eager|=1.000e+00
+
+=== HLO op inventory (identity-rotation constant shape) ===
+   []
+    %6 = "stablehlo.gather"(%cst, %5) <{dimension_numbers = #stablehlo.gather<offset_dims = [0], collapsed_slice_dims = [1], start_index_map = [1], index_
+    %17 = "stablehlo.gather"(%arg0, %16) <{dimension_numbers = #stablehlo.gather<collapsed_slice_dims = [0], start_index_map = [0], index_vector_dim = 1>,
+    %21 = stablehlo.transpose %20, dims = [1, 0] : (tensor<3x6xf64>) -> tensor<6x3xf64>
+
+wrote mech.json
+exit=0
+=== shapes ===
+Call-shape matrix for dc._obb_faces_world  (T transform, c centre, R local rot, h half-extents)
+T    c    R    h     max|jit-eager|  max|jit-TRUTH-e|  classification
+     (T = the 4x4 link transform, held constant vs passed as a traced argument)
+const  const  const  const      9.464e-01     9.464e-01  different-values
+const  const  const  dyn        9.464e-01     9.464e-01  different-values
+const  const  dyn    const      2.776e-17     2.776e-17  different-values
+const  const  dyn    dyn        2.776e-17     2.776e-17  different-values
+const  dyn    const  const      9.464e-01     9.464e-01  different-values
+const  dyn    const  dyn        9.464e-01     9.464e-01  different-values
+const  dyn    dyn    const      2.776e-17     2.776e-17  different-values
+const  dyn    dyn    dyn        2.776e-17     2.776e-17  different-values
+dyn    const  const  const      2.776e-17     2.776e-17  different-values
+dyn    const  const  dyn        2.776e-17     2.776e-17  different-values
+dyn    const  dyn    const      2.776e-17     2.776e-17  different-values
+dyn    const  dyn    dyn        2.776e-17     2.776e-17  different-values
+dyn    dyn    const  const      2.776e-17     2.776e-17  different-values
+dyn    dyn    const  dyn        2.776e-17     2.776e-17  different-values
+dyn    dyn    dyn    const      2.776e-17     2.776e-17  different-values
+dyn    dyn    dyn    dyn        2.776e-17     2.776e-17  different-values
+
+=== public production API: self_collision_distances ===
+OBB_LOCAL_ROTATIONS all identity: True
+  self_collision_distances_jit max_abs_diff_vs_eager=0.000e+00
+  outer_jit                    max_abs_diff_vs_eager=0.000e+00
+  vmap_jit                     max_abs_diff_vs_eager=0.000e+00
+  constant_closure             max_abs_diff_vs_eager=0.000e+00
+  constant_closure_pair        max_abs_diff_vs_eager=shape ()
+  grad_jit                     max_abs_diff_vs_eager=shape (9,)
+  grad_eager                   max_abs_diff_vs_eager=shape (9,)
+  vs qp_reference (14 declared pairs): max|kernel-qp| = 3.109e-15 (eager), 3.109e-15 (jit)
+
+wrote shapes.json
+exit=0
+=== rule2x2 ===
+A. face-centre helper, transform = identity (world rotation = local rotation)
+shape (rotation,half)    max|jit-truth|  verdict
+R=const h=const             6.680e-01  CORRUPT (values permuted)
+R=const h=traced            6.680e-01  CORRUPT (values permuted)
+R=traced h=const            5.551e-17  exact
+R=traced h=traced           5.551e-17  exact
+
+B. full pair distance vs the QP oracle, one box per pattern
+   qp reference = 0.009799083 (overlap=False)
+   production (locals const, transforms traced)         0.009799083  err=-8.136e-16
+   audit (locals const, centres traced, transforms const id) 0.005680951  err=-4.118e-03
+   audit + half-extents traced too                      0.005680951  err=-4.118e-03
+
+C. real production entry self_collision_distances: max|eager-jit| = 0.000e+00
+
+D. gradient wrt the varied argument, same two patterns
+   production (transforms traced)                 d/dcA=[[-0.022586  0.016939 -0.011293  0.564642]
+ [ 0.033013 -0.02476   0.016507 -0.825336]
+ [ 0.        0.        0.        0.      ]
+ [ 0.        0.        0.        0.      ]]
+   audit (locals const, transforms const id)      d/dcA=[ 0.564642 -0.825336  0.      ]
+
+wrote rule2x2.json
+exit=0
+=== recon ===
+=== faithful audit shape: make_jit_const (transforms and rotations constant) ===
+aa_unequal_sep   qp=1.700000000 eager=1.700000000 jit_traced=1.700000000 jit_const=1.506585544  err_jit_const=-1.934e-01
+aa_robot_scale   qp=0.170000000 eager=0.170000000 jit_traced=0.170000000 jit_const=0.150658554  err_jit_const=-1.934e-02
+rot45_sep        qp=0.460611648 eager=0.460611648 jit_traced=0.460611648 jit_const=0.445616217  err_jit_const=-1.500e-02
+rot_edge_edge    qp=0.125007809 eager=0.125007809 jit_traced=0.125007809 jit_const=0.110191133  err_jit_const=-1.482e-02
+
+=== same numbers, but the varying quantity passed as the TRANSFORM (production shape) ===
+aa_unequal_sep   eager=1.700000000 jit(transform traced)=1.700264685  diff=2.647e-04
+aa_robot_scale   eager=0.170000000 jit(transform traced)=0.170026469  diff=2.647e-05
+rot45_sep        eager=0.464180087 jit(transform traced)=0.461166976  diff=-3.013e-03
+rot_edge_edge    eager=0.120594728 jit(transform traced)=0.098137315  diff=-2.246e-02
+
+=== value dependence of the face-centre helper (constant rotation, traced half-extents) ===
+  identity     unit_repeat  maxdiff=1.000e+00 permutation=True
+  identity     generic      maxdiff=5.300e-01 permutation=True
+  identity     robot_like   maxdiff=1.000e-01 permutation=True
+  rot_z_0.4    unit_repeat  maxdiff=1.310e+00 permutation=True
+  rot_z_0.4    generic      maxdiff=5.504e-01 permutation=True
+  rot_z_0.4    robot_like   maxdiff=1.310e-01 permutation=True
+  rot_xy_1.1   unit_repeat  maxdiff=1.260e+00 permutation=True
+  rot_xy_1.1   generic      maxdiff=6.680e-01 permutation=True
+  rot_xy_1.1   robot_like   maxdiff=1.260e-01 permutation=True
+  rot_xyz_gen  unit_repeat  maxdiff=1.401e+00 permutation=False
+  rot_xyz_gen  generic      maxdiff=7.427e-01 permutation=False
+  rot_xyz_gen  robot_like   maxdiff=1.401e-01 permutation=False
+
+wrote recon.json
+exit=0
+=== exclusion_audit ===
+SAT sweep over 3001 configs x 36 non-adjacent pairs (0.2s)
+
+omitted non-adjacent pair  SAT coll max depth  min SAT lower bound (sep)
+Link5/Link7                 2470   0.02332  0.000006
+Link6/Link8                 2266   0.02027  0.000006
+Link3/Link5                 1680   0.00885  0.000002
+Link7/Link9                  239   0.00135  0.000021
+Link1/Link6                    2   0.03390  0.012085
+base_link/Link2                0   0.00000  0.192999
+base_link/Link3                0   0.00000  0.192999
+base_link/Link6                0   0.00000  0.082720
+Link1/Link3                    0   0.00000  0.027008
+Link1/Link4                    0   0.00000  0.007490
+Link2/Link4                    0   0.00000  0.064810
+Link2/Link5                    0   0.00000  0.095084
+Link2/Link6                    0   0.00000  0.111300
+Link3/Link6                    0   0.00000  0.183230
+Link3/Link7                    0   0.00000  0.183774
+Link4/Link6                    0   0.00000  0.119565
+Link4/Link7                    0   0.00000  0.139798
+Link4/Link8                    0   0.00000  0.074167
+Link4/Link9                    0   0.00000  0.027960
+Link5/Link8                    0   0.00000  0.010093
+Link5/Link9                    0   0.00000  0.049598
+Link6/Link9                    0   0.00000  0.027968
+
+declared pair           SAT coll max depth  min SAT lower bound (sep)
+Link1/Link9                    7   0.05236  0.001135
+Link1/Link5                    2   0.03341  0.001635
+base_link/Link8                3   0.04338  0.003755
+Link1/Link8                    3   0.04043  0.004988
+base_link/Link9                8   0.10447  0.005479
+base_link/Link7                0   0.00000  0.005545
+Link2/Link9                    0   0.00000  0.007645
+Link1/Link7                    1   0.03821  0.016551
+Link2/Link8                    0   0.00000  0.042488
+Link3/Link9                    1   0.01343  0.089299
+Link2/Link7                    0   0.00000  0.107343
+Link3/Link8                    0   0.00000  0.129759
+base_link/Link4                0   0.00000  0.192999
+base_link/Link5                0   0.00000  0.194756
+
+configs with >=1 SAT collision among the 36 pairs: 2890 / 3001
+blind events (SAT colliding, kernel > 1e-9): 6682
+   per pair: {"Link6/Link8": 2266, "Link5/Link7": 2470, "Link3/Link5": 1680, "Link3/Link9": 1, "Link7/Link9": 239, "Link1/Link9": 7, "base_link/Link9": 8, "base_link/Link8": 3, "Link1/Link5": 2, "Link1/Link6": 2, "Link1/Link7": 1, "Link1/Link8": 3}
+
+QP/GJK/FCL cross-check of the first blind events (all oracles on the OBBs):
+   Link6/Link8            kernel=7.122698e-03 qp=2.612e-08(ov=False) gjk=1.406e-09(ov=False) fcl_box=-1.0(coll=True)
+   Link5/Link7            kernel=1.505237e-02 qp=0.000e+00(ov=True) gjk=0.000e+00(ov=True) fcl_box=-1.0(coll=True)
+   Link3/Link5            kernel=8.848872e-03 qp=1.241e-16(ov=True) gjk=1.405e-09(ov=False) fcl_box=-1.0(coll=True)
+   Link5/Link7            kernel=1.863513e-02 qp=1.161e-09(ov=False) gjk=1.536e-12(ov=True) fcl_box=-1.0(coll=True)
+   Link6/Link8            kernel=2.772939e-03 qp=6.205e-09(ov=False) gjk=1.058e-10(ov=True) fcl_box=-1.0(coll=True)
+   Link3/Link5            kernel=3.346909e-03 qp=1.119e-16(ov=True) gjk=2.107e-10(ov=True) fcl_box=-1.0(coll=True)
+   Link5/Link7            kernel=1.755386e-02 qp=4.486e-10(ov=False) gjk=1.408e-17(ov=True) fcl_box=-1.0(coll=True)
+   Link6/Link8            kernel=1.157358e-02 qp=3.331e-15(ov=True) gjk=1.446e-14(ov=True) fcl_box=-1.0(coll=True)
+   Link3/Link5            kernel=5.518282e-03 qp=4.287e-08(ov=False) gjk=1.338e-10(ov=True) fcl_box=-1.0(coll=True)
+   Link3/Link5            kernel=2.022790e-03 qp=3.057e-09(ov=False) gjk=0.000e+00(ov=True) fcl_box=-1.0(coll=True)
+   Link5/Link7            kernel=2.913613e-03 qp=2.092e-09(ov=False) gjk=7.263e-11(ov=True) fcl_box=-1.0(coll=True)
+   Link6/Link8            kernel=4.281194e-03 qp=2.581e-09(ov=False) gjk=2.941e-11(ov=True) fcl_box=-1.0(coll=True)
+
+SAT-colliding (config, pair) events to mesh-check: 6682
+kernel values at events: max 0.0200  min 2.353e-07  fraction > 1e-9: 1.0000
+mesh scan done in 13.5s
+real mesh-level collisions among them: 3
+   COLLISION cfg=196 base_link/Link9        mesh_d=0.000000 declared=True
+   COLLISION cfg=1371 base_link/Link9        mesh_d=0.000000 declared=True
+   COLLISION cfg=2039 base_link/Link9        mesh_d=0.000000 declared=True
+min non-colliding mesh clearance among those events: 0.008512 m
+
+detail of real mesh collisions:
+   cfg=196 base_link/Link9  kernel=3.168543e-03  qp=2.797e-17  sat_depth=0.10447  n_contacts=8  max_pen=0.00885
+      q = [ 0.1433 -1.4618 -0.9148 -1.5535 -0.4212 -0.0021 -1.3915 -0.917  -0.5863]
+   cfg=1371 base_link/Link9  kernel=4.305311e-03  qp=5.960e-17  sat_depth=0.08699  n_contacts=8  max_pen=0.01839
+      q = [ 0.0226  0.9498 -1.084  -0.9537 -2.2743 -1.3481  0.34   -1.1759  1.1052]
+   cfg=2039 base_link/Link9  kernel=9.113320e-04  qp=0.000e+00  sat_depth=0.07664  n_contacts=8  max_pen=0.02764
+      q = [ 0.4606 -1.0257 -1.4395 -1.4461 -2.5459 -0.7688  1.0774 -0.1567 -1.3059]
+   focus q10 base_link/Link7        OBB overlap -> mesh_colliding=False mesh_d=0.061674
+   focus q10 base_link/Link8        OBB overlap -> mesh_colliding=False mesh_d=0.079790
+
+per-pair clearance refinement (kernel-gradient descent, QP-verified):
+   base_link/Link4        declared  kernel= 0.192999 qp= 0.192999 gjk= 0.192999 sat_coll=False mesh_coll=False mesh_d=0.2485
+   base_link/Link5        declared  kernel= 0.194755 qp= 0.194755 gjk= 0.194755 sat_coll=False mesh_coll=False mesh_d=0.2630
+   base_link/Link7        declared  kernel= 0.000000 qp= 0.000000 gjk= 0.000000 sat_coll=True  mesh_coll=False mesh_d=0.0592
+   base_link/Link8        declared  kernel= 0.000000 qp= 0.000000 gjk= 0.000000 sat_coll=True  mesh_coll=False mesh_d=0.0993
+   base_link/Link9        declared  kernel= 0.000000 qp= 0.000000 gjk= 0.000000 sat_coll=False mesh_coll=False mesh_d=0.0304
+   Link1/Link5            declared  kernel= 0.000000 qp= 0.000000 gjk= 0.000000 sat_coll=False mesh_coll=False mesh_d=0.0850
+   Link1/Link7            declared  kernel= 0.000000 qp= 0.000000 gjk= 0.000000 sat_coll=False mesh_coll=False mesh_d=0.0616
+   Link1/Link8            declared  kernel= 0.000000 qp= 0.000000 gjk= 0.000000 sat_coll=True  mesh_coll=False mesh_d=0.0616
+   Link1/Link9            declared  kernel= 0.000000 qp= 0.000000 gjk= 0.000000 sat_coll=True  mesh_coll=False mesh_d=0.0309
+   Link2/Link7            declared  kernel= 0.028422 qp= 0.028422 gjk= 0.028422 sat_coll=False mesh_coll=False mesh_d=0.0601
+   Link2/Link8            declared  kernel= 0.000000 qp= 0.000000 gjk= 0.000000 sat_coll=True  mesh_coll=False mesh_d=0.0919
+   Link2/Link9            declared  kernel= 0.000000 qp= 0.000000 gjk= 0.000000 sat_coll=True  mesh_coll=False mesh_d=0.0331
+   Link3/Link8            declared  kernel= 0.144282 qp= 0.144282 gjk= 0.144282 sat_coll=False mesh_coll=False mesh_d=0.1508
+   Link3/Link9            declared  kernel= 0.000000 qp= 0.000000 gjk= 0.000000 sat_coll=False mesh_coll=False mesh_d=0.0837
+   base_link/Link2                  kernel= 0.192999 qp= 0.192999 gjk= 0.192999 sat_coll=False mesh_coll=False mesh_d=0.2550
+   base_link/Link3                  kernel= 0.192999 qp= 0.192999 gjk= 0.192999 sat_coll=False mesh_coll=False mesh_d=0.2820
+   base_link/Link6                  kernel= 0.080351 qp= 0.080351 gjk= 0.080351 sat_coll=False mesh_coll=False mesh_d=0.1411
+   Link1/Link3                      kernel= 0.037086 qp= 0.037086 gjk= 0.037086 sat_coll=False mesh_coll=False mesh_d=0.1001
+   Link1/Link4                      kernel= 0.000000 qp= 0.000000 gjk= 0.000000 sat_coll=True  mesh_coll=False mesh_d=0.0480
+   Link1/Link6                      kernel= 0.000000 qp= 0.000000 gjk= 0.000000 sat_coll=True  mesh_coll=False mesh_d=0.0706
+   Link2/Link4                      kernel= 0.090944 qp= 0.090944 gjk= 0.090944 sat_coll=False mesh_coll=False mesh_d=0.1377
+   Link2/Link5                      kernel= 0.110300 qp= 0.110300 gjk= 0.110300 sat_coll=False mesh_coll=False mesh_d=0.1671
+   Link2/Link6                      kernel= 0.111014 qp= 0.111014 gjk= 0.111014 sat_coll=False mesh_coll=False mesh_d=0.1526
+   Link3/Link5                      kernel= 0.000000 qp= 0.000000 gjk= 0.000000 sat_coll=True  mesh_coll=False mesh_d=0.0195
+   Link3/Link6                      kernel= 0.183213 qp= 0.183213 gjk= 0.183213 sat_coll=False mesh_coll=False mesh_d=0.2317
+   Link3/Link7                      kernel= 0.203358 qp= 0.203358 gjk= 0.203358 sat_coll=False mesh_coll=False mesh_d=0.2406
+   Link4/Link6                      kernel= 0.119565 qp= 0.119565 gjk= 0.119565 sat_coll=False mesh_coll=False mesh_d=0.1420
+   Link4/Link7                      kernel= 0.139700 qp= 0.139700 gjk= 0.139700 sat_coll=False mesh_coll=False mesh_d=0.1490
+   Link4/Link8                      kernel= 0.058765 qp= 0.058765 gjk= 0.058765 sat_coll=False mesh_coll=False mesh_d=0.1031
+   Link4/Link9                      kernel= 0.000000 qp= 0.000000 gjk= 0.000000 sat_coll=True  mesh_coll=False mesh_d=0.0649
+   Link5/Link7                      kernel= 0.000000 qp= 0.000000 gjk= 0.000000 sat_coll=False mesh_coll=False mesh_d=0.0265
+   Link5/Link8                      kernel= 0.008844 qp= 0.008844 gjk= 0.008844 sat_coll=False mesh_coll=False mesh_d=0.0415
+   Link5/Link9                      kernel= 0.064010 qp= 0.064010 gjk= 0.064010 sat_coll=False mesh_coll=False mesh_d=0.1043
+   Link6/Link8                      kernel= 0.000000 qp= 0.000000 gjk= 0.000000 sat_coll=False mesh_coll=False mesh_d=0.0550
+   Link6/Link9                      kernel= 0.026491 qp= 0.026491 gjk= 0.026491 sat_coll=False mesh_coll=False mesh_d=0.0556
+   Link7/Link9                      kernel= 0.000000 qp= 0.000000 gjk= 0.000000 sat_coll=True  mesh_coll=False mesh_d=0.0367
+
+wrote exclusion_audit.json
+exit=0
+=== realpair_accuracy ===
+kernel distances for 60 configs x 36 pairs computed
+
+pair                   declared   n_sep   min QP clear     min kernel    max |err|
+base_link/Link9        yes           60       0.053162       0.053162    1.756e-14
+Link1/Link9            yes           60       0.093814       0.093814    3.886e-15
+Link2/Link9            yes           60       0.101485       0.101485    6.439e-15
+base_link/Link8        yes           60       0.122752       0.122752    6.273e-15
+base_link/Link7        yes           60       0.125119       0.125119    8.965e-15
+Link3/Link9            yes           60       0.127459       0.127459    4.330e-15
+Link3/Link8            yes           60       0.174374       0.174374    5.395e-13
+Link1/Link8            yes           60       0.190824       0.190824    5.218e-15
+base_link/Link4        yes           60       0.192999       0.192999    1.730e-12
+Link1/Link5            yes           60       0.201050       0.201050    6.106e-15
+base_link/Link5        yes           60       0.203403       0.203403    8.771e-15
+Link2/Link8            yes           60       0.212497       0.212497    5.396e-13
+Link1/Link7            yes           60       0.238329       0.238329    9.437e-15
+Link2/Link7            yes           60       0.286181       0.286181    2.831e-15
+Link3/Link5                          33       0.000184       0.000184    2.292e-07
+Link5/Link7                          14       0.000573       0.000573    5.109e-14
+Link6/Link8                          21       0.000578       0.000578    5.139e-13
+Link7/Link9                          55       0.001569       0.001569    1.875e-13
+Link5/Link8                          60       0.019388       0.019388    6.622e-13
+Link6/Link9                          60       0.035036       0.035036    1.721e-14
+Link1/Link3                          60       0.038856       0.038856    1.349e-07
+Link5/Link9                          60       0.084563       0.084563    3.525e-15
+Link4/Link9                          60       0.085212       0.085212    4.274e-15
+Link2/Link4                          60       0.090944       0.090944    1.582e-15
+Link4/Link8                          60       0.113514       0.113514    3.997e-15
+Link2/Link5                          60       0.118870       0.118870    9.159e-15
+Link4/Link6                          60       0.119565       0.119565    2.846e-08
+Link4/Link7                          60       0.142553       0.142553    1.421e-14
+base_link/Link6                      60       0.166986       0.166986    4.996e-15
+Link1/Link4                          60       0.180457       0.180457    1.256e-08
+Link3/Link6                          60       0.183875       0.183875    7.019e-13
+base_link/Link2                      60       0.192999       0.192999    8.236e-09
+base_link/Link3                      60       0.192999       0.192999    2.589e-09
+Link3/Link7                          60       0.206692       0.206692    2.054e-15
+Link1/Link6                          60       0.215979       0.215979    1.332e-15
+Link2/Link6                          60       0.282488       0.282488    5.441e-13
+
+verification of the closest sampled configuration per pair (QP vs GJK vs kernel):
+pair                   declared            QP          GJK       kernel    kernel-QP   mesh clear
+base_link/Link4        yes           0.192999     0.192999     0.192999    -1.72e-13     0.232000
+base_link/Link5        yes           0.203403     0.203403     0.203403    -2.78e-16     0.271441
+base_link/Link7        yes           0.125119     0.125119     0.125119    -8.97e-15     0.142170
+base_link/Link8        yes           0.122752     0.122752     0.122752     3.47e-16     0.131674
+base_link/Link9        yes           0.053162     0.053162     0.053162    -1.76e-14     0.090439
+Link1/Link5            yes           0.201050     0.201050     0.201050    -5.55e-17     0.248749
+Link1/Link7            yes           0.238329     0.238329     0.238329    -9.44e-15     0.284461
+Link1/Link8            yes           0.190824     0.190824     0.190824    -2.78e-17     0.242445
+Link1/Link9            yes           0.093814     0.093814     0.093814    -6.94e-17     0.163708
+Link2/Link7            yes           0.286181     0.286181     0.286181     0.00e+00     0.307055
+Link2/Link8            yes           0.212497     0.212497     0.212497    -1.94e-16     0.216790
+Link2/Link9            yes           0.101485     0.101485     0.101485    -5.55e-17     0.160000
+Link3/Link8            yes           0.174374     0.174374     0.174374    -1.67e-16     0.228821
+Link3/Link9            yes           0.127459     0.127459     0.127459     2.78e-17     0.179064
+base_link/Link2                      0.192999     0.192999     0.192999    -3.77e-13     0.255000
+base_link/Link3                      0.192999     0.192999     0.192999    -3.18e-13     0.232627
+base_link/Link6                      0.166986     0.166986     0.166986    -6.38e-16     0.217474
+Link1/Link3                          0.038856     0.038856     0.038856    -6.52e-16     0.100090
+Link1/Link4                          0.180457     0.180457     0.180457    -1.67e-16     0.217784
+Link1/Link6                          0.215979     0.215979     0.215979    -5.55e-17     0.267695
+Link2/Link4                          0.090944     0.090944     0.090944    -3.61e-16     0.137760
+Link2/Link5                          0.118870     0.118870     0.118870    -5.55e-17     0.171168
+Link2/Link6                          0.282488     0.282488     0.282488    -1.11e-16     0.314113
+Link3/Link5                          0.000184     0.000184     0.000184    -1.79e-07     0.019512
+Link3/Link6                          0.183875     0.183875     0.183875    -2.50e-16     0.234043
+Link3/Link7                          0.206692     0.206692     0.206692    -1.39e-16     0.245756
+Link4/Link6                          0.119565     0.119565     0.119565    -9.71e-17     0.142032
+Link4/Link7                          0.142553     0.142553     0.142553    -1.42e-14     0.156008
+Link4/Link8                          0.113514     0.113514     0.113514    -2.22e-16     0.153135
+Link4/Link9                          0.085212     0.085212     0.085212    -9.71e-17     0.126548
+Link5/Link7                          0.000573     0.000573     0.000573    -5.11e-14     0.028144
+Link5/Link8                          0.019388     0.019388     0.019388    -3.47e-18     0.052380
+Link5/Link9                          0.084563     0.084563     0.084563    -2.36e-16     0.122921
+Link6/Link8                          0.000578     0.000578     0.000578    -5.14e-13     0.052815
+Link6/Link9                          0.035036     0.035036     0.035036    -1.39e-17     0.060713
+Link7/Link9                          0.001569     0.001569     0.001569    -2.45e-16     0.036569
+
+wrote realpair_accuracy.json
+exit=0
+=== mesh_collision_confirm ===
+SELFTEST triangle-triangle SAT (crossing=1, far=0): PASS
+base_link/Link9  cfg=196   fcl=True  tested=96000  independent tri-tri hits=97
+base_link/Link9  cfg=1371  fcl=True  tested=97185  independent tri-tri hits=36
+base_link/Link9  cfg=2039  fcl=True  tested=96000  independent tri-tri hits=27
+base_link/Link9  zero-config control fcl=False  tested=4000000  independent tri-tri hits=0
+
+wrote mesh_collision_confirm.json
+exit=0
+=== derivatives ===
+gradient evidence (production regime)
+case                distance           autodiff d/dcB             reference -n    max err
+aa_robot_scale    0.17000000 [ 1.00000  0.00000  0.00000] [ 1.00000  0.00000 -0.00000]  8.16e-16
+rot_face90        0.18000000 [ 1.00000 -0.00000  0.00000] [ 1.00000 -0.00000 -0.00000]  1.67e-16
+rot45_sep         0.46061165 [ 0.93883  0.33899  0.06074] [ 0.93883  0.33899  0.06074]  2.22e-16
+rot_edge_edge     0.12500781 [ 0.77554  0.32853  0.53907] [ 0.77554  0.32853  0.53907]  3.33e-16
+autodiff vs own central-difference, max |g - FD| per step:
+   aa_robot_scale   {'0.01': '8.88e-16', '0.001': '8.88e-16', '0.0001': '1.10e-13', '1e-05': '1.00e-12', '1e-06': '2.68e-11'}
+   rot_face90       {'0.01': '9.99e-16', '0.001': '9.99e-16', '0.0001': '1.10e-13', '1e-05': '1.00e-12', '1e-06': '2.68e-11'}
+   rot45_sep        {'0.01': '7.07e-05', '0.001': '7.07e-07', '0.0001': '7.07e-09', '1e-05': '7.01e-11', '1e-06': '3.79e-11'}
+   rot_edge_edge    {'0.01': '9.99e-16', '0.001': '3.00e-15', '0.0001': '1.01e-13', '1e-05': '3.15e-13', '1e-06': '1.36e-11'}
+
+nearest-feature switching sweep (rotated A, 41 steps): max |kernel - ref| = 4.712e-04
+
+nine-axis chain: FK numpy-vs-JAX max diff = 1.886e-01
+q-space distance agreement vs independent QP reference: {"n_samples": 41, "n_pair_samples": 574, "max_abs_err": 0.016645946381340825, "p99_abs_err": 5.395278668274273e-13, "median_abs_err": 3.0531133177191805e-16, "n_err_gt_1um": 2, "n_overlap_ref": 1, "n_overlap_ref_kernel_positive": 1, "min_kernel": 0.00022377743595043686, "min_ref": 0.0}
+q-space gradient (autodiff vs central difference of the kernel through q): {"max_rel_err": 13.31004009880755, "max_abs_err": 3.841206797083885e-10}
+   ['base_link', 'Link4']   max|g|=2.0643e-06  max|FD|=2.0644e-06  max|g-FD|=8.253e-11  rel=4.00e-05
+   ['base_link', 'Link8']   max|g|=8.9605e-01  max|FD|=8.9605e-01  max|g-FD|=1.644e-10  rel=1.83e-10
+   ['Link1', 'Link8']       max|g|=5.7000e-02  max|FD|=5.7000e-02  max|g-FD|=1.223e-10  rel=2.14e-09
+   ['base_link', 'Link4']   max|g|=7.0579e-01  max|FD|=7.0579e-01  max|g-FD|=4.902e-11  rel=6.95e-11
+   ['base_link', 'Link8']   max|g|=7.6686e-01  max|FD|=7.6686e-01  max|g-FD|=1.881e-10  rel=2.45e-10
+   ['Link1', 'Link8']       max|g|=2.9073e-01  max|FD|=2.9073e-01  max|g-FD|=1.975e-10  rel=6.79e-10
+   ['base_link', 'Link4']   max|g|=1.7111e-01  max|FD|=1.7111e-01  max|g-FD|=6.901e-11  rel=4.03e-10
+   ['base_link', 'Link8']   max|g|=2.6027e-01  max|FD|=2.6027e-01  max|g-FD|=2.858e-10  rel=1.10e-09
+   ['Link1', 'Link8']       max|g|=2.7017e-01  max|FD|=2.7017e-01  max|g-FD|=2.059e-10  rel=7.62e-10
+   ['base_link', 'Link4']   max|g|=3.2456e-12  max|FD|=4.1633e-11  max|g-FD|=4.320e-11  rel=1.33e+01
+   ['base_link', 'Link8']   max|g|=5.5486e-01  max|FD|=5.5486e-01  max|g-FD|=1.299e-10  rel=2.34e-10
+   ['Link1', 'Link8']       max|g|=2.7279e-01  max|FD|=2.7279e-01  max|g-FD|=1.343e-10  rel=4.92e-10
+   ['base_link', 'Link4']   max|g|=7.7375e-06  max|FD|=7.7375e-06  max|g-FD|=3.074e-11  rel=3.97e-06
+   ['base_link', 'Link8']   max|g|=3.7152e-01  max|FD|=3.7152e-01  max|g-FD|=1.568e-10  rel=4.22e-10
+   ['Link1', 'Link8']       max|g|=2.8835e-01  max|FD|=2.8835e-01  max|g-FD|=2.304e-10  rel=7.99e-10
+   ['base_link', 'Link4']   max|g|=6.9930e-02  max|FD|=6.9930e-02  max|g-FD|=3.339e-11  rel=4.77e-10
+   ['base_link', 'Link8']   max|g|=8.4530e-01  max|FD|=8.4530e-01  max|g-FD|=3.536e-10  rel=4.18e-10
+   ['Link1', 'Link8']       max|g|=1.3184e-01  max|FD|=1.3184e-01  max|g-FD|=3.706e-10  rel=2.81e-09
+   ['base_link', 'Link4']   max|g|=6.2943e-02  max|FD|=6.2943e-02  max|g-FD|=4.596e-11  rel=7.30e-10
+   ['base_link', 'Link8']   max|g|=2.1052e-01  max|FD|=2.1052e-01  max|g-FD|=2.836e-10  rel=1.35e-09
+   ['Link1', 'Link8']       max|g|=2.1063e-01  max|FD|=2.1063e-01  max|g-FD|=2.643e-10  rel=1.25e-09
+   ['base_link', 'Link4']   max|g|=9.8959e-02  max|FD|=9.8959e-02  max|g-FD|=1.830e-11  rel=1.85e-10
+   ['base_link', 'Link8']   max|g|=4.2243e-01  max|FD|=4.2243e-01  max|g-FD|=1.123e-10  rel=2.66e-10
+   ['Link1', 'Link8']       max|g|=2.8075e-01  max|FD|=2.8075e-01  max|g-FD|=1.057e-10  rel=3.77e-10
+   ['base_link', 'Link4']   max|g|=2.7928e-02  max|FD|=2.7928e-02  max|g-FD|=4.368e-11  rel=1.56e-09
+   ['base_link', 'Link8']   max|g|=3.6022e-01  max|FD|=3.6022e-01  max|g-FD|=1.246e-10  rel=3.46e-10
+   ['Link1', 'Link8']       max|g|=3.0766e-01  max|FD|=3.0766e-01  max|g-FD|=1.649e-10  rel=5.36e-10
+   ['base_link', 'Link4']   max|g|=1.4481e-01  max|FD|=1.4481e-01  max|g-FD|=4.299e-11  rel=2.97e-10
+   ['base_link', 'Link8']   max|g|=4.4952e-01  max|FD|=4.4952e-01  max|g-FD|=1.652e-10  rel=3.68e-10
+   ['Link1', 'Link8']       max|g|=4.2292e-01  max|FD|=4.2292e-01  max|g-FD|=1.591e-10  rel=3.76e-10
+   ['base_link', 'Link4']   max|g|=2.5331e-02  max|FD|=2.5331e-02  max|g-FD|=5.605e-11  rel=2.21e-09
+   ['base_link', 'Link8']   max|g|=4.0177e-02  max|FD|=4.0177e-02  max|g-FD|=2.730e-10  rel=6.79e-09
+   ['Link1', 'Link8']       max|g|=3.4315e-01  max|FD|=3.4315e-01  max|g-FD|=1.594e-10  rel=4.64e-10
+   ['base_link', 'Link4']   max|g|=1.1476e-01  max|FD|=1.1476e-01  max|g-FD|=4.772e-11  rel=4.16e-10
+   ['base_link', 'Link8']   max|g|=3.4215e-01  max|FD|=3.4215e-01  max|g-FD|=1.412e-10  rel=4.13e-10
+   ['Link1', 'Link8']       max|g|=2.9710e-01  max|FD|=2.9710e-01  max|g-FD|=1.253e-10  rel=4.22e-10
+   ['base_link', 'Link4']   max|g|=5.1850e-01  max|FD|=5.1850e-01  max|g-FD|=4.745e-11  rel=9.15e-11
+   ['base_link', 'Link8']   max|g|=3.4351e-01  max|FD|=3.4351e-01  max|g-FD|=1.237e-10  rel=3.60e-10
+   ['Link1', 'Link8']       max|g|=3.2679e-01  max|FD|=3.2679e-01  max|g-FD|=2.340e-10  rel=7.16e-10
+   ['base_link', 'Link4']   max|g|=1.3815e-01  max|FD|=1.3815e-01  max|g-FD|=8.932e-12  rel=6.46e-11
+   ['base_link', 'Link8']   max|g|=4.1045e-01  max|FD|=4.1045e-01  max|g-FD|=2.120e-10  rel=5.16e-10
+   ['Link1', 'Link8']       max|g|=1.7042e-01  max|FD|=1.7042e-01  max|g-FD|=1.927e-10  rel=1.13e-09
+   ['base_link', 'Link4']   max|g|=3.3803e-01  max|FD|=3.3803e-01  max|g-FD|=2.731e-11  rel=8.08e-11
+   ['base_link', 'Link8']   max|g|=6.1323e-01  max|FD|=6.1323e-01  max|g-FD|=1.548e-10  rel=2.52e-10
+   ['Link1', 'Link8']       max|g|=2.2725e-01  max|FD|=2.2725e-01  max|g-FD|=1.280e-10  rel=5.63e-10
+   ['base_link', 'Link4']   max|g|=9.0027e-02  max|FD|=9.0027e-02  max|g-FD|=5.692e-11  rel=6.32e-10
+   ['base_link', 'Link8']   max|g|=1.9190e-01  max|FD|=1.9190e-01  max|g-FD|=6.240e-11  rel=3.25e-10
+   ['Link1', 'Link8']       max|g|=1.6928e-01  max|FD|=1.6928e-01  max|g-FD|=1.270e-10  rel=7.50e-10
+   ['base_link', 'Link4']   max|g|=2.0359e-01  max|FD|=2.0359e-01  max|g-FD|=1.015e-10  rel=4.99e-10
+   ['base_link', 'Link8']   max|g|=3.6355e-01  max|FD|=3.6355e-01  max|g-FD|=1.216e-10  rel=3.35e-10
+   ['Link1', 'Link8']       max|g|=3.2074e-01  max|FD|=3.2074e-01  max|g-FD|=1.720e-10  rel=5.36e-10
+   ['base_link', 'Link4']   max|g|=2.1299e-11  max|FD|=6.9389e-11  max|g-FD|=5.613e-11  rel=2.64e+00
+   ['base_link', 'Link8']   max|g|=3.0576e-01  max|FD|=3.0576e-01  max|g-FD|=1.062e-10  rel=3.47e-10
+   ['Link1', 'Link8']       max|g|=2.4247e-01  max|FD|=2.4247e-01  max|g-FD|=1.323e-10  rel=5.45e-10
+   ['base_link', 'Link4']   max|g|=6.6904e-01  max|FD|=6.6904e-01  max|g-FD|=3.480e-11  rel=5.20e-11
+   ['base_link', 'Link8']   max|g|=9.4063e-01  max|FD|=9.4063e-01  max|g-FD|=1.284e-10  rel=1.36e-10
+   ['Link1', 'Link8']       max|g|=2.4682e-01  max|FD|=2.4682e-01  max|g-FD|=2.105e-10  rel=8.53e-10
+   ['base_link', 'Link4']   max|g|=8.6386e-02  max|FD|=8.6386e-02  max|g-FD|=1.164e-10  rel=1.35e-09
+   ['base_link', 'Link8']   max|g|=4.3177e-01  max|FD|=4.3177e-01  max|g-FD|=1.817e-10  rel=4.21e-10
+   ['Link1', 'Link8']       max|g|=1.7917e-01  max|FD|=1.7917e-01  max|g-FD|=1.895e-10  rel=1.06e-09
+   ['base_link', 'Link4']   max|g|=8.8328e-02  max|FD|=8.8328e-02  max|g-FD|=5.111e-11  rel=5.79e-10
+   ['base_link', 'Link8']   max|g|=2.6707e-01  max|FD|=2.6707e-01  max|g-FD|=1.138e-10  rel=4.26e-10
+   ['Link1', 'Link8']       max|g|=3.4067e-01  max|FD|=3.4067e-01  max|g-FD|=1.683e-10  rel=4.94e-10
+   ['base_link', 'Link4']   max|g|=1.8191e-01  max|FD|=1.8191e-01  max|g-FD|=7.967e-11  rel=4.38e-10
+   ['base_link', 'Link8']   max|g|=2.1362e-01  max|FD|=2.1362e-01  max|g-FD|=1.002e-10  rel=4.69e-10
+   ['Link1', 'Link8']       max|g|=3.1079e-01  max|FD|=3.1079e-01  max|g-FD|=1.345e-10  rel=4.33e-10
+   ['base_link', 'Link4']   max|g|=5.6512e-02  max|FD|=5.6512e-02  max|g-FD|=6.498e-11  rel=1.15e-09
+   ['base_link', 'Link8']   max|g|=4.7537e-01  max|FD|=4.7537e-01  max|g-FD|=2.097e-10  rel=4.41e-10
+   ['Link1', 'Link8']       max|g|=3.5688e-01  max|FD|=3.5688e-01  max|g-FD|=2.070e-10  rel=5.80e-10
+   ['base_link', 'Link4']   max|g|=1.8543e-01  max|FD|=1.8543e-01  max|g-FD|=1.052e-10  rel=5.67e-10
+   ['base_link', 'Link8']   max|g|=5.4507e-01  max|FD|=5.4507e-01  max|g-FD|=2.916e-10  rel=5.35e-10
+   ['Link1', 'Link8']       max|g|=3.4503e-01  max|FD|=3.4503e-01  max|g-FD|=1.022e-10  rel=2.96e-10
+   ['base_link', 'Link4']   max|g|=7.0269e-02  max|FD|=7.0269e-02  max|g-FD|=1.366e-11  rel=1.94e-10
+   ['base_link', 'Link8']   max|g|=4.3958e-01  max|FD|=4.3958e-01  max|g-FD|=1.817e-10  rel=4.13e-10
+   ['Link1', 'Link8']       max|g|=1.6157e-01  max|FD|=1.6157e-01  max|g-FD|=1.419e-10  rel=8.78e-10
+   ['base_link', 'Link4']   max|g|=1.2956e-01  max|FD|=1.2956e-01  max|g-FD|=2.992e-11  rel=2.31e-10
+   ['base_link', 'Link8']   max|g|=4.0546e-01  max|FD|=4.0546e-01  max|g-FD|=9.505e-11  rel=2.34e-10
+   ['Link1', 'Link8']       max|g|=1.6145e-01  max|FD|=1.6145e-01  max|g-FD|=6.944e-11  rel=4.30e-10
+   ['base_link', 'Link4']   max|g|=1.8743e-01  max|FD|=1.8743e-01  max|g-FD|=4.831e-11  rel=2.58e-10
+   ['base_link', 'Link8']   max|g|=3.8218e-01  max|FD|=3.8218e-01  max|g-FD|=1.861e-10  rel=4.87e-10
+   ['Link1', 'Link8']       max|g|=7.9360e-02  max|FD|=7.9360e-02  max|g-FD|=1.681e-10  rel=2.12e-09
+   ['base_link', 'Link4']   max|g|=1.1319e-01  max|FD|=1.1319e-01  max|g-FD|=3.570e-11  rel=3.15e-10
+   ['base_link', 'Link8']   max|g|=1.1667e-01  max|FD|=1.1667e-01  max|g-FD|=1.853e-10  rel=1.59e-09
+   ['Link1', 'Link8']       max|g|=1.0068e-01  max|FD|=1.0068e-01  max|g-FD|=1.624e-10  rel=1.61e-09
+   ['base_link', 'Link4']   max|g|=1.0864e-01  max|FD|=1.0864e-01  max|g-FD|=6.804e-11  rel=6.26e-10
+   ['base_link', 'Link8']   max|g|=2.7003e-01  max|FD|=2.7003e-01  max|g-FD|=1.752e-10  rel=6.49e-10
+   ['Link1', 'Link8']       max|g|=1.9588e-01  max|FD|=1.9588e-01  max|g-FD|=9.007e-11  rel=4.60e-10
+   ['base_link', 'Link4']   max|g|=6.8049e-01  max|FD|=6.8049e-01  max|g-FD|=7.374e-11  rel=1.08e-10
+   ['base_link', 'Link8']   max|g|=9.0965e-01  max|FD|=9.0965e-01  max|g-FD|=1.346e-10  rel=1.48e-10
+   ['Link1', 'Link8']       max|g|=2.0434e-01  max|FD|=2.0434e-01  max|g-FD|=1.679e-10  rel=8.22e-10
+   ['base_link', 'Link4']   max|g|=7.1105e-01  max|FD|=7.1105e-01  max|g-FD|=5.454e-11  rel=7.67e-11
+   ['base_link', 'Link8']   max|g|=6.6149e-01  max|FD|=6.6149e-01  max|g-FD|=1.324e-10  rel=2.00e-10
+   ['Link1', 'Link8']       max|g|=2.5683e-01  max|FD|=2.5683e-01  max|g-FD|=1.766e-10  rel=6.87e-10
+   ['base_link', 'Link4']   max|g|=2.3033e-01  max|FD|=2.3033e-01  max|g-FD|=5.833e-11  rel=2.53e-10
+   ['base_link', 'Link8']   max|g|=5.5986e-01  max|FD|=5.5986e-01  max|g-FD|=2.123e-10  rel=3.79e-10
+   ['Link1', 'Link8']       max|g|=2.9916e-01  max|FD|=2.9916e-01  max|g-FD|=1.897e-10  rel=6.34e-10
+   ['base_link', 'Link4']   max|g|=7.0701e-02  max|FD|=7.0701e-02  max|g-FD|=3.383e-11  rel=4.79e-10
+   ['base_link', 'Link8']   max|g|=5.1390e-01  max|FD|=5.1390e-01  max|g-FD|=2.030e-10  rel=3.95e-10
+   ['Link1', 'Link8']       max|g|=2.7189e-01  max|FD|=2.7189e-01  max|g-FD|=1.856e-10  rel=6.83e-10
+   ['base_link', 'Link4']   max|g|=1.3022e-01  max|FD|=1.3022e-01  max|g-FD|=4.738e-11  rel=3.64e-10
+   ['base_link', 'Link8']   max|g|=7.1983e-01  max|FD|=7.1983e-01  max|g-FD|=1.334e-10  rel=1.85e-10
+   ['Link1', 'Link8']       max|g|=3.2518e-01  max|FD|=3.2518e-01  max|g-FD|=1.870e-10  rel=5.75e-10
+   ['base_link', 'Link4']   max|g|=8.3208e-01  max|FD|=8.3208e-01  max|g-FD|=9.367e-11  rel=1.13e-10
+   ['base_link', 'Link8']   max|g|=7.2920e-01  max|FD|=7.2920e-01  max|g-FD|=1.267e-10  rel=1.74e-10
+   ['Link1', 'Link8']       max|g|=2.2971e-01  max|FD|=2.2971e-01  max|g-FD|=1.352e-10  rel=5.88e-10
+   ['base_link', 'Link4']   max|g|=1.1846e-01  max|FD|=1.1846e-01  max|g-FD|=4.275e-11  rel=3.61e-10
+   ['base_link', 'Link8']   max|g|=2.4239e-01  max|FD|=2.4239e-01  max|g-FD|=1.200e-10  rel=4.95e-10
+   ['Link1', 'Link8']       max|g|=2.2494e-01  max|FD|=2.2494e-01  max|g-FD|=1.182e-10  rel=5.26e-10
+   ['base_link', 'Link4']   max|g|=9.2398e-02  max|FD|=9.2398e-02  max|g-FD|=6.257e-11  rel=6.77e-10
+   ['base_link', 'Link8']   max|g|=1.8962e-01  max|FD|=1.8962e-01  max|g-FD|=1.995e-10  rel=1.05e-09
+   ['Link1', 'Link8']       max|g|=1.2487e-01  max|FD|=1.2487e-01  max|g-FD|=1.224e-10  rel=9.80e-10
+   ['base_link', 'Link4']   max|g|=3.3658e-02  max|FD|=3.3658e-02  max|g-FD|=6.158e-11  rel=1.83e-09
+   ['base_link', 'Link8']   max|g|=4.7536e-01  max|FD|=4.7536e-01  max|g-FD|=1.292e-10  rel=2.72e-10
+   ['Link1', 'Link8']       max|g|=2.7745e-01  max|FD|=2.7745e-01  max|g-FD|=1.430e-10  rel=5.15e-10
+   ['base_link', 'Link4']   max|g|=1.4026e-01  max|FD|=1.4026e-01  max|g-FD|=8.945e-11  rel=6.38e-10
+   ['base_link', 'Link8']   max|g|=3.8851e-01  max|FD|=3.8851e-01  max|g-FD|=1.775e-10  rel=4.57e-10
+   ['Link1', 'Link8']       max|g|=3.9638e-01  max|FD|=3.9638e-01  max|g-FD|=1.446e-10  rel=3.65e-10
+   ['base_link', 'Link4']   max|g|=2.2534e-01  max|FD|=2.2534e-01  max|g-FD|=5.660e-11  rel=2.51e-10
+   ['base_link', 'Link8']   max|g|=5.3435e-01  max|FD|=5.3435e-01  max|g-FD|=1.389e-10  rel=2.60e-10
+   ['Link1', 'Link8']       max|g|=9.5151e-02  max|FD|=9.5151e-02  max|g-FD|=1.183e-10  rel=1.24e-09
+   ['base_link', 'Link4']   max|g|=6.3455e-01  max|FD|=6.3455e-01  max|g-FD|=5.464e-11  rel=8.61e-11
+   ['base_link', 'Link8']   max|g|=9.6770e-01  max|FD|=9.6770e-01  max|g-FD|=3.841e-10  rel=3.97e-10
+   ['Link1', 'Link8']       max|g|=2.7745e-01  max|FD|=2.7745e-01  max|g-FD|=3.832e-10  rel=1.38e-09
+
+wrote derivatives.json
+exit=0

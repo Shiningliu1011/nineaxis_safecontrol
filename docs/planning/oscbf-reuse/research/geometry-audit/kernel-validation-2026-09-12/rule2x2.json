@@ -1,0 +1,46 @@
+{
+  "helper_2x2": [
+    {
+      "rotation": "const",
+      "half_extents": "const",
+      "max_abs_err_m": 0.6679894938073702,
+      "values_permuted": false
+    },
+    {
+      "rotation": "const",
+      "half_extents": "traced",
+      "max_abs_err_m": 0.6679894938073702,
+      "values_permuted": false
+    },
+    {
+      "rotation": "traced",
+      "half_extents": "const",
+      "max_abs_err_m": 5.551115123125783e-17,
+      "values_permuted": false
+    },
+    {
+      "rotation": "traced",
+      "half_extents": "traced",
+      "max_abs_err_m": 5.551115123125783e-17,
+      "values_permuted": false
+    }
+  ],
+  "pair_shapes": {
+    "production (locals const, transforms traced)": {
+      "kernel": 0.00979908339842451,
+      "qp": 0.009799083398425324,
+      "err": -8.135853102331225e-16
+    },
+    "audit (locals const, centres traced, transforms const id)": {
+      "kernel": 0.005680951229904272,
+      "qp": 0.009799083398425324,
+      "err": -0.004118132168521052
+    },
+    "audit + half-extents traced too": {
+      "kernel": 0.005680951229904272,
+      "qp": 0.009799083398425324,
+      "err": -0.004118132168521052
+    }
+  },
+  "production_entry_eager_vs_jit": 0.0
+}
