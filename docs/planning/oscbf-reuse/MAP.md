@@ -12,7 +12,7 @@ tracker_target: https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/1
 
 ## Notes
 
-- 2026-09-12 OFF-15 原始决定及审查修复决定均已获用户确认；严格区间、路径精度与后台报告三项修复已本地完成，141 项相关测试通过、2 项既有跳过。见[跟踪评价指标与证据等级交接](handoffs/44-offline-tracking-evaluation.md#代码审查后的修复决策)及[审查修复验证](validation/2026-09-12-off15-review-fixes/REPORT.md)。远端票状态未修改；原票最终阈值与现场证据继续保留。
+- 2026-09-12 OFF-15 原始决定及审查修复决定均已获用户确认；严格区间、路径精度与后台报告三项修复已推送 `main`，141 项相关测试通过、2 项既有跳过，满足本票三项离线验收并按完成收尾。见[跟踪评价指标与证据等级交接](handoffs/44-offline-tracking-evaluation.md#代码审查后的修复决策)及[审查修复验证](validation/2026-09-12-off15-review-fixes/REPORT.md)。远端状态以 [#44](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/44) 为准；原票最终阈值与现场证据继续保留。
 
 - 2026-09-12 用户要求将当前可独立处理的离线部分拆为新的 OFF ticket，并给出执行顺序。离线入口见[执行说明](OFFLINE-EXECUTION-ORDER.md)及 [票据清单](OFFLINE-TICKETS.json)；原票保留整体交付和剩余证据，不重复实施拆出的部分，不把建票或离线验收加入已完成决议。
 

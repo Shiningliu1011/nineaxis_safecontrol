@@ -1,6 +1,6 @@
 {
   "base_head": "744b44c82c17d668011afe3c462e0994c4da5c61",
-  "scope": "OFF-15 final working tree including initial implementation and review fixes; no commit/push",
+  "scope": "OFF-15 implementation and review fixes published in d3a3804; closure documentation and archive identity reconciliation",
   "python": "3.10.12",
   "dependencies": {
     "numpy": "1.26.4",
@@ -15,8 +15,8 @@
     "CONTEXT.md": "37e776db76fc67c5fefcbec20500f4cc43c5f142299bc77caf3e09c087fbbab6",
     "README.md": "7deef4101c49a0973e216d7ecf83dc2bb543568b671546f7fa14f7f82a2cab59",
     "docs/adr/0008-tracking-evaluation-scope-and-angle.md": "27b6c24dd64d8899517e64119dcd5474af56c32f3af156b26bac4a5dcd50123a",
-    "docs/planning/oscbf-reuse/MAP.md": "37af509d475701f5204fce21ea52aa32421aa843db4a2b11ee02671b24c63a05",
-    "docs/planning/oscbf-reuse/handoffs/44-offline-tracking-evaluation.md": "27dc109426229250195a902aba61b5e9ce97080a6eab7d0e6a4d55c84f40a5b5",
+    "docs/planning/oscbf-reuse/MAP.md": "cd82d7dc66722e639c1ef7df05dcac779d665609c0bfcb5b8f7f928defd2f54a",
+    "docs/planning/oscbf-reuse/handoffs/44-offline-tracking-evaluation.md": "88bc373f935630d9cf2a7f706e95e6970d16c6f3d289939c113eb0e07451db0e",
     "docs/tracking_evaluation.md": "e1fa802fc8fad478a683f12955c2aee7ffef24a58a1743185f0125d2d9c746fe",
     "portable_oscbf/tests/test_path_evaluation_diagnostics.py": "5aafd1ca3b94065210e7b15e510400a4b39f88d670fa8471a3a34eff89cb33e3",
     "portable_oscbf/tests/test_path_precision_initialization.py": "ecbd60d99250abb2e3e57a0ade6ccb060b6450f9201c63fbd1eb27776193cb6c",
@@ -32,17 +32,39 @@
     "tests/test_tracking_report_writer.py": "e41007cb515933a472df101e6c4f8f9ca46706782f34ea03de12d08d67c52479"
   },
   "validation_artifacts": {
-    "REPORT.md": "8e3bb578e483e854b24911a423d586d6884fd17170a570ae34e4fe19c1ddae0d",
-    "contracts-final-excerpt.txt": "24383101397ed115619597f19fb5eb934bb4355f329f9f8b07b6b3d8b3944daa",
+    "REPORT.md": "f6ab8f6ae5791b1d0e335500e73ecfbc0021f17e7292664560ba5608df97c453",
+    "contracts-final-excerpt.txt": "51661ff1f415c67f892fbb117cf2bee6521cfd0838118046c3b75b2932764044",
     "controller-runtime-snapshot.json": "cadb905ca395b46c257305604ebec90dac2621a6cc3da4e51a659a5ab3443c11",
     "controller-terminal.json": "72e84369539d768c44d48e585602438c08bfd86bb6ee0a60221ad3f5895f7b23",
     "controller-terminal.md": "4c81fa5e3a77dd3e0eed165da11e4d162a3ab70c34255bb446161a305e7422f4",
     "controller-terminal.samples.json": "68a96529344fbcf420f48072a07cbace67bdc7de55f0a7ad8a8ec32bfe13ca19",
-    "hold-publication-final-excerpt.txt": "b5d054784a4f9ce58cdd948149a5b58adea112e07eba96a5baca51018ceac0aa",
-    "portable-final-excerpt.txt": "a115f06304b1af8b659ce8ec7d2c0af28ff7453a3eff2605e968435521bcab32",
-    "production-final-excerpt.txt": "61753316db6f2bddcbd80c0401e30fae6bfd8b3e1c83e98f2e09a4887014bfbe",
+    "hold-publication-final-excerpt.txt": "111306dcbe02a527c28ea2771e60d33a67231adb1c22b805dedd2310f3e5322c",
+    "portable-final-excerpt.txt": "1da022bc2e88f31421a4c71cf01f6a3011330acb080aa24b4b9534410df546bc",
+    "production-final-excerpt.txt": "864a520361a9bec81c1d767df67391c131cee9c7c0c4f920b0ff6d7dfea0dd1b",
     "report-concurrency.json": "636cbb5023b09ae264ba46b2a96d1b726bce48a0e5815c1507830c8c05deb5f1",
     "report_concurrency.py": "b360fd37d067ee7da5ace6108f080357d1076a941893f77de5771998f7dd24f9",
-    "ros-production-first-failure.txt": "3d78873f947b90bd9d365ecee34c795bcd71b7a7a5ad0160f56cbdea98c646b2"
+    "ros-production-first-failure.txt": "fb31ae75d664b5ec8bd3b44e1f6a2fbc8a3ee5eabc203e7c09cec26c6fb0353f"
+  },
+  "publication_update": {
+    "date": "2026-09-12",
+    "published_commits": [
+      "d3a3804",
+      "eebc47e"
+    ],
+    "reason": "Reconcile five log excerpts after publication whitespace cleanup, and delivery/closure documentation updates. Source, tests, sample artifacts and recorded test results are unchanged; behavior tests were not rerun for this metadata update.",
+    "previous_hashes": {
+      "files": {
+        "docs/planning/oscbf-reuse/MAP.md": "37af509d475701f5204fce21ea52aa32421aa843db4a2b11ee02671b24c63a05",
+        "docs/planning/oscbf-reuse/handoffs/44-offline-tracking-evaluation.md": "27dc109426229250195a902aba61b5e9ce97080a6eab7d0e6a4d55c84f40a5b5"
+      },
+      "validation_artifacts": {
+        "REPORT.md": "8e3bb578e483e854b24911a423d586d6884fd17170a570ae34e4fe19c1ddae0d",
+        "contracts-final-excerpt.txt": "24383101397ed115619597f19fb5eb934bb4355f329f9f8b07b6b3d8b3944daa",
+        "hold-publication-final-excerpt.txt": "b5d054784a4f9ce58cdd948149a5b58adea112e07eba96a5baca51018ceac0aa",
+        "portable-final-excerpt.txt": "a115f06304b1af8b659ce8ec7d2c0af28ff7453a3eff2605e968435521bcab32",
+        "production-final-excerpt.txt": "61753316db6f2bddcbd80c0401e30fae6bfd8b3e1c83e98f2e09a4887014bfbe",
+        "ros-production-first-failure.txt": "3d78873f947b90bd9d365ecee34c795bcd71b7a7a5ad0160f56cbdea98c646b2"
+      }
+    }
   }
 }
