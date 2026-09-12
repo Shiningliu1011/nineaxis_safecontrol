@@ -2,9 +2,21 @@
 
 - Tracker：https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/13
 - 日期：2026-09-09；执行者 Codex；已认领给 Shiningliu1011。
-- 状态：离线核验完成；实施与验收未完成，issue 保持 OPEN。
+- 当前状态（2026-09-12 复核）：containment 已进入当前 main；通信/诊断准备位于开放草稿 PR，尚未合入。完整执行会话及实机验收未完成，原票保持 OPEN。下方 2026-09-09 记录为历史核验。
 
-## 起点
+## 2026-09-12 与几何票联合对齐
+
+用户本轮明确按 HTML 标题票号处理「11 真机执行链路」与「12 自碰撞 OBB 与环境几何模型核对」，使用 grill-with-docs；不是重新处理已经关闭的测试容差与配置一致性票。本轮只读核对当前代码、正式票据和 PR，未重跑历史测试、未操作 CAN 或设备。
+
+- [准备 SocketCAN 传输与笔记本非运动诊断入口](https://github.com/Shiningliu1011/nineaxis_safecontrol/pull/43)仍为 OPEN / draft，分支 `codex/ticket13-socketcan-review`；协议修正、python-can 薄适配、doctor/probe 与相关验证属于该草稿，不能当作当前 main 已具备的功能。
+- 当前 main 的 `hardware_bridge` 明确拒绝 live；sim 不创建硬件 I/O，shadow 不收发 CAN。`SocketCANBus._create_backend` 在本工作树仍未实现，与草稿中的进展分开记录。
+- 已有架构方向继续沿用 python-can、既有编解码/总线边界及 CommandSafetyGate，不重新投票。可独立推进的工程缺口是完整执行会话：真实反馈身份与时间、命令产生时间和独立断流检查、全轴映射/标定拒绝门、发送失败锁存与人工恢复。
+- Linux vcan 通过证据、实际电机/适配器身份、J1 传动与全轴标定、设备独立看门狗及承重停车能力仍缺。协议读取成功和软件保持命令均不等于物理停止；这些事实不能由访谈投票代替实测。
+- [选定不可行/裕度/降级策略](18-infeasibility-margin-degradation.md)的失败锁存、人工恢复及低通预算决议作为后续接线输入；控制器到执行端的连接缺口见[命令链事实核验](../research/18-recovery-command-chain-20260912.md)。该连接未因单模块网关测试通过而完成。
+
+2026-09-12，用户已接受首版限定在经认证的任务关节范围内，覆盖过渡与停车所需范围，范围外拒绝运行；具体含义及待验证的确定方法见[几何票联合对齐](8-obb-environment-geometry.md#本轮已接受决策首版认证的有效范围)。执行端后续必须保留真实位置/速度与时间依据，使准入和停止范围检查能够成立；该范围尚未计算或获证，不意味着只检查位置上下限即可准入。本票不关闭、草稿未合入、live 限制未解除；实际反应与制动证据仍是明确缺口。
+
+## 起点（2026-09-09 历史记录）
 
 继承 [可复现基线与证据目录](30-baseline.md)。本机 main 与本次远端 main 查询均为 `659da6c6db598abddc272ad0941b72f77793211b`。原有 MAP.md 修改、handoffs、.scratch/oscbf-reuse-wayfinder 和大然电机资料保留，未提交或覆盖。原始状态见 `output/audit-13/status-before.txt`。
 

@@ -1,0 +1,576 @@
+{
+  "date": "2026-09-12",
+  "map_url": "https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/1",
+  "order": [
+    "OFF-15",
+    "OFF-01",
+    "OFF-02",
+    "OFF-09",
+    "OFF-04",
+    "OFF-05",
+    "OFF-03",
+    "OFF-06",
+    "OFF-07",
+    "OFF-08",
+    "OFF-10",
+    "OFF-11",
+    "OFF-18",
+    "OFF-13",
+    "OFF-14",
+    "OFF-12",
+    "OFF-16",
+    "OFF-17"
+  ],
+  "tickets": [
+    {
+      "code": "OFF-01",
+      "title": "标定记录加载与运行时身份统一",
+      "sources": [
+        27
+      ],
+      "deps": [],
+      "kind": "task",
+      "goal": "让标定记录成为可验证的单一数据来源，完成不需要真实传感器的加载、迁移和诊断部分。",
+      "scope": [
+        "复用已接受的 sensor_extrinsics.yaml / DiagnosticArray 契约，统一 schema、内容身份、ament 查询路径和 resolved 路径；解析和 hash 使用同一次字节快照。",
+        "实现加载器、provenance 校验、启动诊断与配置迁移；保留假定调试几何的 calibrated=false 身份，不把假定矩阵标成实测。",
+        "验证旧参数/TF 不再形成另一条隐式标定写入来源；模拟调用方接线。T7 尚未决定的调试模式入口取舍保留，不能隐式开放正式避障。"
+      ],
+      "done": [
+        "覆盖缺字段、非有限/非法矩阵、错误 frame、身份不符，以及软链接和复制安装分叉。",
+        "证明诊断记录对应实际加载的字节；未标定/不可信记录不能产生可信避障准入。",
+        "留下接口、迁移和部署复现记录；需要模式取舍的运行入口可保持拒绝，明确交回 T7。"
+      ],
+      "evidence": [
+        "docs/planning/oscbf-reuse/handoffs/27-calibration-ssot.md",
+        "docs/adr/0004-calibration-ssot-sensor-extrinsics-authority.md"
+      ],
+      "residual": "T7 继续承接完整运行入口/部署验收及未定模式接口；真实外参和现场误差验收由 T5/T6/H0 承接。",
+      "number": 45,
+      "url": "https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/45",
+      "id": 5433300126
+    },
+    {
+      "code": "OFF-02",
+      "title": "OBB 重叠判据与任务关节域离线验证",
+      "sources": [
+        8,
+        18
+      ],
+      "deps": [],
+      "kind": "prototype",
+      "goal": "把已发现的重叠盲区和省略碰撞对问题转化为可复核的离线几何证据及准入接口。",
+      "scope": [
+        "继承用户已接受的首版任务范围路线；先冻结模型/附件声明、任务和允许起点，生成九轴候选区域，不把单轴 min/max 的组合或抽样轨迹当成认证。",
+        "复用 OBB 和独立 SAT/FCL/网格对照，实现独立重叠状态接口及已知反例回归；保留分离态内核语义，不擅自更换碰撞表示。",
+        "对省略的 22 对（含 Link6）建立域内净空下界验证工具；用有依据的连续变化界/区域细分处理，保留已定按需补对的兜底。给停车/误差包络保留参数接口。"
+      ],
+      "done": [
+        "已知相交却报正距离的反例被独立判据拒绝；分离态对照和非有限/未知状态有明确结果。",
+        "至少一个明确边界的非空局部区域获得连续几何界证据；若候选不能证明，输出可复现反例/无法认证结果及收缩建议，不能标记认证通过。",
+        "输出模型 hash、区域、每对依据及未知项；抽样统计与连续证明分栏，Link6 不再使用未经证实的包围说法。"
+      ],
+      "evidence": [
+        "docs/planning/oscbf-reuse/handoffs/8-obb-environment-geometry.md",
+        "docs/planning/oscbf-reuse/research/geometry-audit/kernel-validation-2026-09-12/REPORT.md"
+      ],
+      "residual": "实物附件覆盖、真实误差及停止能力未进入此离线几何结论；完整实机运行域和最终逐对阈值仍由 12/08B 验收。",
+      "number": 46,
+      "url": "https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/46",
+      "id": 5433300554
+    },
+    {
+      "code": "OFF-03",
+      "title": "环境占据几何与九轴距离导数对照",
+      "sources": [
+        8
+      ],
+      "deps": [
+        "OFF-02"
+      ],
+      "kind": "prototype",
+      "goal": "为环境 OBB—占据体素查询提供可靠的距离、身份、有效性和九轴导数接口证据。",
+      "scope": [
+        "复用 CPU/PCL、占据体素与 FCL 候选及已有 OBB/运动学；先核查已有研究，固定依赖、模型和许可证。",
+        "建立 Box–OcTree 的分离、接触、穿透、包含、空树、未知、压缩叶、动态增删和对象交换对照。",
+        "把最近点/连杆身份映射到九轴距离导数；核验最近特征切换、并列近障及障碍运动项，明确 FCL 非 JAX 可微常数。"
+      ],
+      "done": [
+        "独立参考矩阵可复现；不把 -1 哨兵或不一致的 scalar/result 解释成已知穿透深度。",
+        "距离/导数的有效域、误差证据和失效返回完整；几何变化与 frame/version 变化能使旧结果失效。",
+        "明确选用候选及比较结果；收益或正确性不足时保留基线和已证实缺口，不强行切换。"
+      ],
+      "evidence": [
+        "docs/planning/oscbf-reuse/handoffs/8-obb-environment-geometry.md",
+        "docs/planning/oscbf-reuse/research/environment-pointcloud-collision.md"
+      ],
+      "residual": "实际点云覆盖、真实装配和在线尾延迟仍需原 12 票与整链/现场验收。",
+      "number": 50,
+      "url": "https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/50",
+      "id": 5433302032
+    },
+    {
+      "code": "OFF-04",
+      "title": "执行会话与 SocketCAN 协议离线验证",
+      "sources": [
+        13
+      ],
+      "deps": [],
+      "kind": "task",
+      "goal": "完成执行会话的软件契约及模拟故障验证，复用已存在的 SocketCAN 草稿。",
+      "scope": [
+        "先核对 PR #43（codex/ticket13-socketcan-review）及现有协议/doctor/probe 成果，仅补未完成项，不重复写传输层。",
+        "把真实反馈身份/时间、命令产生时间、独立无新命令超时、全轴映射/标定拒绝、发送失败锁存和人工恢复连接到可注入后端的会话。",
+        "使用 Fake/virtual CAN 验证，区分其证据与 Linux vcan；可用 vcan 时追加双端收发。无接口时保留明确 NOT_RUN 与复现命令，不宣称 Linux socket 已验收。"
+      ],
+      "done": [
+        "错节点/属性/单位、陈旧/乱序/缺反馈、未标定、断流、发送异常、断线重连和关闭路径均有行为测试。",
+        "命令、补零、ack 或重打时间戳均不能制造健康反馈；无新命令也触发独立期限检查。",
+        "sim/shadow/live containment 回归成立；报告分别列 Fake、virtual、vcan 的运行/跳过情况及剩余 OS/设备验证。"
+      ],
+      "evidence": [
+        "docs/planning/oscbf-reuse/handoffs/13-socketcan.md",
+        "https://github.com/Shiningliu1011/nineaxis_safecontrol/pull/43"
+      ],
+      "residual": "vcan 未运行时继续是 11 的 OS 传输验证缺口；真实设备/固件、全轴标定、独立看门狗和物理停止由原票承接。",
+      "number": 48,
+      "url": "https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/48",
+      "id": 5433301374
+    },
+    {
+      "code": "OFF-05",
+      "title": "双源官方驱动离线构建与消息边界核验",
+      "sources": [
+        31
+      ],
+      "deps": [],
+      "kind": "task",
+      "goal": "把官方驱动的可复现软件准备与设备在线验收分开。",
+      "scope": [
+        "核对已有 Mid-360S / Gemini 335L 研究、构建和采集记录，固定候选仓库提交、SDK、许可证和 Ubuntu/Humble 构建环境，仅补缺项。",
+        "隔离构建项目薄 launch 适配，核对 PointCloud2/CustomMsg、topic/QoS/frame/单位及时间字段的源码来源；不连接设备。",
+        "形成逐源配置/诊断入口及录包接入约定，明确 SDK/固件和时钟能力尚待设备核对的字段。"
+      ],
+      "done": [
+        "隔离构建或可复现的具体兼容缺口有记录；成功与缺依赖失败分开，不把文档核验标成构建通过。",
+        "无设备启动/缺依赖/非法配置路径被验证；配置能实际传到对应官方参数，不依赖无效 launch 参数覆盖。",
+        "输出版本清单和消息/时间契约供 OFF-06 使用；无法确认的硬件时间能力保持 unknown。"
+      ],
+      "evidence": [
+        "docs/planning/oscbf-reuse/handoffs/31-official-sensor-drivers.md"
+      ],
+      "residual": "固件/序列号、实际时间域、双源同步和长期采集稳定性继续由 P0 现场核验。",
+      "number": 49,
+      "url": "https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/49",
+      "id": 5433301692
+    },
+    {
+      "code": "OFF-06",
+      "title": "逐源时间与显式障碍观测契约",
+      "sources": [
+        7,
+        21
+      ],
+      "deps": [
+        "OFF-01",
+        "OFF-03",
+        "OFF-05"
+      ],
+      "kind": "task",
+      "goal": "实现可由合成数据验收的观测和时间契约，替代不携带充分身份/有效性的隐式输入。",
+      "scope": [
+        "承接标定身份、驱动字段和几何接口；明确逐源采集起点、时钟/会话、frame、几何身份、有效域、覆盖、容量和速度未知状态。",
+        "实现纯时间校验及 observation 的序列化/发布订阅适配；未知时钟映射不能假设成立，旧数据不因融合/接收时间刷新。",
+        "固定环境模型与在线观测分开管理；空帧/关联失败不证明空间空闲，速度缺失不当零速度，旧格式兼容不得补造可信字段。"
+      ],
+      "done": [
+        "未来/零/非有限时间、乱序、重启会话、时钟失锁、frame/provenance 错误、旧贡献帧、容量溢出全部有拒绝/未知状态。",
+        "已知时钟的合成观测和未知时钟的拒绝路径均覆盖端到端编解码。",
+        "时间/几何/覆盖字段及其消费者可追溯；真实有效期保持参数化，不冻结现场秒数。"
+      ],
+      "evidence": [
+        "docs/planning/oscbf-reuse/handoffs/7-perception-time-model.md",
+        "docs/planning/oscbf-reuse/research/perception-age-budget.md"
+      ],
+      "residual": "实际时钟映射、曝光/扫描语义、运动界及最终 age 阈值仍由 10/T1 和预算票确认。",
+      "number": 51,
+      "url": "https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/51",
+      "id": 5433302401
+    },
+    {
+      "code": "OFF-07",
+      "title": "逐源 MoveIt 自体过滤接入与误删回归",
+      "sources": [
+        22
+      ],
+      "deps": [
+        "OFF-06"
+      ],
+      "kind": "task",
+      "goal": "在明确采集时刻和标定身份的输入上，完成可离线验证的逐源本体过滤。",
+      "scope": [
+        "复用 MoveIt 几何过滤及现有模型，核对本机缺失构建依赖；不重写通用过滤算法。",
+        "按逐源采集时刻提供关节/变换，明确机器人本体、附件及传感器射线语义；输出继承 OFF-06 契约。",
+        "复用已有误删反例，补模型外近障、错误 TF、陈旧关节状态、混合 source 和缺模型场景。"
+      ],
+      "done": [
+        "近机器人但不属于本体的障碍保留，已知本体样本正确移除；无法可靠判断时输出无效/未知而非过度删点。",
+        "源间过滤互不污染，错误时间/身份不被 latest TF 静默替代。",
+        "构建、接口及反例结果有复现记录；软件覆盖不冒充真实附件覆盖。"
+      ],
+      "evidence": [
+        "docs/planning/oscbf-reuse/handoffs/22-self-filter.md"
+      ],
+      "residual": "真实传感器遮挡、附件/线缆覆盖和现场误删率留给 T2 的实测验收。",
+      "number": 52,
+      "url": "https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/52",
+      "id": 5433302765
+    },
+    {
+      "code": "OFF-08",
+      "title": "感知无效状态到停止请求的离线接线",
+      "sources": [
+        23
+      ],
+      "deps": [
+        "OFF-06",
+        "OFF-07"
+      ],
+      "kind": "task",
+      "goal": "把感知失效转换成明确的停止/锁存事件，供控制和执行端消费。",
+      "scope": [
+        "连接 observation 的时间、覆盖、来源、标定和过滤有效性，不以 tracks 非空或节点存活替代健康。",
+        "实现失效原因、锁存事件及恢复条件接口；沿用用户已接受的双源协作和人工恢复规则。",
+        "保持本票只负责感知状态到事件；控制器锁存由 OFF-09、最终命令执行由 OFF-13 持有，避免平行状态机。"
+      ],
+      "done": [
+        "源故障、空帧、遮挡、覆盖丢失、时钟错误和溢出不会静默继续使用旧障碍。",
+        "恢复数据本身不能自动清除故障锁存；正常有效观测路径不被误判。",
+        "合成发布订阅验证能关联首个失败原因、来源与时刻，明确事件被下游接收的接口。"
+      ],
+      "evidence": [
+        "docs/adr/0003-perception-input-failure-strategy.md",
+        "docs/adr/0006-continuous-obstacle-observation.md"
+      ],
+      "residual": "物理停止、现场有效覆盖及真实传感器故障响应由 T3/E0/H0 继续验证。",
+      "number": 53,
+      "url": "https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/53",
+      "id": 5433311490
+    },
+    {
+      "code": "OFF-09",
+      "title": "OSCBF 求解后准入与冻结恢复状态机",
+      "sources": [
+        18,
+        33
+      ],
+      "deps": [
+        "OFF-02",
+        "OFF-15"
+      ],
+      "kind": "task",
+      "goal": "落实已接受的准入与锁存决定，修复 QP 失败仅影响单 tick 的连接缺口。",
+      "scope": [
+        "区分 solver 状态、弹性松弛、逐行原约束残差、几何重叠和非有限输入；量纲/增益换算逐行核对，不能用一个混合单位最大残差代表所有准入条件。",
+        "将拒绝结果贯通控制器冻结和路径状态；下一 tick 求解成功不能自动恢复，人工恢复仍要求健康条件。",
+        "定义传给 OFF-13 的候选/拒绝/恢复事件；保留低通政策，不在本票擅自选择实机旁路或制动参数。"
+      ],
+      "done": [
+        "故障 tick 及其后的多 tick 序列、持续故障、恢复前后状态、人工确认但仍不健康等行为有测试。",
+        "使用明确的合成阈值验证允许/拒绝边界；暂定阈值不伪装成实机准入值。",
+        "独立校验原约束残差与诊断的对应关系；模型重叠不能因内核正距离或 QP 收敛而放行。"
+      ],
+      "evidence": [
+        "docs/planning/oscbf-reuse/handoffs/18-infeasibility-margin-degradation.md",
+        "docs/planning/oscbf-reuse/research/18-recovery-command-chain-20260912.md"
+      ],
+      "residual": "实机数值阈值和物理停止不在本票定案；最终滤波/发送接线由 OFF-13，整体责任保留在 08B/E0。",
+      "number": 47,
+      "url": "https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/47",
+      "id": 5433300948
+    },
+    {
+      "code": "OFF-10",
+      "title": "5D 精度约束下的九轴协调与进给对照",
+      "sources": [
+        32,
+        6
+      ],
+      "deps": [
+        "OFF-03",
+        "OFF-06",
+        "OFF-09",
+        "OFF-15"
+      ],
+      "kind": "prototype",
+      "goal": "验证外部障碍下保持末端精度、尽量保持进给的控制方法，而非重复无障碍局部冗余实验。",
+      "scope": [
+        "复用九轴速度级、5D 工具轴、OBB、JAX/CBFpy/qpax 和单一候选控制入口；核对 x64 初始化顺序及 FK/Jacobian 身份。",
+        "比较能表达已定任务优先关系的最小适配：在精度和安全/执行约束内保持进给，不可兼顾时重新求解降进给/暂缓动作。具体算法择优，不预先批准替换库。",
+        "场景覆盖臂身受阻而末端路径畅通、仅降进给可解、任务路径被占、限位/自碰撞共同活跃及正常恢复；合成参数明确来源。"
+      ],
+      "done": [
+        "每个候选报告路径横偏、工具轴误差、进度、约束残差、松弛、失败分类及最终候选命令。",
+        "有限权重或全关节速度同比缩放不能被直接宣称为严格任务优先；明确其适用条件和反例。",
+        "交付可复现比较和推荐；若方案改变未决架构/数值取舍，将具体结果交原 C0/08B 决策，保留可运行基线。"
+      ],
+      "evidence": [
+        "docs/planning/oscbf-reuse/handoffs/16-redundancy-priority.md",
+        "docs/planning/oscbf-reuse/issues/05-control-adoption.md"
+      ],
+      "residual": "控制方法最终选用、现场任务精度与执行器一致性仍由 C0/08A 及实机验收确认。",
+      "number": 54,
+      "url": "https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/54",
+      "id": 5433312362
+    },
+    {
+      "code": "OFF-11",
+      "title": "约束构造优化与同条件性能比较",
+      "sources": [
+        32,
+        3
+      ],
+      "deps": [
+        "OFF-10"
+      ],
+      "kind": "prototype",
+      "goal": "针对已有证据定位的约束构造成本，寻找保持数学/几何语义的可复现优化。",
+      "scope": [
+        "复用已测成本基线，定位运动学、几何导数、小矩阵分解及主机边界；比较共享中间结果、批量构造和减少重复计算的候选。",
+        "固定同一模型/场景/精度/容差和控制行为，核验原约束、导数、候选命令和完整任务结果；不删约束、换球包络或降低精度换取速度。",
+        "先保留 CPU 基线；GPU 仅做同条件对照。计时包括实际同步/主机转换，区分编译预热和运行尾延迟。"
+      ],
+      "done": [
+        "基线与候选的正确性、完整任务及不利工况比较可复现，报告 p50/p95/p99/max 和 deadline 分布的适用范围。",
+        "收益成立才提出接入；无收益亦可用完整反证结束实验并保留基线，不能捏造加速目标达成。",
+        "记录源码/配置/依赖 hash、机器和负载条件，提供回退及后续复验入口。"
+      ],
+      "evidence": [
+        "docs/planning/oscbf-reuse/research/3-latency-evidence/README.md",
+        "docs/planning/oscbf-reuse/research/gpu-latency-diagnosis/README.md"
+      ],
+      "residual": "生产后端/周期定案、目标实机负载与最坏响应上界继续归 01A/01B/C0。",
+      "number": 55,
+      "url": "https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/55",
+      "id": 5433312914
+    },
+    {
+      "code": "OFF-12",
+      "title": "完整软件时延与参数化停止预算",
+      "sources": [
+        3,
+        17
+      ],
+      "deps": [
+        "OFF-14"
+      ],
+      "kind": "task",
+      "goal": "在集成后的离线软件链上给出可追溯耗时和预算输入，保留实际执行器参数的未知性。",
+      "scope": [
+        "测合成采集、过滤、观测、几何、求解、后处理、发送模拟后端及反馈注入的连续事件链，含调度抖动、资源争用和故障。",
+        "复用已有预算工具，按几何时间基准和互不重叠区间计账；实际 CAN/驱动/制动、物理误差参数保持 unknown 或明示假设。",
+        "用测量结果提出软件周期/超时的候选与适用条件；保留最终用户决策，禁止把样本最大值/p99 升级为保证上界。"
+      ],
+      "done": [
+        "正常、近障、不可行、长程和组合负载的原始数据、软件边界及预算输入可追溯。",
+        "未知/无效/空间不足预算明确拒绝准入；参数化示例均标记为合成或假设。",
+        "输出仍待实测的字段、测量事件和候选决策表；不填造硬件停止值或发布最终真机准入。"
+      ],
+      "evidence": [
+        "docs/planning/oscbf-reuse/research/perception-age-budget.md",
+        "docs/planning/oscbf-reuse/research/offline-budget-20260911/README.md",
+        "docs/planning/oscbf-reuse/handoffs/17-control-budget.md"
+      ],
+      "residual": "实测制动、执行器/通信最坏响应和最终控制周期/有效期由 01B、11、H0 承接。",
+      "number": 59,
+      "url": "https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/59",
+      "id": 5433314455
+    },
+    {
+      "code": "OFF-13",
+      "title": "滤波后最终命令检查与执行保护闭环",
+      "sources": [
+        33,
+        13
+      ],
+      "deps": [
+        "OFF-04",
+        "OFF-08",
+        "OFF-09",
+        "OFF-10"
+      ],
+      "kind": "task",
+      "goal": "把控制器候选、后处理、停止事件和执行会话接成一条可离线验证的命令链。",
+      "scope": [
+        "保持一个命令发布者，关联观测、反馈、QP 候选、滤波结果、发送和反馈模拟；最终检查使用实际将发送的候选和原始时间。",
+        "接入 OFF-08 感知停止事件与 OFF-09 控制器锁存，验证低通/限幅/积分对约束的影响及独立断流处理；不得默认为滤波保持安全。",
+        "沿用一阶低通政策；对未知执行响应和未验证停止路径保持拒绝，不因离线试验自行开放 live 或改变物理制动方式。"
+      ],
+      "done": [
+        "覆盖 QP/感知失败、后处理违规、命令过期、反馈超龄、发送失败、重连、人工恢复和无新命令的端到端序列。",
+        "拒绝后不发送 stale/未经验证候选；恢复身份与状态一致，模块各自通过不能替代整链行为测试。",
+        "Fake/virtual 反馈明确标为测试输入；运行模式隔离与资源释放回归成立，并记录物理停止尚缺。"
+      ],
+      "evidence": [
+        "docs/planning/oscbf-reuse/research/18-recovery-command-chain-20260912.md",
+        "docs/planning/oscbf-reuse/handoffs/13-socketcan.md"
+      ],
+      "residual": "真实执行器响应、独立硬件看门狗、承重/制动能力继续阻止 E0/11/H0 的现场验收。",
+      "number": 57,
+      "url": "https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/57",
+      "id": 5433313686
+    },
+    {
+      "code": "OFF-14",
+      "title": "合成双源到控制执行的闭环场景验证",
+      "sources": [
+        24,
+        6
+      ],
+      "deps": [
+        "OFF-07",
+        "OFF-08",
+        "OFF-11",
+        "OFF-13",
+        "OFF-18"
+      ],
+      "kind": "task",
+      "goal": "形成不依赖设备的完整场景通道，验证真实软件接线和任务/故障行为。",
+      "scope": [
+        "复用现有回放与仿真，将合成双源输出实际接入 OFF-06/07/08，再通过控制器、最终命令检查及隔离被控对象闭环。",
+        "覆盖可行避障、仅降进给可行、路径被占、遮挡/空帧、时钟/frame 错误、容量溢出、源故障、执行反馈故障及恢复。",
+        "使用可追溯的初始姿态、障碍轨迹和真值，区分故意不可行的压力负载与任务成功场景。"
+      ],
+      "done": [
+        "正常完整轨迹、活跃安全约束、降速恢复、任务冲突和故障锁存均有可复现结果。",
+        "评价包含误差、进度、几何/约束余量、状态事件和最终执行模拟命令，不以 QP 收敛或到达 completed 单独判成功。",
+        "记录模型和全部假设，失败反例保留；合成闭环成功不能标记现场覆盖/物理停止已验证。"
+      ],
+      "evidence": [
+        "docs/planning/oscbf-reuse/research/offline-latency-20260911/README.md",
+        "docs/planning/oscbf-reuse/handoffs/16-redundancy-priority.md"
+      ],
+      "residual": "真实双源数据、标定、执行反馈及物理故障处理的证据留在 T4/08A 和现场票。",
+      "number": 58,
+      "url": "https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/58",
+      "id": 5433314056
+    },
+    {
+      "code": "OFF-15",
+      "title": "跟踪评价指标与证据等级落地",
+      "sources": [
+        19
+      ],
+      "deps": [],
+      "kind": "task",
+      "goal": "先统一离线实验的评价口径，防止不同起点、测量边界和失败状态被混为成功。",
+      "scope": [
+        "沿用已定路径跟随语义：cross-track、工具轴误差、弧长进度、进给、QP/准入状态、逐类残差、几何余量和时延。",
+        "区分内核候选、滤波后命令、模拟状态和真实反馈；输出数据/模型身份、工况及测量边界。",
+        "把任务容差、数值容差、安全阈值及其 provisional/accepted 来源分别记录；复用已修复指标，不重复历史完成项。"
+      ],
+      "done": [
+        "用独立可计算轨迹/姿态验证定义；空样本、NaN、提前保持、零进度和未完成任务不会输出误导的通过结论。",
+        "报告能同时呈现整段验收与在线门控信息，合成/模型证据不能冒充真机结果。",
+        "未知最终阈值允许输出指标和未定状态，不能为关闭本票自行设定或放宽阈值。"
+      ],
+      "evidence": [
+        "docs/planning/oscbf-reuse/handoffs/16-redundancy-priority.md",
+        "src/robot_safecontrol_moveit/tracking_evaluator.py"
+      ],
+      "residual": "最终阈值及现场任务验收仍依赖原 13、01B、08B 的证据和决定。",
+      "number": 44,
+      "url": "https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/44",
+      "id": 5433299758
+    },
+    {
+      "code": "OFF-16",
+      "title": "标定工具离线适配与退化数据验证",
+      "sources": [
+        25
+      ],
+      "deps": [
+        "OFF-01"
+      ],
+      "kind": "task",
+      "goal": "完成标定工具输出到统一记录的离线通路，不等待现场采集。",
+      "scope": [
+        "复用已验证的 OpenCV AX=YB 接口和已研究的 LiDAR–camera 候选，先盘点现有合成/实采记录；不重写通用优化器或强制移植 ROS1 工具。",
+        "统一 frame/单位/方向、残差、设备/方法 provenance 和 OFF-01 的身份算法，实现离线导出适配。",
+        "补有噪声、错误方向、退化运动、缺配对和来源缺失验证；合成结果保持 test/assumed 身份，不能成为可信现场标定。"
+      ],
+      "done": [
+        "已知变换可恢复，退化/无效输入被发现，残差与适用条件可追溯。",
+        "导出记录与加载器相容，源记录与部署加载身份一致性的测试通过。",
+        "明确所选工具的固定版本、许可证、可复现步骤及尚缺现场资料。"
+      ],
+      "evidence": [
+        "docs/planning/oscbf-reuse/handoffs/25-calibration-toolchain.md"
+      ],
+      "residual": "实际配对数据、夹具、独立误差和现场标定仍由 T5/T6 承接。",
+      "number": 60,
+      "url": "https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/60",
+      "id": 5433314776
+    },
+    {
+      "code": "OFF-17",
+      "title": "启动自检离线汇总与模式拒绝验证",
+      "sources": [
+        26
+      ],
+      "deps": [
+        "OFF-01",
+        "OFF-12",
+        "OFF-13",
+        "OFF-16"
+      ],
+      "kind": "task",
+      "goal": "把已实现的软件与证据条件汇入自检，保证缺少现场依据时明确拒绝相应模式。",
+      "scope": [
+        "汇总运行时标定身份、状态/观测时间与覆盖、控制/执行保护、后端和预算条件，复用既有 launch/config 契约。",
+        "测试矩阵合法性与标定真实性分别判断；合法 identity 不因单位阵被误拒，假定非单位阵也不因非单位而被放行。",
+        "设计正/负合成记录验证自检逻辑；模拟证据仅用于测试入口，正式 live 继续 fail closed。"
+      ],
+      "done": [
+        "缺字段、错误 hash/frame/会话、过期、无覆盖、预算未知和保护缺失均导致对应拒绝原因。",
+        "自检比较节点实际加载的记录而非另读源码副本；所有结果可追溯到输入身份。",
+        "测试通过不生成现场准入证书；报告列出未满足的实际设备/标定/停止证据。"
+      ],
+      "evidence": [
+        "docs/adr/0004-calibration-ssot-sensor-extrinsics-authority.md",
+        "docs/real_robot_runbook.md"
+      ],
+      "residual": "已知物体精度验收、真实状态覆盖、设备响应和 live 开启属于 T6/H0 后续工作。",
+      "number": 61,
+      "url": "https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/61",
+      "id": 5433315179
+    },
+    {
+      "code": "OFF-18",
+      "title": "仿真退出异常与完整生命周期回归",
+      "sources": [
+        9
+      ],
+      "deps": [],
+      "kind": "task",
+      "goal": "处理现有测试票剩余的 launch 退出验收缺口，不重复已通过的历史修复。",
+      "scope": [
+        "在隔离且归属明确的仿真进程中复现 SIGINT 后 move_group exit -11，区分产品、上游和测试清理问题。",
+        "只修有证据的根因/清理顺序，或记录确切上游缺口与受影响范围；保持运行期断言和超时标准。",
+        "把启动、运行和退出结果都纳入对应测试；不清理其他任务的 demo/ROS 进程。"
+      ],
+      "done": [
+        "保留复现命令、进程归属和退出日志，不能仅凭运行阶段通过宣称完整生命周期通过。",
+        "修复时运行受影响的完整生命周期回归；若上游问题暂无法修复，给出可复现定位和明确失败状态，由原 02 票继续承接，不伪报转绿。",
+        "不重复改动已修好的 settle/perf 独立性/e2e steps，不以 xfail 或放宽性能阈值掩盖缺口。"
+      ],
+      "evidence": [
+        "https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/9"
+      ],
+      "residual": "最终性能预算仍由 01B 决定；根因未修时原 02 票仍保留退出失败验收项。",
+      "number": 56,
+      "url": "https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/56",
+      "id": 5433313306
+    }
+  ]
+}
