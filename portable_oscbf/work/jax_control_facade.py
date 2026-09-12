@@ -85,6 +85,8 @@ class JaxPathTrackingResult:
     actual_tangent_speed_m_s: float
     reference_at_endpoint: bool
     delta_slack: float = 0.0
+    constraint_metrics: dict | None = None
+    ee_pos_before: np.ndarray | None = None
 
 
 class JaxControlLoop:
@@ -130,6 +132,9 @@ class JaxControlLoop:
             else np.asarray(rate_limit_du_max, dtype=np.float32).reshape(9))
         self.rate_limit_penalty = float(rate_limit_penalty)
         self.enable_x64 = bool(enable_x64)
+        # Apply precision before constructing robot constants, limits or paths.
+        # Enabling x64 only in init_cbf cannot recover already-rounded arrays.
+        jax.config.update('jax_enable_x64', self.enable_x64)
         self.solver_tol = float(solver_tol)
         self.qp_warm_start = bool(qp_warm_start)
         self.task_mode = str(task_mode)
@@ -250,6 +255,7 @@ class JaxControlLoop:
             raise TypeError('geometry must expose the PathGeometry fields')
         if not all(hasattr(config, field) for field in config_fields):
             raise TypeError('config must expose the PathFollowingConfig fields')
+        jax.config.update('jax_enable_x64', self.enable_x64)
         self._path_geometry = as_jax_path_geometry(geometry)
         self._path_config = as_jax_path_config(config)
         if posture_reference is None:
@@ -263,6 +269,13 @@ class JaxControlLoop:
             )
             self._path_posture_reference = as_jax_path_posture_reference(
                 host_reference)
+
+    def path_geometry_arrays(self) -> dict[str, np.ndarray]:
+        """Startup snapshot of the exact arrays captured by the path kernel."""
+        if self._path_geometry is None:
+            raise RuntimeError('configure_path() must run before path_geometry_arrays()')
+        return {name: np.array(value, copy=True)
+                for name, value in self._path_geometry._asdict().items()}
 
     @property
     def path_is_configured(self) -> bool:
@@ -624,7 +637,8 @@ class JaxControlLoop:
          gamma, feedrate_nominal, feedrate, feedrate_joint_limit, feedrate_cbf_limit,
          feedrate_rate_limit, feedrate_tool_axis_limit, feedrate_endpoint_brake_limit,
          limiting_reason_code, actual_tangent_speed,
-         reference_at_endpoint, posture_reference) = result
+         reference_at_endpoint, posture_reference,
+         constraint_residuals, ee_pos_before) = result
         self._update_qp_diagnostics(
             qp_ok, min_dist, min_esdf, rate_constraint_violation,
             rate_solver_slack, h_vals, cbf_grad,
@@ -685,7 +699,51 @@ class JaxControlLoop:
             actual_tangent_speed_m_s=float(actual_tangent_speed),
             reference_at_endpoint=bool(reference_at_endpoint),
             delta_slack=float(delta_slack),
+            constraint_metrics=self._path_constraint_metrics(
+                constraint_residuals, h_vals, jx),
+            ee_pos_before=np.asarray(ee_pos_before),
         )
+
+    def _path_constraint_metrics(self, residuals, static_margins, inputs) -> dict:
+        """Group measured rows by quantity/unit; disabled geometry stays unmeasured.
+
+        h_vals is the static CBF RHS divided by the baseline gain, before
+        dynamic obstacle corrections. It is explicitly not physical clearance.
+        """
+        config = self._config
+        joint_count = self.robot.num_joints
+        from work.kinematics_data import JOINT_CHAIN
+        joint_types = [row[2] for row in JOINT_CHAIN if row[2] != 'fixed']
+        linear = [i for i, kind in enumerate(joint_types) if kind == 'prismatic']
+        angular = [i for i, kind in enumerate(joint_types) if kind == 'revolute']
+        linear = linear + [i + joint_count for i in linear]
+        angular = angular + [i + joint_count for i in angular]
+        groups = (
+            ("joint_linear", linear, "m", True),
+            ("joint_angular", angular, "rad", True),
+            ("self_collision", slice(2 * joint_count, config.obstacle_h_start), "m", True),
+            ("obstacle", slice(config.obstacle_h_start, config.obstacle_h_stop), "m",
+             bool(np.any(np.asarray(inputs['obs_enabled']) > 0.5))),
+            ("esdf", slice(config.esdf_h_start, config.esdf_h_stop), "m",
+             bool(config.enable_sdf and float(inputs['sdf_enabled']) > 0.5)),
+            ("singularity", slice(config.esdf_h_stop, config.esdf_h_stop + 1), "model_manipulability", True),
+        )
+        rows, margins = np.asarray(residuals), np.asarray(static_margins)
+        metrics = {}
+        for name, indices, unit, enabled in groups:
+            metrics[name + '.residual'] = {
+                'value': float(np.maximum(np.max(rows[indices]), 0.0)) if enabled else None,
+                'quantity': 'max_positive_unrelaxed_G_u_candidate_minus_h',
+                'unit': unit + '/s', 'active': enabled,
+                'source': 'QP solve state; dynamic-corrected RHS; before health gate/integration/filter',
+            }
+            metrics[name + '.static_margin'] = {
+                'value': float(np.min(margins[indices])) if enabled else None,
+                'quantity': 'static_cbf_rhs_div_baseline_alpha',
+                'unit': unit, 'active': enabled,
+                'source': 'QP solve state; static RHS before dynamic correction; model metric, not physical clearance',
+            }
+        return metrics
 
     def _update_qp_diagnostics(self, qp_ok, min_dist, min_esdf,
                                rate_constraint_violation, rate_solver_slack,

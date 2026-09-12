@@ -1,0 +1,20 @@
+{
+  "base_head": "744b44c82c17d668011afe3c462e0994c4da5c61",
+  "files": {
+    "CONTEXT.md": "37e776db76fc67c5fefcbec20500f4cc43c5f142299bc77caf3e09c087fbbab6",
+    "README.md": "7deef4101c49a0973e216d7ecf83dc2bb543568b671546f7fa14f7f82a2cab59",
+    "docs/adr/0008-tracking-evaluation-scope-and-angle.md": "ab9725c544a745e7bda0514965222083b591e909d6c5a9ab29d3fc91fb57b92e",
+    "docs/planning/oscbf-reuse/MAP.md": "ba1dc89cb0855038560ce1748847a904d8a9814c5a41871d6214bfe13dafbe3f",
+    "docs/planning/oscbf-reuse/handoffs/44-offline-tracking-evaluation.md": "e1dddd99265797f0df36794b551fee44201532dd8cf68b35e021f55ac84dce7f",
+    "docs/tracking_evaluation.md": "2cdf80dc45423df0ff05b706668714bea928bc656a0aca31757880e276877362",
+    "portable_oscbf/tests/test_path_evaluation_diagnostics.py": "5aafd1ca3b94065210e7b15e510400a4b39f88d670fa8471a3a34eff89cb33e3",
+    "portable_oscbf/work/jax_control_facade.py": "f9be46e62be7c51352b7437b7ccc9a6ff2a465956fe54c3da5b17557946bd04c",
+    "portable_oscbf/work/jax_kernel_factory.py": "96b6e2a09ddff14097588918b021131c36920438a9bdee5a2f7170ae7bfe3ccc",
+    "src/robot_safecontrol_moveit/oscbf_controller.py": "cc95dd20af28443095cbd7ee75b5e5101858f06ebfd8df3bd9da60e83f689f4c",
+    "src/robot_safecontrol_moveit/tracking_contract.py": "c5f54b18d0581a04e0e30dd3ac71e79375d709a1374a38c819e89da6a3db4e51",
+    "src/robot_safecontrol_moveit/tracking_evaluator.py": "4ccfc0d394316078cdd4459b63d71c88f2880cb7cb035f0e003e691b8dbc6182",
+    "tests/test_oscbf_controller_smoke.py": "c7022d4a2a31e0ecc3f8c2e6370e304e51254195b844640d5fd2b547d7474ef3",
+    "tests/test_oscbf_production_config.py": "2aa1970ffe287937f709b07627a63a482547f0b499e3f3b81e35ad9dfddf1682",
+    "tests/test_tracking_evaluator.py": "852febe037ed7050f88d2b6d151f92406a788b04fc96436829663492cd49d256"
+  }
+}

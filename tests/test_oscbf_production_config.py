@@ -237,6 +237,9 @@ def test_chain_remap_is_applied_once_and_snapshot_matches_entities(
     def _fake_build_controller(node, portable_root):
         del portable_root
         node._loop = SimpleNamespace(obstacle_h_baseline_alpha=10.0)
+        node._evaluation_geometry = SimpleNamespace(total_length_m=1.0)
+        node._evaluation_geometry_hash = "fixture-path-identity"
+        node._evaluation_path_dtype = "float64"
         node._surface_axis = None
         node._surface_centre = None
         node._surface_radius = None
@@ -479,6 +482,9 @@ def test_snapshot_failure_prevents_command_publisher_creation(monkeypatch):
         node._loop = SimpleNamespace(
             obstacle_h_baseline_alpha=10.0
         )
+        node._evaluation_geometry = SimpleNamespace(total_length_m=1.0)
+        node._evaluation_geometry_hash = "fixture-path-identity"
+        node._evaluation_path_dtype = "float64"
         node._surface_axis = None
         node._surface_centre = None
         node._surface_radius = None

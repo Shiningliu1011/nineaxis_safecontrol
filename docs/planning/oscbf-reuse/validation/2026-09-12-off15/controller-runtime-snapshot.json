@@ -1,0 +1,477 @@
+{
+  "created_at_utc": "2026-09-12T13:55:40.891333+00:00",
+  "evaluation": {
+    "boundary": "kernel_candidate",
+    "scope": "full_path",
+    "total_length_m": 1.8167634936816308,
+    "trajectory_geometry_sha256": "9527603c32cf1dde6d96f714aa44345ad21f7c1d8804db6597f84769e92c38b3"
+  },
+  "final_values": {
+    "cylinder_axis_direction": [
+      0.0,
+      1.0,
+      0.0
+    ],
+    "cylinder_center": [],
+    "damping": 0.05,
+    "dt": 0.012,
+    "dt_path": 0.013,
+    "enable_perception_obstacles": false,
+    "enable_x64": true,
+    "joint_names": [
+      "J1",
+      "J2",
+      "J3",
+      "J4",
+      "J5",
+      "J6",
+      "J7",
+      "J8",
+      "J9"
+    ],
+    "joint_state_topic": "/mujoco_joint_states",
+    "kp_joint": 0.45,
+    "kp_orient": 10.0,
+    "kp_pos": 161.0,
+    "latency_budget_ms": 20.0,
+    "max_tool_axis_speed_rad_s": 2.0,
+    "nullspace_speed_limit": 0.18,
+    "orientation_mode": "surface_normal",
+    "perception_tracks_topic": "/perception/tracks",
+    "perf_report_path": "/tmp/pytest-of-lsn/pytest-6/oscbf_m100/perf.md",
+    "portable_config_yaml": "/home/lsn/robot/robot_safecontrol/portable_oscbf/config/nineaxis.yaml",
+    "portable_oscbf_root": "/home/lsn/robot/robot_safecontrol/portable_oscbf",
+    "publish_frequency_hz": 80.0,
+    "publish_joint_state_topic": "/oscbf_command",
+    "reference_feedrate_scale": 3.5,
+    "reference_lead_m": 0.01,
+    "solver_tol": 0.001,
+    "task_mode": "tool_axis_5d",
+    "telemetry_period_s": 0.5,
+    "temporal_lambda": 0.2,
+    "trajectory_mat": "/home/lsn/robot/robot_safecontrol/data/nurbs/ik_input.mat",
+    "use_nullspace_policy": false,
+    "w_joint": 0.1,
+    "w_orient": 10.0,
+    "w_pos": 41.0,
+    "wait_for_start": true
+  },
+  "geometry": {
+    "cylinder_center_source": "trajectory_fit",
+    "resolved_axis_direction": [
+      0.0,
+      1.0,
+      0.0
+    ],
+    "resolved_center": [
+      -7.246874682720339e-05,
+      0.3466393505935161,
+      1.6372593390674266
+    ],
+    "resolved_radius_m": 0.27060099731968984
+  },
+  "node_name": "oscbf_controller_smoke",
+  "obstacle_alpha_contract": {
+    "baseline_source": "NineaxisOSCBFVelocityConfig",
+    "baseline_value": 10.0,
+    "runtime_value_source": "perception track slot 10"
+  },
+  "override_chains": {
+    "cylinder_axis_direction": [
+      {
+        "source": "production_yaml",
+        "value": [
+          0.0,
+          1.0,
+          0.0
+        ]
+      }
+    ],
+    "cylinder_center": [
+      {
+        "source": "optional_default",
+        "value": []
+      }
+    ],
+    "damping": [
+      {
+        "source": "production_yaml",
+        "value": 0.05
+      }
+    ],
+    "dt": [
+      {
+        "source": "production_yaml",
+        "value": 0.01
+      },
+      {
+        "source": "explicit_override",
+        "value": 0.012
+      }
+    ],
+    "dt_path": [
+      {
+        "source": "production_yaml",
+        "value": 0.01
+      },
+      {
+        "source": "explicit_override",
+        "value": 0.013
+      }
+    ],
+    "enable_perception_obstacles": [
+      {
+        "source": "production_yaml",
+        "value": false
+      }
+    ],
+    "enable_x64": [
+      {
+        "source": "production_yaml",
+        "value": true
+      }
+    ],
+    "joint_names": [
+      {
+        "source": "production_yaml",
+        "value": [
+          "J1",
+          "J2",
+          "J3",
+          "J4",
+          "J5",
+          "J6",
+          "J7",
+          "J8",
+          "J9"
+        ]
+      }
+    ],
+    "joint_state_topic": [
+      {
+        "source": "production_yaml",
+        "value": "/mujoco_joint_states"
+      }
+    ],
+    "kp_joint": [
+      {
+        "source": "production_yaml",
+        "value": 0.45
+      }
+    ],
+    "kp_orient": [
+      {
+        "source": "production_yaml",
+        "value": 10.0
+      }
+    ],
+    "kp_pos": [
+      {
+        "source": "production_yaml",
+        "value": 160.0
+      },
+      {
+        "source": "explicit_override",
+        "value": 161.0
+      }
+    ],
+    "latency_budget_ms": [
+      {
+        "source": "production_yaml",
+        "value": 20.0
+      }
+    ],
+    "max_tool_axis_speed_rad_s": [
+      {
+        "source": "production_yaml",
+        "value": 2.0
+      }
+    ],
+    "nullspace_speed_limit": [
+      {
+        "source": "production_yaml",
+        "value": 0.18
+      }
+    ],
+    "orientation_mode": [
+      {
+        "source": "production_yaml",
+        "value": "surface_normal"
+      }
+    ],
+    "perception_tracks_topic": [
+      {
+        "source": "production_yaml",
+        "value": "/perception/tracks"
+      }
+    ],
+    "perf_report_path": [
+      {
+        "source": "production_yaml",
+        "value": "output/oscbf_m10_perf.md"
+      },
+      {
+        "source": "explicit_override",
+        "value": "/tmp/pytest-of-lsn/pytest-6/oscbf_m100/perf.md"
+      }
+    ],
+    "portable_config_yaml": [
+      {
+        "source": "production_yaml",
+        "value": ""
+      },
+      {
+        "source": "explicit_override",
+        "value": "/home/lsn/robot/robot_safecontrol/portable_oscbf/config/nineaxis.yaml"
+      }
+    ],
+    "portable_oscbf_root": [
+      {
+        "source": "production_yaml",
+        "value": ""
+      },
+      {
+        "source": "explicit_override",
+        "value": "/home/lsn/robot/robot_safecontrol/portable_oscbf"
+      }
+    ],
+    "publish_frequency_hz": [
+      {
+        "source": "production_yaml",
+        "value": 100.0
+      },
+      {
+        "source": "explicit_override",
+        "value": 80.0
+      }
+    ],
+    "publish_joint_state_topic": [
+      {
+        "source": "production_yaml",
+        "value": "/oscbf_command"
+      }
+    ],
+    "reference_feedrate_scale": [
+      {
+        "source": "production_yaml",
+        "value": 3.5
+      }
+    ],
+    "reference_lead_m": [
+      {
+        "source": "production_yaml",
+        "value": 0.01
+      }
+    ],
+    "solver_tol": [
+      {
+        "source": "production_yaml",
+        "value": 0.001
+      }
+    ],
+    "task_mode": [
+      {
+        "source": "production_yaml",
+        "value": "tool_axis_5d"
+      }
+    ],
+    "telemetry_period_s": [
+      {
+        "source": "production_yaml",
+        "value": 1.0
+      },
+      {
+        "source": "explicit_override",
+        "value": 0.5
+      }
+    ],
+    "temporal_lambda": [
+      {
+        "source": "production_yaml",
+        "value": 0.2
+      }
+    ],
+    "trajectory_mat": [
+      {
+        "source": "production_yaml",
+        "value": ""
+      },
+      {
+        "source": "explicit_override",
+        "value": "/home/lsn/robot/robot_safecontrol/data/nurbs/ik_input.mat"
+      }
+    ],
+    "use_nullspace_policy": [
+      {
+        "source": "production_yaml",
+        "value": false
+      }
+    ],
+    "w_joint": [
+      {
+        "source": "production_yaml",
+        "value": 0.1
+      }
+    ],
+    "w_orient": [
+      {
+        "source": "production_yaml",
+        "value": 10.0
+      }
+    ],
+    "w_pos": [
+      {
+        "source": "production_yaml",
+        "value": 40.0
+      },
+      {
+        "source": "explicit_override",
+        "value": 41.0
+      }
+    ],
+    "wait_for_start": [
+      {
+        "source": "production_yaml",
+        "value": false
+      },
+      {
+        "source": "explicit_override",
+        "value": true
+      }
+    ]
+  },
+  "parameter_sources": {
+    "cylinder_axis_direction": "production_yaml",
+    "cylinder_center": "optional_default",
+    "damping": "production_yaml",
+    "dt": "explicit_override",
+    "dt_path": "explicit_override",
+    "enable_perception_obstacles": "production_yaml",
+    "enable_x64": "production_yaml",
+    "joint_names": "production_yaml",
+    "joint_state_topic": "production_yaml",
+    "kp_joint": "production_yaml",
+    "kp_orient": "production_yaml",
+    "kp_pos": "explicit_override",
+    "latency_budget_ms": "production_yaml",
+    "max_tool_axis_speed_rad_s": "production_yaml",
+    "nullspace_speed_limit": "production_yaml",
+    "orientation_mode": "production_yaml",
+    "perception_tracks_topic": "production_yaml",
+    "perf_report_path": "explicit_override",
+    "portable_config_yaml": "explicit_override",
+    "portable_oscbf_root": "explicit_override",
+    "publish_frequency_hz": "explicit_override",
+    "publish_joint_state_topic": "production_yaml",
+    "reference_feedrate_scale": "production_yaml",
+    "reference_lead_m": "production_yaml",
+    "solver_tol": "production_yaml",
+    "task_mode": "production_yaml",
+    "telemetry_period_s": "explicit_override",
+    "temporal_lambda": "production_yaml",
+    "trajectory_mat": "explicit_override",
+    "use_nullspace_policy": "production_yaml",
+    "w_joint": "production_yaml",
+    "w_orient": "production_yaml",
+    "w_pos": "explicit_override",
+    "wait_for_start": "explicit_override"
+  },
+  "production_config": {
+    "path": "/home/lsn/robot/robot_safecontrol/config/oscbf_controller.yaml",
+    "sha256": "a1c85415a7a7055a980276eb0ce645697a213d5179f8b1b36c348145e6e00176"
+  },
+  "resources": {
+    "portable_config_yaml": {
+      "raw_value": "/home/lsn/robot/robot_safecontrol/portable_oscbf/config/nineaxis.yaml",
+      "resolution_source": "configured_path",
+      "resolved_path": "/home/lsn/robot/robot_safecontrol/portable_oscbf/config/nineaxis.yaml",
+      "value_source": "explicit_override"
+    },
+    "portable_oscbf_root": {
+      "raw_value": "/home/lsn/robot/robot_safecontrol/portable_oscbf",
+      "resolution_source": "configured_path",
+      "resolved_path": "/home/lsn/robot/robot_safecontrol/portable_oscbf",
+      "value_source": "explicit_override"
+    },
+    "trajectory_mat": {
+      "raw_value": "/home/lsn/robot/robot_safecontrol/data/nurbs/ik_input.mat",
+      "resolution_source": "configured_path",
+      "resolved_path": "/home/lsn/robot/robot_safecontrol/data/nurbs/ik_input.mat",
+      "value_source": "explicit_override"
+    }
+  },
+  "run_id": "20260912T135540.891276Z-d5d79979247448638029c7d248eea552",
+  "schema_version": 1,
+  "snapshot_path": "/tmp/pytest-of-lsn/pytest-6/oscbf_m100/runtime_snapshots/oscbf-runtime-20260912T135540.891276Z-d5d79979247448638029c7d248eea552.json",
+  "software": {
+    "git_dirty": true,
+    "git_head": "744b44c82c17d668011afe3c462e0994c4da5c61",
+    "git_root": "/home/lsn/robot/robot_safecontrol",
+    "git_status": " M CONTEXT.md\n M README.md\n M docs/planning/oscbf-reuse/MAP.md\n M portable_oscbf/work/jax_control_facade.py\n M portable_oscbf/work/jax_kernel_factory.py\n M src/robot_safecontrol_moveit/oscbf_controller.py\n M src/robot_safecontrol_moveit/tracking_evaluator.py\n M tests/test_oscbf_controller_smoke.py\n M tests/test_oscbf_production_config.py\n M tests/test_tracking_evaluator.py\n?? AGENTS.md\n?? docs/adr/0008-tracking-evaluation-scope-and-angle.md\n?? docs/planning/oscbf-reuse/handoffs/44-offline-tracking-evaluation.md\n?? docs/planning/oscbf-reuse/validation/2026-09-12-off15/\n?? docs/tracking_evaluation.md\n?? portable_oscbf/tests/test_path_evaluation_diagnostics.py\n?? src/robot_safecontrol_moveit/tracking_contract.py",
+    "source_files": {
+      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/actuator_limits.py": "e68d72aff4b114c0aa92de1aab4c9ef12a031b7a8a0ce5f68731e60bb1a0215a",
+      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/cbf_types.py": "7d2e1b33284f36088e40e811a811be7b508caab57167ff3d4f9c66fe34b2b459",
+      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/collision_envelope.py": "72a6a8bbd286f0013ce335b837d50dac1315ed412fa5bd217b14a13498ad241f",
+      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/controller_step_cache.py": "7d9829d054af8de3f8d8d4f94e67461add1f8ce1f8b147cab6f9f2a54477b360",
+      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/dpax_collision.py": "91a7c144fd0f4a3ff9fe603796197f2ed1513e094626b870f29540637dda4dcb",
+      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/driver_simulator.py": "292b3b776bd211adcf0d3fb0be39b16791a58f2ddb5c912d7ce1f0fff65f02b5",
+      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/dynamic_clustering.py": "e30d80b1777b0ce840fc75b87fed805c4436fecfdd20643d121fa478c111c14c",
+      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/dynamic_obstacle_placement.py": "39c7df6f7df76381426219e5bf4b266ac43328940cd97c41f355e9e97ffb04ac",
+      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/dynamic_obstacles.py": "bd3f4f9e0fefc7ba542f75bfce2f43d73c79d41560493a9c35103de843e76dfe",
+      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/fcl_collision.py": "be4920c15dbddd4c665111d57d840538afd453e7008dc45a6efd8e279a739be2",
+      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/fcl_collision_mesh.py": "586f094724a855654ef17a5a567c14d50a8885e08b76433af86c2bc012a7b86d",
+      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/fusion_engine.py": "9f8dfea41ef0f52db5c297b9f09c2f9a7fbb684b3c209273b635ca49caa12a4e",
+      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/ik_data_loader.py": "9197b9ec35c3c7688e496fd68e59b3f2b7ddedd14e4e2954d57257f64747bbfd",
+      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/jax_barrier_terms.py": "4e37b4da12bd56aeb4f90b059f5dd2af89af1eb2ef671237b36a01ef02f380e4",
+      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/jax_control_facade.py": "f9be46e62be7c51352b7437b7ccc9a6ff2a465956fe54c3da5b17557946bd04c",
+      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/jax_kernel_factory.py": "96b6e2a09ddff14097588918b021131c36920438a9bdee5a2f7170ae7bfe3ccc",
+      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/jax_path_following.py": "79a30e0d7a812a30f774a02f5d73d2e5afc5adc43d5cba69555a85985b6f4511",
+      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/jax_posture_reference.py": "73692083ae01f5839f421cce0cc44c447af0a585e9d3723644d4fa617fdd8256",
+      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/joint_limit_contract.py": "77d544438874d85c629012e42f4fc1a4250beabcac5a67eda4e22e58ee1d0d7f",
+      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/joint_trajectory_logging.py": "8579d0630a5af1cd655eab428b6abf431c994db2be21febdadb72d4fed2e8b66",
+      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/joint_velocity_limits.py": "17be1ea84dc59fb84e1a15c10b6de0b762946a7848ca0ae253b0e0be64b1ab4c",
+      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/kinematics_data.py": "9cfa1632748bee07c727a4b84726466ac9f7a7b5b267e31ecf88fd5b29a2db14",
+      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/manipulability_metric.py": "a3e36a489cbddd91b3d9435daddef0e567e48de56a8327f34abdfede488f6bb5",
+      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/nineaxis_kinematics.py": "7cec2c14d630272d5c4e3ea38186284d90b459fd611c9554e92ceb80496e035f",
+      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/nineaxis_manipulator_jax.py": "b01c18d8b4ea4b8b7267f76a483ff11ea3407e5bc44574359f1c5e9f04f01396",
+      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/nullspace_policy.py": "a7e074175f2fa490f55cd2a64cb3090db3dd266f23044622749727d9c3fb3cf7",
+      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/obb_collision_model.py": "1ea08f39ade0fe943068522b2e14e2a8601170d0d6639cd8b1f7b112d651a0a7",
+      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/oscbf_velocity_config.py": "a962f9ea6d1cceeee1d8e730aad459489cfb84ff056cc163e07b366ba33149bf",
+      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/path_following.py": "93a2a7651f3ab831e0efc37d34689209a8508ff62177e41259dd60f49c2cbcff",
+      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/path_posture_reference.py": "af5ab13447900d6be80afcecb9b7808fb02bda17c8d598b43ed3486a071c7e27",
+      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/perception_config.py": "dee94c9e4ba623b950fc939781b815b51a95ccf4f33fb49fe0736b6dc1b4b5e5",
+      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/point_cloud_obstacles.py": "7626f19fea002d7025fb635a7dd431ab1ea4ef6aec9ab65131157c88818534df",
+      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/point_cloud_obstacles_dynamic.py": "51a318d790a227be5c6263a9521b8806e434a8d390fc008d3a3ae307ffbd2cc6",
+      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/qp_solver_health.py": "c16d3d23eadbea00d0d955813bf7f3d224b5eca7d08774b1013acc0ccc01b283",
+      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/qpax_solver.py": "3be6e444b6f243c3a2c29411e9702bdf3705b1ab79b0c5bfc3799d14c4aaef61",
+      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/qpax_warmstart.py": "7c4fa0e68f1ec06bb3bbf766245da25969a760813e3e5b5ffdb1a9564c9439fa",
+      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/robot_geometry.py": "ad5fd135009bdf0273ab258b4bcc0dba45aa379c7d116e830908d8ccfc24c9e5",
+      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/safe_posture.py": "ba2925192b0fe2088bb2c4c940022aa4a9629225a9e82e79c3786016b176a965",
+      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/safety_snapshot.py": "bbc4103b858baade69d7f3a58acafdc06df76642f167e33cb6449b532d48942b",
+      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/static_occupancy.py": "1930056e71af5a456bb8a91ddcd490b0aec462756c12a6ec524b1eadb3420af9",
+      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/task_mode_contract.py": "ab879b83df9ab66ecff9269026b57cbeb0b64d7a83bfaab15c6e5570bcf12db8",
+      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/tool_axis_task.py": "a50619dd7e39c9c4c461c92ad3a13b1de55451d575461e0110bb458fac9d153a",
+      "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/oscbf_controller.py": "cc95dd20af28443095cbd7ee75b5e5101858f06ebfd8df3bd9da60e83f689f4c",
+      "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/production_config.py": "69c7d76b1e763256dd52168273060995ad763880397137bbb4742407a21d6cfc",
+      "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/runtime_snapshot.py": "8143f4507d44e891c2b4501e26d570a1e655d815ede0464e13db0577cc79937e",
+      "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/tracking_contract.py": "c5f54b18d0581a04e0e30dd3ac71e79375d709a1374a38c819e89da6a3db4e51",
+      "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/tracking_evaluator.py": "4ccfc0d394316078cdd4459b63d71c88f2880cb7cb035f0e003e691b8dbc6182"
+    },
+    "source_sha256": "7b7ea63fe98f0724f22134e75da03d3b5d5ad811b82e445f9cfd25a1e2a3bc13"
+  },
+  "topic_connections": {
+    "joint_state_topic": {
+      "raw_value": "/mujoco_joint_states",
+      "resolved_topic": "/mujoco_joint_states"
+    },
+    "perception_tracks_topic": {
+      "raw_value": "/perception/tracks",
+      "resolved_topic": "/perception/tracks"
+    },
+    "publish_joint_state_topic": {
+      "raw_value": "/oscbf_command",
+      "resolved_topic": "/oscbf_command"
+    }
+  }
+}

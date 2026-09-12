@@ -1,0 +1,12 @@
+{
+  "samples": 3000,
+  "submit_ms": 2.9568630016001407,
+  "report_s": 1.8196926200016605,
+  "published": 172,
+  "received": 172,
+  "nominal_timer_ms": 10.0,
+  "max_observed_gap_ms": 22.49981200111506,
+  "sample_bytes": 13579788,
+  "hash_matches": true,
+  "scope": "isolated ROS timer and writer workload; no physical control or realtime guarantee"
+}

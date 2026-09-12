@@ -1,0 +1,16 @@
+{
+  "python": "3.10.12 (main, Aug 31 2026, 10:18:17) [GCC 11.4.0]",
+  "executable": "/usr/bin/python3",
+  "platform": "Linux-6.8.0-138-generic-x86_64-with-glibc2.35",
+  "packages": {
+    "numpy": "1.26.4",
+    "scipy": "1.15.3",
+    "jax": "0.6.2",
+    "jaxlib": "0.6.2",
+    "qpax": "0.1.4",
+    "cbfpy": "0.0.1",
+    "pytest": "6.2.5"
+  },
+  "test_ros_log_dir": "/tmp/off15-ros-log",
+  "test_jax_cache_dir": "/tmp/off15-jax-cache"
+}

@@ -11,6 +11,7 @@ vendored ``dpax``) to ``sys.path`` before importing ``work``.
 from __future__ import annotations
 
 import time
+from dataclasses import replace
 from pathlib import Path
 from typing import List, Optional, Sequence
 
@@ -42,7 +43,9 @@ from .runtime_snapshot import (
 from .ros_conventions import (
     state_stream_qos,
 )
-from .tracking_evaluator import TrackingEvaluator
+from .tracking_evaluator import TrackingEvaluator, step_from_result
+from .tracking_contract import EvidenceContext, EvaluationScope
+from .tracking_report_writer import TrackingReportWriter, write_tracking_bundle
 
 
 def _default_share_dir() -> Path:
@@ -118,6 +121,8 @@ class OscbfController(Node):
         )
         self._log_throttle = 0.0
         self._evaluator: TrackingEvaluator | None = None
+        self._report_writer = TrackingReportWriter()
+        self._reported_writer_state = "idle"
 
         portable_root = Path(
             str(self._runtime_config["portable_oscbf_root"])
@@ -311,6 +316,9 @@ class OscbfController(Node):
                 Path(__file__),
                 Path(__file__).with_name("production_config.py"),
                 Path(__file__).with_name("runtime_snapshot.py"),
+                Path(__file__).with_name("tracking_evaluator.py"),
+                Path(__file__).with_name("tracking_contract.py"),
+                Path(__file__).with_name("tracking_report_writer.py"),
                 portable_root / "work",
             ),
         )
@@ -332,6 +340,13 @@ class OscbfController(Node):
             },
             "software": software,
             "geometry": geometry,
+            "evaluation": {
+                "trajectory_geometry_sha256": self._evaluation_geometry_hash,
+                "total_length_m": self._evaluation_geometry.total_length_m,
+                "path_array_dtype": self._evaluation_path_dtype,
+                "boundary": "kernel_candidate",
+                "scope": "full_path",
+            },
             "obstacle_alpha_contract": {
                 "baseline_value": float(
                     self._loop.obstacle_h_baseline_alpha
@@ -365,6 +380,10 @@ class OscbfController(Node):
         from work.nineaxis_manipulator_jax import NineaxisManipulatorJAX
         from work.nullspace_policy import ManipulabilityGradientPolicy
         from work.path_following import PathFollowingConfig
+        import jax
+
+        # Optional policy construction also creates JAX robot constants.
+        jax.config.update('jax_enable_x64', bool(self._runtime_config["enable_x64"]))
 
         self.get_logger().info("Loading repository trajectory ...")
         trajectory_mat = str(self._runtime_config["trajectory_mat"])
@@ -426,6 +445,16 @@ class OscbfController(Node):
                 ),
             ),
         )
+        arrays = self._loop.path_geometry_arrays()
+        self._evaluation_path_dtype = str(arrays["arc_length_m"].dtype)
+        # Widen the actual kernel values losslessly for host projection. This
+        # also binds explicit float32 runs to their real quantized path length.
+        self._evaluation_geometry = replace(geometry, **{
+            name: np.asarray(value, dtype=float) for name, value in arrays.items()
+        })
+        self._evaluation_geometry_hash = sha256_bytes(b"".join(
+            np.asarray(arrays[name], dtype="<f8").tobytes() for name in sorted(arrays)
+        ))
         self.get_logger().info("Warming up the JAX control kernel ...")
         self._loop.init_cbf()
         # 拟合圆柱几何 (surface_normal 模式下由轨迹数据拟合), 供径向
@@ -505,6 +534,10 @@ class OscbfController(Node):
         if obs_kwargs:
             kwargs.update(obs_kwargs)
         result = self._loop.path_tracking_step(**kwargs)
+        projection_before, _ = self._evaluation_geometry.project_local(
+            result.ee_pos_before, anchor_segment=int(self._path_state[2]),
+            half_window_segments=self._evaluation_geometry.num_segments,
+        ) if self._evaluator is None or self._evaluator.step_count == 0 else (float(self._path_state[1]), 0)
         self._path_state = np.asarray(result.path_state, dtype=float)
         self._last_result = result
         return {
@@ -512,6 +545,13 @@ class OscbfController(Node):
             "u_safe": np.asarray(result.u_safe, dtype=float),
             "err_6d": np.asarray(result.err_6d, dtype=float),
             "ee_pos": np.asarray(result.ee_pos, dtype=float),
+            "ee_rot": np.asarray(result.ee_rot, dtype=float),
+            "reference_rotation": np.asarray(result.reference_rotation, dtype=float),
+            "reference_tangent": np.asarray(result.reference_tangent, dtype=float),
+            "path_state": np.asarray(result.path_state, dtype=float),
+            "projection_before_m": projection_before,
+            "actual_tangent_speed_m_s": float(result.actual_tangent_speed_m_s),
+            "constraint_metrics": result.constraint_metrics,
             "reference_position_m": np.asarray(
                 result.reference_position_m, dtype=float),
             "path_progress_m": float(result.path_state[0]),
@@ -519,7 +559,10 @@ class OscbfController(Node):
             "qp_primal_residual": float(
                 self._loop.last_qp_primal_residual
             ),
-            "min_obs_dist": float(result.min_obs_dist),
+            # The kernel uses 1.0 as the disabled-obstacle sentinel. Do not
+            # report it as a measured metre of clearance/margin.
+            "min_obs_dist": float(result.min_obs_dist) if obs_kwargs and np.any(
+                np.asarray(obs_kwargs.get("obs_enabled", [])) > 0.5) else None,
             "delta_slack": float(result.delta_slack),
             # TrackingEvaluator 依赖这些键计算完成度/横偏/速率统计,
             # 缺失会让 report 的 done=0% 而 progress 行却显示 100%。
@@ -539,6 +582,43 @@ class OscbfController(Node):
             "limiting_reason_code": int(result.limiting_reason_code),
         }
 
+    def _make_tracking_evaluator(self) -> TrackingEvaluator:
+        snapshot = str(self.runtime_snapshot_path)
+        return TrackingEvaluator(
+            self._trajectory_duration_s,
+            scope=EvaluationScope(self._evaluation_geometry.total_length_m),
+            evidence=EvidenceContext(
+                run_id=self.runtime_snapshot_path.stem, kind="model", boundary="kernel_candidate",
+                model_id=snapshot + "#software", config_id=snapshot,
+                trajectory_id="sha256:" + self._evaluation_geometry_hash,
+                data_id=snapshot + "#kernel_step_sequence",
+                scenario="configured path; obstacles=" + str(self._enable_obs),
+                measurement="post-integration model q_next and command reference; QP rows at solve input; before command filter; no execution feedback",
+                time_basis="perf_counter sample start; step_once includes kernel and host diagnostics",
+            ),
+            deadline_ms=float(self._runtime_config["latency_budget_ms"]),
+        )
+
+    def _finish_tracking_evaluation(self, reason: str) -> None:
+        if self._evaluator is None:
+            return
+        self._evaluator.finish(reason)
+        self._report_writer.submit(self._evaluator, self._tracking_report_path())
+        self._poll_tracking_report()
+
+    def _tracking_report_path(self) -> str:
+        return str(Path(self._runtime_config["perf_report_path"]).parent / "tracking_report.md")
+
+    def _poll_tracking_report(self) -> None:
+        status = self._report_writer.status()
+        if status["state"] == self._reported_writer_state:
+            return
+        self._reported_writer_state = status["state"]
+        if status["state"] == "failed":
+            self.get_logger().error(f"tracking report failed: {status['error']}")
+        else:
+            self.get_logger().info(f"tracking report {status['state']}: {status['path']}")
+
     def _control_tick(self) -> None:
         if not self._tracking_started or self._latest_q is None:
             return
@@ -553,8 +633,7 @@ class OscbfController(Node):
 
         # 首次跟踪步：初始化评价器
         if self._evaluator is None:
-            self._evaluator = TrackingEvaluator(
-                trajectory_duration_s=self._trajectory_duration_s)
+            self._evaluator = self._make_tracking_evaluator()
 
         start = time.perf_counter()
         q_now = np.asarray(self._latest_q, dtype=float)
@@ -565,6 +644,7 @@ class OscbfController(Node):
         self._latest_q = None
 
         # 累积跟踪指标
+        step["step_latency_ms"] = duration_ms
         self._evaluator.update(step, wall_time_s=start)
 
         lower, upper = self._limits
@@ -624,6 +704,7 @@ class OscbfController(Node):
                     f"{start - self._stall_since:.2f}s; holding current pose"
                 )
                 self._publish_positions(hold)
+                self._finish_tracking_evaluation("held")
                 return
         else:
             self._stall_since = None
@@ -652,6 +733,7 @@ class OscbfController(Node):
                 f"pos_err={pos_err_now*1e3:.1f}mm); holding current pose"
             )
             self._publish_positions(hold)
+            self._finish_tracking_evaluation("held")
             return
 
         if bool(step["reference_at_endpoint"]) and self._hold_q is None:
@@ -662,17 +744,21 @@ class OscbfController(Node):
                 f"pos_err={float(np.linalg.norm(step['err_6d'][:3]))*1e3:.1f}mm"
             )
             self._publish_positions(hold)
+            self._evaluator.record_event("reference_endpoint_hold")
+            self._finish_tracking_evaluation("completed")
             return
 
         q_next = step["q_next"]
         valid = np.all(np.isfinite(q_next)) and np.all(q_next >= lower - 1e-9) \
             and np.all(q_next <= upper + 1e-9)
         if not valid:
+            self._evaluator.record_event("command_rejected")
             self.get_logger().error(
                 f"discarding invalid safe state: {q_next.tolist()}"
             )
             return
         if not step["qp_ok"]:
+            self._evaluator.record_event("qp_failure")
             self._qp_fail_count += 1
             self.get_logger().warn(
                 f"QP failed at step {len(self._step_durations)}; "
@@ -718,8 +804,10 @@ class OscbfController(Node):
                 "steps": 0,
                 "ready": False,
                 "qp_fail_count": self._qp_fail_count,
+                "report_status": self._report_writer.status(),
             }
         source_time = float(result.reference_source_time_s)
+        measured = step_from_result(result)
         if durations:
             p50 = float(np.percentile(durations, 50))
             p95 = float(np.percentile(durations, 95))
@@ -733,13 +821,15 @@ class OscbfController(Node):
             "err_6d": np.asarray(result.err_6d, dtype=float),
             "pos_error_m": float(np.linalg.norm(result.err_6d[:3])),
             "path_progress_m": float(np.asarray(result.path_state)[0]),
-            "orient_error_rad": float(np.linalg.norm(result.err_6d[3:])),
+            "orient_error_rad": measured.values["tool_axis_error_rad"],
             "source_time_s": source_time,
             "trajectory_duration_s": self._trajectory_duration_s,
             "arc_fraction": min(
-                max(source_time / self._trajectory_duration_s, 0.0), 1.0
+                max(float(result.path_state[1]) / self._evaluation_geometry.total_length_m, 0.0), 1.0
             ),
-            "cross_track_error_m": float(result.cross_track_error_m),
+            "cross_track_error_m": measured.values["cross_track_m"],
+            "online_cross_track_error_m": float(result.cross_track_error_m),
+            "measurement_boundary": "kernel_candidate",
             "feedrate_m_s": float(result.feedrate_m_s),
             "limiting_reason_code": int(result.limiting_reason_code),
             "at_endpoint": bool(result.reference_at_endpoint),
@@ -749,9 +839,13 @@ class OscbfController(Node):
             "latency_p95_ms": p95,
             "latency_max_ms": maximum,
             "qp_fail_count": self._qp_fail_count,
+            "report_status": self._report_writer.status(),
         }
 
     def _telemetry_tick(self) -> None:
+        # Poll before any hold/stale-state return so persistence failures remain
+        # visible even after sampling and feedback have stopped.
+        self._poll_tracking_report()
         now = time.monotonic()
         if self._last_state_time is None:
             self.get_logger().warn(
@@ -793,25 +887,13 @@ class OscbfController(Node):
         )
         if snapshot["at_endpoint"] and not self._completion_logged:
             self._completion_logged = True
-            report = self._evaluator.report() if self._evaluator is not None else None
-            done_pct = (
-                report.completion_fraction * 100.0 if report is not None else 0.0
-            )
+            done_pct = snapshot["arc_fraction"] * 100.0
             self.get_logger().info(
-                f"TRAJECTORY_COMPLETE: done={done_pct:.1f}% "
+                f"REFERENCE_AT_ENDPOINT: projected_arc={done_pct:.1f}% "
                 f"duration={self._trajectory_duration_s:.1f}s "
                 f"steps={snapshot['steps']} "
                 f"at_endpoint={snapshot['at_endpoint']}"
             )
-            # 输出跟踪评价报告摘要
-            if report is not None:
-                self.get_logger().info(
-                    f"TRACKING_REPORT: {report.summary()}")
-                # 写入报告文件
-                try:
-                    self.write_tracking_report()
-                except Exception as exc:
-                    self.get_logger().warn(f"failed to write tracking report: {exc}")
 
     def tracking_report(self):
         """返回跟踪评价报告（TrackingReport），未开始跟踪时返回 None。"""
@@ -820,16 +902,24 @@ class OscbfController(Node):
         return self._evaluator.report()
 
     def write_tracking_report(self, path: str | None = None) -> str:
-        """写入 Markdown 格式的跟踪评价报告，返回文件路径。"""
-        from pathlib import Path
-        report = self._evaluator.report()
-        if path is None:
-            path = str(Path(self._runtime_config["perf_report_path"]).parent
-                       / "tracking_report.md")
-        Path(path).parent.mkdir(parents=True, exist_ok=True)
-        Path(path).write_text(report.markdown(), encoding="utf-8")
+        """Synchronous export for explicit callers outside ROS callbacks."""
+        if self._evaluator is None:
+            raise ValueError("tracking has not started; no report to write")
+        if self._report_writer.status()["state"] == "writing":
+            raise RuntimeError("background tracking report is still writing")
+        path = write_tracking_bundle(self._evaluator, path or self._tracking_report_path())
         self.get_logger().info(f"tracking report written to {path}")
         return path
+
+    def destroy_node(self):
+        try:
+            if self._evaluator is not None and self._evaluator.termination is None:
+                self._finish_tracking_evaluation("interrupted")
+            self._report_writer.close()
+            self._poll_tracking_report()
+        finally:
+            destroyed = super().destroy_node()
+        return destroyed
 
     def _start_tracking_callback(self, request, response):
         if not self._tracking_started:
@@ -900,8 +990,10 @@ def main(args: Optional[Sequence[str]] = None) -> None:
         pass
     finally:
         if node is not None:
-            node.write_perf_report()
-            node.destroy_node()
+            try:
+                node.write_perf_report()
+            finally:
+                node.destroy_node()
         if rclpy.ok():
             try:
                 rclpy.shutdown()

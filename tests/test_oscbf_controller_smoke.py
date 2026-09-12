@@ -370,6 +370,9 @@ def test_runtime_snapshot_matches_consumers_and_records_version_identity(
     }
     assert snapshot["production_config"]["sha256"]
     assert snapshot["software"]["source_sha256"]
+    assert snapshot["evaluation"]["path_array_dtype"] == "float64"
+    assert snapshot["evaluation"]["total_length_m"] == float(
+        node._loop.path_geometry_arrays()["arc_length_m"][-1])
     assert isinstance(snapshot["software"]["git_dirty"], bool)
     assert snapshot["geometry"]["cylinder_center_source"] == "trajectory_fit"
     assert len(snapshot["geometry"]["resolved_center"]) == 3
@@ -378,6 +381,89 @@ def test_runtime_snapshot_matches_consumers_and_records_version_identity(
         "baseline_value": 10.0,
         "runtime_value_source": "perception track slot 10",
     }
+
+
+@pytest.mark.parametrize("write_fails", [False, True])
+def test_hold_commands_continue_during_background_report(
+    controller_fixture, tmp_path, monkeypatch, write_fails,
+):
+    from threading import Event
+    from robot_safecontrol_moveit.tracking_report_writer import TrackingReportWriter, write_tracking_bundle
+
+    node, context = controller_fixture["node"], controller_fixture["context"]
+    entered, release = Event(), Event()
+
+    def slow_write(evaluator, path):
+        entered.set()
+        assert release.wait(5.)
+        if write_fails:
+            raise OSError("test report disk failure")
+        return write_tracking_bundle(evaluator, path)
+
+    writer = TrackingReportWriter(write=slow_write)
+    # Restore all shared fixture state after this terminal episode.
+    monkeypatch.setattr(node, "_path_state", node._loop.initial_path_state())
+    monkeypatch.setattr(node, "_last_result", None)
+    step = node.step_once(_START_Q)
+    step["reference_at_endpoint"] = True
+    monkeypatch.setattr(node, "step_once", lambda *args, **kwargs: step)
+    monkeypatch.setattr(node, "_report_writer", writer)
+    monkeypatch.setattr(node, "_tracking_report_path", lambda: str(tmp_path / "terminal.md"))
+    monkeypatch.setattr(node, "_reported_writer_state", "idle")
+    monkeypatch.setattr(node, "_evaluator", node._make_tracking_evaluator())
+    monkeypatch.setattr(node, "_tracking_started", True)
+    monkeypatch.setattr(node, "_latest_q", _START_Q.copy())
+    monkeypatch.setattr(node, "_hold_q", None)
+    monkeypatch.setattr(node, "_hold_reported", False)
+    monkeypatch.setattr(node, "_q_cmd_smooth", None)
+    monkeypatch.setattr(node, "_last_pos_err", None)
+    monkeypatch.setattr(node, "_step_durations", [])
+    monkeypatch.setattr(node, "_received_any_state", node._received_any_state)
+    monkeypatch.setattr(node, "_last_state_time", node._last_state_time)
+    monkeypatch.setattr(node, "_stall_since", None)
+    monkeypatch.setattr(node, "_pos_err_hist", node._pos_err_hist.copy())
+    monkeypatch.setattr(node, "_src_hist", node._src_hist.copy())
+
+    probe = rclpy.create_node("off15_report_probe", context=context)
+    received = []
+    probe.create_subscription(JointState, _COMMAND_TOPIC, received.append, qos_profile_sensor_data)
+    plant_pub = probe.create_publisher(JointState, _STATE_TOPIC, qos_profile_sensor_data)
+    executor = SingleThreadedExecutor(context=context)
+    executor.add_node(node)
+    executor.add_node(probe)
+    plant = JointState()
+    plant.name = node._joint_names
+    plant.position = _START_Q.tolist()
+    try:
+        node._control_tick()
+        assert entered.wait(2.)
+        assert node._evaluator.termination == "completed"
+        assert node.progress_snapshot()["report_status"]["state"] == "writing"
+        deadline = time.monotonic() + .7
+        while time.monotonic() < deadline:
+            plant_pub.publish(plant)
+            executor.spin_once(timeout_sec=.01)
+        assert len(received) >= 3, "hold publisher stopped while report writer was blocked"
+        assert all(_in_bounds(node, np.asarray(message.position)) for message in received)
+        assert node._evaluator.step_count == 1  # holding does not append samples
+    finally:
+        release.set()
+        writer.close()
+        executor.remove_node(node)
+        executor.remove_node(probe)
+        executor.shutdown()
+        probe.destroy_node()
+    node._poll_tracking_report()
+    status = node.progress_snapshot()["report_status"]
+    assert status["state"] == ("failed" if write_fails else "saved")
+    if write_fails:
+        assert "test report disk failure" in status["error"]
+    else:
+        import hashlib
+        path = tmp_path / "terminal.json"
+        summary = json.loads(path.read_text())
+        assert summary["sample_data_sha256"] == hashlib.sha256(
+            path.with_suffix(".samples.json").read_bytes()).hexdigest()
 
 
 def test_step_once_returns_valid_safe_state(controller_fixture):
@@ -391,17 +477,16 @@ def test_step_once_returns_valid_safe_state(controller_fixture):
     assert np.all(np.isfinite(step["u_safe"]))
     assert np.all(np.isfinite(step["err_6d"]))
     assert step["qp_ok"]
-    assert step["min_obs_dist"] > 0.0
+    assert step["min_obs_dist"] is None  # disabled obstacle sentinel is not a measurement
 
 
-def test_tracking_evaluator_integration(controller_fixture):
+def test_tracking_evaluator_integration(controller_fixture, tmp_path):
     """评价器在控制器内正确累积跟踪指标。"""
     node = controller_fixture["node"]
     # 初始状态：评价器为 None（尚未开始跟踪）
     assert node.tracking_report() is None
     # 模拟几步跟踪
-    from robot_safecontrol_moveit.tracking_evaluator import TrackingEvaluator
-    node._evaluator = TrackingEvaluator(trajectory_duration_s=30.0)
+    node._evaluator = node._make_tracking_evaluator()
     for i in range(5):
         step = node.step_once(_START_Q)
         node._evaluator.update(step, wall_time_s=float(i) * 0.01)
@@ -409,8 +494,28 @@ def test_tracking_evaluator_integration(controller_fixture):
     assert report is not None
     assert report.total_steps == 5
     assert report.qp_success_rate == 1.0
-    assert report.tracking_score > 0.0
-    assert "score=" in report.summary()
+    assert report.task_verdict != "pass"  # five repeated inputs do not complete a path
+    assert "score=" not in report.summary()
+    assert report.evidence.boundary == "kernel_candidate"
+    assert report.evidence.kind == "model"
+    assert report.metrics["tool_axis_error_rad"].count == 5
+    assert report.metrics["cross_track_m"].count == 5
+    assert report.constraint_metrics["joint_linear.residual"]["unit"] == "m/s"
+    assert report.constraint_metrics["joint_angular.residual"]["unit"] == "rad/s"
+    assert report.constraint_metrics["obstacle.residual"]["inactive_count"] == 5
+    assert report.admission_counts == {"unmeasured": 5}
+    assert report.overlap_counts == {"unmeasured": 5}
+    assert report.deadline_ms == node._runtime_config["latency_budget_ms"]
+    assert str(node.runtime_snapshot_path) in report.evidence.config_id
+    # The writer must bind the summary to the exact persisted sample record.
+    import hashlib
+    path = Path(node.write_tracking_report(str(tmp_path / "tracking.md")))
+    summary = json.loads(path.with_suffix(".json").read_text())
+    samples = path.with_suffix(".samples.json").read_bytes()
+    assert summary["sample_data_sha256"] == hashlib.sha256(samples).hexdigest()
+    assert len(json.loads(samples)["samples"]) == 5
+    assert "NaN" not in path.with_suffix(".json").read_text()
+    node._evaluator = None
 
 
 def test_no_command_before_start_signal(controller_fixture):
@@ -519,6 +624,12 @@ def test_start_signal_unlocks_safe_state(controller_fixture):
 
 def test_progress_snapshot_reports_tracking_state(controller_fixture):
     node = controller_fixture["node"]
+    # Standalone runs must not depend on another test starting the shared node.
+    if not node._tracking_started:
+        _call_start_tracking(node, controller_fixture["context"])
+    if not node._step_durations:
+        node._latest_q = _START_Q.copy()
+        node._control_tick()
     snapshot = node.progress_snapshot()
     assert snapshot["tracking_started"]
     assert snapshot["ready"]

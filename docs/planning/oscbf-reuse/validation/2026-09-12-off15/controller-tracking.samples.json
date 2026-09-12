@@ -1,0 +1,670 @@
+{
+  "deadline_ms": 20.0,
+  "events": {},
+  "evidence": {
+    "boundary": "kernel_candidate",
+    "config_id": "/tmp/pytest-of-lsn/pytest-6/oscbf_m100/runtime_snapshots/oscbf-runtime-20260912T135540.891276Z-d5d79979247448638029c7d248eea552.json",
+    "data_id": "/tmp/pytest-of-lsn/pytest-6/oscbf_m100/runtime_snapshots/oscbf-runtime-20260912T135540.891276Z-d5d79979247448638029c7d248eea552.json#kernel_step_sequence",
+    "kind": "model",
+    "measurement": "post-integration model q_next and command reference; QP rows at solve input; before command filter; no execution feedback",
+    "model_id": "/tmp/pytest-of-lsn/pytest-6/oscbf_m100/runtime_snapshots/oscbf-runtime-20260912T135540.891276Z-d5d79979247448638029c7d248eea552.json#software",
+    "run_id": "oscbf-runtime-20260912T135540.891276Z-d5d79979247448638029c7d248eea552",
+    "scenario": "configured path; obstacles=False",
+    "time_basis": "perf_counter sample start; step_once includes kernel and host diagnostics",
+    "trajectory_id": "sha256:9527603c32cf1dde6d96f714aa44345ad21f7c1d8804db6597f84769e92c38b3"
+  },
+  "samples": [
+    {
+      "admission_ok": null,
+      "at_endpoint": false,
+      "constraint_metrics": {
+        "esdf.residual": {
+          "active": false,
+          "quantity": "max_positive_unrelaxed_G_u_candidate_minus_h",
+          "source": "QP solve state; dynamic-corrected RHS; before health gate/integration/filter",
+          "unit": "m/s",
+          "value": null
+        },
+        "esdf.static_margin": {
+          "active": false,
+          "quantity": "static_cbf_rhs_div_baseline_alpha",
+          "source": "QP solve state; static RHS before dynamic correction; model metric, not physical clearance",
+          "unit": "m",
+          "value": null
+        },
+        "joint_angular.residual": {
+          "active": true,
+          "quantity": "max_positive_unrelaxed_G_u_candidate_minus_h",
+          "source": "QP solve state; dynamic-corrected RHS; before health gate/integration/filter",
+          "unit": "rad/s",
+          "value": 0.0
+        },
+        "joint_angular.static_margin": {
+          "active": true,
+          "quantity": "static_cbf_rhs_div_baseline_alpha",
+          "source": "QP solve state; static RHS before dynamic correction; model metric, not physical clearance",
+          "unit": "rad",
+          "value": 0.4306072445556641
+        },
+        "joint_linear.residual": {
+          "active": true,
+          "quantity": "max_positive_unrelaxed_G_u_candidate_minus_h",
+          "source": "QP solve state; dynamic-corrected RHS; before health gate/integration/filter",
+          "unit": "m/s",
+          "value": 0.0
+        },
+        "joint_linear.static_margin": {
+          "active": true,
+          "quantity": "static_cbf_rhs_div_baseline_alpha",
+          "source": "QP solve state; static RHS before dynamic correction; model metric, not physical clearance",
+          "unit": "m",
+          "value": 0.2203562
+        },
+        "obstacle.residual": {
+          "active": false,
+          "quantity": "max_positive_unrelaxed_G_u_candidate_minus_h",
+          "source": "QP solve state; dynamic-corrected RHS; before health gate/integration/filter",
+          "unit": "m/s",
+          "value": null
+        },
+        "obstacle.static_margin": {
+          "active": false,
+          "quantity": "static_cbf_rhs_div_baseline_alpha",
+          "source": "QP solve state; static RHS before dynamic correction; model metric, not physical clearance",
+          "unit": "m",
+          "value": null
+        },
+        "self_collision.residual": {
+          "active": true,
+          "quantity": "max_positive_unrelaxed_G_u_candidate_minus_h",
+          "source": "QP solve state; dynamic-corrected RHS; before health gate/integration/filter",
+          "unit": "m/s",
+          "value": 0.0
+        },
+        "self_collision.static_margin": {
+          "active": true,
+          "quantity": "static_cbf_rhs_div_baseline_alpha",
+          "source": "QP solve state; static RHS before dynamic correction; model metric, not physical clearance",
+          "unit": "m",
+          "value": 0.17816501849980926
+        },
+        "singularity.residual": {
+          "active": true,
+          "quantity": "max_positive_unrelaxed_G_u_candidate_minus_h",
+          "source": "QP solve state; dynamic-corrected RHS; before health gate/integration/filter",
+          "unit": "model_manipulability/s",
+          "value": 0.0
+        },
+        "singularity.static_margin": {
+          "active": true,
+          "quantity": "static_cbf_rhs_div_baseline_alpha",
+          "source": "QP solve state; static RHS before dynamic correction; model metric, not physical clearance",
+          "unit": "model_manipulability",
+          "value": 0.27553195322861124
+        }
+      },
+      "limiting_reason_code": 4,
+      "overlap": null,
+      "projected_progress_m": 0.0034899155143648386,
+      "projection_before_m": 1.177923712638363,
+      "qp_ok": true,
+      "reference_progress_m": 0.0,
+      "values": {
+        "actual_tangent_speed_m_s": -0.013350996344962842,
+        "cross_track_m": 0.5258473629131134,
+        "delta_slack": 6.364791682335708e-11,
+        "feedrate_m_s": 0.0,
+        "legacy_orientation_error": 0.9999999877395476,
+        "obstacle_clearance_m": null,
+        "obstacle_margin_m": null,
+        "online_cross_track_m": 0.5351979365613815,
+        "pos_error_m": 0.7441354485103091,
+        "qp_primal_residual": 0.0,
+        "source_time_s": 0.0,
+        "step_latency_ms": null,
+        "tool_axis_error_rad": 1.5709531278236133
+      },
+      "wall_time_s": 0.0
+    },
+    {
+      "admission_ok": null,
+      "at_endpoint": false,
+      "constraint_metrics": {
+        "esdf.residual": {
+          "active": false,
+          "quantity": "max_positive_unrelaxed_G_u_candidate_minus_h",
+          "source": "QP solve state; dynamic-corrected RHS; before health gate/integration/filter",
+          "unit": "m/s",
+          "value": null
+        },
+        "esdf.static_margin": {
+          "active": false,
+          "quantity": "static_cbf_rhs_div_baseline_alpha",
+          "source": "QP solve state; static RHS before dynamic correction; model metric, not physical clearance",
+          "unit": "m",
+          "value": null
+        },
+        "joint_angular.residual": {
+          "active": true,
+          "quantity": "max_positive_unrelaxed_G_u_candidate_minus_h",
+          "source": "QP solve state; dynamic-corrected RHS; before health gate/integration/filter",
+          "unit": "rad/s",
+          "value": 0.0
+        },
+        "joint_angular.static_margin": {
+          "active": true,
+          "quantity": "static_cbf_rhs_div_baseline_alpha",
+          "source": "QP solve state; static RHS before dynamic correction; model metric, not physical clearance",
+          "unit": "rad",
+          "value": 0.4306072445556641
+        },
+        "joint_linear.residual": {
+          "active": true,
+          "quantity": "max_positive_unrelaxed_G_u_candidate_minus_h",
+          "source": "QP solve state; dynamic-corrected RHS; before health gate/integration/filter",
+          "unit": "m/s",
+          "value": 0.0
+        },
+        "joint_linear.static_margin": {
+          "active": true,
+          "quantity": "static_cbf_rhs_div_baseline_alpha",
+          "source": "QP solve state; static RHS before dynamic correction; model metric, not physical clearance",
+          "unit": "m",
+          "value": 0.2203562
+        },
+        "obstacle.residual": {
+          "active": false,
+          "quantity": "max_positive_unrelaxed_G_u_candidate_minus_h",
+          "source": "QP solve state; dynamic-corrected RHS; before health gate/integration/filter",
+          "unit": "m/s",
+          "value": null
+        },
+        "obstacle.static_margin": {
+          "active": false,
+          "quantity": "static_cbf_rhs_div_baseline_alpha",
+          "source": "QP solve state; static RHS before dynamic correction; model metric, not physical clearance",
+          "unit": "m",
+          "value": null
+        },
+        "self_collision.residual": {
+          "active": true,
+          "quantity": "max_positive_unrelaxed_G_u_candidate_minus_h",
+          "source": "QP solve state; dynamic-corrected RHS; before health gate/integration/filter",
+          "unit": "m/s",
+          "value": 0.0
+        },
+        "self_collision.static_margin": {
+          "active": true,
+          "quantity": "static_cbf_rhs_div_baseline_alpha",
+          "source": "QP solve state; static RHS before dynamic correction; model metric, not physical clearance",
+          "unit": "m",
+          "value": 0.17816501849980926
+        },
+        "singularity.residual": {
+          "active": true,
+          "quantity": "max_positive_unrelaxed_G_u_candidate_minus_h",
+          "source": "QP solve state; dynamic-corrected RHS; before health gate/integration/filter",
+          "unit": "model_manipulability/s",
+          "value": 0.0
+        },
+        "singularity.static_margin": {
+          "active": true,
+          "quantity": "static_cbf_rhs_div_baseline_alpha",
+          "source": "QP solve state; static RHS before dynamic correction; model metric, not physical clearance",
+          "unit": "model_manipulability",
+          "value": 0.27553195322861124
+        }
+      },
+      "limiting_reason_code": 4,
+      "overlap": null,
+      "projected_progress_m": 0.019093886017799377,
+      "projection_before_m": 0.0034899155143648386,
+      "qp_ok": true,
+      "reference_progress_m": 0.0,
+      "values": {
+        "actual_tangent_speed_m_s": -0.013301186300777857,
+        "cross_track_m": 0.5258449440790804,
+        "delta_slack": 6.336525794338891e-11,
+        "feedrate_m_s": 0.0,
+        "legacy_orientation_error": 0.9999999895306271,
+        "obstacle_clearance_m": null,
+        "obstacle_margin_m": null,
+        "online_cross_track_m": 0.5351979365613815,
+        "pos_error_m": 0.7441341618431128,
+        "qp_primal_residual": 0.0,
+        "source_time_s": 0.0,
+        "step_latency_ms": null,
+        "tool_axis_error_rad": 1.5709412557518516
+      },
+      "wall_time_s": 0.01
+    },
+    {
+      "admission_ok": null,
+      "at_endpoint": false,
+      "constraint_metrics": {
+        "esdf.residual": {
+          "active": false,
+          "quantity": "max_positive_unrelaxed_G_u_candidate_minus_h",
+          "source": "QP solve state; dynamic-corrected RHS; before health gate/integration/filter",
+          "unit": "m/s",
+          "value": null
+        },
+        "esdf.static_margin": {
+          "active": false,
+          "quantity": "static_cbf_rhs_div_baseline_alpha",
+          "source": "QP solve state; static RHS before dynamic correction; model metric, not physical clearance",
+          "unit": "m",
+          "value": null
+        },
+        "joint_angular.residual": {
+          "active": true,
+          "quantity": "max_positive_unrelaxed_G_u_candidate_minus_h",
+          "source": "QP solve state; dynamic-corrected RHS; before health gate/integration/filter",
+          "unit": "rad/s",
+          "value": 0.0
+        },
+        "joint_angular.static_margin": {
+          "active": true,
+          "quantity": "static_cbf_rhs_div_baseline_alpha",
+          "source": "QP solve state; static RHS before dynamic correction; model metric, not physical clearance",
+          "unit": "rad",
+          "value": 0.4306072445556641
+        },
+        "joint_linear.residual": {
+          "active": true,
+          "quantity": "max_positive_unrelaxed_G_u_candidate_minus_h",
+          "source": "QP solve state; dynamic-corrected RHS; before health gate/integration/filter",
+          "unit": "m/s",
+          "value": 0.0
+        },
+        "joint_linear.static_margin": {
+          "active": true,
+          "quantity": "static_cbf_rhs_div_baseline_alpha",
+          "source": "QP solve state; static RHS before dynamic correction; model metric, not physical clearance",
+          "unit": "m",
+          "value": 0.2203562
+        },
+        "obstacle.residual": {
+          "active": false,
+          "quantity": "max_positive_unrelaxed_G_u_candidate_minus_h",
+          "source": "QP solve state; dynamic-corrected RHS; before health gate/integration/filter",
+          "unit": "m/s",
+          "value": null
+        },
+        "obstacle.static_margin": {
+          "active": false,
+          "quantity": "static_cbf_rhs_div_baseline_alpha",
+          "source": "QP solve state; static RHS before dynamic correction; model metric, not physical clearance",
+          "unit": "m",
+          "value": null
+        },
+        "self_collision.residual": {
+          "active": true,
+          "quantity": "max_positive_unrelaxed_G_u_candidate_minus_h",
+          "source": "QP solve state; dynamic-corrected RHS; before health gate/integration/filter",
+          "unit": "m/s",
+          "value": 0.0
+        },
+        "self_collision.static_margin": {
+          "active": true,
+          "quantity": "static_cbf_rhs_div_baseline_alpha",
+          "source": "QP solve state; static RHS before dynamic correction; model metric, not physical clearance",
+          "unit": "m",
+          "value": 0.17816501849980926
+        },
+        "singularity.residual": {
+          "active": true,
+          "quantity": "max_positive_unrelaxed_G_u_candidate_minus_h",
+          "source": "QP solve state; dynamic-corrected RHS; before health gate/integration/filter",
+          "unit": "model_manipulability/s",
+          "value": 0.0
+        },
+        "singularity.static_margin": {
+          "active": true,
+          "quantity": "static_cbf_rhs_div_baseline_alpha",
+          "source": "QP solve state; static RHS before dynamic correction; model metric, not physical clearance",
+          "unit": "model_manipulability",
+          "value": 0.27553195322861124
+        }
+      },
+      "limiting_reason_code": 4,
+      "overlap": null,
+      "projected_progress_m": 0.026424886658787727,
+      "projection_before_m": 0.019093886017799377,
+      "qp_ok": true,
+      "reference_progress_m": 0.0,
+      "values": {
+        "actual_tangent_speed_m_s": -0.013300383510414465,
+        "cross_track_m": 0.5258448855493332,
+        "delta_slack": 6.311069963406845e-11,
+        "feedrate_m_s": 0.0,
+        "legacy_orientation_error": 0.9999999915869269,
+        "obstacle_clearance_m": null,
+        "obstacle_margin_m": null,
+        "online_cross_track_m": 0.5351979365613815,
+        "pos_error_m": 0.7441341267632512,
+        "qp_primal_residual": 0.0,
+        "source_time_s": 0.0,
+        "step_latency_ms": null,
+        "tool_axis_error_rad": 1.570926295263949
+      },
+      "wall_time_s": 0.02
+    },
+    {
+      "admission_ok": null,
+      "at_endpoint": false,
+      "constraint_metrics": {
+        "esdf.residual": {
+          "active": false,
+          "quantity": "max_positive_unrelaxed_G_u_candidate_minus_h",
+          "source": "QP solve state; dynamic-corrected RHS; before health gate/integration/filter",
+          "unit": "m/s",
+          "value": null
+        },
+        "esdf.static_margin": {
+          "active": false,
+          "quantity": "static_cbf_rhs_div_baseline_alpha",
+          "source": "QP solve state; static RHS before dynamic correction; model metric, not physical clearance",
+          "unit": "m",
+          "value": null
+        },
+        "joint_angular.residual": {
+          "active": true,
+          "quantity": "max_positive_unrelaxed_G_u_candidate_minus_h",
+          "source": "QP solve state; dynamic-corrected RHS; before health gate/integration/filter",
+          "unit": "rad/s",
+          "value": 0.0
+        },
+        "joint_angular.static_margin": {
+          "active": true,
+          "quantity": "static_cbf_rhs_div_baseline_alpha",
+          "source": "QP solve state; static RHS before dynamic correction; model metric, not physical clearance",
+          "unit": "rad",
+          "value": 0.4306072445556641
+        },
+        "joint_linear.residual": {
+          "active": true,
+          "quantity": "max_positive_unrelaxed_G_u_candidate_minus_h",
+          "source": "QP solve state; dynamic-corrected RHS; before health gate/integration/filter",
+          "unit": "m/s",
+          "value": 0.0
+        },
+        "joint_linear.static_margin": {
+          "active": true,
+          "quantity": "static_cbf_rhs_div_baseline_alpha",
+          "source": "QP solve state; static RHS before dynamic correction; model metric, not physical clearance",
+          "unit": "m",
+          "value": 0.2203562
+        },
+        "obstacle.residual": {
+          "active": false,
+          "quantity": "max_positive_unrelaxed_G_u_candidate_minus_h",
+          "source": "QP solve state; dynamic-corrected RHS; before health gate/integration/filter",
+          "unit": "m/s",
+          "value": null
+        },
+        "obstacle.static_margin": {
+          "active": false,
+          "quantity": "static_cbf_rhs_div_baseline_alpha",
+          "source": "QP solve state; static RHS before dynamic correction; model metric, not physical clearance",
+          "unit": "m",
+          "value": null
+        },
+        "self_collision.residual": {
+          "active": true,
+          "quantity": "max_positive_unrelaxed_G_u_candidate_minus_h",
+          "source": "QP solve state; dynamic-corrected RHS; before health gate/integration/filter",
+          "unit": "m/s",
+          "value": 0.0
+        },
+        "self_collision.static_margin": {
+          "active": true,
+          "quantity": "static_cbf_rhs_div_baseline_alpha",
+          "source": "QP solve state; static RHS before dynamic correction; model metric, not physical clearance",
+          "unit": "m",
+          "value": 0.17816501849980926
+        },
+        "singularity.residual": {
+          "active": true,
+          "quantity": "max_positive_unrelaxed_G_u_candidate_minus_h",
+          "source": "QP solve state; dynamic-corrected RHS; before health gate/integration/filter",
+          "unit": "model_manipulability/s",
+          "value": 0.0
+        },
+        "singularity.static_margin": {
+          "active": true,
+          "quantity": "static_cbf_rhs_div_baseline_alpha",
+          "source": "QP solve state; static RHS before dynamic correction; model metric, not physical clearance",
+          "unit": "model_manipulability",
+          "value": 0.27553195322861124
+        }
+      },
+      "limiting_reason_code": 4,
+      "overlap": null,
+      "projected_progress_m": 0.026424886658787727,
+      "projection_before_m": 0.026424886658787727,
+      "qp_ok": true,
+      "reference_progress_m": 0.0,
+      "values": {
+        "actual_tangent_speed_m_s": -0.013300371058131779,
+        "cross_track_m": 0.5258448311220647,
+        "delta_slack": 6.286771936139931e-11,
+        "feedrate_m_s": 0.0,
+        "legacy_orientation_error": 0.9999999933418762,
+        "obstacle_clearance_m": null,
+        "obstacle_margin_m": null,
+        "online_cross_track_m": 0.5351979365613815,
+        "pos_error_m": 0.744134087841499,
+        "qp_primal_residual": 0.0,
+        "source_time_s": 0.0,
+        "step_latency_ms": null,
+        "tool_axis_error_rad": 1.5709120069724545
+      },
+      "wall_time_s": 0.03
+    },
+    {
+      "admission_ok": null,
+      "at_endpoint": false,
+      "constraint_metrics": {
+        "esdf.residual": {
+          "active": false,
+          "quantity": "max_positive_unrelaxed_G_u_candidate_minus_h",
+          "source": "QP solve state; dynamic-corrected RHS; before health gate/integration/filter",
+          "unit": "m/s",
+          "value": null
+        },
+        "esdf.static_margin": {
+          "active": false,
+          "quantity": "static_cbf_rhs_div_baseline_alpha",
+          "source": "QP solve state; static RHS before dynamic correction; model metric, not physical clearance",
+          "unit": "m",
+          "value": null
+        },
+        "joint_angular.residual": {
+          "active": true,
+          "quantity": "max_positive_unrelaxed_G_u_candidate_minus_h",
+          "source": "QP solve state; dynamic-corrected RHS; before health gate/integration/filter",
+          "unit": "rad/s",
+          "value": 0.0
+        },
+        "joint_angular.static_margin": {
+          "active": true,
+          "quantity": "static_cbf_rhs_div_baseline_alpha",
+          "source": "QP solve state; static RHS before dynamic correction; model metric, not physical clearance",
+          "unit": "rad",
+          "value": 0.4306072445556641
+        },
+        "joint_linear.residual": {
+          "active": true,
+          "quantity": "max_positive_unrelaxed_G_u_candidate_minus_h",
+          "source": "QP solve state; dynamic-corrected RHS; before health gate/integration/filter",
+          "unit": "m/s",
+          "value": 0.0
+        },
+        "joint_linear.static_margin": {
+          "active": true,
+          "quantity": "static_cbf_rhs_div_baseline_alpha",
+          "source": "QP solve state; static RHS before dynamic correction; model metric, not physical clearance",
+          "unit": "m",
+          "value": 0.2203562
+        },
+        "obstacle.residual": {
+          "active": false,
+          "quantity": "max_positive_unrelaxed_G_u_candidate_minus_h",
+          "source": "QP solve state; dynamic-corrected RHS; before health gate/integration/filter",
+          "unit": "m/s",
+          "value": null
+        },
+        "obstacle.static_margin": {
+          "active": false,
+          "quantity": "static_cbf_rhs_div_baseline_alpha",
+          "source": "QP solve state; static RHS before dynamic correction; model metric, not physical clearance",
+          "unit": "m",
+          "value": null
+        },
+        "self_collision.residual": {
+          "active": true,
+          "quantity": "max_positive_unrelaxed_G_u_candidate_minus_h",
+          "source": "QP solve state; dynamic-corrected RHS; before health gate/integration/filter",
+          "unit": "m/s",
+          "value": 0.0
+        },
+        "self_collision.static_margin": {
+          "active": true,
+          "quantity": "static_cbf_rhs_div_baseline_alpha",
+          "source": "QP solve state; static RHS before dynamic correction; model metric, not physical clearance",
+          "unit": "m",
+          "value": 0.17816501849980926
+        },
+        "singularity.residual": {
+          "active": true,
+          "quantity": "max_positive_unrelaxed_G_u_candidate_minus_h",
+          "source": "QP solve state; dynamic-corrected RHS; before health gate/integration/filter",
+          "unit": "model_manipulability/s",
+          "value": 0.0
+        },
+        "singularity.static_margin": {
+          "active": true,
+          "quantity": "static_cbf_rhs_div_baseline_alpha",
+          "source": "QP solve state; static RHS before dynamic correction; model metric, not physical clearance",
+          "unit": "model_manipulability",
+          "value": 0.27553195322861124
+        }
+      },
+      "limiting_reason_code": 4,
+      "overlap": null,
+      "projected_progress_m": 0.026424886658787727,
+      "projection_before_m": 0.026424886658787727,
+      "qp_ok": true,
+      "reference_progress_m": 0.0,
+      "values": {
+        "actual_tangent_speed_m_s": -0.013300370427232013,
+        "cross_track_m": 0.5258447793111892,
+        "delta_slack": 6.263622685240741e-11,
+        "feedrate_m_s": 0.0,
+        "legacy_orientation_error": 0.9999999948237172,
+        "obstacle_clearance_m": null,
+        "obstacle_margin_m": null,
+        "online_cross_track_m": 0.5351979365613815,
+        "pos_error_m": 0.7441340506472776,
+        "qp_primal_residual": 0.0,
+        "source_time_s": 0.0,
+        "step_latency_ms": null,
+        "tool_axis_error_rad": 1.5708983964797254
+      },
+      "wall_time_s": 0.04
+    }
+  ],
+  "schema_version": 1,
+  "scope": {
+    "end_m": 1.8167634936816308,
+    "start_m": 0.0,
+    "total_length_m": 1.8167634936816308
+  },
+  "statistics": "sample-weighted RMS; linear percentile",
+  "termination": null,
+  "thresholds": [
+    {
+      "category": "task",
+      "comparison": "<=",
+      "limit": 0.00015,
+      "metric": "cross_track_m.rms",
+      "source": "GitHub #14 resolution 2026-09-04",
+      "status": "accepted",
+      "unit": "m"
+    },
+    {
+      "category": "task",
+      "comparison": "<=",
+      "limit": 0.0005,
+      "metric": "cross_track_m.p95",
+      "source": "GitHub #14 resolution 2026-09-04",
+      "status": "accepted",
+      "unit": "m"
+    },
+    {
+      "category": "task",
+      "comparison": "<=",
+      "limit": 0.002,
+      "metric": "cross_track_m.maximum",
+      "source": "GitHub #14 resolution 2026-09-04",
+      "status": "accepted",
+      "unit": "m"
+    },
+    {
+      "category": "task",
+      "comparison": "<=",
+      "limit": 0.0008726646259971648,
+      "metric": "tool_axis_error_rad.rms",
+      "source": "GitHub #14 resolution 2026-09-04; OFF-15 user decision: true axis angle 2026-09-12",
+      "status": "accepted",
+      "unit": "rad"
+    },
+    {
+      "category": "task",
+      "comparison": "<=",
+      "limit": 0.008726646259971648,
+      "metric": "tool_axis_error_rad.maximum",
+      "source": "GitHub #14 resolution 2026-09-04; OFF-15 user decision: true axis angle 2026-09-12",
+      "status": "accepted",
+      "unit": "rad"
+    },
+    {
+      "category": "task",
+      "comparison": ">=",
+      "limit": 0.999,
+      "metric": "qp_success_rate",
+      "source": "GitHub #14 resolution 2026-09-04",
+      "status": "accepted",
+      "unit": "1"
+    },
+    {
+      "category": "safety",
+      "comparison": ">=",
+      "limit": 0.0,
+      "metric": "obstacle_clearance_nonnegative",
+      "source": "GitHub #14 resolution 2026-09-04; nonnegative clearance alone does not prove non-overlap",
+      "status": "accepted",
+      "unit": "m"
+    },
+    {
+      "category": "safety",
+      "comparison": ">=",
+      "limit": 0.03,
+      "metric": "obstacle_clearance_m.minimum",
+      "source": "GitHub #14 resolution 2026-09-04; geometry/scope pending #8/#18",
+      "status": "provisional",
+      "unit": "m"
+    },
+    {
+      "category": "timing",
+      "comparison": "<=",
+      "limit": 0.01,
+      "metric": "deadline_miss_rate",
+      "source": "GitHub #14 resolution 2026-09-04; deadline must match current measured boundary/config",
+      "status": "provisional",
+      "unit": "1"
+    }
+  ],
+  "trajectory_duration_s": 29.984
+}

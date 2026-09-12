@@ -1,0 +1,6 @@
+Command:
+ROS_LOG_DIR=/tmp/off15-fix-ros-log JAX_COMPILATION_CACHE_DIR=/tmp/off15-fix-jax-cache python3 -m pytest tests/test_oscbf_controller_smoke.py::test_hold_commands_continue_during_background_report -q -x
+
+Tool output excerpt (initial progress may be omitted):
+..                                                                       [100%]
+2 passed in 27.12s

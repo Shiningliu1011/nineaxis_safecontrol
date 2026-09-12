@@ -1,0 +1,511 @@
+{
+  "total_steps": 1,
+  "sample_data_sha256": "68a96529344fbcf420f48072a07cbace67bdc7de55f0a7ad8a8ec32bfe13ca19",
+  "evidence": {
+    "run_id": "oscbf-runtime-20260912T143705.449275Z-f0bdbc946d90499bae7cc85ea0928090",
+    "kind": "model",
+    "boundary": "kernel_candidate",
+    "model_id": "/tmp/pytest-of-lsn/pytest-12/oscbf_m100/runtime_snapshots/oscbf-runtime-20260912T143705.449275Z-f0bdbc946d90499bae7cc85ea0928090.json#software",
+    "config_id": "/tmp/pytest-of-lsn/pytest-12/oscbf_m100/runtime_snapshots/oscbf-runtime-20260912T143705.449275Z-f0bdbc946d90499bae7cc85ea0928090.json",
+    "trajectory_id": "sha256:a4aa60dbde62d798d37266882556a6103ba401d1f3e449b6eb9d7cc1641bfc91",
+    "data_id": "/tmp/pytest-of-lsn/pytest-12/oscbf_m100/runtime_snapshots/oscbf-runtime-20260912T143705.449275Z-f0bdbc946d90499bae7cc85ea0928090.json#kernel_step_sequence",
+    "scenario": "configured path; obstacles=False",
+    "measurement": "post-integration model q_next and command reference; QP rows at solve input; before command filter; no execution feedback",
+    "time_basis": "perf_counter sample start; step_once includes kernel and host diagnostics"
+  },
+  "scope": {
+    "total_length_m": 1.8167634936816308,
+    "start_m": 0.0,
+    "end_m": 1.8167634936816308
+  },
+  "metrics": {
+    "actual_tangent_speed_m_s": {
+      "count": 1,
+      "missing": 0,
+      "invalid": 0,
+      "mean": -0.013350999141384842,
+      "rms": 0.013350999141384842,
+      "p95": -0.013350999141384842,
+      "minimum": -0.013350999141384842,
+      "maximum": -0.013350999141384842
+    },
+    "cross_track_m": {
+      "count": 1,
+      "missing": 0,
+      "invalid": 0,
+      "mean": 0.7441354870948301,
+      "rms": 0.7441354870948301,
+      "p95": 0.7441354870948301,
+      "minimum": 0.7441354870948301,
+      "maximum": 0.7441354870948301
+    },
+    "delta_slack": {
+      "count": 1,
+      "missing": 0,
+      "invalid": 0,
+      "mean": 6.364780632328936e-11,
+      "rms": 6.364780632328936e-11,
+      "p95": 6.364780632328936e-11,
+      "minimum": 6.364780632328936e-11,
+      "maximum": 6.364780632328936e-11
+    },
+    "feedrate_m_s": {
+      "count": 1,
+      "missing": 0,
+      "invalid": 0,
+      "mean": 0.0,
+      "rms": 0.0,
+      "p95": 0.0,
+      "minimum": 0.0,
+      "maximum": 0.0
+    },
+    "legacy_orientation_error": {
+      "count": 1,
+      "missing": 0,
+      "invalid": 0,
+      "mean": 0.9999999877074645,
+      "rms": 0.9999999877074645,
+      "p95": 0.9999999877074645,
+      "minimum": 0.9999999877074645,
+      "maximum": 0.9999999877074645
+    },
+    "obstacle_clearance_m": {
+      "count": 0,
+      "missing": 1,
+      "invalid": 0,
+      "mean": null,
+      "rms": null,
+      "p95": null,
+      "minimum": null,
+      "maximum": null
+    },
+    "obstacle_margin_m": {
+      "count": 0,
+      "missing": 1,
+      "invalid": 0,
+      "mean": null,
+      "rms": null,
+      "p95": null,
+      "minimum": null,
+      "maximum": null
+    },
+    "online_cross_track_m": {
+      "count": 1,
+      "missing": 0,
+      "invalid": 0,
+      "mean": 0.5351979778248432,
+      "rms": 0.5351979778248432,
+      "p95": 0.5351979778248432,
+      "minimum": 0.5351979778248432,
+      "maximum": 0.5351979778248432
+    },
+    "pos_error_m": {
+      "count": 1,
+      "missing": 0,
+      "invalid": 0,
+      "mean": 0.7441354870948301,
+      "rms": 0.7441354870948301,
+      "p95": 0.7441354870948301,
+      "minimum": 0.7441354870948301,
+      "maximum": 0.7441354870948301
+    },
+    "qp_primal_residual": {
+      "count": 1,
+      "missing": 0,
+      "invalid": 0,
+      "mean": 0.0,
+      "rms": 0.0,
+      "p95": 0.0,
+      "minimum": 0.0,
+      "maximum": 0.0
+    },
+    "source_time_s": {
+      "count": 1,
+      "missing": 0,
+      "invalid": 0,
+      "mean": 0.0,
+      "rms": 0.0,
+      "p95": 0.0,
+      "minimum": 0.0,
+      "maximum": 0.0
+    },
+    "step_latency_ms": {
+      "count": 1,
+      "missing": 0,
+      "invalid": 0,
+      "mean": 0.003019000359927304,
+      "rms": 0.003019000359927304,
+      "p95": 0.003019000359927304,
+      "minimum": 0.003019000359927304,
+      "maximum": 0.003019000359927304
+    },
+    "tool_axis_error_rad": {
+      "count": 1,
+      "missing": 0,
+      "invalid": 0,
+      "mean": 1.5709531230645053,
+      "rms": 1.5709531230645053,
+      "p95": 1.5709531230645053,
+      "minimum": 1.5709531230645053,
+      "maximum": 1.5709531230645053
+    }
+  },
+  "criteria": [
+    {
+      "threshold": {
+        "metric": "cross_track_m.rms",
+        "limit": 0.00015,
+        "comparison": "<=",
+        "unit": "m",
+        "category": "task",
+        "status": "accepted",
+        "source": "GitHub #14 resolution 2026-09-04"
+      },
+      "value": 0.7441354870948301,
+      "verdict": "fail",
+      "reason": "complete samples compared with sourced threshold"
+    },
+    {
+      "threshold": {
+        "metric": "cross_track_m.p95",
+        "limit": 0.0005,
+        "comparison": "<=",
+        "unit": "m",
+        "category": "task",
+        "status": "accepted",
+        "source": "GitHub #14 resolution 2026-09-04"
+      },
+      "value": 0.7441354870948301,
+      "verdict": "fail",
+      "reason": "complete samples compared with sourced threshold"
+    },
+    {
+      "threshold": {
+        "metric": "cross_track_m.maximum",
+        "limit": 0.002,
+        "comparison": "<=",
+        "unit": "m",
+        "category": "task",
+        "status": "accepted",
+        "source": "GitHub #14 resolution 2026-09-04"
+      },
+      "value": 0.7441354870948301,
+      "verdict": "fail",
+      "reason": "complete samples compared with sourced threshold"
+    },
+    {
+      "threshold": {
+        "metric": "tool_axis_error_rad.rms",
+        "limit": 0.0008726646259971648,
+        "comparison": "<=",
+        "unit": "rad",
+        "category": "task",
+        "status": "accepted",
+        "source": "GitHub #14 resolution 2026-09-04; OFF-15 user decision: true axis angle 2026-09-12"
+      },
+      "value": 1.5709531230645053,
+      "verdict": "fail",
+      "reason": "complete samples compared with sourced threshold"
+    },
+    {
+      "threshold": {
+        "metric": "tool_axis_error_rad.maximum",
+        "limit": 0.008726646259971648,
+        "comparison": "<=",
+        "unit": "rad",
+        "category": "task",
+        "status": "accepted",
+        "source": "GitHub #14 resolution 2026-09-04; OFF-15 user decision: true axis angle 2026-09-12"
+      },
+      "value": 1.5709531230645053,
+      "verdict": "fail",
+      "reason": "complete samples compared with sourced threshold"
+    },
+    {
+      "threshold": {
+        "metric": "qp_success_rate",
+        "limit": 0.999,
+        "comparison": ">=",
+        "unit": "1",
+        "category": "task",
+        "status": "accepted",
+        "source": "GitHub #14 resolution 2026-09-04"
+      },
+      "value": 1.0,
+      "verdict": "pass",
+      "reason": "complete samples compared with sourced threshold"
+    },
+    {
+      "threshold": {
+        "metric": "obstacle_clearance_nonnegative",
+        "limit": 0.0,
+        "comparison": ">=",
+        "unit": "m",
+        "category": "safety",
+        "status": "accepted",
+        "source": "GitHub #14 resolution 2026-09-04; nonnegative clearance alone does not prove non-overlap"
+      },
+      "value": null,
+      "verdict": "insufficient_evidence",
+      "reason": "required samples missing or invalid"
+    },
+    {
+      "threshold": {
+        "metric": "obstacle_clearance_m.minimum",
+        "limit": 0.03,
+        "comparison": ">=",
+        "unit": "m",
+        "category": "safety",
+        "status": "provisional",
+        "source": "GitHub #14 resolution 2026-09-04; geometry/scope pending #8/#18"
+      },
+      "value": null,
+      "verdict": "insufficient_evidence",
+      "reason": "threshold not accepted for this scope"
+    },
+    {
+      "threshold": {
+        "metric": "deadline_miss_rate",
+        "limit": 0.01,
+        "comparison": "<=",
+        "unit": "1",
+        "category": "timing",
+        "status": "provisional",
+        "source": "GitHub #14 resolution 2026-09-04; deadline must match current measured boundary/config"
+      },
+      "value": 0.0,
+      "verdict": "insufficient_evidence",
+      "reason": "threshold not accepted for this scope"
+    }
+  ],
+  "completed": false,
+  "completion_fraction": 0.001920951979687376,
+  "scope_completion_fraction": 0.0,
+  "full_path_verified": false,
+  "full_path_covered": false,
+  "initial_progress_m": 1.1779236957734789,
+  "final_progress_m": 0.0034899154298114825,
+  "termination": "completed",
+  "task_verdict": "fail",
+  "online_verdict": "insufficient_evidence",
+  "verdict": "fail",
+  "qp_success_rate": 1.0,
+  "qp_fail_count": 0,
+  "qp_missing_count": 0,
+  "admission_counts": {
+    "unmeasured": 1
+  },
+  "overlap_counts": {
+    "unmeasured": 1
+  },
+  "events": {
+    "reference_endpoint_hold": 1
+  },
+  "limiting_reason_counts": {
+    "4": 1
+  },
+  "constraint_metrics": {
+    "esdf.residual": {
+      "quantity": "max_positive_unrelaxed_G_u_candidate_minus_h",
+      "unit": "m/s",
+      "source": "QP solve state; dynamic-corrected RHS; before health gate/integration/filter",
+      "statistics": {
+        "count": 0,
+        "missing": 1,
+        "invalid": 0,
+        "mean": null,
+        "rms": null,
+        "p95": null,
+        "minimum": null,
+        "maximum": null
+      },
+      "inactive_count": 1
+    },
+    "esdf.static_margin": {
+      "quantity": "static_cbf_rhs_div_baseline_alpha",
+      "unit": "m",
+      "source": "QP solve state; static RHS before dynamic correction; model metric, not physical clearance",
+      "statistics": {
+        "count": 0,
+        "missing": 1,
+        "invalid": 0,
+        "mean": null,
+        "rms": null,
+        "p95": null,
+        "minimum": null,
+        "maximum": null
+      },
+      "inactive_count": 1
+    },
+    "joint_angular.residual": {
+      "quantity": "max_positive_unrelaxed_G_u_candidate_minus_h",
+      "unit": "rad/s",
+      "source": "QP solve state; dynamic-corrected RHS; before health gate/integration/filter",
+      "statistics": {
+        "count": 1,
+        "missing": 0,
+        "invalid": 0,
+        "mean": 0.0,
+        "rms": 0.0,
+        "p95": 0.0,
+        "minimum": 0.0,
+        "maximum": 0.0
+      },
+      "inactive_count": 0
+    },
+    "joint_angular.static_margin": {
+      "quantity": "static_cbf_rhs_div_baseline_alpha",
+      "unit": "rad",
+      "source": "QP solve state; static RHS before dynamic correction; model metric, not physical clearance",
+      "statistics": {
+        "count": 1,
+        "missing": 0,
+        "invalid": 0,
+        "mean": 0.4306072000000001,
+        "rms": 0.4306072000000001,
+        "p95": 0.4306072000000001,
+        "minimum": 0.4306072000000001,
+        "maximum": 0.4306072000000001
+      },
+      "inactive_count": 0
+    },
+    "joint_linear.residual": {
+      "quantity": "max_positive_unrelaxed_G_u_candidate_minus_h",
+      "unit": "m/s",
+      "source": "QP solve state; dynamic-corrected RHS; before health gate/integration/filter",
+      "statistics": {
+        "count": 1,
+        "missing": 0,
+        "invalid": 0,
+        "mean": 0.0,
+        "rms": 0.0,
+        "p95": 0.0,
+        "minimum": 0.0,
+        "maximum": 0.0
+      },
+      "inactive_count": 0
+    },
+    "joint_linear.static_margin": {
+      "quantity": "static_cbf_rhs_div_baseline_alpha",
+      "unit": "m",
+      "source": "QP solve state; static RHS before dynamic correction; model metric, not physical clearance",
+      "statistics": {
+        "count": 1,
+        "missing": 0,
+        "invalid": 0,
+        "mean": 0.2203562,
+        "rms": 0.2203562,
+        "p95": 0.2203562,
+        "minimum": 0.2203562,
+        "maximum": 0.2203562
+      },
+      "inactive_count": 0
+    },
+    "obstacle.residual": {
+      "quantity": "max_positive_unrelaxed_G_u_candidate_minus_h",
+      "unit": "m/s",
+      "source": "QP solve state; dynamic-corrected RHS; before health gate/integration/filter",
+      "statistics": {
+        "count": 0,
+        "missing": 1,
+        "invalid": 0,
+        "mean": null,
+        "rms": null,
+        "p95": null,
+        "minimum": null,
+        "maximum": null
+      },
+      "inactive_count": 1
+    },
+    "obstacle.static_margin": {
+      "quantity": "static_cbf_rhs_div_baseline_alpha",
+      "unit": "m",
+      "source": "QP solve state; static RHS before dynamic correction; model metric, not physical clearance",
+      "statistics": {
+        "count": 0,
+        "missing": 1,
+        "invalid": 0,
+        "mean": null,
+        "rms": null,
+        "p95": null,
+        "minimum": null,
+        "maximum": null
+      },
+      "inactive_count": 1
+    },
+    "self_collision.residual": {
+      "quantity": "max_positive_unrelaxed_G_u_candidate_minus_h",
+      "unit": "m/s",
+      "source": "QP solve state; dynamic-corrected RHS; before health gate/integration/filter",
+      "statistics": {
+        "count": 1,
+        "missing": 0,
+        "invalid": 0,
+        "mean": 0.0,
+        "rms": 0.0,
+        "p95": 0.0,
+        "minimum": 0.0,
+        "maximum": 0.0
+      },
+      "inactive_count": 0
+    },
+    "self_collision.static_margin": {
+      "quantity": "static_cbf_rhs_div_baseline_alpha",
+      "unit": "m",
+      "source": "QP solve state; static RHS before dynamic correction; model metric, not physical clearance",
+      "statistics": {
+        "count": 1,
+        "missing": 0,
+        "invalid": 0,
+        "mean": 0.17816501849980926,
+        "rms": 0.17816501849980926,
+        "p95": 0.17816501849980926,
+        "minimum": 0.17816501849980926,
+        "maximum": 0.17816501849980926
+      },
+      "inactive_count": 0
+    },
+    "singularity.residual": {
+      "quantity": "max_positive_unrelaxed_G_u_candidate_minus_h",
+      "unit": "model_manipulability/s",
+      "source": "QP solve state; dynamic-corrected RHS; before health gate/integration/filter",
+      "statistics": {
+        "count": 1,
+        "missing": 0,
+        "invalid": 0,
+        "mean": 0.0,
+        "rms": 0.0,
+        "p95": 0.0,
+        "minimum": 0.0,
+        "maximum": 0.0
+      },
+      "inactive_count": 0
+    },
+    "singularity.static_margin": {
+      "quantity": "static_cbf_rhs_div_baseline_alpha",
+      "unit": "model_manipulability",
+      "source": "QP solve state; static RHS before dynamic correction; model metric, not physical clearance",
+      "statistics": {
+        "count": 1,
+        "missing": 0,
+        "invalid": 0,
+        "mean": 0.27553186552965975,
+        "rms": 0.27553186552965975,
+        "p95": 0.27553186552965975,
+        "minimum": 0.27553186552965975,
+        "maximum": 0.27553186552965975
+      },
+      "inactive_count": 0
+    }
+  },
+  "wall_time_s": 0.0,
+  "trajectory_duration_s": 29.984,
+  "deadline_ms": 20.0,
+  "deadline_miss_rate": 0.0,
+  "issues": [
+    "no positive progress beyond floating-point comparison resolution",
+    "projected progress regressed; interval coverage invalid",
+    "observed start differs from predeclared scope start",
+    "declared interval has not been validly completed"
+  ]
+}

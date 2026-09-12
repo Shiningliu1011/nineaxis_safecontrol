@@ -766,6 +766,9 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
                 path.feedrate_endpoint_brake_limit_m_s,
                 path.limiting_reason_code,
                 actual_tangent_speed, sample.at_endpoint, control_q_des,
+                # OFF-15 diagnostics only: unrelaxed rows at the solve state.
+                # Preserve the raw candidate even when qp_ok rejects it.
+                G @ u_candidate - h_qp, ee_pos,
             )
 
         # Keep the module entry points for profiling, but dispatch production

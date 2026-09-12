@@ -1,0 +1,45 @@
+# OFF-15 审查问题修复与验证
+
+2026-09-12。基线 HEAD：`744b44c82c17d668011afe3c462e0994c4da5c61`，在已有 OFF-15 未提交实现上修复。用户已确认严格区间契约、本票修复精度初始化并验证控制回归、终止后后台生成报告且继续发布保持命令。未提交、推送或修改远端票。
+
+## 修复结果
+
+- 评价器检查声明区间内的所有观测投影及显式前状态投影，越界记录完整保留作诊断，但阻止区间完成和任务通过。参考进度仍只作参考诊断。舍入量不能将零进度或分辨率以下的变化伪装成完成。
+- `JaxControlLoop` 创建常量及路径前应用配置精度；节点的可选策略初始化也使用该配置。评价范围和哈希绑定实际内核路径数组，快照记录数组 dtype。独立新进程验证 x64 开/关及 1.3 m 端点，未放宽任务、安全或回归容差。
+- 结束采样后直接将封存的评价器交给单个后台线程，控制回调不复制或序列化历史。保存状态独立呈现，后台失败不会改写任务终止原因或停止保持发布。正常节点销毁等待报告完成；显式同步导出仅供回调外调用。临时文件写好后逐一替换，汇总 JSON 最后更新。
+
+## 实际验证
+
+| 检查 | 结果 | 证据 |
+|---|---|---|
+| 评价器、后台写盘、新进程路径精度 | 73 passed，2.99 s | [结果摘录](contracts-final-excerpt.txt) |
+| ROS 控制节点完整 smoke 文件 | 16 项全部通过，含原固定控制轨迹对照 | 首轮合并命令在其后的配置测试才失败，见[首轮输出](ros-production-first-failure.txt) |
+| 生产配置测试修复后重跑 | 33 passed，0.94 s | [结果摘录](production-final-excerpt.txt) |
+| 工具轴、弹性 QP、弧长、普通跟踪、逐类遥测回归 | 19 passed，2 skipped，155.59 s | [结果摘录](portable-final-excerpt.txt) |
+| 后台保持发布测试独立复核 | 2 passed，27.12 s | [结果摘录](hold-publication-final-excerpt.txt) |
+| 3000 样本实际报告负载与 ROS 定时发布 | 提交约 2.96 ms；生成约 1.82 s；发布/收到 172/172 条；哈希一致 | [测量结果](report-concurrency.json)、[可复现脚本](report_concurrency.py) |
+| 空白错误与打包入口检查 | `git diff --check` 通过；`setup.py` 的包发现包含新增 Python 模块 | 当前工作区静态检查 |
+
+前四组为 **141 个不同用例通过、2 个既有跳过**；独立复核的两项保持测试不重复计数。两个跳过来自 `test_jax_rate_limit.py` 的既有模块标记：依赖移植边界已排除的 `newaxis`，本次未修改该标记。没有运行全仓测试或硬件。
+
+结果文件保留工具输出摘录，初始进度点可能省略；每个摘录含实际命令及最终计数。首轮 ROS/配置合并命令在配置测试替身遗漏新增 `_evaluation_path_dtype` 字段时停止（36 passed、1 failed），已补两个替身并完整重跑生产配置文件。随后调整保持测试的临时目标路径并独立复核两种写盘结局。没有弱化断言。
+
+## 负载实验边界
+
+`report_concurrency.py` 重复历史模型样本构造 3000 条记录，仅测试报告负载；不把重复记录视作跟踪质量证据。它使用独立 DDS domain 和 `/off15_report_load_test/hold` 测试话题，没有实例化控制器、硬件 bridge 或 CAN。
+
+从仓库根目录运行：
+
+```bash
+PYTHONPATH="src:$PYTHONPATH" ROS_LOG_DIR=/tmp/off15-fix-ros-log python3 docs/planning/oscbf-reuse/validation/2026-09-12-off15-review-fixes/report_concurrency.py
+```
+
+首次命令把 `PYTHONPATH` 完全替换成 `src`，导致无法导入 rclpy；保留原环境中的 ROS 路径后通过。沙箱限制 UDP 的日志仍存在，隔离测试中的消息实际收到 172 条，不以日志静默代替通信验证。
+
+标称定时周期 10 ms，实际最长观察间隔约 22.50 ms。已验证后台生成期间持续发布，未声称达到 10/20 ms 硬实时上界。工作线程仍共享 CPU/GIL，这不提供实机准入或物理停车保证。
+
+## 身份与回退
+
+[manifest.json](manifest.json) 记录最终源码、测试和相关文档 SHA-256、基线及依赖版本；[节点终止报告](controller-terminal.md)、[汇总](controller-terminal.json)、[样本](controller-terminal.samples.json)及[启动快照](controller-runtime-snapshot.json)来自独立保持发布测试。该测试人为置位参考端点以触发报告分支，报告只含一条真实内核计算样本，不能视为整条轨迹完成证据；报告保留原始 `/tmp` 身份路径。
+
+回退本次修复时，成组回退严格区间校验、精度初始化及节点实际路径绑定、后台写盘模块及其节点生命周期接入、相关测试和说明；不得直接重置整个工作区，以免删除首次 OFF-15 实现或用户原有未跟踪 `AGENTS.md`。现场阈值与执行链路继续留在 #19/OFF-09/OFF-13 等原有范围。

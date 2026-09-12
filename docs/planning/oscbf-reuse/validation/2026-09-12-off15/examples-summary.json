@@ -1,0 +1,73 @@
+{
+  "python": "3.10.12",
+  "numpy": "1.26.4",
+  "script_sha256": "ccba1c4f28d70ffea4eea5e0ca3ef83d37c770e6c4fe403475fec19dcd3acbdb",
+  "cases": {
+    "full-path": {
+      "task": "pass",
+      "online": "pass",
+      "all_criteria": "insufficient_evidence",
+      "completed": true,
+      "arc_fraction": 1.0,
+      "scope_fraction": 1.0,
+      "full_path_covered": true,
+      "full_path_verified": false,
+      "sample_data_sha256": "1023921d5ab3e391cc9865d0f3a1e5faeda847100ce180e66a743bd8527c989b"
+    },
+    "subinterval": {
+      "task": "pass",
+      "online": "pass",
+      "all_criteria": "insufficient_evidence",
+      "completed": true,
+      "arc_fraction": 1.0,
+      "scope_fraction": 1.0,
+      "full_path_covered": false,
+      "full_path_verified": false,
+      "sample_data_sha256": "c03f6dd6e8a0456b596fc717da0ec989efecbb6a4a0e197c8e74c63f2de28596"
+    },
+    "held": {
+      "task": "fail",
+      "online": "pass",
+      "all_criteria": "fail",
+      "completed": false,
+      "arc_fraction": 0.5,
+      "scope_fraction": 0.5,
+      "full_path_covered": false,
+      "full_path_verified": false,
+      "sample_data_sha256": "4d4b0be936833a6a61520e6e3639182fea170652e2308c58af20386a4df068dc"
+    },
+    "invalid-sample": {
+      "task": "fail",
+      "online": "pass",
+      "all_criteria": "fail",
+      "completed": false,
+      "arc_fraction": 1.0,
+      "scope_fraction": 1.0,
+      "full_path_covered": true,
+      "full_path_verified": false,
+      "sample_data_sha256": "95cb41174cd8fdb210538e24a3b5460372bdf98d0542dff7528cfd9b8a44fe0e"
+    },
+    "admission-rejected": {
+      "task": "fail",
+      "online": "fail",
+      "all_criteria": "fail",
+      "completed": true,
+      "arc_fraction": 1.0,
+      "scope_fraction": 1.0,
+      "full_path_covered": true,
+      "full_path_verified": false,
+      "sample_data_sha256": "bfa94f70c2f1839845f48907013bb0c663637cc5ed4a2ebccb2554c546f1de6c"
+    },
+    "reversed-axis": {
+      "task": "fail",
+      "online": "pass",
+      "all_criteria": "fail",
+      "completed": true,
+      "arc_fraction": 1.0,
+      "scope_fraction": 1.0,
+      "full_path_covered": true,
+      "full_path_verified": false,
+      "sample_data_sha256": "03c349862fbd923519308ce8c2563e9966704988c444d10798a4989116d4be29"
+    }
+  }
+}

@@ -1,0 +1,657 @@
+.EEE.EEEEEEEEE                                                           [100%]
+==================================== ERRORS ====================================
+____________ ERROR at setup of test_node_starts_without_move_group _____________
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x72e70665c220>, _basetemp=None)
+
+    @pytest.fixture(scope="module")
+    def controller_fixture(tmp_path_factory):
+        from robot_safecontrol_moveit.oscbf_controller import OscbfController
+
+        context = Context()
+>       rclpy.init(context=context, domain_id=_DOMAIN_ID)
+
+tests/test_oscbf_controller_smoke.py:53:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/__init__.py:88: in init
+    context.init(args, domain_id=domain_id)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <rclpy.context.Context object at 0x72e7031a3010>, args = None
+
+    def init(self,
+             args: Optional[List[str]] = None,
+             *,
+             initialize_logging: bool = True,
+             domain_id: Optional[int] = None):
+        """
+        Initialize ROS communications for a given context.
+
+        :param args: List of command line arguments.
+        """
+        # imported locally to avoid loading extensions on module import
+        from rclpy.impl.implementation_singleton import rclpy_implementation as _rclpy
+
+        global g_logging_ref_count
+        with self._lock:
+            if domain_id is not None and domain_id < 0:
+                raise RuntimeError(
+                    'Domain id ({}) should not be lower than zero.'
+                    .format(domain_id))
+
+            if self.__context is not None:
+                raise RuntimeError('Context.init() must only be called once')
+
+            self.__context = _rclpy.Context(
+                args if args is not None else sys.argv,
+                domain_id if domain_id is not None else _rclpy.RCL_DEFAULT_DOMAIN_ID)
+            if initialize_logging and not self._logging_initialized:
+                with g_logging_configure_lock:
+                    g_logging_ref_count += 1
+                    if g_logging_ref_count == 1:
+>                       _rclpy.rclpy_logging_configure(self.__context)
+E                       RuntimeError: Failed opening file /home/lsn/.ros/log/python3_3_1789219989946.log for writing: Read-only file system
+
+/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/context.py:79: RuntimeError
+_ ERROR at setup of test_production_values_reach_actual_consumers_and_provenance _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x72e70665c220>, _basetemp=None)
+
+    @pytest.fixture(scope="module")
+    def controller_fixture(tmp_path_factory):
+        from robot_safecontrol_moveit.oscbf_controller import OscbfController
+
+        context = Context()
+>       rclpy.init(context=context, domain_id=_DOMAIN_ID)
+
+tests/test_oscbf_controller_smoke.py:53:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/__init__.py:88: in init
+    context.init(args, domain_id=domain_id)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <rclpy.context.Context object at 0x72e7031a3010>, args = None
+
+    def init(self,
+             args: Optional[List[str]] = None,
+             *,
+             initialize_logging: bool = True,
+             domain_id: Optional[int] = None):
+        """
+        Initialize ROS communications for a given context.
+
+        :param args: List of command line arguments.
+        """
+        # imported locally to avoid loading extensions on module import
+        from rclpy.impl.implementation_singleton import rclpy_implementation as _rclpy
+
+        global g_logging_ref_count
+        with self._lock:
+            if domain_id is not None and domain_id < 0:
+                raise RuntimeError(
+                    'Domain id ({}) should not be lower than zero.'
+                    .format(domain_id))
+
+            if self.__context is not None:
+                raise RuntimeError('Context.init() must only be called once')
+
+            self.__context = _rclpy.Context(
+                args if args is not None else sys.argv,
+                domain_id if domain_id is not None else _rclpy.RCL_DEFAULT_DOMAIN_ID)
+            if initialize_logging and not self._logging_initialized:
+                with g_logging_configure_lock:
+                    g_logging_ref_count += 1
+                    if g_logging_ref_count == 1:
+>                       _rclpy.rclpy_logging_configure(self.__context)
+E                       RuntimeError: Failed opening file /home/lsn/.ros/log/python3_3_1789219989946.log for writing: Read-only file system
+
+/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/context.py:79: RuntimeError
+____ ERROR at setup of test_tracking_sentinels_reach_the_actual_facade_call ____
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x72e70665c220>, _basetemp=None)
+
+    @pytest.fixture(scope="module")
+    def controller_fixture(tmp_path_factory):
+        from robot_safecontrol_moveit.oscbf_controller import OscbfController
+
+        context = Context()
+>       rclpy.init(context=context, domain_id=_DOMAIN_ID)
+
+tests/test_oscbf_controller_smoke.py:53:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/__init__.py:88: in init
+    context.init(args, domain_id=domain_id)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <rclpy.context.Context object at 0x72e7031a3010>, args = None
+
+    def init(self,
+             args: Optional[List[str]] = None,
+             *,
+             initialize_logging: bool = True,
+             domain_id: Optional[int] = None):
+        """
+        Initialize ROS communications for a given context.
+
+        :param args: List of command line arguments.
+        """
+        # imported locally to avoid loading extensions on module import
+        from rclpy.impl.implementation_singleton import rclpy_implementation as _rclpy
+
+        global g_logging_ref_count
+        with self._lock:
+            if domain_id is not None and domain_id < 0:
+                raise RuntimeError(
+                    'Domain id ({}) should not be lower than zero.'
+                    .format(domain_id))
+
+            if self.__context is not None:
+                raise RuntimeError('Context.init() must only be called once')
+
+            self.__context = _rclpy.Context(
+                args if args is not None else sys.argv,
+                domain_id if domain_id is not None else _rclpy.RCL_DEFAULT_DOMAIN_ID)
+            if initialize_logging and not self._logging_initialized:
+                with g_logging_configure_lock:
+                    g_logging_ref_count += 1
+                    if g_logging_ref_count == 1:
+>                       _rclpy.rclpy_logging_configure(self.__context)
+E                       RuntimeError: Failed opening file /home/lsn/.ros/log/python3_3_1789219989946.log for writing: Read-only file system
+
+/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/context.py:79: RuntimeError
+__ ERROR at setup of test_runtime_single_managed_parameter_change_is_rejected __
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x72e70665c220>, _basetemp=PosixPath('/tmp/pytest-of-lsn/pytest-0'))
+
+    @pytest.fixture(scope="module")
+    def controller_fixture(tmp_path_factory):
+        from robot_safecontrol_moveit.oscbf_controller import OscbfController
+
+        context = Context()
+>       rclpy.init(context=context, domain_id=_DOMAIN_ID)
+
+tests/test_oscbf_controller_smoke.py:53:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/__init__.py:88: in init
+    context.init(args, domain_id=domain_id)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <rclpy.context.Context object at 0x72e7031a3010>, args = None
+
+    def init(self,
+             args: Optional[List[str]] = None,
+             *,
+             initialize_logging: bool = True,
+             domain_id: Optional[int] = None):
+        """
+        Initialize ROS communications for a given context.
+
+        :param args: List of command line arguments.
+        """
+        # imported locally to avoid loading extensions on module import
+        from rclpy.impl.implementation_singleton import rclpy_implementation as _rclpy
+
+        global g_logging_ref_count
+        with self._lock:
+            if domain_id is not None and domain_id < 0:
+                raise RuntimeError(
+                    'Domain id ({}) should not be lower than zero.'
+                    .format(domain_id))
+
+            if self.__context is not None:
+                raise RuntimeError('Context.init() must only be called once')
+
+            self.__context = _rclpy.Context(
+                args if args is not None else sys.argv,
+                domain_id if domain_id is not None else _rclpy.RCL_DEFAULT_DOMAIN_ID)
+            if initialize_logging and not self._logging_initialized:
+                with g_logging_configure_lock:
+                    g_logging_ref_count += 1
+                    if g_logging_ref_count == 1:
+>                       _rclpy.rclpy_logging_configure(self.__context)
+E                       RuntimeError: Failed opening file /home/lsn/.ros/log/python3_3_1789219989946.log for writing: Read-only file system
+
+/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/context.py:79: RuntimeError
+_ ERROR at setup of test_runtime_atomic_batch_change_is_rejected_without_partial_update _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x72e70665c220>, _basetemp=PosixPath('/tmp/pytest-of-lsn/pytest-0'))
+
+    @pytest.fixture(scope="module")
+    def controller_fixture(tmp_path_factory):
+        from robot_safecontrol_moveit.oscbf_controller import OscbfController
+
+        context = Context()
+>       rclpy.init(context=context, domain_id=_DOMAIN_ID)
+
+tests/test_oscbf_controller_smoke.py:53:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/__init__.py:88: in init
+    context.init(args, domain_id=domain_id)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <rclpy.context.Context object at 0x72e7031a3010>, args = None
+
+    def init(self,
+             args: Optional[List[str]] = None,
+             *,
+             initialize_logging: bool = True,
+             domain_id: Optional[int] = None):
+        """
+        Initialize ROS communications for a given context.
+
+        :param args: List of command line arguments.
+        """
+        # imported locally to avoid loading extensions on module import
+        from rclpy.impl.implementation_singleton import rclpy_implementation as _rclpy
+
+        global g_logging_ref_count
+        with self._lock:
+            if domain_id is not None and domain_id < 0:
+                raise RuntimeError(
+                    'Domain id ({}) should not be lower than zero.'
+                    .format(domain_id))
+
+            if self.__context is not None:
+                raise RuntimeError('Context.init() must only be called once')
+
+            self.__context = _rclpy.Context(
+                args if args is not None else sys.argv,
+                domain_id if domain_id is not None else _rclpy.RCL_DEFAULT_DOMAIN_ID)
+            if initialize_logging and not self._logging_initialized:
+                with g_logging_configure_lock:
+                    g_logging_ref_count += 1
+                    if g_logging_ref_count == 1:
+>                       _rclpy.rclpy_logging_configure(self.__context)
+E                       RuntimeError: Failed opening file /home/lsn/.ros/log/python3_3_1789219989946.log for writing: Read-only file system
+
+/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/context.py:79: RuntimeError
+_ ERROR at setup of test_runtime_snapshot_matches_consumers_and_records_version_identity _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x72e70665c220>, _basetemp=PosixPath('/tmp/pytest-of-lsn/pytest-0'))
+
+    @pytest.fixture(scope="module")
+    def controller_fixture(tmp_path_factory):
+        from robot_safecontrol_moveit.oscbf_controller import OscbfController
+
+        context = Context()
+>       rclpy.init(context=context, domain_id=_DOMAIN_ID)
+
+tests/test_oscbf_controller_smoke.py:53:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/__init__.py:88: in init
+    context.init(args, domain_id=domain_id)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <rclpy.context.Context object at 0x72e7031a3010>, args = None
+
+    def init(self,
+             args: Optional[List[str]] = None,
+             *,
+             initialize_logging: bool = True,
+             domain_id: Optional[int] = None):
+        """
+        Initialize ROS communications for a given context.
+
+        :param args: List of command line arguments.
+        """
+        # imported locally to avoid loading extensions on module import
+        from rclpy.impl.implementation_singleton import rclpy_implementation as _rclpy
+
+        global g_logging_ref_count
+        with self._lock:
+            if domain_id is not None and domain_id < 0:
+                raise RuntimeError(
+                    'Domain id ({}) should not be lower than zero.'
+                    .format(domain_id))
+
+            if self.__context is not None:
+                raise RuntimeError('Context.init() must only be called once')
+
+            self.__context = _rclpy.Context(
+                args if args is not None else sys.argv,
+                domain_id if domain_id is not None else _rclpy.RCL_DEFAULT_DOMAIN_ID)
+            if initialize_logging and not self._logging_initialized:
+                with g_logging_configure_lock:
+                    g_logging_ref_count += 1
+                    if g_logging_ref_count == 1:
+>                       _rclpy.rclpy_logging_configure(self.__context)
+E                       RuntimeError: Failed opening file /home/lsn/.ros/log/python3_3_1789219989946.log for writing: Read-only file system
+
+/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/context.py:79: RuntimeError
+__________ ERROR at setup of test_step_once_returns_valid_safe_state ___________
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x72e70665c220>, _basetemp=PosixPath('/tmp/pytest-of-lsn/pytest-0'))
+
+    @pytest.fixture(scope="module")
+    def controller_fixture(tmp_path_factory):
+        from robot_safecontrol_moveit.oscbf_controller import OscbfController
+
+        context = Context()
+>       rclpy.init(context=context, domain_id=_DOMAIN_ID)
+
+tests/test_oscbf_controller_smoke.py:53:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/__init__.py:88: in init
+    context.init(args, domain_id=domain_id)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <rclpy.context.Context object at 0x72e7031a3010>, args = None
+
+    def init(self,
+             args: Optional[List[str]] = None,
+             *,
+             initialize_logging: bool = True,
+             domain_id: Optional[int] = None):
+        """
+        Initialize ROS communications for a given context.
+
+        :param args: List of command line arguments.
+        """
+        # imported locally to avoid loading extensions on module import
+        from rclpy.impl.implementation_singleton import rclpy_implementation as _rclpy
+
+        global g_logging_ref_count
+        with self._lock:
+            if domain_id is not None and domain_id < 0:
+                raise RuntimeError(
+                    'Domain id ({}) should not be lower than zero.'
+                    .format(domain_id))
+
+            if self.__context is not None:
+                raise RuntimeError('Context.init() must only be called once')
+
+            self.__context = _rclpy.Context(
+                args if args is not None else sys.argv,
+                domain_id if domain_id is not None else _rclpy.RCL_DEFAULT_DOMAIN_ID)
+            if initialize_logging and not self._logging_initialized:
+                with g_logging_configure_lock:
+                    g_logging_ref_count += 1
+                    if g_logging_ref_count == 1:
+>                       _rclpy.rclpy_logging_configure(self.__context)
+E                       RuntimeError: Failed opening file /home/lsn/.ros/log/python3_3_1789219989946.log for writing: Read-only file system
+
+/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/context.py:79: RuntimeError
+____________ ERROR at setup of test_tracking_evaluator_integration _____________
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x72e70665c220>, _basetemp=PosixPath('/tmp/pytest-of-lsn/pytest-0'))
+
+    @pytest.fixture(scope="module")
+    def controller_fixture(tmp_path_factory):
+        from robot_safecontrol_moveit.oscbf_controller import OscbfController
+
+        context = Context()
+>       rclpy.init(context=context, domain_id=_DOMAIN_ID)
+
+tests/test_oscbf_controller_smoke.py:53:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/__init__.py:88: in init
+    context.init(args, domain_id=domain_id)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <rclpy.context.Context object at 0x72e7031a3010>, args = None
+
+    def init(self,
+             args: Optional[List[str]] = None,
+             *,
+             initialize_logging: bool = True,
+             domain_id: Optional[int] = None):
+        """
+        Initialize ROS communications for a given context.
+
+        :param args: List of command line arguments.
+        """
+        # imported locally to avoid loading extensions on module import
+        from rclpy.impl.implementation_singleton import rclpy_implementation as _rclpy
+
+        global g_logging_ref_count
+        with self._lock:
+            if domain_id is not None and domain_id < 0:
+                raise RuntimeError(
+                    'Domain id ({}) should not be lower than zero.'
+                    .format(domain_id))
+
+            if self.__context is not None:
+                raise RuntimeError('Context.init() must only be called once')
+
+            self.__context = _rclpy.Context(
+                args if args is not None else sys.argv,
+                domain_id if domain_id is not None else _rclpy.RCL_DEFAULT_DOMAIN_ID)
+            if initialize_logging and not self._logging_initialized:
+                with g_logging_configure_lock:
+                    g_logging_ref_count += 1
+                    if g_logging_ref_count == 1:
+>                       _rclpy.rclpy_logging_configure(self.__context)
+E                       RuntimeError: Failed opening file /home/lsn/.ros/log/python3_3_1789219989946.log for writing: Read-only file system
+
+/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/context.py:79: RuntimeError
+____________ ERROR at setup of test_no_command_before_start_signal _____________
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x72e70665c220>, _basetemp=PosixPath('/tmp/pytest-of-lsn/pytest-0'))
+
+    @pytest.fixture(scope="module")
+    def controller_fixture(tmp_path_factory):
+        from robot_safecontrol_moveit.oscbf_controller import OscbfController
+
+        context = Context()
+>       rclpy.init(context=context, domain_id=_DOMAIN_ID)
+
+tests/test_oscbf_controller_smoke.py:53:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/__init__.py:88: in init
+    context.init(args, domain_id=domain_id)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <rclpy.context.Context object at 0x72e7031a3010>, args = None
+
+    def init(self,
+             args: Optional[List[str]] = None,
+             *,
+             initialize_logging: bool = True,
+             domain_id: Optional[int] = None):
+        """
+        Initialize ROS communications for a given context.
+
+        :param args: List of command line arguments.
+        """
+        # imported locally to avoid loading extensions on module import
+        from rclpy.impl.implementation_singleton import rclpy_implementation as _rclpy
+
+        global g_logging_ref_count
+        with self._lock:
+            if domain_id is not None and domain_id < 0:
+                raise RuntimeError(
+                    'Domain id ({}) should not be lower than zero.'
+                    .format(domain_id))
+
+            if self.__context is not None:
+                raise RuntimeError('Context.init() must only be called once')
+
+            self.__context = _rclpy.Context(
+                args if args is not None else sys.argv,
+                domain_id if domain_id is not None else _rclpy.RCL_DEFAULT_DOMAIN_ID)
+            if initialize_logging and not self._logging_initialized:
+                with g_logging_configure_lock:
+                    g_logging_ref_count += 1
+                    if g_logging_ref_count == 1:
+>                       _rclpy.rclpy_logging_configure(self.__context)
+E                       RuntimeError: Failed opening file /home/lsn/.ros/log/python3_3_1789219989946.log for writing: Read-only file system
+
+/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/context.py:79: RuntimeError
+____________ ERROR at setup of test_start_signal_unlocks_safe_state ____________
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x72e70665c220>, _basetemp=PosixPath('/tmp/pytest-of-lsn/pytest-0'))
+
+    @pytest.fixture(scope="module")
+    def controller_fixture(tmp_path_factory):
+        from robot_safecontrol_moveit.oscbf_controller import OscbfController
+
+        context = Context()
+>       rclpy.init(context=context, domain_id=_DOMAIN_ID)
+
+tests/test_oscbf_controller_smoke.py:53:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/__init__.py:88: in init
+    context.init(args, domain_id=domain_id)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <rclpy.context.Context object at 0x72e7031a3010>, args = None
+
+    def init(self,
+             args: Optional[List[str]] = None,
+             *,
+             initialize_logging: bool = True,
+             domain_id: Optional[int] = None):
+        """
+        Initialize ROS communications for a given context.
+
+        :param args: List of command line arguments.
+        """
+        # imported locally to avoid loading extensions on module import
+        from rclpy.impl.implementation_singleton import rclpy_implementation as _rclpy
+
+        global g_logging_ref_count
+        with self._lock:
+            if domain_id is not None and domain_id < 0:
+                raise RuntimeError(
+                    'Domain id ({}) should not be lower than zero.'
+                    .format(domain_id))
+
+            if self.__context is not None:
+                raise RuntimeError('Context.init() must only be called once')
+
+            self.__context = _rclpy.Context(
+                args if args is not None else sys.argv,
+                domain_id if domain_id is not None else _rclpy.RCL_DEFAULT_DOMAIN_ID)
+            if initialize_logging and not self._logging_initialized:
+                with g_logging_configure_lock:
+                    g_logging_ref_count += 1
+                    if g_logging_ref_count == 1:
+>                       _rclpy.rclpy_logging_configure(self.__context)
+E                       RuntimeError: Failed opening file /home/lsn/.ros/log/python3_3_1789219989946.log for writing: Read-only file system
+
+/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/context.py:79: RuntimeError
+_______ ERROR at setup of test_progress_snapshot_reports_tracking_state ________
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x72e70665c220>, _basetemp=PosixPath('/tmp/pytest-of-lsn/pytest-0'))
+
+    @pytest.fixture(scope="module")
+    def controller_fixture(tmp_path_factory):
+        from robot_safecontrol_moveit.oscbf_controller import OscbfController
+
+        context = Context()
+>       rclpy.init(context=context, domain_id=_DOMAIN_ID)
+
+tests/test_oscbf_controller_smoke.py:53:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/__init__.py:88: in init
+    context.init(args, domain_id=domain_id)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <rclpy.context.Context object at 0x72e7031a3010>, args = None
+
+    def init(self,
+             args: Optional[List[str]] = None,
+             *,
+             initialize_logging: bool = True,
+             domain_id: Optional[int] = None):
+        """
+        Initialize ROS communications for a given context.
+
+        :param args: List of command line arguments.
+        """
+        # imported locally to avoid loading extensions on module import
+        from rclpy.impl.implementation_singleton import rclpy_implementation as _rclpy
+
+        global g_logging_ref_count
+        with self._lock:
+            if domain_id is not None and domain_id < 0:
+                raise RuntimeError(
+                    'Domain id ({}) should not be lower than zero.'
+                    .format(domain_id))
+
+            if self.__context is not None:
+                raise RuntimeError('Context.init() must only be called once')
+
+            self.__context = _rclpy.Context(
+                args if args is not None else sys.argv,
+                domain_id if domain_id is not None else _rclpy.RCL_DEFAULT_DOMAIN_ID)
+            if initialize_logging and not self._logging_initialized:
+                with g_logging_configure_lock:
+                    g_logging_ref_count += 1
+                    if g_logging_ref_count == 1:
+>                       _rclpy.rclpy_logging_configure(self.__context)
+E                       RuntimeError: Failed opening file /home/lsn/.ros/log/python3_3_1789219989946.log for writing: Read-only file system
+
+/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/context.py:79: RuntimeError
+_____________ ERROR at setup of test_perf_report_p95_within_budget _____________
+
+tmp_path_factory = TempPathFactory(_given_basetemp=None, _trace=<pluggy._tracing.TagTracerSub object at 0x72e70665c220>, _basetemp=PosixPath('/tmp/pytest-of-lsn/pytest-0'))
+
+    @pytest.fixture(scope="module")
+    def controller_fixture(tmp_path_factory):
+        from robot_safecontrol_moveit.oscbf_controller import OscbfController
+
+        context = Context()
+>       rclpy.init(context=context, domain_id=_DOMAIN_ID)
+
+tests/test_oscbf_controller_smoke.py:53:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/__init__.py:88: in init
+    context.init(args, domain_id=domain_id)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <rclpy.context.Context object at 0x72e7031a3010>, args = None
+
+    def init(self,
+             args: Optional[List[str]] = None,
+             *,
+             initialize_logging: bool = True,
+             domain_id: Optional[int] = None):
+        """
+        Initialize ROS communications for a given context.
+
+        :param args: List of command line arguments.
+        """
+        # imported locally to avoid loading extensions on module import
+        from rclpy.impl.implementation_singleton import rclpy_implementation as _rclpy
+
+        global g_logging_ref_count
+        with self._lock:
+            if domain_id is not None and domain_id < 0:
+                raise RuntimeError(
+                    'Domain id ({}) should not be lower than zero.'
+                    .format(domain_id))
+
+            if self.__context is not None:
+                raise RuntimeError('Context.init() must only be called once')
+
+            self.__context = _rclpy.Context(
+                args if args is not None else sys.argv,
+                domain_id if domain_id is not None else _rclpy.RCL_DEFAULT_DOMAIN_ID)
+            if initialize_logging and not self._logging_initialized:
+                with g_logging_configure_lock:
+                    g_logging_ref_count += 1
+                    if g_logging_ref_count == 1:
+>                       _rclpy.rclpy_logging_configure(self.__context)
+E                       RuntimeError: Failed opening file /home/lsn/.ros/log/python3_3_1789219989946.log for writing: Read-only file system
+
+/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/context.py:79: RuntimeError
+=============================== warnings summary ===============================
+tests/test_oscbf_controller_smoke.py::test_production_config_refactor_preserves_control_outputs_from_8479740
+  Warning: Error writing persistent compilation cache entry for 'jit_path_tracking_step': OSError: [Errno 30] Read-only file system: '/home/lsn/.cache/jax_cache/jit_path_tracking_step-4d4f457753e9d101583fc191fe9a5abfca613ad3ddf4915403cc40508d349c26-cache'
+
+-- Docs: https://docs.pytest.org/en/stable/warnings.html
+=========================== short test summary info ============================
+ERROR tests/test_oscbf_controller_smoke.py::test_node_starts_without_move_group
+ERROR tests/test_oscbf_controller_smoke.py::test_production_values_reach_actual_consumers_and_provenance
+ERROR tests/test_oscbf_controller_smoke.py::test_tracking_sentinels_reach_the_actual_facade_call
+ERROR tests/test_oscbf_controller_smoke.py::test_runtime_single_managed_parameter_change_is_rejected
+ERROR tests/test_oscbf_controller_smoke.py::test_runtime_atomic_batch_change_is_rejected_without_partial_update
+ERROR tests/test_oscbf_controller_smoke.py::test_runtime_snapshot_matches_consumers_and_records_version_identity
+ERROR tests/test_oscbf_controller_smoke.py::test_step_once_returns_valid_safe_state
+ERROR tests/test_oscbf_controller_smoke.py::test_tracking_evaluator_integration
+ERROR tests/test_oscbf_controller_smoke.py::test_no_command_before_start_signal
+ERROR tests/test_oscbf_controller_smoke.py::test_start_signal_unlocks_safe_state
+ERROR tests/test_oscbf_controller_smoke.py::test_progress_snapshot_reports_tracking_state
+ERROR tests/test_oscbf_controller_smoke.py::test_perf_report_p95_within_budget
+2 passed, 1 warning, 12 errors in 37.35s

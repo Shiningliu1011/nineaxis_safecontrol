@@ -1,0 +1,17 @@
+.F                                                                       [100%]
+=================================== FAILURES ===================================
+________________ test_progress_snapshot_reports_tracking_state _________________
+
+controller_fixture = {'context': <rclpy.context.Context object at 0x7f19d2286e30>, 'node': <robot_safecontrol_moveit.oscbf_controller.OscbfController object at 0x7f19cf95e8f0>, 'perf_path': PosixPath('/tmp/pytest-of-lsn/pytest-3/oscbf_m100/perf.md')}
+
+    def test_progress_snapshot_reports_tracking_state(controller_fixture):
+        node = controller_fixture["node"]
+        snapshot = node.progress_snapshot()
+>       assert snapshot["tracking_started"]
+E       assert False
+
+tests/test_oscbf_controller_smoke.py:542: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_oscbf_controller_smoke.py::test_progress_snapshot_reports_tracking_state
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 1 passed in 25.95s

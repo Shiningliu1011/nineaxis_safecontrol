@@ -1,0 +1,6 @@
+Command:
+JAX_COMPILATION_CACHE_DIR=/tmp/off15-fix-jax-cache python3 -m pytest portable_oscbf/tests/test_jax_tool_axis_tracking.py portable_oscbf/tests/test_elastic_qp.py portable_oscbf/tests/test_jax_path_following.py portable_oscbf/tests/test_jax_tracking_step.py portable_oscbf/tests/test_jax_rate_limit.py portable_oscbf/tests/test_path_evaluation_diagnostics.py -q -x
+
+Tool output excerpt (initial progress may be omitted):
+................ss...                                                    [100%]
+19 passed, 2 skipped in 155.59s (0:02:35)

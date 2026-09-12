@@ -1,0 +1,143 @@
+Command:
+ROS_LOG_DIR=/tmp/off15-fix-ros-log JAX_COMPILATION_CACHE_DIR=/tmp/off15-fix-jax-cache python3 -m pytest tests/test_oscbf_controller_smoke.py tests/test_oscbf_production_config.py -q -x
+
+Tool output excerpt (initial progress may be omitted):
+...................................F
+=================================== FAILURES ===================================
+________ test_chain_remap_is_applied_once_and_snapshot_matches_entities ________
+
+tmp_path = PosixPath('/tmp/pytest-of-lsn/pytest-10/test_chain_remap_is_applied_on0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x78469416db70>
+
+    def test_chain_remap_is_applied_once_and_snapshot_matches_entities(
+        tmp_path, monkeypatch
+    ):
+        from types import SimpleNamespace
+
+        from robot_safecontrol_moveit.oscbf_controller import OscbfController
+
+        config = _write_profile(
+            tmp_path,
+            joint_state_topic="/a",
+            publish_joint_state_topic="/c",
+        )
+
+        def _fake_build_controller(node, portable_root):
+            del portable_root
+            node._loop = SimpleNamespace(obstacle_h_baseline_alpha=10.0)
+            node._evaluation_geometry = SimpleNamespace(total_length_m=1.0)
+            node._evaluation_geometry_hash = "fixture-path-identity"
+            node._surface_axis = None
+            node._surface_centre = None
+            node._surface_radius = None
+
+        monkeypatch.setattr(OscbfController, "_build_controller", _fake_build_controller)
+        context = Context()
+        rclpy.init(
+            args=["--ros-args", "-r", "/a:=/b", "-r", "/b:=/c"],
+            context=context,
+        )
+        parameters = [
+            _parameter("production_config_yaml", str(config)),
+            _parameter("portable_oscbf_root", str(REPO_ROOT / "portable_oscbf")),
+            _parameter("trajectory_mat", str(REPO_ROOT / "data" / "nurbs" / "ik_input.mat")),
+            _parameter(
+                "portable_config_yaml",
+                str(REPO_ROOT / "portable_oscbf" / "config" / "nineaxis.yaml"),
+            ),
+            _parameter("perf_report_path", str(tmp_path / "perf.md")),
+        ]
+>       node = OscbfController(context=context, parameter_overrides=parameters)
+
+tests/test_oscbf_production_config.py:262:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/robot_safecontrol_moveit/oscbf_controller.py:135: in __init__
+    self.runtime_snapshot_path = self._write_runtime_snapshot(portable_root)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <robot_safecontrol_moveit.oscbf_controller.OscbfController object at 0x784694a2eb90>
+portable_root = PosixPath('/home/lsn/robot/robot_safecontrol/portable_oscbf')
+
+    def _write_runtime_snapshot(self, portable_root: Path) -> Path:
+        """Persist the configuration consumed by the warmed control kernel."""
+        perf_path = Path(str(self._runtime_config["perf_report_path"]))
+        if not perf_path.is_absolute():
+            perf_path = Path.cwd() / perf_path
+        snapshot_dir = perf_path.resolve().parent / "runtime_snapshots"
+
+        center = list(self._runtime_config["cylinder_center"])
+        if self._surface_centre is not None:
+            resolved_center = self._surface_centre.tolist()
+            center_source = "trajectory_fit" if not center else "explicit_config"
+        else:
+            resolved_center = center or None
+            center_source = "explicit_config" if center else "unavailable"
+        geometry = {
+            "cylinder_center_source": center_source,
+            "resolved_center": resolved_center,
+            "resolved_axis_direction": (
+                self._surface_axis.tolist()
+                if self._surface_axis is not None
+                else list(self._runtime_config["cylinder_axis_direction"])
+            ),
+            "resolved_radius_m": self._surface_radius,
+        }
+
+        repository_hint = Path(__file__).resolve().parents[2]
+        software = collect_software_identity(
+            repository_hint=repository_hint,
+            source_paths=(
+                Path(__file__),
+                Path(__file__).with_name("production_config.py"),
+                Path(__file__).with_name("runtime_snapshot.py"),
+                Path(__file__).with_name("tracking_evaluator.py"),
+                Path(__file__).with_name("tracking_contract.py"),
+                Path(__file__).with_name("tracking_report_writer.py"),
+                portable_root / "work",
+            ),
+        )
+        effective = self._effective.diagnostics()
+        payload = {
+            "schema_version": 1,
+            "node_name": self.get_name(),
+            "final_values": effective["values"],
+            "parameter_sources": effective["sources"],
+            "override_chains": effective["override_chains"],
+            "resources": effective["resources"],
+            "topic_connections": {
+                name: dict(connection)
+                for name, connection in self._topic_connections.items()
+            },
+            "production_config": {
+                "path": str(self._production_profile.path),
+                "sha256": sha256_bytes(self._production_profile.content),
+            },
+            "software": software,
+            "geometry": geometry,
+            "evaluation": {
+                "trajectory_geometry_sha256": self._evaluation_geometry_hash,
+                "total_length_m": self._evaluation_geometry.total_length_m,
+>               "path_array_dtype": self._evaluation_path_dtype,
+                "boundary": "kernel_candidate",
+                "scope": "full_path",
+            },
+            "obstacle_alpha_contract": {
+                "baseline_value": float(
+                    self._loop.obstacle_h_baseline_alpha
+                ),
+                "baseline_source": "NineaxisOSCBFVelocityConfig",
+                "runtime_value_source": "perception track slot 10",
+            },
+        }
+E       AttributeError: 'OscbfController' object has no attribute '_evaluation_path_dtype'
+
+src/robot_safecontrol_moveit/oscbf_controller.py:346: AttributeError
+----------------------------- Captured stdout call -----------------------------
+2026-09-12 22:33:07.726 [TRANSPORT_UDP Error] Error creating socket: Operation not permitted -> Function init
+2026-09-12 22:33:07.726 [RTPS_PARTICIPANT Error] User transport failed to register. -> Function RTPSParticipantImpl
+----------------------------- Captured stderr call -----------------------------
+getifaddrs: Operation not permitted
+=========================== short test summary info ============================
+FAILED tests/test_oscbf_production_config.py::test_chain_remap_is_applied_once_and_snapshot_matches_entities
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 36 passed in 65.45s (0:01:05)

@@ -86,6 +86,8 @@ ros2 run robot_safecontrol_moveit oscbf_controller --ros-args \
 每次成功启动的最终值、来源链、资源路径、配置/软件哈希及拟合几何会原子写入
 性能报告同目录下的 `runtime_snapshots/`。
 
+跟踪评价输出逐项结论、真实工具轴夹角、弧长覆盖与证据来源，并保存 Markdown、JSON 和样本记录。离线子区间须在采样前声明；当前节点报告的边界为控制内核模型输出。指标定义、阈值来源及使用示例见[跟踪评价说明](docs/tracking_evaluation.md)。
+
 依赖包含 ROS 2 Humble、MoveIt2、pymoveit2、MuJoCo，以及 JAX/CBFpy/qpax 等控制内核依赖。环境与构建说明见 [项目入门](docs/ONBOARDING.md)和 [控制内核 README](portable_oscbf/README.md)。
 
 最终闭环默认使用 `AEBRRTstarFaithfulConfigDefault`。AEB-RRT* 由 MoveIt

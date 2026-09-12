@@ -1,0 +1,7 @@
+Command:
+ROS_LOG_DIR=/tmp/off15-fix-ros-log JAX_COMPILATION_CACHE_DIR=/tmp/off15-fix-jax-cache python3 -m pytest tests/test_tracking_evaluator.py tests/test_tracking_report_writer.py portable_oscbf/tests/test_path_precision_initialization.py -q
+
+Tool output excerpt (initial progress may be omitted):
+. [ 98%]
+.                                                                        [100%]
+73 passed in 2.99s

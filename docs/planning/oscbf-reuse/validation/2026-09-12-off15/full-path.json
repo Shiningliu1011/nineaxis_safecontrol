@@ -1,0 +1,309 @@
+{
+  "total_steps": 11,
+  "sample_data_sha256": "1023921d5ab3e391cc9865d0f3a1e5faeda847100ce180e66a743bd8527c989b",
+  "evidence": {
+    "run_id": "full-path",
+    "kind": "analytic",
+    "boundary": "kernel_candidate",
+    "model_id": "analytic point on x-axis; tool X direction",
+    "config_id": "OFF-15 inherited default thresholds",
+    "trajectory_id": "line-x:0..1m",
+    "data_id": "sha256:ccba1c4f28d70ffea4eea5e0ca3ef83d37c770e6c4fe403475fec19dcd3acbdb#full-path",
+    "scenario": "full-path",
+    "measurement": "analytic positions and same-time reference",
+    "time_basis": "explicit test seconds"
+  },
+  "scope": {
+    "total_length_m": 1.0,
+    "start_m": 0.0,
+    "end_m": 1.0
+  },
+  "metrics": {
+    "actual_tangent_speed_m_s": {
+      "count": 0,
+      "missing": 11,
+      "invalid": 0,
+      "mean": null,
+      "rms": null,
+      "p95": null,
+      "minimum": null,
+      "maximum": null
+    },
+    "cross_track_m": {
+      "count": 11,
+      "missing": 0,
+      "invalid": 0,
+      "mean": 0.0,
+      "rms": 0.0,
+      "p95": 0.0,
+      "minimum": 0.0,
+      "maximum": 0.0
+    },
+    "delta_slack": {
+      "count": 0,
+      "missing": 11,
+      "invalid": 0,
+      "mean": null,
+      "rms": null,
+      "p95": null,
+      "minimum": null,
+      "maximum": null
+    },
+    "feedrate_m_s": {
+      "count": 11,
+      "missing": 0,
+      "invalid": 0,
+      "mean": 0.01,
+      "rms": 0.01,
+      "p95": 0.01,
+      "minimum": 0.01,
+      "maximum": 0.01
+    },
+    "legacy_orientation_error": {
+      "count": 0,
+      "missing": 11,
+      "invalid": 0,
+      "mean": null,
+      "rms": null,
+      "p95": null,
+      "minimum": null,
+      "maximum": null
+    },
+    "obstacle_clearance_m": {
+      "count": 0,
+      "missing": 11,
+      "invalid": 0,
+      "mean": null,
+      "rms": null,
+      "p95": null,
+      "minimum": null,
+      "maximum": null
+    },
+    "obstacle_margin_m": {
+      "count": 0,
+      "missing": 11,
+      "invalid": 0,
+      "mean": null,
+      "rms": null,
+      "p95": null,
+      "minimum": null,
+      "maximum": null
+    },
+    "online_cross_track_m": {
+      "count": 0,
+      "missing": 11,
+      "invalid": 0,
+      "mean": null,
+      "rms": null,
+      "p95": null,
+      "minimum": null,
+      "maximum": null
+    },
+    "pos_error_m": {
+      "count": 11,
+      "missing": 0,
+      "invalid": 0,
+      "mean": 0.0,
+      "rms": 0.0,
+      "p95": 0.0,
+      "minimum": 0.0,
+      "maximum": 0.0
+    },
+    "qp_primal_residual": {
+      "count": 0,
+      "missing": 11,
+      "invalid": 0,
+      "mean": null,
+      "rms": null,
+      "p95": null,
+      "minimum": null,
+      "maximum": null
+    },
+    "source_time_s": {
+      "count": 11,
+      "missing": 0,
+      "invalid": 0,
+      "mean": 1005.0,
+      "rms": 1005.0049751120638,
+      "p95": 1009.5,
+      "minimum": 1000.0,
+      "maximum": 1010.0
+    },
+    "step_latency_ms": {
+      "count": 11,
+      "missing": 0,
+      "invalid": 0,
+      "mean": 1.0,
+      "rms": 1.0,
+      "p95": 1.0,
+      "minimum": 1.0,
+      "maximum": 1.0
+    },
+    "tool_axis_error_rad": {
+      "count": 11,
+      "missing": 0,
+      "invalid": 0,
+      "mean": 0.0,
+      "rms": 0.0,
+      "p95": 0.0,
+      "minimum": 0.0,
+      "maximum": 0.0
+    }
+  },
+  "criteria": [
+    {
+      "threshold": {
+        "metric": "cross_track_m.rms",
+        "limit": 0.00015,
+        "comparison": "<=",
+        "unit": "m",
+        "category": "task",
+        "status": "accepted",
+        "source": "GitHub #14 resolution 2026-09-04"
+      },
+      "value": 0.0,
+      "verdict": "pass",
+      "reason": "complete samples compared with sourced threshold"
+    },
+    {
+      "threshold": {
+        "metric": "cross_track_m.p95",
+        "limit": 0.0005,
+        "comparison": "<=",
+        "unit": "m",
+        "category": "task",
+        "status": "accepted",
+        "source": "GitHub #14 resolution 2026-09-04"
+      },
+      "value": 0.0,
+      "verdict": "pass",
+      "reason": "complete samples compared with sourced threshold"
+    },
+    {
+      "threshold": {
+        "metric": "cross_track_m.maximum",
+        "limit": 0.002,
+        "comparison": "<=",
+        "unit": "m",
+        "category": "task",
+        "status": "accepted",
+        "source": "GitHub #14 resolution 2026-09-04"
+      },
+      "value": 0.0,
+      "verdict": "pass",
+      "reason": "complete samples compared with sourced threshold"
+    },
+    {
+      "threshold": {
+        "metric": "tool_axis_error_rad.rms",
+        "limit": 0.0008726646259971648,
+        "comparison": "<=",
+        "unit": "rad",
+        "category": "task",
+        "status": "accepted",
+        "source": "GitHub #14 resolution 2026-09-04; OFF-15 user decision: true axis angle 2026-09-12"
+      },
+      "value": 0.0,
+      "verdict": "pass",
+      "reason": "complete samples compared with sourced threshold"
+    },
+    {
+      "threshold": {
+        "metric": "tool_axis_error_rad.maximum",
+        "limit": 0.008726646259971648,
+        "comparison": "<=",
+        "unit": "rad",
+        "category": "task",
+        "status": "accepted",
+        "source": "GitHub #14 resolution 2026-09-04; OFF-15 user decision: true axis angle 2026-09-12"
+      },
+      "value": 0.0,
+      "verdict": "pass",
+      "reason": "complete samples compared with sourced threshold"
+    },
+    {
+      "threshold": {
+        "metric": "qp_success_rate",
+        "limit": 0.999,
+        "comparison": ">=",
+        "unit": "1",
+        "category": "task",
+        "status": "accepted",
+        "source": "GitHub #14 resolution 2026-09-04"
+      },
+      "value": 1.0,
+      "verdict": "pass",
+      "reason": "complete samples compared with sourced threshold"
+    },
+    {
+      "threshold": {
+        "metric": "obstacle_clearance_nonnegative",
+        "limit": 0.0,
+        "comparison": ">=",
+        "unit": "m",
+        "category": "safety",
+        "status": "accepted",
+        "source": "GitHub #14 resolution 2026-09-04; nonnegative clearance alone does not prove non-overlap"
+      },
+      "value": null,
+      "verdict": "insufficient_evidence",
+      "reason": "required samples missing or invalid"
+    },
+    {
+      "threshold": {
+        "metric": "obstacle_clearance_m.minimum",
+        "limit": 0.03,
+        "comparison": ">=",
+        "unit": "m",
+        "category": "safety",
+        "status": "provisional",
+        "source": "GitHub #14 resolution 2026-09-04; geometry/scope pending #8/#18"
+      },
+      "value": null,
+      "verdict": "insufficient_evidence",
+      "reason": "threshold not accepted for this scope"
+    },
+    {
+      "threshold": {
+        "metric": "deadline_miss_rate",
+        "limit": 0.01,
+        "comparison": "<=",
+        "unit": "1",
+        "category": "timing",
+        "status": "provisional",
+        "source": "GitHub #14 resolution 2026-09-04; deadline must match current measured boundary/config"
+      },
+      "value": 0.0,
+      "verdict": "insufficient_evidence",
+      "reason": "threshold not accepted for this scope"
+    }
+  ],
+  "completed": true,
+  "completion_fraction": 1.0,
+  "scope_completion_fraction": 1.0,
+  "full_path_verified": false,
+  "full_path_covered": true,
+  "initial_progress_m": 0.0,
+  "final_progress_m": 1.0,
+  "termination": "completed",
+  "task_verdict": "pass",
+  "online_verdict": "pass",
+  "verdict": "insufficient_evidence",
+  "qp_success_rate": 1.0,
+  "qp_fail_count": 0,
+  "qp_missing_count": 0,
+  "admission_counts": {
+    "accepted": 11
+  },
+  "overlap_counts": {
+    "clear": 11
+  },
+  "events": {},
+  "limiting_reason_counts": {},
+  "constraint_metrics": {},
+  "wall_time_s": 10.0,
+  "trajectory_duration_s": null,
+  "deadline_ms": 20.0,
+  "deadline_miss_rate": 0.0,
+  "issues": []
+}
