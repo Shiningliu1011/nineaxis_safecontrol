@@ -1,0 +1,337 @@
+jax=0.6.2 backend=cpu x64=True threads(OPENBLAS=1, OMP=1)
+[IKTrajectoryData] 加载完成: 14992 点, 23 块, Ts=0.002s, 总时长=29.982s
+  JAX 固定形状控制内核 JIT 预热中...
+  JAX 固定形状控制内核 JIT 预热完成 (7.9s)
+relax_cbf=True cbf_relaxation_penalty=100000.0 solver_tol=0.001 alpha=(10.0*h) enable_rate_limit=False num_cbf=43 rows={'joint': (0, 18), 'self_collision': (18, 32), 'obstacle': (32, 42), 'singularity': (42, 43)}
+n_obb_links=10 num_obstacle_constraints=10 d_safe_collision=0.03
+
+=== scenario A: no obstacles, 60 ticks ===
+     A+000  min_h=-0.010000  (joint=-0.0100 self=+0.162999 obs=+999.979206 sing=+1.1042)  slack=1.975e-10  qp_ok=True  primal_res=0.000e+00  |u|=0.10590  |dq|=0.001059
+     A+001  min_h=-0.009000  (joint=-0.0090 self=+0.162999 obs=+999.979206 sing=+1.1042)  slack=1.923e-10  qp_ok=True  primal_res=0.000e+00  |u|=0.09682  |dq|=0.000968
+     A+002  min_h=-0.008100  (joint=-0.0081 self=+0.162999 obs=+999.979206 sing=+1.1042)  slack=1.840e-10  qp_ok=True  primal_res=0.000e+00  |u|=0.12174  |dq|=0.001217
+     A+058  min_h=+0.112113  (joint=+0.1121 self=+0.163000 obs=+999.979206 sing=+1.2941)  slack=4.726e-11  qp_ok=True  primal_res=0.000e+00  |u|=0.65097  |dq|=0.006510
+     A+059  min_h=+0.113243  (joint=+0.1132 self=+0.163000 obs=+999.979206 sing=+1.2950)  slack=4.635e-11  qp_ok=True  primal_res=0.000e+00  |u|=0.62049  |dq|=0.006205
+  summary: {
+  "ticks": 60,
+  "max_delta_slack": 1.8672837084670862e-09,
+  "min_h_over_run": -0.01,
+  "all_qp_ok": true,
+  "max_primal_residual_row_units": 0.0
+}
+
+=== scenario B: measured clearance starts at ~-5 mm ===
+  placement: {
+  "obstacle_center_m": [
+    0.13297997829228564,
+    0.34299256590302496,
+    0.9658701706462027
+  ],
+  "obstacle_radius_m": 0.001,
+  "obs_d_safe_m": 0.08,
+  "obs_alpha": 1.5,
+  "ray_offset_m": 0.39575,
+  "measured_min_h_at_start_m": -0.005015214018025266,
+  "target_h_m": -0.005
+}
+     B+000  min_h=-0.010000  (joint=-0.0100 self=+0.162999 obs=-0.005015 sing=+1.1042)  slack=3.157e-11  qp_ok=True  primal_res=0.000e+00  |u|=0.11705  |dq|=0.001171
+     B+001  min_h=-0.009000  (joint=-0.0090 self=+0.162999 obs=-0.004704 sing=+1.1042)  slack=3.375e-12  qp_ok=True  primal_res=0.000e+00  |u|=0.16165  |dq|=0.001616
+     B+002  min_h=-0.008100  (joint=-0.0081 self=+0.162999 obs=-0.004423 sing=+1.1042)  slack=2.240e-12  qp_ok=True  primal_res=0.000e+00  |u|=0.42151  |dq|=0.004215
+     B+003  min_h=-0.007290  (joint=-0.0073 self=+0.162999 obs=-0.004061 sing=+1.1042)  slack=4.743e-11  qp_ok=True  primal_res=0.000e+00  |u|=1.35090  |dq|=0.013509
+     B+004  min_h=-0.006561  (joint=-0.0066 self=+0.162999 obs=-0.003318 sing=+1.1041)  slack=4.702e-12  qp_ok=True  primal_res=0.000e+00  |u|=4.44526  |dq|=0.044453
+
+=== reference: h without obstacle at q=0 ===
+  {
+  "joint": -0.01,
+  "self_collision": 0.16299908074225788,
+  "obstacle": 999.9792055845833,
+  "singularity": 1.1041644385789433
+}
+
+=== scenario C: enclosing obstacle, bisected by radius ===
+  r= 0.02 m  min_h=-0.080000  min_h_obs=-0.080000  slack=1.200e-01  qp_ok=True  |u|=0.10590 |dq|=0.001059
+  r= 0.05 m  min_h=-0.080000  min_h_obs=-0.080000  slack=1.200e-01  qp_ok=True  |u|=0.10591 |dq|=0.001059
+  r= 0.10 m  min_h=-0.080000  min_h_obs=-0.080000  slack=1.200e-01  qp_ok=True  |u|=0.28810 |dq|=0.002881
+  r= 0.20 m  min_h=-0.080000  min_h_obs=-0.080000  slack=2.162e-01  qp_ok=True  |u|=0.30884 |dq|=0.002861
+  r= 0.30 m  min_h=-0.080000  min_h_obs=-0.080000  slack=1.200e-01  qp_ok=True  |u|=0.29212 |dq|=0.002921
+  r= 0.50 m  min_h=-0.080000  min_h_obs=-0.080000  slack=1.704e-01  qp_ok=True  |u|=0.85066 |dq|=0.008477
+  r= 0.80 m  min_h=-0.080000  min_h_obs=-0.080000  slack=1.200e-01  qp_ok=True  |u|=0.35125 |dq|=0.003512
+  r= 1.20 m  min_h=-0.080000  min_h_obs=-0.080000  slack=1.200e-01  qp_ok=True  |u|=0.07530 |dq|=0.000753
+  r= 2.00 m  min_h=-0.080000  min_h_obs=-0.080000  slack=1.200e-01  qp_ok=True  |u|=0.10591 |dq|=0.001059
+  r= 3.00 m  min_h=-0.080000  min_h_obs=-0.080000  slack=1.200e-01  qp_ok=True  |u|=0.10591 |dq|=0.001059
+     C+000  min_h=-0.080000  (joint=-0.0100 self=+0.162999 obs=-0.080000 sing=+1.1042)  slack=1.200e-01  qp_ok=True  primal_res=1.200e-01  |u|=0.10590  |dq|=0.001059
+     C+001  min_h=-0.080000  (joint=-0.0090 self=+0.162999 obs=-0.080000 sing=+1.1042)  slack=1.200e-01  qp_ok=True  primal_res=1.200e-01  |u|=0.09683  |dq|=0.000968
+     C+002  min_h=-0.080000  (joint=-0.0081 self=+0.162999 obs=-0.080000 sing=+1.1042)  slack=1.200e-01  qp_ok=True  primal_res=1.200e-01  |u|=0.12172  |dq|=0.001217
+     C+003  min_h=-0.080000  (joint=-0.0073 self=+0.162999 obs=-0.080000 sing=+1.1042)  slack=1.200e-01  qp_ok=True  primal_res=1.200e-01  |u|=0.28241  |dq|=0.002824
+     C+004  min_h=-0.080000  (joint=-0.0066 self=+0.162999 obs=-0.080000 sing=+1.1042)  slack=1.200e-01  qp_ok=True  primal_res=1.200e-01  |u|=0.81922  |dq|=0.008192
+     C+005  min_h=-0.080000  (joint=-0.0059 self=+0.162999 obs=-0.080000 sing=+1.1042)  slack=1.200e-01  qp_ok=True  primal_res=1.200e-01  |u|=2.49456  |dq|=0.024946
+     C+006  min_h=-0.080000  (joint=-0.0053 self=+0.162999 obs=-0.080000 sing=+1.1043)  slack=1.200e-01  qp_ok=True  primal_res=1.200e-01  |u|=5.14987  |dq|=0.051499
+     C+007  min_h=-0.080000  (joint=-0.0048 self=+0.162999 obs=-0.080000 sing=+1.1050)  slack=1.200e-01  qp_ok=True  primal_res=1.200e-01  |u|=5.68562  |dq|=0.056856
+
+=== scenario E: joint measured outside the joint-limit envelope ===
+[
+  {
+    "overshoot_below_lower_limit_rad": 0.0,
+    "h_j1_lower_rad": -0.01,
+    "required_escape_rate_rad_s": 0.1,
+    "j1_vmax_rad_s": 0.5,
+    "min_h": -0.01,
+    "u_j1_rad_s": 0.1000001663208018,
+    "q_next_j1": 0.001000001663208018,
+    "delta_slack_row_units": 1.9753340903146754e-10,
+    "qp_ok": true,
+    "primal_residual_row_units": 0.0
+  },
+  {
+    "overshoot_below_lower_limit_rad": 0.005,
+    "h_j1_lower_rad": -0.015,
+    "required_escape_rate_rad_s": 0.15,
+    "j1_vmax_rad_s": 0.5,
+    "min_h": -0.015,
+    "u_j1_rad_s": 0.15000016178893366,
+    "q_next_j1": 0.0,
+    "delta_slack_row_units": 2.0534458851004732e-10,
+    "qp_ok": true,
+    "primal_residual_row_units": 0.0
+  },
+  {
+    "overshoot_below_lower_limit_rad": 0.02,
+    "h_j1_lower_rad": -0.03,
+    "required_escape_rate_rad_s": 0.3,
+    "j1_vmax_rad_s": 0.5,
+    "min_h": -0.03,
+    "u_j1_rad_s": 0.300006673041885,
+    "q_next_j1": 0.0,
+    "delta_slack_row_units": 2.933922462409497e-09,
+    "qp_ok": true,
+    "primal_residual_row_units": 0.0
+  },
+  {
+    "overshoot_below_lower_limit_rad": 0.05,
+    "h_j1_lower_rad": -0.060000000000000005,
+    "required_escape_rate_rad_s": 0.6000000000000001,
+    "j1_vmax_rad_s": 0.5,
+    "min_h": -0.060000000000000005,
+    "u_j1_rad_s": 0.5009021647390879,
+    "q_next_j1": 0.0,
+    "delta_slack_row_units": 0.09909783526415543,
+    "qp_ok": true,
+    "primal_residual_row_units": 0.0990978352609122
+  },
+  {
+    "overshoot_below_lower_limit_rad": 0.2,
+    "h_j1_lower_rad": -0.21000000000000002,
+    "required_escape_rate_rad_s": 2.1,
+    "j1_vmax_rad_s": 0.5,
+    "min_h": -0.21000000000000002,
+    "u_j1_rad_s": 0.5010510558107373,
+    "q_next_j1": 0.0,
+    "delta_slack_row_units": 1.5989489441936744,
+    "qp_ok": true,
+    "primal_residual_row_units": 1.5989489441892628
+  }
+]
+
+=== scenario F: collision distance kernels saturate at zero ===
+{
+  "obb_sphere": [
+    {
+      "sphere_radius_m": 0.0,
+      "min_surface_distance_m": 1.1765959999791011e-06,
+      "implied_min_h_m": -0.07999882340400002
+    },
+    {
+      "sphere_radius_m": 0.001,
+      "min_surface_distance_m": 0.0,
+      "implied_min_h_m": -0.08
+    },
+    {
+      "sphere_radius_m": 0.05,
+      "min_surface_distance_m": 0.0,
+      "implied_min_h_m": -0.08
+    },
+    {
+      "sphere_radius_m": 0.3,
+      "min_surface_distance_m": 0.0,
+      "implied_min_h_m": -0.08
+    },
+    {
+      "sphere_radius_m": 0.8,
+      "min_surface_distance_m": 0.0,
+      "implied_min_h_m": -0.08
+    }
+  ],
+  "obb_obb_same_link": [
+    {
+      "x_offset_m": 0.0,
+      "obb_half_extent_x_m": 0.0750013664365,
+      "returned_distance_m": 0.0
+    },
+    {
+      "x_offset_m": 0.001,
+      "obb_half_extent_x_m": 0.0750013664365,
+      "returned_distance_m": 0.0
+    },
+    {
+      "x_offset_m": 0.01,
+      "obb_half_extent_x_m": 0.0750013664365,
+      "returned_distance_m": 0.0
+    },
+    {
+      "x_offset_m": 0.05,
+      "obb_half_extent_x_m": 0.0750013664365,
+      "returned_distance_m": 0.0
+    },
+    {
+      "x_offset_m": 0.2,
+      "obb_half_extent_x_m": 0.0750013664365,
+      "returned_distance_m": 0.04999726712699921
+    }
+  ]
+}
+
+=== scenario D: infeasible QP, hard vs elastic qpax ===
+{
+  "hard": {
+    "x": [
+      0.0
+    ],
+    "slack_s": [
+      1.4901161193847713e-10,
+      1.4901161193847713e-10
+    ],
+    "dual_z": [
+      5.939004089274509e+215,
+      5.939004089274509e+215
+    ],
+    "converged": 0,
+    "iterations": 30,
+    "row_violation_Gx_minus_h": [
+      1.0,
+      1.0
+    ]
+  },
+  "elastic": {
+    "x": [
+      -0.0
+    ],
+    "t": [
+      0.9999728730731963,
+      0.9999728730731963
+    ],
+    "s1_equals_t": [
+      1.0000000006243985,
+      1.0000000006243985
+    ],
+    "s2": [
+      6.243987933455344e-10,
+      6.243987933455344e-10
+    ],
+    "converged": 1,
+    "iterations": 7,
+    "row_violation_Gx_minus_h": [
+      1.0,
+      1.0
+    ]
+  }
+}
+
+=== scenario G: sensitivity to the slack penalty ===
+[
+  {
+    "cbf_relaxation_penalty": 1000.0,
+    "jit_cache_cleared": true,
+    "delta_slack_row_units": 0.12000000614759472,
+    "primal_residual_row_units": 0.12,
+    "u_norm": 0.10590725669023654,
+    "q_next_moved_norm": 0.0010590725669023654,
+    "qp_ok": true,
+    "qp_iterations": 16
+  },
+  {
+    "cbf_relaxation_penalty": 100000.0,
+    "jit_cache_cleared": true,
+    "delta_slack_row_units": 0.12000000614759472,
+    "primal_residual_row_units": 0.12,
+    "u_norm": 0.10590725669023654,
+    "q_next_moved_norm": 0.0010590725669023654,
+    "qp_ok": true,
+    "qp_iterations": 16
+  },
+  {
+    "cbf_relaxation_penalty": 10000000.0,
+    "jit_cache_cleared": true,
+    "delta_slack_row_units": 0.12000000614759472,
+    "primal_residual_row_units": 0.12,
+    "u_norm": 0.10590725669023654,
+    "q_next_moved_norm": 0.0010590725669023654,
+    "qp_ok": true,
+    "qp_iterations": 16
+  },
+  {
+    "cbf_relaxation_penalty": 1000000000.0,
+    "jit_cache_cleared": true,
+    "delta_slack_row_units": 0.12000000614759472,
+    "primal_residual_row_units": 0.12,
+    "u_norm": 0.10590725669023654,
+    "q_next_moved_norm": 0.0010590725669023654,
+    "qp_ok": true,
+    "qp_iterations": 16
+  }
+]
+row control authority |Lg h|_1 for the same state:
+{
+  "min_lgh_l1": 0.0,
+  "max_lgh_l1": 1.1748223590896427,
+  "rows_with_zero_lgh": 2,
+  "obstacle_rows_lgh_l1": [
+    0.0,
+    1.0,
+    1.0000012599026042,
+    1.0000025198119544,
+    1.0000090250379539,
+    1.0000165845142952,
+    1.0000037797145591,
+    1.0000037797145591,
+    1.0000037797145593,
+    0.0
+  ]
+}
+
+=== gate table: what max(slack) <= eps would have done ===
+{
+  "A no obstacles": {
+    "ticks": 60,
+    "max_slack_over_run": 1.8672837084670862e-09,
+    "freeze_ticks_if_eps": {
+      "1e-09": 1,
+      "1e-06": 0,
+      "0.001": 0,
+      "0.01": 0
+    },
+    "all_qp_ok": true
+  },
+  "B clearance -5mm": {
+    "ticks": 5,
+    "max_slack_over_run": 4.742604710918863e-11,
+    "freeze_ticks_if_eps": {
+      "1e-09": 0,
+      "1e-06": 0,
+      "0.001": 0,
+      "0.01": 0
+    },
+    "all_qp_ok": true
+  },
+  "C enclosing obstacle": {
+    "ticks": 8,
+    "max_slack_over_run": 0.12000000084730057,
+    "freeze_ticks_if_eps": {
+      "1e-09": 8,
+      "1e-06": 8,
+      "0.001": 8,
+      "0.01": 8
+    },
+    "all_qp_ok": true
+  }
+}
+
+wrote /home/lsn/robot/robot_safecontrol/docs/planning/oscbf-reuse/research/18-elastic-qp-admission/results.json
