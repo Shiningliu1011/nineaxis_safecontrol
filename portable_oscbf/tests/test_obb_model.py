@@ -12,9 +12,14 @@ import _path_setup  # noqa: F401
 import numpy as np
 import pytest
 import trimesh
+import yaml
 
 from work.fcl_collision_mesh import FclMeshSelfCollisionChecker
 from work.nineaxis_manipulator_jax import NineaxisManipulatorJAX
+from work.obb_geometry_admission import (
+    ALL_NONADJACENT_PAIRS,
+    OMITTED_NONADJACENT_PAIRS,
+)
 from work.obb_collision_model import (
     OBB_COLLISION_PAIRS,
     OBB_HALF_EXTENTS_M,
@@ -98,17 +103,28 @@ def test_obb_volume_ratio_above_threshold():
         assert ratio > 0.7, f"{link_name} OBB volume ratio {ratio:.4f} <= 0.7"
 
 
-def test_collision_pairs_are_non_adjacent_and_exemptions_preserved():
+def test_online_pairs_are_non_adjacent_and_omissions_are_not_exemptions():
     pairs = np.asarray(OBB_COLLISION_PAIRS)
     assert pairs.shape == (14, 2)
     assert np.all((pairs >= 0) & (pairs <= 9))
     for i, j in pairs:
         assert abs(int(i) - int(j)) >= 2, (
             f"adjacent pair in topology: {(int(i), int(j))}")
-    exempted = frozenset((3, 5))
-    for i, j in pairs:
-        assert exempted != frozenset((int(i), int(j))), (
-            "Link3-Link5 exemption was not preserved")
+    assert len(ALL_NONADJACENT_PAIRS) == 36
+    assert len(OMITTED_NONADJACENT_PAIRS) == 22
+    assert (3, 5) in OMITTED_NONADJACENT_PAIRS
+    assert any(6 in pair for pair in OMITTED_NONADJACENT_PAIRS)
+
+
+def test_mesh_checker_covers_every_non_adjacent_pair_including_link6():
+    checker = FclMeshSelfCollisionChecker(str(MESH_DIR), max_faces=300)
+    actual = {
+        tuple(sorted((OBB_LINK_NAMES.index(left), OBB_LINK_NAMES.index(right))))
+        for left, right in checker._check_pairs
+    }
+    assert actual == set(ALL_NONADJACENT_PAIRS)
+    assert "Link6" in checker._mesh_objs
+    assert (3, 5) in actual
 
 
 def test_zero_configuration_has_no_obb_overlap_and_fcl_clearance():
@@ -160,6 +176,22 @@ def test_generator_is_deterministic():
             outputs.append((output_py.read_bytes(), output_yaml.read_bytes()))
         assert outputs[0] == outputs[1], (
             "OBB generator output is not deterministic")
+
+
+def test_generated_yaml_marks_14_pairs_as_online_subset():
+    document = yaml.safe_load(
+        (REPO_ROOT / "portable_oscbf" / "config" / "obb_model.yaml")
+        .read_text(encoding="utf-8")
+    )
+    assert document["collision_pairs_role"] == "online_cbf_subset"
+    assert document["exclusions"] == []
+    assert document["pair_policy"] == {
+        "adjacent_pairs": "excluded",
+        "all_nonadjacent_pair_count": 36,
+        "online_pair_count": 14,
+        "omitted_nonadjacent_pair_count": 22,
+        "omitted_pair_evidence": "OFF-02 bounded-region certificate",
+    }
 
 
 if __name__ == "__main__":

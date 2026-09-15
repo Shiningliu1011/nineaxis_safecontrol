@@ -8,9 +8,10 @@ with the link-frame principal axes (PCA), then writes:
   core and by M3's DCOL collision path);
 - ``config/obb_model.yaml`` (human-readable calibration data).
 
-The self-collision topology inherits the validated 14-pair reference topology
-(``oscbf_collision_config.py``) mapped to link indices, with the calibrated
-mechanical near-neighbour exclusion Link3-Link5 preserved.
+The online CBF table inherits the 14-pair reference topology
+(``oscbf_collision_config.py``) mapped to link indices.  It is only the
+online constraint subset; OFF-02 evaluates all other non-adjacent pairs with
+point checks and bounded-region evidence.
 
 Usage::
 
@@ -42,10 +43,9 @@ LINK_NAMES = (
 
 # Reference 14-pair topology (oscbf_collision_config.py SELF_COLLISION_PAIRS)
 # mapped from 17-sphere indices to OBB link indices (0=base_link .. 9=Link9).
-# Link6 is intentionally absent from the pairs, matching the reference model
-# where Link5 covers the Link5/Link6 segment.  Link3-Link5 is excluded because
-# it is a calibrated mechanical near-neighbour exemption (16.6-17.2 mm mesh
-# clearance across the full joint grid; see fcl_collision_mesh.py).
+# Link6 and Link3-Link5 are absent from this historical online subset.  Their
+# absence is not a geometric exemption; they remain part of the 36-pair
+# non-adjacent point policy and the 22-pair omitted-region certificate.
 COLLISION_PAIRS = (
     (0, 4), (0, 5), (0, 7), (0, 8), (0, 9),
     (1, 5), (1, 7), (1, 8), (1, 9),
@@ -173,7 +173,7 @@ def write_python_module(data: dict, path: Path) -> None:
         "OBB_LOCAL_ROTATIONS = np.array(",
         _format_array(rotations) + ")",
         "",
-        "# Non-adjacent self-collision pairs (link indices); Link3-Link5 exempt.",
+        "# Online CBF subset; omitted non-adjacent pairs are not exemptions.",
         "OBB_COLLISION_PAIRS = np.array(",
         _format_array(pairs.astype(np.float64)) + ", dtype=np.int32)",
         "",
@@ -200,10 +200,15 @@ def write_yaml(data: dict, path: Path) -> None:
             for e in entries
         ],
         "collision_pairs": [list(pair) for pair in COLLISION_PAIRS],
-        "exclusions": [
-            "Link3-Link5 (calibrated mechanical near-neighbour, "
-            "see fcl_collision_mesh.py)",
-        ],
+        "collision_pairs_role": "online_cbf_subset",
+        "exclusions": [],
+        "pair_policy": {
+            "adjacent_pairs": "excluded",
+            "all_nonadjacent_pair_count": 36,
+            "online_pair_count": len(COLLISION_PAIRS),
+            "omitted_nonadjacent_pair_count": 36 - len(COLLISION_PAIRS),
+            "omitted_pair_evidence": "OFF-02 bounded-region certificate",
+        },
     }
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(yaml.safe_dump(document, sort_keys=False), encoding="utf-8")
@@ -225,7 +230,7 @@ def main() -> int:
     print("OBB volume / link-frame AABB volume:")
     for link, ratio in data["volume_ratios"].items():
         print(f"  {link:10s} {ratio:.4f}  ({data['methods'][link]})")
-    print(f"Collision pairs: {len(COLLISION_PAIRS)} (all non-adjacent)")
+    print(f"Online CBF pairs: {len(COLLISION_PAIRS)} of 36 non-adjacent pairs")
     return 0
 
 

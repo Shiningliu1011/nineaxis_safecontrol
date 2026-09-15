@@ -78,7 +78,7 @@ OBB_LOCAL_ROTATIONS = np.array(
   [0, 1, 0],
   [0, 0, 1]]])
 
-# Non-adjacent self-collision pairs (link indices); Link3-Link5 exempt.
+# Online CBF subset; omitted non-adjacent pairs are not exemptions.
 OBB_COLLISION_PAIRS = np.array(
 [[0, 4],
  [0, 5],

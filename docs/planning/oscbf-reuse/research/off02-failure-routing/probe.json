@@ -1,0 +1,2645 @@
+{
+  "evidence": "point checks only; seeds are NOT solved IK states",
+  "numpy": "1.26.4",
+  "python_fcl": "0.7.0.11",
+  "sha256": {
+    "portable_oscbf/work/obb_collision_model.py": "1ea08f39ade0fe943068522b2e14e2a8601170d0d6639cd8b1f7b112d651a0a7",
+    "portable_oscbf/work/kinematics_data.py": "9cfa1632748bee07c727a4b84726466ac9f7a7b5b267e31ecf88fd5b29a2db14",
+    "portable_oscbf/work/nineaxis_kinematics.py": "7cec2c14d630272d5c4e3ea38186284d90b459fd611c9554e92ceb80496e035f",
+    "src/robot_safecontrol_moveit/task_target.py": "82e1a48ba9a2261dc1ee5764f90022017fa7a6c85d54f76dd11eb0f28d5d0cce"
+  },
+  "samples": [
+    {
+      "label": "zero",
+      "q": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "pairs": [
+        {
+          "pair": [
+            "base_link",
+            "Link2"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.19299915420786945,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link3"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.19299907156075136,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link4"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.1929990807422579,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link5"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.22399810121577443,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link6"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.21099871980966123,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link7"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.3150421945159985,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link8"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.4359663133965337,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link9"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.5625009700354054,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link3"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.10005045672130183,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link4"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.3385210777703007,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link5"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.46699981499530685,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link6"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.681521110760304,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link7"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.8145409810320523,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link8"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.9354650778682715,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link9"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 1.0619998429749051,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link2",
+            "Link4"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.13597137763745143,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link2",
+            "Link5"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.26444967407904163,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link2",
+            "Link6"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.4789712931002504,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link2",
+            "Link7"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.611991196425476,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link2",
+            "Link8"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.7329152305574451,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link2",
+            "Link9"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.859449920146312,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link3",
+            "Link5"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.017050290653709554,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link3",
+            "Link6"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.23157198680208857,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link3",
+            "Link7"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.36459189012747606,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link3",
+            "Link8"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.4855159242594451,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link3",
+            "Link9"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.612050613848312,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link4",
+            "Link6"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.14202108607398645,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link4",
+            "Link7"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.27504097103163194,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link4",
+            "Link8"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.39596506760803085,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link4",
+            "Link9"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.5224997314828419,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link5",
+            "Link7"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.023090628373542033,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link5",
+            "Link8"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.14401474724950236,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link5",
+            "Link9"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.2705494038924413,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link6",
+            "Link8"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.030136055200899944,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link6",
+            "Link9"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.1566706363254998,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link7",
+            "Link9"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.03549998679719987,
+          "fcl_box_collision": false
+        }
+      ]
+    },
+    {
+      "label": "natural_seed_1",
+      "q": [
+        0.3,
+        0.0,
+        0.8,
+        0.9,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "pairs": [
+        {
+          "pair": [
+            "base_link",
+            "Link2"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.19299915420786945,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link3"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.19299902563612187,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link4"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.19299902563776464,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link5"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.22399804977472848,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link6"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.3712742987074415,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link7"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.5025409899423795,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link8"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.6246567372274651,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link9"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.7527854747661796,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link3"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.07415639307399288,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link4"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.2674085032712205,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link5"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.2664056907510716,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link6"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.36877688148114357,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link7"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.5000437192391287,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link8"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.6221593204447597,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link9"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.7502882040629288,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link2",
+            "Link4"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.07137899364379041,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link2",
+            "Link5"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.19238271172542937,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link2",
+            "Link6"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.4062755797630789,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link2",
+            "Link7"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.5375425439850328,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link2",
+            "Link8"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.6596581150775958,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link2",
+            "Link9"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.7877870938375848,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link3",
+            "Link5"
+          ],
+          "online": false,
+          "sat_state": "overlap",
+          "max_axis_gap_m": -0.008277261403131286,
+          "fcl_box_collision": true
+        },
+        {
+          "pair": [
+            "Link3",
+            "Link6"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.20624424766876598,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link3",
+            "Link7"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.3392641509935878,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link3",
+            "Link8"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.4601881851259607,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link3",
+            "Link9"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.5867228747144236,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link4",
+            "Link6"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.14202108607398647,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link4",
+            "Link7"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.27504097103163205,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link4",
+            "Link8"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.39596506760803085,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link4",
+            "Link9"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.522499731482842,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link5",
+            "Link7"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.023090628373542074,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link5",
+            "Link8"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.14401474724950225,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link5",
+            "Link9"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.2705494038924413,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link6",
+            "Link8"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.030136055200899958,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link6",
+            "Link9"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.15667063632549985,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link7",
+            "Link9"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.03549998679719982,
+          "fcl_box_collision": false
+        }
+      ]
+    },
+    {
+      "label": "natural_seed_2",
+      "q": [
+        0.3,
+        -0.9,
+        0.8,
+        0.9,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "pairs": [
+        {
+          "pair": [
+            "base_link",
+            "Link2"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.19299909456733266,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link3"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.19299969720406077,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link4"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.19300009949283997,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link5"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.2239987245929401,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link6"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.26928278426459784,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link7"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.35837075287693576,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link8"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.4548656970582405,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link9"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.5577705287649176,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link3"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.030325743921366402,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link4"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.240543959645787,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link5"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.3128664374818693,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link6"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.4687810416313114,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link7"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.5578699003471455,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link8"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.6543639596289624,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link9"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.7572697364482841,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link2",
+            "Link4"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.07137899364379036,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link2",
+            "Link5"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.19238271172542926,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link2",
+            "Link6"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.4062755797630788,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link2",
+            "Link7"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.5375425439850328,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link2",
+            "Link8"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.6596581150775959,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link2",
+            "Link9"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.7877870938375848,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link3",
+            "Link5"
+          ],
+          "online": false,
+          "sat_state": "overlap",
+          "max_axis_gap_m": -0.008277261403131259,
+          "fcl_box_collision": true
+        },
+        {
+          "pair": [
+            "Link3",
+            "Link6"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.20624424766876598,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link3",
+            "Link7"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.3392641509935878,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link3",
+            "Link8"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.4601881851259608,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link3",
+            "Link9"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.5867228747144239,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link4",
+            "Link6"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.14202108607398625,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link4",
+            "Link7"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.275040971031632,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link4",
+            "Link8"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.39596506760803085,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link4",
+            "Link9"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.522499731482842,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link5",
+            "Link7"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.023090628373542144,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link5",
+            "Link8"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.14401474724950244,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link5",
+            "Link9"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.27054940389244136,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link6",
+            "Link8"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.03013605520090014,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link6",
+            "Link9"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.15667063632550005,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link7",
+            "Link9"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.035499986797199956,
+          "fcl_box_collision": false
+        }
+      ]
+    },
+    {
+      "label": "natural_seed_3",
+      "q": [
+        0.47,
+        0.0,
+        0.8,
+        0.9,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "pairs": [
+        {
+          "pair": [
+            "base_link",
+            "Link2"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.19299915420786945,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link3"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.19299947463621273,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link4"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.23847622023138104,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link5"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.2374733615943418,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link6"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.3712742987074415,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link7"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.5025409899423795,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link8"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.6246567372274651,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link9"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.7527854747661796,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link3"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.07415639307399288,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link4"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.2674085032712205,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link5"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.2664056907510716,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link6"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.36877688148114357,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link7"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.5000437192391287,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link8"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.6221593204447597,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link9"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.7502882040629288,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link2",
+            "Link4"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.07137899364379047,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link2",
+            "Link5"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.19238271172542937,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link2",
+            "Link6"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.4062755797630789,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link2",
+            "Link7"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.5375425439850328,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link2",
+            "Link8"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.6596581150775958,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link2",
+            "Link9"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.7877870938375848,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link3",
+            "Link5"
+          ],
+          "online": false,
+          "sat_state": "overlap",
+          "max_axis_gap_m": -0.008277261403131286,
+          "fcl_box_collision": true
+        },
+        {
+          "pair": [
+            "Link3",
+            "Link6"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.20624424766876598,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link3",
+            "Link7"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.3392641509935878,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link3",
+            "Link8"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.4601881851259607,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link3",
+            "Link9"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.5867228747144236,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link4",
+            "Link6"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.14202108607398647,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link4",
+            "Link7"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.27504097103163205,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link4",
+            "Link8"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.39596506760803085,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link4",
+            "Link9"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.522499731482842,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link5",
+            "Link7"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.023090628373542074,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link5",
+            "Link8"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.14401474724950225,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link5",
+            "Link9"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.2705494038924413,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link6",
+            "Link8"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.030136055200899958,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link6",
+            "Link9"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.15667063632549985,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link7",
+            "Link9"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.03549998679719982,
+          "fcl_box_collision": false
+        }
+      ]
+    },
+    {
+      "label": "natural_seed_4",
+      "q": [
+        0.47,
+        -0.9,
+        0.8,
+        0.9,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "pairs": [
+        {
+          "pair": [
+            "base_link",
+            "Link2"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.19299909456733266,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link3"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.19299969720406077,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link4"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.2211244197463959,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link5"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.28336728489262486,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link6"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.4392827842623045,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link7"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.5283707528763789,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link8"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.6248656970559473,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link9"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.7277705287643609,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link3"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.030325743921366402,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link4"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.2405439596457869,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link5"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.3128664374818691,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link6"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.4687810416313113,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link7"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.5578699003471453,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link8"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.6543639596289623,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link9"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.757269736448284,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link2",
+            "Link4"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.0713789936437903,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link2",
+            "Link5"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.19238271172542915,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link2",
+            "Link6"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.4062755797630788,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link2",
+            "Link7"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.5375425439850328,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link2",
+            "Link8"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.6596581150775959,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link2",
+            "Link9"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.7877870938375848,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link3",
+            "Link5"
+          ],
+          "online": false,
+          "sat_state": "overlap",
+          "max_axis_gap_m": -0.00827726140313148,
+          "fcl_box_collision": true
+        },
+        {
+          "pair": [
+            "Link3",
+            "Link6"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.2062442476687658,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link3",
+            "Link7"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.3392641509935877,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link3",
+            "Link8"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.4601881851259606,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link3",
+            "Link9"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.5867228747144236,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link4",
+            "Link6"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.14202108607398625,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link4",
+            "Link7"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.275040971031632,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link4",
+            "Link8"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.39596506760803085,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link4",
+            "Link9"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.522499731482842,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link5",
+            "Link7"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.0230906283735422,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link5",
+            "Link8"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.1440147472495025,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link5",
+            "Link9"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.2705494038924414,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link6",
+            "Link8"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.03013605520090014,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link6",
+            "Link9"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.15667063632550005,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link7",
+            "Link9"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.035499986797199956,
+          "fcl_box_collision": false
+        }
+      ]
+    },
+    {
+      "label": "natural_seed_5",
+      "q": [
+        0.58,
+        0.0,
+        0.8,
+        1.3,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "pairs": [
+        {
+          "pair": [
+            "base_link",
+            "Link2"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.1929991542078695,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link3"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.19299989066588238,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link4"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.3286947663993031,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link5"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.32769324047429205,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link6"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.3366946163158309,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link7"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.4262520477471007,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link8"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.5392532166891962,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link9"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.6588577833042399,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link3"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.07415639307399288,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link4"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.2579459375527036,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link5"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.25694412890292273,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link6"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.31145522515325674,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link7"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.4237547770438499,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link8"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.5367554998445052,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link9"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.6563605126009892,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link2",
+            "Link4"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.10203538789807916,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link2",
+            "Link5"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.15923356418216061,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link2",
+            "Link6"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.34895430134443306,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link2",
+            "Link7"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.4612542128209137,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link2",
+            "Link8"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.5742550324469886,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link2",
+            "Link9"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.6938603507322678,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link3",
+            "Link5"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.0025721541171108697,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link3",
+            "Link6"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.21709378582689665,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link3",
+            "Link7"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.3501136891521688,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link3",
+            "Link8"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.47103772328409166,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link3",
+            "Link9"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.597572412873005,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link4",
+            "Link6"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.14202108607398647,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link4",
+            "Link7"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.27504097103163205,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link4",
+            "Link8"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.3959650676080311,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link4",
+            "Link9"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.5224997314828421,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link5",
+            "Link7"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.023090628373542033,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link5",
+            "Link8"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.14401474724950242,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link5",
+            "Link9"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.2705494038924414,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link6",
+            "Link8"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.030136055200900153,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link6",
+            "Link9"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.15667063632550002,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link7",
+            "Link9"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.035499986797199984,
+          "fcl_box_collision": false
+        }
+      ]
+    },
+    {
+      "label": "natural_seed_6",
+      "q": [
+        0.58,
+        -0.6,
+        0.8,
+        1.3,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "pairs": [
+        {
+          "pair": [
+            "base_link",
+            "Link2"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.19299913723659967,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link3"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.19299968522691086,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link4"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.36367277700655426,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link5"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.36898979265570303,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link6"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.3931430616537222,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link7"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.3975635516820677,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link8"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.42314605818104384,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "base_link",
+            "Link9"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.5475552192566431,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link3"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.049579482244676926,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link4"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.2831974549317797,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link5"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.2884896856203253,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link6"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.3126417394971742,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link7"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.3170634441269973,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link8"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.41283556800545745,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link1",
+            "Link9"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.5393701494017507,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link2",
+            "Link4"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.10203538789807923,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link2",
+            "Link5"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.1592335641821607,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link2",
+            "Link6"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.3489543013444334,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link2",
+            "Link7"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.4612542128209139,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link2",
+            "Link8"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.5742550324469886,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link2",
+            "Link9"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.6938603507322679,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link3",
+            "Link5"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.0025721541171106754,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link3",
+            "Link6"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.21709378582689676,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link3",
+            "Link7"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.350113689152169,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link3",
+            "Link8"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.47103772328409144,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link3",
+            "Link9"
+          ],
+          "online": true,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.5975724128730051,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link4",
+            "Link6"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.14202108607398647,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link4",
+            "Link7"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.27504097103163216,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link4",
+            "Link8"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.3959650676080311,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link4",
+            "Link9"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.5224997314828422,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link5",
+            "Link7"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.02309062837354206,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link5",
+            "Link8"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.1440147472495023,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link5",
+            "Link9"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.2705494038924414,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link6",
+            "Link8"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.030136055200899917,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link6",
+            "Link9"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.15667063632549988,
+          "fcl_box_collision": false
+        },
+        {
+          "pair": [
+            "Link7",
+            "Link9"
+          ],
+          "online": false,
+          "sat_state": "separated",
+          "max_axis_gap_m": 0.0354999867971999,
+          "fcl_box_collision": false
+        }
+      ]
+    }
+  ]
+}

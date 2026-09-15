@@ -1,0 +1,71 @@
+{
+  "scope_statement": "Model-only continuous joint box containing the proposed straight-joint transition from the fixed allowed start q_start to the current butterfly first-target IK q_task_start, plus 0.0005 in every joint coordinate. It does not cover the remaining butterfly tracking path or any physical state, stopping, attachment, or geometry-error envelope.",
+  "query_id": "off02-butterfly-transition-box-v1-center",
+  "boundary": "kernel_candidate",
+  "candidate_context": {
+    "fixed_allowed_start_q": [0.2, -1.0, 1.2, 0.0, -0.7854, 0.35, 0.0, -0.47, 0.1],
+    "butterfly_first_target_ik_q": [0.145220506589, -1.125971556525, 1.298605201346, 0.0, -0.7854, 0.34987160919, 0.015356115966, -0.471678659574, 0.10801598214],
+    "butterfly_first_target_position_m": [-0.000045357825003508, 0.3948815348800556, 1.3666583431058257],
+    "butterfly_first_target_tool_x_world": [-0.00010018781191595272, 0.0, 0.9999999949812012],
+    "ik_position_error_m": 1.59e-16,
+    "ik_tool_axis_error_rad": 3.66e-08,
+    "candidate_generation": "Deterministic scipy least_squares screening with J4=0 and J5=-0.7854 fixed, followed by the independent 36-pair OBB SAT assessment."
+  },
+  "support_points": [
+    {
+      "id": "fixed_allowed_start",
+      "q": [0.2, -1.0, 1.2, 0.0, -0.7854, 0.35, 0.0, -0.47, 0.1]
+    },
+    {
+      "id": "butterfly_first_target_ik",
+      "q": [0.145220506589, -1.125971556525, 1.298605201346, 0.0, -0.7854, 0.34987160919, 0.015356115966, -0.471678659574, 0.10801598214]
+    }
+  ],
+  "identity_files": [
+    "data/nurbs/ik_input.mat",
+    "config/oscbf_controller.yaml",
+    "src/robot_safecontrol_moveit/oscbf_trajectory.py",
+    "src/robot_safecontrol_moveit/cylinder_geometry.py"
+  ],
+  "unknown_items": [
+    "The complete butterfly tracking joint trajectory and its continuous joint-space envelope have not been generated or certified.",
+    "The production MoveIt transition is not constrained to remain inside this proposed straight-joint transition box.",
+    "Measured state error, command-to-state lag, reaction time, and stopping envelope are unavailable; their half widths are zero only for this model-only result.",
+    "Physical robot geometry error and any future attachment envelope are unavailable; attachment_id=none applies only to the declared digital model.",
+    "The 14 online CBF pairs are checked at the box center here; this certificate supplies the continuous bound only for the 22 omitted non-adjacent pairs."
+  ],
+  "region": {
+    "center_q": [
+      0.1726102532945,
+      -1.0629857782625,
+      1.249302600673,
+      0.0,
+      -0.7854,
+      0.349935804595,
+      0.007678057983,
+      -0.470839329787,
+      0.10400799107
+    ],
+    "task_half_width_q": [
+      0.0278897467055,
+      0.0634857782625,
+      0.049802600673,
+      0.0005,
+      0.0005,
+      0.000564195405,
+      0.008178057983,
+      0.001339329787,
+      0.00450799107
+    ],
+    "state_error_half_width_q": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "stop_half_width_q": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "geometry_error_m": 0.0,
+    "required_clearance_m": 0.001,
+    "task_id": "butterfly-current-v1",
+    "attachment_id": "none",
+    "task_region_source": "q_start/q_task_start endpoint box plus 0.0005 per coordinate; OFF-02 2026-09-15 deterministic offline screening",
+    "state_error_source": "model-only zero; physical state error and lag are unknown",
+    "stop_envelope_source": "model-only zero; reaction and stopping envelope are unknown",
+    "geometry_error_source": "digital generated OBB/STL model only; physical geometry error is unknown"
+  }
+}

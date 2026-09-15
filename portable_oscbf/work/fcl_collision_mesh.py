@@ -41,22 +41,14 @@ class FclCollisionPair:
 LINK_MESH_FILES = {
     name: f"{name}.STL"
     for name in LINK_NAMES
-    if name not in ("world", "Link6", "ee_link")
+    if name not in ("world", "ee_link")
     # world: 环境, 无链路网格
-    # Link6: 包含在 Link5 网格内
     # ee_link: Link9 的固定偏移 (0.235m), 用 Link9 包络覆盖即可
 }
 
-# 网格模型的已标定运动链邻接对。
-# 在 J4/J5 全关节限位的 161 x 321 网格扫描中，Link3-Link5 的凸包净空恒为
-# 16.56--17.17 mm，从未接触。它们是经 Link4 机械连接的近邻结构，绝对 30 mm
-# 规则对该对不可满足；将其作为普通自碰撞对会使任何全局路径规划错误地失败。
-# 这不是一般性距离阈值放松：URDF、网格或关节限位变化后必须重新执行标定扫描。
-CALIBRATED_MESH_PAIR_EXCLUSIONS = frozenset({
-    frozenset(("Link3", "Link5")),
-    frozenset(("Link7", "Link8")),
-    frozenset(("Link8", "Link9")),
-})
+# 只排除运动链上直接相邻的链接，由 _build_collision_pairs 统一处理。
+# Link3-Link5 等非相邻对必须进入离线网格检查，不再使用标定豁免。
+CALIBRATED_MESH_PAIR_EXCLUSIONS = frozenset()
 
 # Primitive checker uses different naming: capsule_Link7_Link8, joint_Link9, etc.
 # Map primitive names to the same calibrated near-neighbor exclusions.
@@ -154,10 +146,11 @@ class FclMeshSelfCollisionChecker:
           2: Link2
           3: Link3
           4: Link4
-          5: Link5 (含 Link6)
-          6: Link7
-          7: Link8
-          8: Link9 / ee_link
+          5: Link5
+          6: Link6
+          7: Link7
+          8: Link8
+          9: Link9 / ee_link
         """
         # 链接分组 (与运动链对齐): 每个有网格的链路独立一组
         groups = [[name] for name in LINK_MESH_FILES]

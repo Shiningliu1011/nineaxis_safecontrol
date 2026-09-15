@@ -241,5 +241,11 @@ collision_pairs:
   - 8
 - - 3
   - 9
-exclusions:
-- Link3-Link5 (calibrated mechanical near-neighbour, see fcl_collision_mesh.py)
+collision_pairs_role: online_cbf_subset
+exclusions: []
+pair_policy:
+  adjacent_pairs: excluded
+  all_nonadjacent_pair_count: 36
+  online_pair_count: 14
+  omitted_nonadjacent_pair_count: 22
+  omitted_pair_evidence: OFF-02 bounded-region certificate
