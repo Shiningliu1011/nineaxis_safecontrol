@@ -22,6 +22,7 @@ from work.jax_barrier_terms import (
     apply_qp_health_gate,
     compute_dcol_obstacle_clearance,
 )
+from work.control_step_record import ControlStepRecord
 from work.jax_path_following import (
     JaxPathFollowingConfig,
     JaxPathGeometry,
@@ -748,27 +749,46 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
              ee_pos_next, ee_rot_next) = _path_finalize(
                 q_next, ee_pos, ee_rot, full_jacobian, sample, u_safe,
                 path.state)
-            return (
-                q_next, u_safe, u_candidate, u_nom, err_report_next,
-                ee_pos_next, ee_rot_next,
-                qp_ok, min_obs_dist, min_esdf_dist, rate_relaxation,
-                rate_solver_slack, h_vals,
-                cbf_grad, active_count, primal_residual,
-                terminal_kkt_residual, terminal_kkt_accepted, dual_max,
-                qp_iterations, delta_slack, next_path_state,
-                sample.position_m, sample.rotation,
-                sample.tangent, sample.omega_per_m, sample.source_time_s,
-                path.cross_track_error_m, path.gamma, path.feedrate_nominal_m_s,
-                path.feedrate_m_s,
-                path.feedrate_joint_limit_m_s, path.feedrate_cbf_limit_m_s,
-                path.feedrate_rate_limit_m_s,
-                path.feedrate_tool_axis_limit_m_s,
-                path.feedrate_endpoint_brake_limit_m_s,
-                path.limiting_reason_code,
-                actual_tangent_speed, sample.at_endpoint, control_q_des,
-                # OFF-15 diagnostics only: unrelaxed rows at the solve state.
-                # Preserve the raw candidate even when qp_ok rejects it.
-                G @ u_candidate - h_qp, ee_pos,
+            return ControlStepRecord(
+                q_next=q_next, u_safe=u_safe, u_candidate=u_candidate,
+                u_nom=u_nom, err_6d=err_report_next,
+                ee_pos=ee_pos_next, ee_rot=ee_rot_next,
+                qp_ok=qp_ok, min_obs_dist=min_obs_dist,
+                # Both bits are the complement of the sentinel predicate in
+                # build_constraint_terms: a sentinel is not a measurement.
+                min_obs_dist_measured=jnp.any(obs_enabled > 0.5),
+                min_esdf_dist=min_esdf_dist,
+                min_esdf_dist_measured=(
+                    jnp.asarray(enable_sdf) & jnp.any(sdf_enabled > 0.5)),
+                rate_constraint_violation=rate_relaxation,
+                rate_solver_slack=rate_solver_slack, h_vals=h_vals,
+                cbf_grad=cbf_grad, active_count=active_count,
+                primal_residual=primal_residual,
+                terminal_kkt_residual=terminal_kkt_residual,
+                terminal_kkt_accepted=terminal_kkt_accepted,
+                dual_max=dual_max, qp_iterations=qp_iterations,
+                delta_slack=delta_slack, path_state=next_path_state,
+                reference_position_m=sample.position_m,
+                reference_rotation=sample.rotation,
+                reference_tangent=sample.tangent,
+                reference_omega_per_m=sample.omega_per_m,
+                reference_source_time_s=sample.source_time_s,
+                cross_track_error_m=path.cross_track_error_m,
+                gamma=path.gamma,
+                feedrate_nominal_m_s=path.feedrate_nominal_m_s,
+                feedrate_m_s=path.feedrate_m_s,
+                feedrate_joint_limit_m_s=path.feedrate_joint_limit_m_s,
+                feedrate_cbf_limit_m_s=path.feedrate_cbf_limit_m_s,
+                feedrate_rate_limit_m_s=path.feedrate_rate_limit_m_s,
+                feedrate_tool_axis_limit_m_s=path.feedrate_tool_axis_limit_m_s,
+                feedrate_endpoint_brake_limit_m_s=(
+                    path.feedrate_endpoint_brake_limit_m_s),
+                limiting_reason_code=path.limiting_reason_code,
+                actual_tangent_speed_m_s=actual_tangent_speed,
+                reference_at_endpoint=sample.at_endpoint,
+                posture_reference=control_q_des,
+                constraint_residuals=G @ u_candidate - h_qp,
+                ee_pos_before=ee_pos,
             )
 
         # Keep the module entry points for profiling, but dispatch production

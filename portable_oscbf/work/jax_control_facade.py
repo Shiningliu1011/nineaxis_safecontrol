@@ -15,6 +15,10 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
+from work.cross_step_state import (
+    advance_cross_step_state,
+    initial_cross_step_state,
+)
 from work.jax_barrier_terms import MAX_JAX_OBSTACLES
 from work.jax_kernel_factory import build_jax_control_kernels
 from work.jax_path_following import (
@@ -64,7 +68,7 @@ class JaxPathTrackingResult:
     ee_pos: np.ndarray
     ee_rot: np.ndarray
     qp_ok: bool
-    min_obs_dist: float
+    min_obs_dist: float | None
     path_state: np.ndarray
     reference_position_m: np.ndarray
     reference_rotation: np.ndarray
@@ -87,6 +91,10 @@ class JaxPathTrackingResult:
     delta_slack: float = 0.0
     constraint_metrics: dict | None = None
     ee_pos_before: np.ndarray | None = None
+    qp_primal_residual: float | None = None
+    min_esdf_dist: float | None = None
+    min_obs_dist_measured: bool = False
+    min_esdf_dist_measured: bool = False
 
 
 class JaxControlLoop:
@@ -200,30 +208,40 @@ class JaxControlLoop:
         self._path_config = None
         self._path_posture_reference = None
 
-        self.last_qp_ok = True
-        self.last_min_obs_dist = 1.0
+        # ``last_min_esdf_dist`` is the one measured distance that keeps a
+        # compatibility mirror here: ``perception_demo`` prints it.  Its twins
+        # now live on the step record only.
         self.last_min_esdf_dist = 1.0
-        # ``last_rate_slack`` is retained as a public compatibility alias for
-        # the actual rate-constraint relaxation.  qpax's raw interior-point
-        # slack is exposed separately because it is not itself a command
-        # violation.
-        self.last_rate_constraint_violation = 0.0
-        self.last_rate_slack = 0.0
-        self.last_rate_solver_slack = 0.0
+        # The rate relaxation is carried by the step record
+        # (``rate_constraint_violation``) together with qpax's raw
+        # interior-point slack (``rate_solver_slack``).  Their former
+        # ``last_rate_slack`` / ``last_rate_constraint_violation`` /
+        # ``last_rate_solver_slack`` mirrors, and with them the documented
+        # "public compatibility alias" promise, were retired: nothing outside a
+        # skipped module read them.
         self.last_qp_active_count = 0
         self.last_qp_iterations = 0
-        self.last_qp_warm_start_used = False
         self.last_qp_primal_residual = 0.0
         self.last_qp_dual_max = 0.0
         self.last_qp_terminal_kkt_residual = 0.0
         self.last_qp_terminal_kkt_accepted = False
-        self.last_cbf_h_delta_norm = 0.0
-        self.last_cbf_grad_delta_norm = 0.0
-        self._last_cbf_h = None
-        self._last_cbf_grad = None
-        self._last_u_safe = np.zeros(9)
+        self.cross_step_state = initial_cross_step_state(9)
         self.last_qp_candidate = np.zeros(9)
         self.last_path_metrics = {}
+
+    # ``portable_oscbf/tests/test_jax_default_input_cache.py`` seeds the
+    # previous command through this attribute to pin the "cacheable compiled
+    # inputs, refreshed live command" contract, and the archived redundancy
+    # probe does the same.  Keep it as the one writable door into the
+    # cross-step state rather than storing a second copy beside it.
+    @property
+    def _last_u_safe(self) -> np.ndarray:
+        return self.cross_step_state.u_safe_prev
+
+    @_last_u_safe.setter
+    def _last_u_safe(self, value: np.ndarray) -> None:
+        self.cross_step_state = self.cross_step_state._replace(
+            u_safe_prev=np.asarray(value))
 
     def configure_path(self, geometry: PathGeometry,
                        config: PathFollowingConfig,
@@ -456,15 +474,13 @@ class JaxControlLoop:
          rate_constraint_violation, rate_solver_slack, h_vals, cbf_grad,
          active_count, primal_residual,
          terminal_kkt_residual, terminal_kkt_accepted, dual_max,
-         qp_iterations, delta_slack) = result
+         qp_iterations, _delta_slack) = result
         self._update_qp_diagnostics(
-            qp_ok, min_dist, min_esdf, rate_constraint_violation,
-            rate_solver_slack, h_vals, cbf_grad,
+            min_esdf, h_vals, cbf_grad,
             active_count, primal_residual, terminal_kkt_residual,
             terminal_kkt_accepted, dual_max, qp_iterations)
         self._last_u_safe = np.asarray(u_safe)
         self.last_qp_candidate = np.asarray(u_candidate)
-        self.last_delta_slack = float(delta_slack)
         return np.asarray(q_next), np.asarray(u_safe)
 
     def freeze_qp_problem(self, q: np.ndarray, u_des: np.ndarray,
@@ -563,24 +579,23 @@ class JaxControlLoop:
              rate_solver_slack, h_vals, cbf_grad,
              active_count, primal_residual, terminal_kkt_residual,
              terminal_kkt_accepted, dual_max, qp_iterations,
-             delta_slack) = result
+             # Unpacked for arity only: the frozen-QP slack reaches callers
+             # through the step record, which the legacy tuple API cannot carry.
+             _delta_slack) = result
         else:
             (q_next, u_safe, u_candidate, u_nom, err_6d, ee_pos, ee_rot,
              qp_ok, min_dist, min_esdf, rate_constraint_violation,
             rate_solver_slack, active_count,
              primal_residual, terminal_kkt_residual, terminal_kkt_accepted,
              dual_max, qp_iterations) = result
-            delta_slack = 0.0
             h_vals = None
             cbf_grad = None
         self._update_qp_diagnostics(
-            qp_ok, min_dist, min_esdf, rate_constraint_violation,
-            rate_solver_slack, h_vals, cbf_grad,
+            min_esdf, h_vals, cbf_grad,
             active_count, primal_residual, terminal_kkt_residual,
             terminal_kkt_accepted, dual_max, qp_iterations)
         self._last_u_safe = np.asarray(u_safe)
         self.last_qp_candidate = np.asarray(u_candidate)
-        self.last_delta_slack = float(delta_slack)
         return (
             np.asarray(q_next), np.asarray(u_safe), np.asarray(u_nom),
             np.asarray(err_6d), np.asarray(ee_pos), np.asarray(ee_rot),
@@ -626,82 +641,80 @@ class JaxControlLoop:
             jx['obs_alpha'], jx['u_safe_prev'],
             jx['sdf_distance'], jx['sdf_origin'], jx['sdf_voxel_size'],
             jx['sdf_enabled'], jx['sdf_margin'])
-        (q_next, u_safe, u_candidate, u_nom, err_6d, ee_pos, ee_rot,
-         qp_ok, min_dist, min_esdf, rate_constraint_violation,
-         rate_solver_slack, h_vals, cbf_grad,
-         active_count, primal_residual, terminal_kkt_residual,
-         terminal_kkt_accepted, dual_max, qp_iterations, delta_slack,
-         next_path_state,
-         reference_position, reference_rotation, reference_tangent,
-         reference_omega_per_m, reference_source_time, cross_track_error,
-         gamma, feedrate_nominal, feedrate, feedrate_joint_limit, feedrate_cbf_limit,
-         feedrate_rate_limit, feedrate_tool_axis_limit, feedrate_endpoint_brake_limit,
-         limiting_reason_code, actual_tangent_speed,
-         reference_at_endpoint, posture_reference,
-         constraint_residuals, ee_pos_before) = result
         self._update_qp_diagnostics(
-            qp_ok, min_dist, min_esdf, rate_constraint_violation,
-            rate_solver_slack, h_vals, cbf_grad,
-            active_count, primal_residual, terminal_kkt_residual,
-            terminal_kkt_accepted, dual_max, qp_iterations)
-        self._last_u_safe = np.asarray(u_safe)
-        self.last_qp_candidate = np.asarray(u_candidate)
-        next_state_np = np.asarray(next_path_state)
+            result.min_esdf_dist, result.h_vals, result.cbf_grad,
+            result.active_count, result.primal_residual,
+            result.terminal_kkt_residual, result.terminal_kkt_accepted,
+            result.dual_max, result.qp_iterations)
+        self._last_u_safe = np.asarray(result.u_safe)
+        self.last_qp_candidate = np.asarray(result.u_candidate)
+        next_state_np = np.asarray(result.path_state)
         self.last_path_metrics = {
             'path_progress_m': float(next_state_np[0]),
             'path_projection_m': float(next_state_np[1]),
             'path_reference_lead_m': float(next_state_np[0] - next_state_np[1]),
-            'path_cross_track_error_m': float(cross_track_error),
-            'path_gamma': float(gamma),
-            'path_feedrate_nominal_m_s': float(feedrate_nominal),
-            'path_feedrate_m_s': float(feedrate),
-            'path_feedrate_joint_limit_m_s': float(feedrate_joint_limit),
-            'path_feedrate_cbf_limit_m_s': float(feedrate_cbf_limit),
-            'path_feedrate_rate_limit_m_s': float(feedrate_rate_limit),
-            'path_feedrate_tool_axis_limit_m_s': float(feedrate_tool_axis_limit),
+            'path_cross_track_error_m': float(result.cross_track_error_m),
+            'path_gamma': float(result.gamma),
+            'path_feedrate_nominal_m_s': float(result.feedrate_nominal_m_s),
+            'path_feedrate_m_s': float(result.feedrate_m_s),
+            'path_feedrate_joint_limit_m_s': float(
+                result.feedrate_joint_limit_m_s),
+            'path_feedrate_cbf_limit_m_s': float(
+                result.feedrate_cbf_limit_m_s),
+            'path_feedrate_rate_limit_m_s': float(
+                result.feedrate_rate_limit_m_s),
+            'path_feedrate_tool_axis_limit_m_s': float(
+                result.feedrate_tool_axis_limit_m_s),
             'path_feedrate_endpoint_brake_limit_m_s': float(
-                feedrate_endpoint_brake_limit),
-            'path_actual_tangent_speed_m_s': float(actual_tangent_speed),
+                result.feedrate_endpoint_brake_limit_m_s),
+            'path_actual_tangent_speed_m_s': float(
+                result.actual_tangent_speed_m_s),
             'path_endpoint_hold_s': float(next_state_np[3]),
             'path_completed': float(next_state_np[4] > 0.5),
-            'path_limit_code': float(limiting_reason_code),
-            'path_reference_at_endpoint': float(reference_at_endpoint),
+            'path_limit_code': float(result.limiting_reason_code),
+            'path_reference_at_endpoint': float(result.reference_at_endpoint),
             'path_posture_reference_enabled': float(
                 self.path_posture_reference_enabled),
-            'path_delta_slack': float(delta_slack),
+            'path_delta_slack': float(result.delta_slack),
         }
         return JaxPathTrackingResult(
-            q_next=np.asarray(q_next),
-            u_safe=np.asarray(u_safe),
-            u_nom=np.asarray(u_nom),
-            err_6d=np.asarray(err_6d),
-            ee_pos=np.asarray(ee_pos),
-            ee_rot=np.asarray(ee_rot),
-            qp_ok=bool(qp_ok),
-            min_obs_dist=float(min_dist),
+            q_next=np.asarray(result.q_next),
+            u_safe=np.asarray(result.u_safe),
+            u_nom=np.asarray(result.u_nom),
+            err_6d=np.asarray(result.err_6d),
+            ee_pos=np.asarray(result.ee_pos),
+            ee_rot=np.asarray(result.ee_rot),
+            qp_ok=bool(result.qp_ok),
+            min_obs_dist=float(result.min_obs_dist),
+            min_obs_dist_measured=bool(result.min_obs_dist_measured),
+            min_esdf_dist=float(result.min_esdf_dist),
+            min_esdf_dist_measured=bool(result.min_esdf_dist_measured),
             path_state=next_state_np,
-            reference_position_m=np.asarray(reference_position),
-            reference_rotation=np.asarray(reference_rotation),
-            posture_reference=np.asarray(posture_reference),
-            reference_tangent=np.asarray(reference_tangent),
-            reference_omega_per_m=np.asarray(reference_omega_per_m),
-            reference_source_time_s=float(reference_source_time),
-            cross_track_error_m=float(cross_track_error),
-            gamma=float(gamma),
-            feedrate_nominal_m_s=float(feedrate_nominal),
-            feedrate_m_s=float(feedrate),
-            feedrate_joint_limit_m_s=float(feedrate_joint_limit),
-            feedrate_cbf_limit_m_s=float(feedrate_cbf_limit),
-            feedrate_rate_limit_m_s=float(feedrate_rate_limit),
-            feedrate_tool_axis_limit_m_s=float(feedrate_tool_axis_limit),
-            feedrate_endpoint_brake_limit_m_s=float(feedrate_endpoint_brake_limit),
-            limiting_reason_code=int(limiting_reason_code),
-            actual_tangent_speed_m_s=float(actual_tangent_speed),
-            reference_at_endpoint=bool(reference_at_endpoint),
-            delta_slack=float(delta_slack),
+            reference_position_m=np.asarray(result.reference_position_m),
+            reference_rotation=np.asarray(result.reference_rotation),
+            posture_reference=np.asarray(result.posture_reference),
+            reference_tangent=np.asarray(result.reference_tangent),
+            reference_omega_per_m=np.asarray(result.reference_omega_per_m),
+            reference_source_time_s=float(result.reference_source_time_s),
+            cross_track_error_m=float(result.cross_track_error_m),
+            gamma=float(result.gamma),
+            feedrate_nominal_m_s=float(result.feedrate_nominal_m_s),
+            feedrate_m_s=float(result.feedrate_m_s),
+            feedrate_joint_limit_m_s=float(result.feedrate_joint_limit_m_s),
+            feedrate_cbf_limit_m_s=float(result.feedrate_cbf_limit_m_s),
+            feedrate_rate_limit_m_s=float(result.feedrate_rate_limit_m_s),
+            feedrate_tool_axis_limit_m_s=float(
+                result.feedrate_tool_axis_limit_m_s),
+            feedrate_endpoint_brake_limit_m_s=float(
+                result.feedrate_endpoint_brake_limit_m_s),
+            limiting_reason_code=int(result.limiting_reason_code),
+            actual_tangent_speed_m_s=float(result.actual_tangent_speed_m_s),
+            reference_at_endpoint=bool(result.reference_at_endpoint),
+            delta_slack=float(result.delta_slack),
+            qp_primal_residual=float(result.primal_residual),
             constraint_metrics=self._path_constraint_metrics(
-                constraint_residuals, h_vals, jx),
-            ee_pos_before=np.asarray(ee_pos_before),
+                result.constraint_residuals, result.h_vals, jx),
+            ee_pos_before=np.asarray(result.ee_pos_before),
         )
 
     def _path_constraint_metrics(self, residuals, static_margins, inputs) -> dict:
@@ -745,41 +758,51 @@ class JaxControlLoop:
             }
         return metrics
 
-    def _update_qp_diagnostics(self, qp_ok, min_dist, min_esdf,
-                               rate_constraint_violation, rate_solver_slack,
-                               h_vals, cbf_grad, active_count,
+    def _update_qp_diagnostics(self, min_esdf, h_vals, cbf_grad, active_count,
                                primal_residual, terminal_kkt_residual,
                                terminal_kkt_accepted, dual_max, qp_iterations):
-        self.last_qp_ok = bool(qp_ok)
-        self.last_min_obs_dist = float(min_dist)
+        """Route one step's diagnostics to their two destinations.
+
+        The step record is the carrier the node, the evaluator and the
+        telemetry read, so what remains here is only the pair that cannot live
+        in a step record: the per-attribute mirrors that a test or a research
+        script reads *by name*, and the cross-step CBF memory, which by
+        definition spans two steps.  Assigning both kinds from one place is
+        what made the old ``last_delta_slack`` side channel look initialised
+        when it was not.
+        """
+        self._mirror_qp_diagnostics(
+            min_esdf, active_count, primal_residual, terminal_kkt_residual,
+            terminal_kkt_accepted, dual_max, qp_iterations)
+        self._advance_cbf_telemetry(h_vals, cbf_grad)
+
+    def _mirror_qp_diagnostics(self, min_esdf, active_count, primal_residual,
+                               terminal_kkt_residual, terminal_kkt_accepted,
+                               dual_max, qp_iterations):
+        """Keep the named attributes alive for the readers that still use them.
+
+        A mirror is justified by a reader, not by a value: ``last_min_esdf_dist``
+        has a production reader in ``perception_demo``, the rest are read by
+        tests and archived research scripts.  What the step record already
+        carries is not mirrored here.
+        """
         self.last_min_esdf_dist = float(min_esdf)
-        self.last_rate_constraint_violation = max(
-            0.0, float(rate_constraint_violation))
-        self.last_rate_slack = self.last_rate_constraint_violation
-        self.last_rate_solver_slack = max(0.0, float(rate_solver_slack))
         self.last_qp_active_count = int(active_count)
         self.last_qp_iterations = int(qp_iterations)
-        self.last_qp_warm_start_used = False
         self.last_qp_primal_residual = float(primal_residual)
         self.last_qp_terminal_kkt_residual = float(terminal_kkt_residual)
         self.last_qp_terminal_kkt_accepted = bool(terminal_kkt_accepted)
         self.last_qp_dual_max = float(dual_max)
-        if h_vals is None or cbf_grad is None:
-            self.last_cbf_h_delta_norm = float('nan')
-            self.last_cbf_grad_delta_norm = float('nan')
-            self._last_cbf_h = None
-            self._last_cbf_grad = None
-            return
-        h_now = np.asarray(h_vals)
-        grad_now = np.asarray(cbf_grad)
-        self.last_cbf_h_delta_norm = (
-            0.0 if self._last_cbf_h is None
-            else float(np.linalg.norm(h_now - self._last_cbf_h)))
-        self.last_cbf_grad_delta_norm = (
-            0.0 if self._last_cbf_grad is None
-            else float(np.linalg.norm(grad_now - self._last_cbf_grad)))
-        self._last_cbf_h = h_now.copy()
-        self._last_cbf_grad = grad_now.copy()
+
+    def _advance_cbf_telemetry(self, h_vals, cbf_grad) -> None:
+        """Fold this step's CBF telemetry into the cross-step state.
+
+        No telemetry on this step (the fast path) drops the previous sample
+        instead of keeping it, so the two delta norms report ``NaN``,
+        unmeasured, rather than a stale difference.
+        """
+        self.cross_step_state = advance_cross_step_state(
+            self.cross_step_state, h_vals=h_vals, cbf_grad=cbf_grad)
 
     def _prepare_jax_inputs(self, obs: ObstacleState | None = None,
                             *, obs_pos=None, obs_radii=None, obs_enabled=None,

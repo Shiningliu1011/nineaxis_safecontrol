@@ -13,6 +13,7 @@ import json
 import re
 import sys
 import time
+from dataclasses import replace
 from pathlib import Path
 
 # Keep the single-threaded XLA contract of the portable suite before the node
@@ -273,37 +274,39 @@ def test_production_config_refactor_preserves_control_outputs_from_8479740(
     observed = []
     try:
         for _ in range(4):
-            step = node.step_once(q)
-            observed.append(step)
-            q = step["q_next"]
+            record = node.step_once(q)
+            observed.append(record)
+            q = record.q_next
     finally:
         node.destroy_node()
         rclpy.shutdown(context=context)
 
     np.testing.assert_allclose(
-        np.stack([step["err_6d"] for step in observed]),
+        np.stack([record.err_6d for record in observed]),
         expected_error,
         rtol=1e-5,
         atol=1e-7,
     )
     np.testing.assert_allclose(
-        [step["feedrate_m_s"] for step in observed],
+        [record.feedrate_m_s for record in observed],
         expected_feedrate,
         rtol=1e-5,
         atol=1e-7,
     )
     np.testing.assert_allclose(
-        [step["path_progress_m"] for step in observed],
+        # The record has no separate path_progress_m slot: the projection is
+        # path_state[0], exactly what the node's dict used to copy.
+        [record.path_state[0] for record in observed],
         expected_progress,
         rtol=1e-5,
         atol=1e-7,
     )
     np.testing.assert_allclose(
-        [step["qp_primal_residual"] for step in observed],
+        [record.qp_primal_residual for record in observed],
         np.zeros(4),
         atol=1e-12,
     )
-    assert all(step["qp_ok"] for step in observed)
+    assert all(record.qp_ok for record in observed)
 
 
 def test_runtime_single_managed_parameter_change_is_rejected(controller_fixture):
@@ -405,7 +408,9 @@ def test_hold_commands_continue_during_background_report(
     monkeypatch.setattr(node, "_path_state", node._loop.initial_path_state())
     monkeypatch.setattr(node, "_last_result", None)
     step = node.step_once(_START_Q)
-    step["reference_at_endpoint"] = True
+    # The record is immutable, so the fake terminal step is a copy with the
+    # endpoint flag replaced instead of an in-place edit of the return value.
+    step = replace(step, reference_at_endpoint=True)
     monkeypatch.setattr(node, "step_once", lambda *args, **kwargs: step)
     monkeypatch.setattr(node, "_report_writer", writer)
     monkeypatch.setattr(node, "_tracking_report_path", lambda: str(tmp_path / "terminal.md"))
@@ -468,16 +473,16 @@ def test_hold_commands_continue_during_background_report(
 
 def test_step_once_returns_valid_safe_state(controller_fixture):
     node = controller_fixture["node"]
-    step = node.step_once(_START_Q)
-    q_next = step["q_next"]
+    record = node.step_once(_START_Q)
+    q_next = record.q_next
     assert q_next.shape == (9,)
     assert _in_bounds(node, q_next)
-    assert step["u_safe"].shape == (9,)
-    assert step["err_6d"].shape == (6,)
-    assert np.all(np.isfinite(step["u_safe"]))
-    assert np.all(np.isfinite(step["err_6d"]))
-    assert step["qp_ok"]
-    assert step["min_obs_dist"] is None  # disabled obstacle sentinel is not a measurement
+    assert record.u_safe.shape == (9,)
+    assert record.err_6d.shape == (6,)
+    assert np.all(np.isfinite(record.u_safe))
+    assert np.all(np.isfinite(record.err_6d))
+    assert record.qp_ok
+    assert record.min_obs_dist is None  # disabled obstacle sentinel is not a measurement
 
 
 def test_tracking_evaluator_integration(controller_fixture, tmp_path):
@@ -488,8 +493,8 @@ def test_tracking_evaluator_integration(controller_fixture, tmp_path):
     # 模拟几步跟踪
     node._evaluator = node._make_tracking_evaluator()
     for i in range(5):
-        step = node.step_once(_START_Q)
-        node._evaluator.update(step, wall_time_s=float(i) * 0.01)
+        record = node.step_once(_START_Q)
+        node._evaluator.update(record, wall_time_s=float(i) * 0.01)
     report = node.tracking_report()
     assert report is not None
     assert report.total_steps == 5
@@ -689,9 +694,9 @@ def test_perf_report_p95_within_budget(controller_fixture):
         q_follow = _START_Q.copy()
         for _ in range(200):
             t0 = time.perf_counter()
-            step = node.step_once(q_follow)
+            record = node.step_once(q_follow)
             node._step_durations.append((time.perf_counter() - t0) * 1000.0)
-            q_follow = np.asarray(step["q_next"], dtype=float)
+            q_follow = np.asarray(record.q_next, dtype=float)
 
     node.write_perf_report()
     text = controller_fixture["perf_path"].read_text(encoding="utf-8")

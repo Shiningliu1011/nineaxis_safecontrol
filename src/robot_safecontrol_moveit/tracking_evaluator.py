@@ -38,6 +38,22 @@ def _boolean(value: Any) -> bool | None:
     return bool(value) if isinstance(value, (bool, np.bool_)) else None
 
 
+# Gate slots decide the online verdict, so a value that is not a real boolean
+# must not be indistinguishable from "not measured": ``0``/``1``/``"false"`` in
+# one of these slots would silently drop a genuine measurement.  The value
+# still counts as unmeasured -- fail-closed is unchanged -- but the format
+# error is named in the report instead of disappearing.
+
+
+def _gate(value: Any, name: str, invalid: list[str]) -> bool | None:
+    if value is None:
+        return None
+    if isinstance(value, (bool, np.bool_)):
+        return bool(value)
+    invalid.append(name)
+    return None
+
+
 def _vector(value: Any, shape: tuple[int, ...]) -> np.ndarray:
     array = np.asarray(value, dtype=float)
     if array.shape != shape or not np.isfinite(array).all():
@@ -76,6 +92,9 @@ class TrackingStepData:
     at_endpoint: bool | None = None
     limiting_reason_code: int | None = None
     constraint_metrics: dict[str, dict] = field(default_factory=dict)
+    # Gate slots that carried a value of the wrong type.  Recorded so the
+    # report can name them; a format error is not a rejection.
+    invalid_gate_slots: tuple[str, ...] = ()
 
 
 def step_from_result(result: Any) -> TrackingStepData:
@@ -85,13 +104,18 @@ def step_from_result(result: Any) -> TrackingStepData:
     min_obs_dist is a margin, not a physical obstacle clearance.
     """
     if isinstance(result, TrackingStepData):
+        invalid: list[str] = list(result.invalid_gate_slots)
         values = {name: _number(value) for name, value in result.values.items()}
         _validate_values(values)
-        return replace(result, values=values, qp_ok=_boolean(result.qp_ok),
-                       admission_ok=_boolean(result.admission_ok), overlap=_boolean(result.overlap),
+        return replace(result, values=values,
+                       qp_ok=_gate(result.qp_ok, "qp_ok", invalid),
+                       admission_ok=_gate(result.admission_ok, "admission_ok", invalid),
+                       overlap=_gate(result.overlap, "overlap", invalid),
                        projected_progress_m=_number(result.projected_progress_m),
                        projection_before_m=_number(result.projection_before_m),
-                       reference_progress_m=_number(result.reference_progress_m))
+                       reference_progress_m=_number(result.reference_progress_m),
+                       invalid_gate_slots=tuple(sorted(set(invalid))))
+    invalid = []
     get = result.get if isinstance(result, Mapping) else lambda k, default=None: getattr(result, k, default)
     aliases = {
         "pos_error_m": "pos_error_m",
@@ -146,12 +170,43 @@ def step_from_result(result: Any) -> TrackingStepData:
             reference_progress = projected = math.nan
     code = _number(get("limiting_reason_code"))
     return TrackingStepData(
-        values, _boolean(get("qp_ok")), _boolean(get("admission_ok")),
-        _boolean(get("overlap")), projected, _number(get("projection_before_m")),
+        values, _gate(get("qp_ok"), "qp_ok", invalid),
+        _gate(get("admission_ok"), "admission_ok", invalid),
+        _gate(get("overlap"), "overlap", invalid),
+        projected, _number(get("projection_before_m")),
         reference_progress, _boolean(get("reference_at_endpoint")),
         int(code) if code is not None and math.isfinite(code) and code.is_integer() else None,
         get("constraint_metrics", {}) or {},
+        tuple(sorted(set(invalid))),
     )
+
+
+# The slots this module reads from the control node's step record.  Declared
+# by name so the record is a contract rather than an object that happens to
+# have the right attributes, and so this module stays importable without JAX.
+STEP_RECORD_SLOTS = (
+    "qp_ok", "admission_ok", "overlap", "min_obs_dist", "delta_slack",
+    "qp_primal_residual", "step_latency_ms", "cross_track_error_m",
+    "feedrate_m_s", "actual_tangent_speed_m_s", "reference_source_time_s",
+    "err_6d", "ee_pos", "ee_rot", "reference_position_m",
+    "reference_rotation", "reference_tangent", "reference_at_endpoint",
+    "path_state", "limiting_reason_code", "constraint_metrics",
+    "projection_before_m",
+)
+
+
+def step_from_record(record: Any) -> TrackingStepData:
+    """Read the control node's step record as one measurement sample.
+
+    The explicit counterpart to :func:`step_from_result`'s generic
+    mapping/``getattr`` path: the control loop hands its record straight over,
+    so its slots are listed in :data:`STEP_RECORD_SLOTS` instead of being
+    discovered by duck typing.  Absent slots stay unmeasured.
+    """
+    return step_from_result({
+        slot: getattr(record, slot) for slot in STEP_RECORD_SLOTS
+        if hasattr(record, slot)
+    })
 
 
 def _validate_values(values: dict) -> None:
@@ -234,6 +289,7 @@ class TrackingReport:
     deadline_ms: float | None
     deadline_miss_rate: float | None
     issues: tuple[str, ...]
+    gate_format_counts: dict[str, int] = field(default_factory=dict)
 
     def summary(self) -> str:
         return (
@@ -336,7 +392,16 @@ class TrackingEvaluator:
     def trajectory_duration_s(self) -> float | None:
         return self._trajectory_duration_s
 
-    def update(self, step: Any, *, wall_time_s: float | None = None) -> None:
+    def update(self, step: Any, *, wall_time_s: float | None = None,
+               step_latency_ms: float | None = None,
+               projection_before_m: float | None = None) -> None:
+        """Append one sample.
+
+        ``step_latency_ms`` and ``projection_before_m`` belong to the caller's
+        measurement boundary, not to the step the sample describes, so they are
+        passed here rather than carried inside the sample.  They override the
+        same names read from the sample when supplied.
+        """
         if self._termination is not None:
             raise RuntimeError("cannot append after finish; start a new evaluator")
         if isinstance(step, Mapping):
@@ -344,8 +409,28 @@ class TrackingEvaluator:
                 if key in step and step[key] != expected:
                     self._events["evidence_invalid"] += 1
                     raise ValueError("sample evidence differs from this evaluator; use a separate report")
-        self._steps.append(deepcopy(step_from_result(step)))
+        data = step_from_result(step)
+        if step_latency_ms is not None or projection_before_m is not None:
+            values = dict(data.values)
+            if step_latency_ms is not None:
+                values["step_latency_ms"] = _number(step_latency_ms)
+            _validate_values(values)
+            data = replace(
+                data, values=values,
+                projection_before_m=(
+                    _number(projection_before_m) if projection_before_m is not None
+                    else data.projection_before_m))
+        self._steps.append(deepcopy(data))
         self._times.append(_number(wall_time_s))
+
+    def update_from_step_record(self, record: Any, *,
+                                wall_time_s: float | None = None,
+                                step_latency_ms: float | None = None,
+                                projection_before_m: float | None = None) -> None:
+        """Append one control step record (see :func:`step_from_record`)."""
+        self.update(step_from_record(record), wall_time_s=wall_time_s,
+                    step_latency_ms=step_latency_ms,
+                    projection_before_m=projection_before_m)
 
     def update_from_controller_result(self, result: dict, *, wall_time_s: float | None = None) -> None:
         self.update(result, wall_time_s=wall_time_s)
@@ -401,7 +486,16 @@ class TrackingEvaluator:
         qp_rate = (qp_known - qp_fail) / qp_known if qp_known else None
         admission = Counter("accepted" if s.admission_ok is True else "rejected" if s.admission_ok is False else "unmeasured" for s in steps)
         overlap = Counter("overlap" if s.overlap is True else "clear" if s.overlap is False else "unmeasured" for s in steps)
+        gate_format = Counter(name for s in steps for name in s.invalid_gate_slots)
         issues: list[str] = []
+        if gate_format:
+            # A gate slot that was not given as a boolean is unmeasured, never
+            # a rejection -- but it is a format error, and saying so is the
+            # only way to notice a real measurement silently going missing.
+            issues.append(
+                "gate slots carried a non-boolean value and were counted as "
+                "unmeasured: " + ", ".join(
+                    f"{name}={count}" for name, count in sorted(gate_format.items())))
         times_valid = n > 0 and all(t is not None and math.isfinite(t) for t in self._times)
         times_ordered = times_valid and all(b > a for a, b in zip(self._times, self._times[1:]))
         wall = self._times[-1] - self._times[0] if times_ordered else None
@@ -521,6 +615,7 @@ class TrackingEvaluator:
             limiting_reason_counts=dict(Counter(s.limiting_reason_code for s in steps if s.limiting_reason_code is not None)),
             constraint_metrics=constraints, wall_time_s=wall, trajectory_duration_s=self.trajectory_duration_s,
             deadline_ms=self._deadline_ms, deadline_miss_rate=deadline_rate, issues=tuple(issues),
+            gate_format_counts=dict(gate_format),
         )
 
     def _constraint_report(self, issues: list[str]) -> dict[str, dict]:

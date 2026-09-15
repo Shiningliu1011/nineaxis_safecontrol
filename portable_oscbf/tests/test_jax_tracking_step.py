@@ -97,5 +97,9 @@ def test_tracking_fast_path_preserves_safe_command_without_h_gradient_telemetry(
 
     np.testing.assert_allclose(fast_result[1], full_result[1], atol=1e-10)
     assert fast_result[6]
-    assert np.isnan(loop.last_cbf_h_delta_norm)
-    assert np.isnan(loop.last_cbf_grad_delta_norm)
+    # The two delta norms moved from loose loop attributes into the cross-step
+    # state, which is where the previous CBF telemetry now lives.  The
+    # assertion is unchanged: a fast path must report them unmeasured (NaN),
+    # never a stale difference from the last step that did collect telemetry.
+    assert np.isnan(loop.cross_step_state.cbf_h_delta_norm)
+    assert np.isnan(loop.cross_step_state.cbf_grad_delta_norm)

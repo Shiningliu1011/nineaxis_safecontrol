@@ -56,17 +56,15 @@ def test_unverified_rate_slack_rolls_back_jax_path_state_and_emits_zero(monkeypa
 
     class _JaxLoop:
         is_initialized = True
-        last_rate_slack = 0.02
         last_qp_candidate = np.full(9, 0.3)
         last_qp_active_count = 0
         last_qp_iterations = 8
-        last_qp_warm_start_used = False
         last_qp_primal_residual = 0.0
         last_qp_terminal_kkt_residual = 0.0
         last_qp_terminal_kkt_accepted = True
         last_qp_dual_max = 0.0
-        last_cbf_h_delta_norm = 0.0
-        last_cbf_grad_delta_norm = 0.0
+        cross_step_state = SimpleNamespace(
+            cbf_h_delta_norm=0.0, cbf_grad_delta_norm=0.0)
 
         @staticmethod
         def path_tracking_step(*, q, path_state, **_kwargs):

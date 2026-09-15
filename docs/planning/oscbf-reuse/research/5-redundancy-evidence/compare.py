@@ -52,8 +52,13 @@ for strategy in ('default', 'joint_midpoint', 'existing_manipulability'):
                 axis_error_rad=float(np.arccos(np.clip(rnext[:,0] @ r0[:,0], -1, 1))),
                 axis_speed_rad_s=float(axis_speed), min_normalized_limit_margin=float(np.min(np.minimum(qnext-lo,hi-qnext)/(hi-lo))),
                 rank5=int(np.sum(svals > svals[0]*1e-10)), sigma5=float(svals[-1]),
-                qp_ok=bool(ok), active_count=loop.last_qp_active_count, delta_slack=loop.last_delta_slack,
-                min_h=float(np.min(loop._last_cbf_h)), qp_correction_norm=float(np.linalg.norm(u-unom))))
+                qp_ok=bool(ok), active_count=loop.last_qp_active_count,
+                # ``loop.last_delta_slack`` was removed: only two of the three
+                # step entry points assigned it and nothing initialised it, so
+                # this reader could observe a stale value.  The frozen-QP slack
+                # now travels on the step record, which ``tracking_step()`` does
+                # not return.
+                min_h=float(np.min(loop.cross_step_state.cbf_h_prev)), qp_correction_norm=float(np.linalg.norm(u-unom))))
             q = qnext
         (OUT / f'{strategy}-{scene}.json').write_text(json.dumps(records, indent=2))
         row = dict(strategy=strategy, scene=scene, steps=len(records),
@@ -67,7 +72,6 @@ for strategy in ('default', 'joint_midpoint', 'existing_manipulability'):
             ranks=sorted(set(r['rank5'] for r in records)),
             qp_failures=sum(not r['qp_ok'] for r in records),
             active_step_fraction=sum(r['active_count']>0 for r in records)/len(records),
-            max_delta_slack=max(r['delta_slack'] for r in records),
             min_h=min(r['min_h'] for r in records),
             max_qp_correction_norm=max(r['qp_correction_norm'] for r in records))
         rows.append(row)

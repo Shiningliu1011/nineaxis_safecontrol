@@ -13,7 +13,7 @@ from __future__ import annotations
 import time
 from dataclasses import replace
 from pathlib import Path
-from typing import List, Optional, Sequence
+from typing import List, Optional, Sequence, TYPE_CHECKING
 
 import numpy as np
 import rclpy
@@ -28,6 +28,11 @@ from rcl_interfaces.msg import SetParametersResult
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Float32MultiArray
 from std_srvs.srv import Trigger
+
+if TYPE_CHECKING:
+    # ``work`` is importable only after ``bootstrap_portable`` extends
+    # ``sys.path``; the annotation is a string, so this never runs.
+    from work.jax_control_facade import JaxPathTrackingResult
 
 from .oscbf_trajectory import bootstrap_portable
 from .production_config import (
@@ -104,6 +109,7 @@ class OscbfController(Node):
         self._received_any_state = False
         self._last_state_time: Optional[float] = None
         self._last_result = None
+        self._last_projection_before_m: Optional[float] = None
         self._trajectory_duration_s = 30.0
         self._completion_logged = False
         self._hold_q: Optional[np.ndarray] = None
@@ -517,8 +523,17 @@ class OscbfController(Node):
             "obs_alpha": slots[:, 9].astype(np.float64),
         }
 
-    def step_once(self, q: np.ndarray, *, obs_kwargs: dict | None = None) -> dict:
-        """Advance the control kernel by one step (pure method for tests)."""
+    def step_once(self, q: np.ndarray, *, obs_kwargs: dict | None = None
+                  ) -> "JaxPathTrackingResult":
+        """Advance the control kernel by one step (pure method for tests).
+
+        Returns the kernel's step record unchanged apart from one slot:
+        ``min_obs_dist`` is set to ``None`` whenever the record reports that
+        distance as unmeasured, so no consumer has to re-derive the
+        disabled-obstacle sentinel from its own inputs.  The pre-step
+        projection the evaluator needs is kept on the node instead, because
+        only the node knows the evaluation geometry.
+        """
         kwargs = dict(
             q=np.asarray(q, dtype=float),
             path_state=self._path_state,
@@ -539,48 +554,13 @@ class OscbfController(Node):
             half_window_segments=self._evaluation_geometry.num_segments,
         ) if self._evaluator is None or self._evaluator.step_count == 0 else (float(self._path_state[1]), 0)
         self._path_state = np.asarray(result.path_state, dtype=float)
+        self._last_projection_before_m = projection_before
+        if not result.min_obs_dist_measured:
+            # The kernel substitutes a finite sentinel when the obstacle
+            # geometry is disabled; a sentinel is not a measurement.
+            result = replace(result, min_obs_dist=None)
         self._last_result = result
-        return {
-            "q_next": np.asarray(result.q_next, dtype=float),
-            "u_safe": np.asarray(result.u_safe, dtype=float),
-            "err_6d": np.asarray(result.err_6d, dtype=float),
-            "ee_pos": np.asarray(result.ee_pos, dtype=float),
-            "ee_rot": np.asarray(result.ee_rot, dtype=float),
-            "reference_rotation": np.asarray(result.reference_rotation, dtype=float),
-            "reference_tangent": np.asarray(result.reference_tangent, dtype=float),
-            "path_state": np.asarray(result.path_state, dtype=float),
-            "projection_before_m": projection_before,
-            "actual_tangent_speed_m_s": float(result.actual_tangent_speed_m_s),
-            "constraint_metrics": result.constraint_metrics,
-            "reference_position_m": np.asarray(
-                result.reference_position_m, dtype=float),
-            "path_progress_m": float(result.path_state[0]),
-            "qp_ok": bool(result.qp_ok),
-            "qp_primal_residual": float(
-                self._loop.last_qp_primal_residual
-            ),
-            # The kernel uses 1.0 as the disabled-obstacle sentinel. Do not
-            # report it as a measured metre of clearance/margin.
-            "min_obs_dist": float(result.min_obs_dist) if obs_kwargs and np.any(
-                np.asarray(obs_kwargs.get("obs_enabled", [])) > 0.5) else None,
-            "delta_slack": float(result.delta_slack),
-            # TrackingEvaluator 依赖这些键计算完成度/横偏/速率统计,
-            # 缺失会让 report 的 done=0% 而 progress 行却显示 100%。
-            "reference_source_time_s": float(result.reference_source_time_s),
-            "reference_at_endpoint": bool(result.reference_at_endpoint),
-            "cross_track_error_m": float(result.cross_track_error_m),
-            "feedrate_m_s": float(result.feedrate_m_s),
-            "feedrate_nominal_m_s": float(result.feedrate_nominal_m_s),
-            "feedrate_joint_limit_m_s": float(result.feedrate_joint_limit_m_s),
-            "feedrate_cbf_limit_m_s": float(result.feedrate_cbf_limit_m_s),
-            "feedrate_rate_limit_m_s": float(result.feedrate_rate_limit_m_s),
-            "feedrate_tool_axis_limit_m_s": float(
-                result.feedrate_tool_axis_limit_m_s),
-            "feedrate_endpoint_brake_limit_m_s": float(
-                result.feedrate_endpoint_brake_limit_m_s),
-            "gamma": float(result.gamma),
-            "limiting_reason_code": int(result.limiting_reason_code),
-        }
+        return result
 
     def _make_tracking_evaluator(self) -> TrackingEvaluator:
         snapshot = str(self.runtime_snapshot_path)
@@ -638,27 +618,29 @@ class OscbfController(Node):
         start = time.perf_counter()
         q_now = np.asarray(self._latest_q, dtype=float)
         obs_kwargs = dict(self._obs_state) if self._enable_obs and self._obs_state else None
-        step = self.step_once(q_now, obs_kwargs=obs_kwargs)
+        record = self.step_once(q_now, obs_kwargs=obs_kwargs)
         duration_ms = (time.perf_counter() - start) * 1000.0
         self._step_durations.append(duration_ms)
         self._latest_q = None
 
-        # 累积跟踪指标
-        step["step_latency_ms"] = duration_ms
-        self._evaluator.update(step, wall_time_s=start)
+        # 累积跟踪指标。耗时是调用方的测量边界（含内核输出到主机的转换），
+        # 不属于 step_once 的产物，因此单独传入而不是塞进记录。
+        self._evaluator.update_from_step_record(
+            record, wall_time_s=start, step_latency_ms=duration_ms,
+            projection_before_m=self._last_projection_before_m)
 
         lower, upper = self._limits
         # 跳变诊断: 误差与上一步相比 >0.25 m 时, 记录一步的完整输入输出,
         # 用于区分 "参考跳变" 与 "命令跳变" (观测: 4s 处一秒内 7mm→967mm)。
-        pos_err_now = float(np.linalg.norm(step["err_6d"][:3]))
+        pos_err_now = float(np.linalg.norm(record.err_6d[:3]))
         if (self._last_pos_err is not None
                 and abs(pos_err_now - self._last_pos_err) > 0.25):
             self.get_logger().warning(
                 f"POS_JUMP d_err={pos_err_now - self._last_pos_err:.3f}m "
-                f"u_safe=[{', '.join(f'{v:.3f}' for v in step['u_safe'])}] "
-                f"q_next-qmax={np.max(np.abs(step['q_next'] - q_now)):.4f} "
-                f"ee=[{', '.join(f'{v:.3f}' for v in step['ee_pos'])}] "
-                f"ref=[{', '.join(f'{v:.3f}' for v in step['reference_position_m'])}]"
+                f"u_safe=[{', '.join(f'{v:.3f}' for v in record.u_safe)}] "
+                f"q_next-qmax={np.max(np.abs(record.q_next - q_now)):.4f} "
+                f"ee=[{', '.join(f'{v:.3f}' for v in record.ee_pos)}] "
+                f"ref=[{', '.join(f'{v:.3f}' for v in record.reference_position_m)}]"
             )
         self._last_pos_err = pos_err_now
         # 进给分项诊断: 每 300 步打印各 cap, 直接观察是谁在压进给。
@@ -672,27 +654,27 @@ class OscbfController(Node):
                 f"DETAIL steps={len(self._step_durations)} "
                 f"prog={state0:.6f} proj={state1:.6f} "
                 f"lead={state0 - state1:.6f} dprog300={delta0:.6f} "
-                f"feed={step['feedrate_m_s']:.5f} "
-                f"nom={step['feedrate_nominal_m_s']:.5f} "
-                f"gamma={step['gamma']:.3f} lim={step['limiting_reason_code']} "
-                f"cap_j={step['feedrate_joint_limit_m_s'] if step['feedrate_joint_limit_m_s'] < 1e9 else 9.99:.4f} "
-                f"cap_cbf={step['feedrate_cbf_limit_m_s'] if step['feedrate_cbf_limit_m_s'] < 1e9 else 9.99:.4f} "
-                f"cap_rate={step['feedrate_rate_limit_m_s'] if step['feedrate_rate_limit_m_s'] < 1e9 else 9.99:.4f} "
-                f"cap_tool={step['feedrate_tool_axis_limit_m_s'] if step['feedrate_tool_axis_limit_m_s'] < 1e9 else 9.99:.4f} "
-                f"cap_brake={step['feedrate_endpoint_brake_limit_m_s']:.4f} "
-                f"u_max={float(np.max(np.abs(step['u_safe']))):.5f} "
-                f"dq_max={float(np.max(np.abs(step['q_next'] - q_now))):.6f} "
-                f"radial={self._radial_error_m(step['ee_pos'])*1e3:.2f}mm "
-                f"ref_radial={self._radial_error_m(step['reference_position_m'])*1e3:.2f}mm "
-                f"cap_cbf={step['feedrate_cbf_limit_m_s'] if step['feedrate_cbf_limit_m_s'] < 1e9 else 9.99:.4f} "
-                f"src={step['reference_source_time_s']:.4f}"
+                f"feed={record.feedrate_m_s:.5f} "
+                f"nom={record.feedrate_nominal_m_s:.5f} "
+                f"gamma={record.gamma:.3f} lim={record.limiting_reason_code} "
+                f"cap_j={record.feedrate_joint_limit_m_s if record.feedrate_joint_limit_m_s < 1e9 else 9.99:.4f} "
+                f"cap_cbf={record.feedrate_cbf_limit_m_s if record.feedrate_cbf_limit_m_s < 1e9 else 9.99:.4f} "
+                f"cap_rate={record.feedrate_rate_limit_m_s if record.feedrate_rate_limit_m_s < 1e9 else 9.99:.4f} "
+                f"cap_tool={record.feedrate_tool_axis_limit_m_s if record.feedrate_tool_axis_limit_m_s < 1e9 else 9.99:.4f} "
+                f"cap_brake={record.feedrate_endpoint_brake_limit_m_s:.4f} "
+                f"u_max={float(np.max(np.abs(record.u_safe))):.5f} "
+                f"dq_max={float(np.max(np.abs(record.q_next - q_now))):.6f} "
+                f"radial={self._radial_error_m(record.ee_pos)*1e3:.2f}mm "
+                f"ref_radial={self._radial_error_m(record.reference_position_m)*1e3:.2f}mm "
+                f"cap_cbf={record.feedrate_cbf_limit_m_s if record.feedrate_cbf_limit_m_s < 1e9 else 9.99:.4f} "
+                f"src={record.reference_source_time_s:.4f}"
             )
         # 卡死检测: 参考进给归零且横断误差持续超限 (再紧的非端点位置)
         # 时, 反馈拉回与参考停滞会形成长期摆动; 连续超过 1 s 即冻结,
         # 行为与完成冻结一致 (安全胜过继续挣扎)。
-        if (not bool(step["reference_at_endpoint"])
-                and float(step["feedrate_m_s"]) <= 1e-3
-                and float(step["cross_track_error_m"]) > 5e-3):
+        if (not bool(record.reference_at_endpoint)
+                and float(record.feedrate_m_s) <= 1e-3
+                and float(record.cross_track_error_m) > 5e-3):
             if self._stall_since is None:
                 self._stall_since = start
             elif start - self._stall_since > 1.0:
@@ -700,7 +682,7 @@ class OscbfController(Node):
                 self._hold_q = hold
                 self.get_logger().warn(
                     "TRACKING_STALLED: reference feedrate=0 with cross-track "
-                    f"={float(step['cross_track_error_m'])*1e3:.1f}mm for "
+                    f"={float(record.cross_track_error_m)*1e3:.1f}mm for "
                     f"{start - self._stall_since:.2f}s; holding current pose"
                 )
                 self._publish_positions(hold)
@@ -714,41 +696,41 @@ class OscbfController(Node):
         # 封顶), 与横断超限判据互补。误差爬升率在卡死后只有 1-2 mm/s,
         # 因此不能依赖误差阈值。
         self._pos_err_hist.append((start, pos_err_now))
-        self._src_hist.append((start, float(step["reference_source_time_s"])))
+        self._src_hist.append((start, float(record.reference_source_time_s)))
         while self._pos_err_hist and start - self._pos_err_hist[0][0] > 5.0:
             self._pos_err_hist.popleft()
         while self._src_hist and start - self._src_hist[0][0] > 5.0:
             self._src_hist.popleft()
         if (self._hold_q is None
                 and len(self._src_hist) >= 2
-                and float(step["feedrate_m_s"]) < 0.05
-                and float(step["reference_source_time_s"])
+                and float(record.feedrate_m_s) < 0.05
+                and float(record.reference_source_time_s)
                 - self._src_hist[0][1] < 0.01
                 and pos_err_now > 0.005):
             hold = np.clip(q_now, lower, upper)
             self._hold_q = hold
             self.get_logger().warn(
                 "TRACKING_STALLED: reference source-time frozen for 5s "
-                f"(feed={float(step['feedrate_m_s']):.4f}m/s, "
+                f"(feed={float(record.feedrate_m_s):.4f}m/s, "
                 f"pos_err={pos_err_now*1e3:.1f}mm); holding current pose"
             )
             self._publish_positions(hold)
             self._finish_tracking_evaluation("held")
             return
 
-        if bool(step["reference_at_endpoint"]) and self._hold_q is None:
+        if bool(record.reference_at_endpoint) and self._hold_q is None:
             hold = np.clip(q_now, lower, upper)
             self._hold_q = hold
             self.get_logger().info(
                 "END_OF_TRACKING: holding final pose "
-                f"pos_err={float(np.linalg.norm(step['err_6d'][:3]))*1e3:.1f}mm"
+                f"pos_err={float(np.linalg.norm(record.err_6d[:3]))*1e3:.1f}mm"
             )
             self._publish_positions(hold)
             self._evaluator.record_event("reference_endpoint_hold")
             self._finish_tracking_evaluation("completed")
             return
 
-        q_next = step["q_next"]
+        q_next = record.q_next
         valid = np.all(np.isfinite(q_next)) and np.all(q_next >= lower - 1e-9) \
             and np.all(q_next <= upper + 1e-9)
         if not valid:
@@ -757,7 +739,7 @@ class OscbfController(Node):
                 f"discarding invalid safe state: {q_next.tolist()}"
             )
             return
-        if not step["qp_ok"]:
+        if not record.qp_ok:
             self._evaluator.record_event("qp_failure")
             self._qp_fail_count += 1
             self.get_logger().warn(

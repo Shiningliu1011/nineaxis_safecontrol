@@ -13,6 +13,8 @@ portable_oscbf/
 │   │
 │   │  ── JAX 编译内核层 (热路径) ──
 │   ├── jax_kernel_factory.py      # OSC+CBF+QP+积分 编译入口
+│   ├── control_step_record.py     # 一步输出的具名结构 (含"是否量测"状态位)
+│   ├── cross_step_state.py        # 跨步记忆 (上一步命令/CBF 遥测, 显式结构)
 │   ├── jax_barrier_terms.py       # 固定 shape 障碍物几何/CBF RHS
 │   ├── jax_path_following.py      # JAX 弧长路径跟踪状态机
 │   ├── jax_posture_reference.py   # JAX 姿态参考插值
@@ -203,6 +205,8 @@ for step in range(num_steps):
     # result.u_safe    → 安全关节速度
     # result.err_6d    → 6D 任务误差
     # result.qp_ok     → QP 是否成功
+    # result           → 一步的完整记录 (内核侧字段见 work/control_step_record.py)
+    # result.min_obs_dist_measured → False 时 min_obs_dist 是占位值, 不是观测
 ```
 
 ### 运行测试

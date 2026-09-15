@@ -9,6 +9,8 @@ OFF-15 的评价器是纯 Python / NumPy 模块，不发布控制命令。主入
 - `verdict`：上述两项与全部所需阈值的合并结论。所有必需项通过才为 `pass`，有失败为 `fail`，其余为 `insufficient_evidence`。结论只覆盖报告声明的模型、数据、场景与边界。
 - `completed`：显式正常结束、声明区间覆盖完整且主指标与样本时间有效；它不独立表示验收通过。`full_path_covered` 表示整条路径的样本进度覆盖；`full_path_verified` 还要求全部所需判据通过。
 
+门槽（`qp_ok`、`admission_ok`、`overlap`）只接受布尔值。收到非布尔值时该样本按未测计入（仍是证据不足，不会变成拒绝），并在报告的 `gate_format_counts` 里按槽位计数、在 `issues` 中逐槽列明，例如 `admission_ok=3`。这条计数是纯加法，不参与任何 verdict 的计算；它存在的唯一目的是让「一次真实测量因为格式不对而悄悄丢失」变得可见——这是本评价器里唯一原本无从察觉的故障模式。
+
 默认沿用 #14 的任务要求：cross-track RMS ≤ 0.15 mm、p95 ≤ 0.5 mm、max ≤ 2 mm；真实工具轴角 RMS ≤ 0.05°、max ≤ 0.5°；QP 成功率 ≥ 99.9%。本票没有修改这些任务数值。净空非负的既有下界作为 accepted 判据 `obstacle_clearance_nonnegative` 单独保留，负净空直接判失败；非负值仍不能替代独立重叠判据。历史 30 mm 净空和 1% 超期率仍为 provisional，因此即使解析实验的任务指标通过，默认的全部判据结论仍可能是证据不足。
 
 阈值包含 `metric/limit/comparison/unit/category/status/source`。任务、数值、安全和时间判据分别列出；未定值可用 `limit=None, status="unknown"`。通过构造参数提供阈值时按指标覆盖默认值或追加新指标，不能通过只传一项来隐去其余默认必需项。accepted 需要明确值与来源；该标记由调用者提供，不能替代对来源及适用工况的审查。
@@ -16,6 +18,8 @@ OFF-15 的评价器是纯 Python / NumPy 模块，不发布控制命令。主入
 ## 指标定义与输入
 
 每个 `update()` 对应一个测量边界的样本，调用方提供同一状态/参考时刻的量。需要多个边界时，各自建立评价器，通过相同 `run_id` 关联；显式标有不同 `measurement_boundary` 或 `evidence_kind` 的样本不能混入同一评价器。
+
+控制节点走的是类型化的那个入口：`update_from_step_record(record, ...)`。它在记录的固定槽位清单（`STEP_RECORD_SLOTS`）里按名字取值，缺哪个槽就保持未测，不再靠 `getattr` 去猜对象形状；老的字典型入口 `update(dict)` 原样保留，服务历史脚本与「扔字典进去」的调用方。`step_latency_ms`（调用方实测的一步耗时，含记录转换为宿主数组的时间）和 `projection_before_m`（执行前一步时的实际投影）不是内核输出，由调用方通过 `update()` / `update_from_step_record()` 的参数单独提供；两者为 `None` 时沿用样本里已有的同名值。
 
 | 指标 | 输入与定义 | 用途 |
 |---|---|---|
@@ -36,6 +40,8 @@ OFF-15 的评价器是纯 Python / NumPy 模块，不发布控制命令。主入
 `constraint_metrics` 接受按约束类别命名的字典，每项包含 `value, quantity, unit, source`，可附 `active`。例如 `joint_linear.residual` 与 `joint_angular.residual` 分别是 m/s、rad/s，不能混加；对应阈值键为 `joint_linear.residual.maximum`。跨 tick 改变量纲/来源会使该序列无效。
 
 节点透传的残差是求解时刻、动态修正后 `max(0, G u_candidate - h)` 的逐类值，使用未经健康门替换的原始候选。`static_margin` 明确是静态 CBF 右端除以基准增益，处于动态项修正前；它不是物理 clearance。奇异性指标保留模型可操作度量纲。障碍或 ESDF 未启用时保留未测和 inactive 计数，不把内核的占位距离当观测。`delta_slack`、全局 `qp_primal_residual` 仍可供求解诊断，跨类最大值不能解释为米。
+
+一步记录对「本来就可能不适用」的槽位带显式状态位：`min_obs_dist_measured`、`min_esdf_dist_measured`。障碍或 ESDF 未启用时内核仍然填占位距离，状态位是内核侧「这不是观测」的表示。节点在交给评价器的样本里据状态位把 `min_obs_dist` 置为缺失（`None`），所以占位值不会进入统计；`min_esdf_dist` 目前没有消费方，节点不在返回样本里做同样的置空，将来读它的人必须自己先查 `min_esdf_dist_measured`。其余槽位（末端位姿、任务误差、耗时）每一步都有值，不加状态位。
 
 ## 预先声明子区间的例子
 
