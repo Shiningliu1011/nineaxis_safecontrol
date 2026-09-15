@@ -91,7 +91,7 @@ def test_preprocess_to_esdf_in_base_link():
         rng.uniform(0.1, 0.4, 1500),
         rng.uniform(0.9, 1.2, 1500),
     ])
-    # 单位变换 (占位: world_frame==input 时 bridge 用 identity/camera_to_world_static)。
+    # 单位变换（仅用于这个纯函数测试；运行时外参来自标定记录）。
     world = preprocess_points(sensor_pts, np.eye(4), spec)
     assert world.shape[1] == 3 and len(world) > 0
     sdf = build_distance_field(world, spec)

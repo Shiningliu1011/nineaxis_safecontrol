@@ -1,42 +1,60 @@
-# === DUAL-SENSOR REAL PROFILE (OPT-IN, 默认 INERT) ===
+# === DUAL-SENSOR REAL PROFILE (OPT-IN, 部署 profile) ===
 #
-# 本 profile **默认不启用 LiDAR**（source_topic_lidar = ""）——即使直接作为
-# params-file 加载，节点也只会订阅相机、行为等价于单相机运行，**不会**出现
-# 用占位/假定外参跑双传感器的静默错误。
+# 本 profile **不设逐源豁免**：任何被启用的源（包括相机）都必须先过标定门，否则节点
+# 拒绝启动（exit 3）。所以它现在的实际状态是「**加载即拒绝启动**」——sensor_extrinsics.yaml
+# 的 camera 分节仍是 calibrated: false（假定安装位姿），LiDAR 分节是占位单位阵。
+# 这是有意的 fail-closed：真机部署不得用未标定几何跑避障（ADR 0003/0004/0009）。
+# 需要「未标定也能起步」的仿真/算法调试，用 perception_runtime.yaml（那份显式声明了
+# allow_uncalibrated_debug: [camera]，并且只允许启动、不改变准入结论）。
 #
 # 启用 LiDAR 的真实前提（全部满足，任何一条不满足都不得修改本段）:
-#   1. T5 两段式标定完成，sensor_extrinsics.yaml 含带 provenance 的
-#      T_lidar^base / T_cam^base（calibrated: true）;
-#   2. T7 标定 SSOT 接线完成：bridge/launch 经 ament share 解析唯一
-#      config/sensor_extrinsics.yaml 路径并加载，本文件**不再携带任何
-#      calibration matrix**，外参全部由 sensor_extrinsics.yaml 提供;
-#   3. 代码级 gate（T7/T6）：启动时 fail-fast 校验数学合法性 + 标定状态 +
-#      已知物体 20mm 验收，失败即拒绝进入避障模式（ADR 0003/0004）。
-#      注释/文件名不是 gate——gate 必须是代码，验证未落地前不得启用。
+#   1. T5 两段式标定完成，sensor_extrinsics.yaml 的 lidar 分节含带 provenance 的
+#      T_lidar^base（calibrated: true，含 timestamp / sensor_serial / residual 或
+#      error_estimate）;
+#   2. T7 标定 SSOT 接线**已实现**（OFF-01）：bridge/launch 经 ament share 解析唯一
+#      config/sensor_extrinsics.yaml 路径并加载，本文件**不再携带任何 calibration matrix**，
+#      外参全部由 sensor_extrinsics.yaml 提供;
+#   3. 代码级 gate（已实现）：启动时 fail-fast 校验「记录可读 + 矩阵是合法 SE(3) +
+#      帧绑定一致 + 每个被启用源过标定门」，任一条不满足即拒绝启动（ADR 0003/0004/0009）。
+#      本 profile 不设 allow_uncalibrated_debug，所以启用 LiDAR 前必须有已标定记录。
+#      注释/文件名不是 gate——gate 必须是代码。
+#   4. **未**实现的验收与前置：与 provenance 比对 ≤20mm/5°、已知尺寸物体点云误差 <20mm
+#      仍未评估（诊断固定标 CALIB_ACCEPTANCE_NOT_EVALUATED）；两源时间戳的可信共同基准
+#      也尚未建立（见 docs/planning/oscbf-reuse/research/sensor-time-alignment-20260914.md）。
+#      这两条未落地前不得做真机动态避障实验。
 #
 # 使用方式:
 #   ros2 run robot_safecontrol_moveit perception_bridge \
 #       --ros-args --params-file config/perception_dual_sensor_real.yaml
-#   当前状态下运行 = 单相机（LiDAR 段为空），与 perception_runtime.yaml 等价;
-#   T5/T6/T7 全部落地后才允许把下方 source_topic_lidar 改为 /livox/lidar。
+#   当前状态下会拒绝启动（相机记录未标定，见上）；标定完成后才允许把下方
+#   source_topic_lidar 改为 /livox/lidar。
 
 perception_bridge:
   ros__parameters:
     # --- Camera (Orbbec Gemini 335L) ---
     source_topic: /camera/depth_registered/points
     input_frame: camera_color_optical_frame
-    # 假定安装位姿（无标定 provenance，05A）: bx=cz, by=-cx, bz=-cy, t=[-0.9, 0.4, 1.7]
-    camera_to_world_static: [0.0, 0.0, 1.0, -0.9, -1.0, 0.0, 0.0, 0.4, 0.0, -1.0, 0.0, 1.7, 0.0, 0.0, 0.0, 1.0]
+    # 外参不在这里：来自 config/sensor_extrinsics.yaml 的 camera 分节（ADR 0004/0009）。
 
     # --- LiDAR (Livox Mid-360S) — 默认 INERT，见头部说明 ---
-    # 保持为空！启用条件见头部前提 1-3；T7 后外参改由
-    # config/sensor_extrinsics.yaml（唯一真源）提供，本文件只留 topic/frame。
+    # 保持为空！启用条件见头部前提 1-3；外参由 config/sensor_extrinsics.yaml
+    # （唯一真源）提供，本文件只留 topic/frame。
     source_topic_lidar: ""
     input_frame_lidar: ""
 
     # --- World frame ---
     world_frame: base_link
-    use_tf: false
+
+    # --- Calibration record (SSOT) ---
+    # 空 = 经 ament 解析 <share>/config/sensor_extrinsics.yaml 的唯一路径（生产路径）。
+    calibration_record_path: ""
+    # 本 profile 是**部署** profile：不设逐源豁免（键缺席 = 默认空 = 无豁免；不要写
+    # `allow_uncalibrated_debug: []`——params 文件里的空 YAML 列表会让该参数变成「未初始化」，
+    # 见 `.scratch/off01-extrinsics-source/probe_bridge_params.py`）。任何被启用的源都必须先过
+    # 标定门（calibrated: true 且 provenance 完整）。调试用 perception_runtime.yaml。
+    # 逐源「实际生效」的时间域，只填确实配置并确认过的值；未知留空 → 诊断报 unknown。
+    source_time_domain_camera: ""
+    source_time_domain_lidar: ""
 
     # --- Voxel sizes ---
     voxel_size: 0.03

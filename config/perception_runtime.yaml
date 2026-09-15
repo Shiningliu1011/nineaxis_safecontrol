@@ -16,11 +16,19 @@
 # does not move with any joint (05B decision 2026-09-05).
 #
 # Calibration authority: config/sensor_extrinsics.yaml is the SINGLE source of
-# truth for sensor->world matrices (ADR 0004).  Until T7 (calibration SSOT
-# wiring) is implemented, the matrices below are consumed by the bridge — they
-# are the ASSUMED camera mounting pose (no calibration provenance, 05A finding)
-# and MUST NOT be edited by hand as if calibrated.  T7 removes them from this
-# file and loads sensor_extrinsics.yaml instead.
+# truth for sensor->world matrices (ADR 0004), wired in by OFF-01/T7: this file
+# no longer carries any calibration matrix, and the bridge loads the record via
+# the ament share path.  The old keys (use_tf / camera_to_world_static /
+# lidar_to_world_static) are gone from this file — the bridge still declares
+# those three names purely as a tripwire, and refuses to start when a launch
+# command passes a non-default value (two coexisting geometries are exactly the
+# split-brain ADR 0004 exists to prevent).
+#
+# This is the SIM DEMO profile: the camera source is enabled while its record is
+# still calibrated: false, so it declares the per-source debug exemption
+# allow_uncalibrated_debug: [camera].  The exemption only allows startup — the
+# source stays admission_ready: false and must not be used as something to admit
+# avoidance on.  Drop the exemption once the real calibration lands.
 #
 # LiDAR is OFF by default (source_topic_lidar: "") to keep single-Camera
 # behavior unchanged and until the calibration gate (T5/T6/T7) is passed; use
@@ -36,8 +44,8 @@ perception_bridge:
     # --- Camera (Orbbec Gemini 335L) ---
     source_topic: /camera/depth_registered/points
     input_frame: camera_color_optical_frame
-    # camera->world: bx=cz, by=-cx, bz=-cy, t=[-0.9, 0.4, 1.7]
-    camera_to_world_static: [0.0, 0.0, 1.0, -0.9, -1.0, 0.0, 0.0, 0.4, 0.0, -1.0, 0.0, 1.7, 0.0, 0.0, 0.0, 1.0]
+    # 外参不在这里：来自 config/sensor_extrinsics.yaml 的 camera 分节（当前是假定安装
+    # 位姿 bx=cz, by=-cx, bz=-cy, t=[-0.9, 0.4, 1.7]，calibrated: false）。
 
     # --- LiDAR (Livox Mid-360S) ---
     # 默认关闭（保持单 Camera 行为 + calibration gate 未过不启用）。
@@ -48,12 +56,22 @@ perception_bridge:
     #   ros2 launch livox_ros_driver2 msg_MID360s_launch.py
     source_topic_lidar: ""
     input_frame_lidar: ""
-    # T7（标定 SSOT）后移至 sensor_extrinsics.yaml；当前占位，勿手改。
-    lidar_to_world_static: [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+    # 外参来自 sensor_extrinsics.yaml 的 lidar 分节（当前是占位单位阵，calibrated: false）。
 
     # --- World frame ---
     world_frame: base_link
-    use_tf: false
+
+    # --- Calibration record (SSOT) ---
+    # 空 = 经 ament 解析 <share>/config/sensor_extrinsics.yaml 的唯一路径（生产路径）。
+    # 只在调试/测试时填显式路径。
+    calibration_record_path: ""
+    # 逐源声明「本次部署允许未标定调试几何启动」。只影响能否启动，**不改变准入结论**：
+    # 被豁免的源仍然 admission_ready: false。demo 需要相机在未标定时起步，故此处声明 camera。
+    allow_uncalibrated_debug: [camera]
+    # 逐源「实际生效」的时间域，只填你确实配置并确认过的值；未知留空 → 诊断报 unknown。
+    # 不允许照抄驱动默认值（同样的默认值在不同机型/固件上语义不同）。
+    source_time_domain_camera: ""
+    source_time_domain_lidar: ""
 
     # --- Voxel sizes ---
     voxel_size: 0.03

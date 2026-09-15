@@ -12,6 +12,7 @@
   <exec_depend>aeb_rrtstar_ompl</exec_depend>
   <exec_depend>builtin_interfaces</exec_depend>
   <exec_depend>controller_manager_msgs</exec_depend>
+  <exec_depend>diagnostic_msgs</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>launch</exec_depend>
   <exec_depend>launch_ros</exec_depend>

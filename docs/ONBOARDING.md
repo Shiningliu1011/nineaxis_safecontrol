@@ -56,6 +56,16 @@ final launch 在启动任何节点前拒绝 `hardware_mode=live`；`hardware_bri
 圆柱几何 → 发布到 `/perception/tracks` → `oscbf_controller` 经 `obs_*` 接口注入
 控制内核做动态避障。
 
+**标定记录（外参唯一真源）**：感知外参只来自 `config/sensor_extrinsics.yaml`
+（经 ament share 路径加载；逐源分节含矩阵与 provenance）。`perception_bridge` 启动时校验
+「记录可读 / 矩阵是合法 SE(3) / 帧绑定与配置一致 / 每个被启用源过标定门」，任一条不满足即
+**拒绝启动**（退出码 3，不发布任何诊断）；运行期每帧校验 `header.frame_id`，不符即丢弃。
+旧参数 `use_tf` / `camera_to_world_static` / `lidar_to_world_static` 只保留声明作探测器
+（非默认值即拒绝启动），**没有 TF 输入路径，也没有 identity 兜底**。身份与准入结论发布在
+`/perception/calibration_status`（`DiagnosticArray`，1 Hz 心跳 + 启动即发一份）。
+未标定几何只允许在部署 profile 显式逐源声明 `allow_uncalibrated_debug` 时启动，
+且不构成准入。契约见 ADR 0004 与 ADR 0009。
+
 **坐标系**：URDF 为 Y-up，MuJoCo 为 Z-up，程序通过 `display_frame` body 的
 euler 旋转自动转换。圆柱轴心拟合口径在轨迹生成端、过渡端、控制器端必须一致
 （默认最小二乘圆拟合轨迹自动求轴心）。
@@ -109,6 +119,9 @@ viewer、过渡服务器的状态订阅、过渡回放发布和控制器的命�
   模块级 docstring 说明职责与话题约定。
 - **共享约定**：话题名/QoS/关节名等统一在 `ros_conventions.py` 与 `robot_spec.py`，
   节点间禁止互相 import 私有符号。
+- **轨迹加载与拟合**：`oscbf_trajectory.py` 的两个公开加载入口共享全量标定、
+  圆柱投影和抽样流程；仅位置入口不要求时间字段。`CylinderFit.axis_point`
+  统一拟合轴心坐标解释，查看器自行决定地面延伸等显示范围。
 - **控制内核隔离**：`portable_oscbf/work/` 零 ROS 依赖、零裸名同级 import
   （统一 `from work.X`），节点经 `oscbf_trajectory.bootstrap_portable` 引导。
 - **错误处理**：launch 文件对必需配置文件做启动时 `FileNotFoundError` 校验；

@@ -1,8 +1,8 @@
 """MuJoCo simulation demo: JaxControlLoop tracks the NURBS trajectory while
 avoiding obstacles derived from the LIVE camera via the perception bridge.
 
-The perception bridge transforms the camera cloud into ``base_link`` (via
-``camera_to_world_static``) and publishes fixed-shape ESDF + 8 dynamic slots.
+The perception bridge transforms the camera cloud into ``base_link`` using the
+startup-validated calibration record and publishes fixed-shape ESDF + 8 dynamic slots.
 This node subscribes to those topics, feeds ``sdf_*`` / ``obs_*`` into
 ``JaxControlLoop.path_tracking_step`` each control step, and renders the arm
 plus the camera obstacle points in MuJoCo.

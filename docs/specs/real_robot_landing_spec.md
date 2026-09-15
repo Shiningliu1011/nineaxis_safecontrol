@@ -126,8 +126,9 @@ DrEmpower 模组，J1 为棱柱关节）全部装配在手上，却完全没有�
 - 新增解析障碍物提取器：订阅 PointCloud2（Gemini 335L，官方 orbbec_camera 驱动）
   → 背景/机械臂自过滤 → 聚类 → 球/圆柱参数 → 控制器 `obs_*`（M9 接口路径启用，
   `sdf_*` 不启用）。
-- 外参：实测值生成静态 TF，替换占位 `camera_to_world_static`/`use_tf:false`；
-  外参参数化存储，验收流程为已知尺寸物体验证（点云位置误差 <20mm）。
+- 外参：实测值及 provenance 写入唯一标定记录 `config/sensor_extrinsics.yaml`，将对应源
+  标为 `calibrated: true`；运行时由 bridge 直接加载记录，不设置旧矩阵参数或 TF 旁路。
+  验收流程为已知尺寸物体验证（点云位置误差 <20mm）。
 - 第一版实验条件：单个软质泡沫球/柱、低速、隔离区；点云失效/老化按时间超时平滑
   降级为停车，不误判。
 

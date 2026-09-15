@@ -2,7 +2,7 @@
 
 2026-09-05 定案（05B post-review P0-1；二轮 post-review 增补「运行时文件身份」）：
 05A 审计已证明
-`config/sensor_extrinsics.yaml` 当前**未被生产感知链消费**——真正进入
+`config/sensor_extrinsics.yaml` 当时**未被生产感知链消费**——真正进入
 `perception_bridge` 的 Camera/LiDAR 静态矩阵来自 `config/perception_runtime.yaml`
 的 ROS 参数（`camera_to_world_static` / `lidar_to_world_static`），而 05B/T5 的
 标定工具链又把新标定结果写入 `sensor_extrinsics.yaml`。两者一旦分叉，就会出现
@@ -66,7 +66,7 @@ timeout / fusion 参数，**不再持有任何 calibration matrix**（T7 移除�
 Float32MultiArray 十字段健康接口，新增 `/perception/calibration_status`，使用
 `diagnostic_msgs/msg/DiagnosticArray` 上报实际加载的标定文件路径、SHA-256、
 逐源 calibration_id 与检查结果。该补充替代原先要求把文件身份写入健康数组话题的约定；
-这是目标契约，尚未实施。
+该目标契约已由 OFF-01 于 2026-09-14 实施；具体 schema、准入与诊断接口见 ADR 0009。
 
 选择现成诊断消息可以表达字符串身份及检查状态，同时保持现有健康接口兼容；
 不采用 String 包装 JSON 或将身份塞入数组布局标签，也不整体迁移健康话题类型。

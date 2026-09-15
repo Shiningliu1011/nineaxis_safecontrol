@@ -1,51 +1,114 @@
-# 传感器外参配置（真机）。
+# 传感器外参「标定记录」——唯一 calibration authority（ADR 0004 / ADR 0009）。
+#
+# 本文件是运行时外参的唯一真源：标定工具（T5/OFF-16）写它，bridge（T7/OFF-01）读它，
+# 启动自检（T6/OFF-17）比对「被校验的记录 == 节点实际加载的记录」（路径 + file_sha256 +
+# 逐源 calibration_id）。**不再有第二条可写路径**：ROS 参数里的旧矩阵键已删除，
+# 旧名字（use_tf / camera_to_world_static / lidar_to_world_static）保留声明仅作探测器，
+# 值不等于内置默认即拒绝启动。
+#
+# 结构（schema_version: 1，逐源分节）：
+#   schema_version: 记录 schema 版本，加载器只接受 1。
+#   每个源一个小节：frame_from（传感器帧）、frame_to（世界帧）、matrix（行主序 16 floats，
+#   把 frame_from 下的点变换到 frame_to），以及 provenance（calibrated / method / operator /
+#   timestamp / sensor_serial / residual / error_estimate / calibration_id）。
+#   与标定无关的 orbbec_launch 块原位保留。
+#
+# 身份（ADR 0009 决定 2）：
+#   file_sha256      —— 实际加载字节的 sha256，证明「节点读到的就是被检查的那份文件」。
+#   calibration_id   —— "v1:" + sha256(白名单字段规范化内容)[:16]，由加载器计算并上报。
+#                       本字段若填写，加载器会与计算结果比对：不一致 = 有人手改了矩阵却没
+#                       更新身份 → 诊断 WARN + 不可准入（不阻止启动）。
+#
+# calibrated: false 的含义与后果：
+#   该源的外参不是实测标定值。被启用的源若没有通过标定门（calibrated: true 且 provenance
+#   完整），启动会被拒绝；唯一例外是部署 profile 里 allow_uncalibrated_debug 显式声明的源
+#   （只影响能否启动，**不改变准入结论**）——被豁免的源仍然 admission_ready = false，
+#   禁止作为避障准入使用。
+#
+# 未实测的字段一律写 null，不编造序列号/残差/日期。
+#
+# 坐标系：frame_to 是 base_link（机械臂基坐标系，Y-up URDF；基座固定、J1 是链内移动关节，
+# 所以 base_link 不随任何关节运动）。
+
+schema_version: 1
+
+# ---------------------------------------------------------------------------
 # 相机：Orbbec Gemini 335L（PID 0x0804，USB3.2）
-# 安装方式：固定安装，手动测量外参
-# 前置 P6：相机固定安装后测量 x/y/z + roll/pitch/yaw 并填入本文件。
+# ---------------------------------------------------------------------------
+# matrix 是**假定安装位姿**，不是标定值：它是 05A 之前就放在
+# perception_runtime.yaml 里的那份「假定几何」（bx=cz, by=-cx, bz=-cy, t=[-0.9,0.4,1.7]），
+# 随本票迁移到这里以保持单相机行为不变（ADR 0004 的向后兼容硬约束）。
+# 本次同时纠正了旧文件里与事实矛盾的 calibration_method: "manual_measurement" 标注。
 #
-# 坐标系：
-#   parent_frame: base_link（机械臂基坐标系，Y-up URDF）
-#   child_frame: camera_color_optical_frame（Orbbec 注册点云的 frame_id）
-#
-# camera_to_world_static: 4x4 齐次变换矩阵（行主序 16 个 float），
-# 把 child_frame 下的点变换到 parent_frame。
-# 当前值为占位（单位阵），必须在实机标定后替换。
-#
-# Orbbec 驱动启动命令（depth_registration:=true 时使用 camera_color_optical_frame）：
-#   ros2 launch orbbec_camera gemini_330_series.launch.py \
-#     depth_width:=640 depth_height:=480 depth_fps:=30 \
-#     color_width:=640 color_height:=480 color_fps:=30 \
-#     depth_registration:=true enable_colored_point_cloud:=true
+# 实机标定后（P6）由 T5 覆盖为实测值，并填齐 provenance：timestamp / sensor_serial /
+# residual 或 error_estimate 至少一项，calibrated 改 true。
+# 验收要求（未评估，见下）：已知尺寸物体放在 base_link 下已知位置，点云位置误差 < 20mm。
+camera:
+  frame_from: camera_color_optical_frame
+  frame_to: base_link
+  matrix:
+    - 0.0
+    - 0.0
+    - 1.0
+    - -0.9
+    - -1.0
+    - 0.0
+    - 0.0
+    - 0.4
+    - 0.0
+    - -1.0
+    - 0.0
+    - 1.7
+    - 0.0
+    - 0.0
+    - 0.0
+    - 1.0
+  calibrated: false
+  method: assumed          # 建议词表: placeholder / assumed / manual_measurement / target_based / apriltag
+  operator: assignment     # 谁写入的；assignment = 承接旧假定值，不是实测操作者
+  timestamp: null          # 标定时刻（ISO 8601）；未标定 = null
+  sensor_serial: null      # 设备序列号；未读取 = null
+  residual: null           # 标定残差；未标定 = null
+  error_estimate: null     # 误差估计；未标定 = null
+  calibration_id: null     # null = 未声明（加载器仍会计算并上报）
 
-parent_frame: base_link
-child_frame: camera_color_optical_frame
-
-# 外参矩阵（占位：单位阵 = 相机与 base_link 重合）
-# 格式：行主序 [R11,R12,R13,Tx, R21,R22,R23,Ty, R31,R32,R33,Tz, 0,0,0,1]
-# 实测后替换此值。验收方法：已知尺寸物体放在 base_link 下已知位置，
-# 点云中物体位置误差 <20mm 方可进入动态避障实验。
-camera_to_world_static:
-  - 1.0
-  - 0.0
-  - 0.0
-  - 0.0
-  - 0.0
-  - 1.0
-  - 0.0
-  - 0.0
-  - 0.0
-  - 0.0
-  - 1.0
-  - 0.0
-  - 0.0
-  - 0.0
-  - 0.0
-  - 1.0
-
-# 标定方法与误差估计（待 P6 填写）
-calibration_method: "manual_measurement"  # 或 "apriltag"
-calibration_error_estimate_mm: null       # 待填写
-calibration_error_estimate_deg: null      # 待填写
+# ---------------------------------------------------------------------------
+# LiDAR：Livox Mid-360S
+# ---------------------------------------------------------------------------
+# 单位阵是**占位**，不是"与 base_link 重合"的实际安装。LiDAR 默认关闭
+# （perception_runtime.yaml 的 source_topic_lidar: ""）；启用前必须先完成标定，
+# 并把 source_topic_lidar 改成 /livox/lidar（见 config/perception_dual_sensor_real.yaml）。
+# 驱动（xfer_format=0 才发 PointCloud2，frame_id 固定为 livox_frame）：
+#   source ~/livox_ws/install/setup.bash
+#   ros2 launch livox_ros_driver2 msg_MID360s_launch.py
+lidar:
+  frame_from: livox_frame
+  frame_to: base_link
+  matrix:
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 1.0
+  calibrated: false
+  method: placeholder
+  operator: assignment
+  timestamp: null
+  sensor_serial: null
+  residual: null
+  error_estimate: null
+  calibration_id: null
 
 # 相机启动参数（与 obstacle_params.yaml 对齐）
 orbbec_launch:
@@ -58,44 +121,6 @@ orbbec_launch:
   depth_registration: true
   enable_colored_point_cloud: true
 
-# ---------------------------------------------------------------------------
-# LiDAR 外参（Livox Mid-360S）
-# ---------------------------------------------------------------------------
-# 安装方式：固定安装，手动测量外参
-# child_frame: LiDAR 的 frame_id（由 LiDAR 驱动发布）。
-# lidar_to_world_static: 4×4 齐次变换矩阵（行主序 16 个 float），
-# 把 child_frame 下的点变换到 parent_frame (base_link)。
-# 当前值为占位（单位阵），必须在实机标定后替换。
-#
-# Livox 驱动启动命令示例（xfer_format=0 时发布 /livox/lidar 的 PointCloud2，
-# frame_id 固定为 livox_frame）：
-#   source ~/livox_ws/install/setup.bash
-#   ros2 launch livox_ros_driver2 msg_MID360s_launch.py
-
-child_frame_lidar: livox_frame
-
-# 外参矩阵（占位：单位阵 = LiDAR 与 base_link 重合）
-# 格式：行主序 [R11,R12,R13,Tx, R21,R22,R23,Ty, R31,R32,R33,Tz, 0,0,0,1]
-# 实测后替换此值。
-lidar_to_world_static:
-  - 1.0
-  - 0.0
-  - 0.0
-  - 0.0
-  - 0.0
-  - 1.0
-  - 0.0
-  - 0.0
-  - 0.0
-  - 0.0
-  - 1.0
-  - 0.0
-  - 0.0
-  - 0.0
-  - 0.0
-  - 1.0
-
-# LiDAR 标定方法与误差估计（待填写）
-calibration_method_lidar: null           # 例如 "manual_measurement" 或 "target_based"
-calibration_error_estimate_mm_lidar: null
-calibration_error_estimate_deg_lidar: null
+# 未评估项（ADR 0009 决定 4）：与 provenance 比对 ≤20mm/5°、已知尺寸物体点云误差 <20mm
+# 这两项验收**本轮未实现**，诊断以固定错误码 CALIB_ACCEPTANCE_NOT_EVALUATED 显式标注，
+# 不用占位数据充数。实测验收归 T5/T6 与真机计划 H6.1。

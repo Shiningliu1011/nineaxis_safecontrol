@@ -24,7 +24,7 @@
 | 9 | J1 传动 | 导程已实测（单头丝杠 5 mm/rev，2026-09-06）；二级传动比/效率/行程/正方向/回零方式待实测；未标定前 J1 禁止运动（fail-closed，网关 `require_hardware_executable=True` 语义） |
 | 10 | 零位标定 | 机械零位标记法：手动摆零 → `set_zero`（0x08 order 0x05）→ ±5° 正方向验证，偏移存 `hardware_joint_zero.yaml` |
 | 11 | 感知传感器 | Orbbec Gemini 335L（PID 0x0804，SN CP28563000GD），官方 `orbbec_camera` ROS2 驱动 |
-| 12 | 感知管线 | 固定安装 + 手动测量外参 → 静态 TF（替换占位 `camera_to_world_static`/`use_tf:true`）→ 聚类 → 解析障碍物（球/圆柱）→ 控制器 `obs_*`；`sdf_*` 不启用；不把稠密点云直接塞进 CBF |
+| 12 | 感知管线 | 固定安装 + 手动测量外参并写入 `sensor_extrinsics.yaml` 标定记录 → bridge 从唯一记录加载 → 聚类 → 解析障碍物（球/圆柱）→ 控制器 `obs_*`；`sdf_*` 不启用；不把稠密点云直接塞进 CBF |
 | 13 | 控制频率 | 保持 100 Hz（与仿真一致）；过渡 replay 与 OSCBF 命令共用 `/oscbf_command` 位置流，watchdog 全程生效；launch 增 `hardware_mode:=sim|shadow|live` |
 | 14 | 工程化 | 本地自洽档：无 CI/无远程仓；清死配置、更新过时文档、pytest 全量入口、验收证据归档 |
 
@@ -169,8 +169,8 @@
 - 感知实现：
   - 新增 `obstacle_extractor.py`：PointCloud2 → 背景/机械臂自过滤 → 聚类 →
     球/圆柱参数 → `obs_*`（复用 M9 接口路径；`perception_bridge.py` 占位逻辑移除）。
-  - `sensor_extrinsics.yaml`（P6 测量值）+ 静态 TF 节点（替换 camera_to_world_static
-    占位，`use_tf:true`）。
+  - `sensor_extrinsics.yaml` 写入 P6 测量值、设备身份与质量估计，标为
+    `calibrated: true`；bridge 从该唯一记录加载，不启用旧矩阵参数或 TF 旁路。
   - launch 增加 `start_perception:=true` 分支与 `orbbec_camera` 驱动段。
 - 实验条件：软质泡沫球/柱，低速（≤0.05 m/s 等效），滑轨或手持，隔离区。
 - AC：
