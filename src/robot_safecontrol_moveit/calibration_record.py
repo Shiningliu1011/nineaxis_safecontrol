@@ -182,7 +182,9 @@ def _canonical_value(value: Any) -> Any:
     if isinstance(value, (int, float)):
         return float(value)
     if isinstance(value, Mapping):
-        return {str(k): _canonical_value(v) for k, v in value.items()}
+        if any(not isinstance(key, str) for key in value):
+            raise TypeError("canonical: mapping keys must be strings")
+        return {k: _canonical_value(v) for k, v in value.items()}
     if isinstance(value, (list, tuple)):
         return [_canonical_value(v) for v in value]
     raise TypeError(f"canonical: unsupported value type {type(value).__name__}")
@@ -227,7 +229,7 @@ def compute_calibration_id(
     """
     try:
         canonical = canonical_bytes(source, entry, schema_version=schema_version)
-    except (TypeError, ValueError) as exc:
+    except (TypeError, ValueError, OverflowError) as exc:
         raise CalibrationRecordError(
             CALIB_ID_UNAVAILABLE, f"{source} record cannot be canonicalised: {exc}"
         ) from exc
@@ -318,7 +320,7 @@ _StrictLoader.add_constructor(
 def _parse_yaml(data: bytes) -> Mapping[str, Any]:
     try:
         document = yaml.load(data, Loader=_StrictLoader)
-    except yaml.YAMLError as exc:
+    except (yaml.YAMLError, ValueError, OverflowError) as exc:
         raise CalibrationRecordError(CALIB_RECORD_YAML_INVALID, str(exc)) from exc
     if document is None:
         raise CalibrationRecordError(CALIB_RECORD_YAML_INVALID, "document is empty")
@@ -343,7 +345,12 @@ def _matrix_from_entry(source: str, raw: Any) -> tuple[np.ndarray | None, list[s
             errors.append(
                 f"{CALIB_MATRIX_SHAPE}: {source} matrix element {index} is not a number")
             return None, errors
-        number = float(value)
+        try:
+            number = float(value)
+        except OverflowError:
+            return None, [
+                f"{CALIB_MATRIX_NOT_FINITE}: {source} matrix element {index}"
+                " exceeds float range"]
         if not math.isfinite(number):
             errors.append(
                 f"{CALIB_MATRIX_NOT_FINITE}: {source} matrix element {index} = {value!r}")

@@ -707,3 +707,33 @@ def test_diagnostic_reports_exemption_declared_for_disabled_source(tmp_path):
                  if entry["name"] == "perception_bridge:lidar")
     assert lidar["values"]["enabled"] == "false"
     assert lidar["values"]["exempt"] == "true"
+
+
+@pytest.mark.parametrize("value", [2.5, 2500.0])
+def test_canonical_rejects_colliding_mapping_keys(tmp_path, value):
+    entry = _calibrated_entry(residual={1: value, "1": 0.3})
+    with pytest.raises(CalibrationRecordError, match=calib.CALIB_ID_UNAVAILABLE):
+        compute_calibration_id("camera", entry)
+    record = _load(tmp_path, _record_yaml(camera=entry))
+    assert record.source("camera").calibration_id is None
+    assert not record.source("camera").admission_ready
+    assert not _decide(record, exempt_sources=["camera"]).start
+
+
+def test_invalid_yaml_timestamp_has_record_error(tmp_path):
+    with pytest.raises(CalibrationRecordError, match=CALIB_RECORD_YAML_INVALID):
+        _load(tmp_path, "schema_version: 1\ncamera:\n  timestamp: 2026-99-99\n")
+
+
+@pytest.mark.parametrize("field", ["matrix", "residual", "error_estimate"])
+def test_overflowing_numeric_record_is_refused(tmp_path, field):
+    value = [10**400, *ASSUMED_MATRIX[1:]] if field == "matrix" else {"error": 10**400}
+    entry = _calibrated_entry(**{field: value})
+    record = _load(tmp_path, _record_yaml(camera=entry))
+    source = record.source("camera")
+    assert source.calibration_id is None
+    assert not source.admission_ready
+    assert not _decide(record, exempt_sources=["camera"]).start
+    assert any(calib.CALIB_ID_UNAVAILABLE in error for error in source.math_errors)
+    if field == "matrix":
+        assert any(CALIB_MATRIX_NOT_FINITE in error for error in source.math_errors)

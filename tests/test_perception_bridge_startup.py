@@ -361,6 +361,56 @@ def test_missing_record_refuses_startup() -> None:
     assert "PERCEPTION_BRIDGE_CALIBRATION_REFUSED" in combined
 
 
+@pytest.mark.parametrize("variant,code", [
+    ("date", "CALIB_RECORD_YAML_INVALID"),
+    ("matrix", "CALIB_MATRIX_NOT_FINITE"),
+    ("residual", "CALIB_ID_UNAVAILABLE"),
+    ("keys", "CALIB_ID_UNAVAILABLE"),
+])
+def test_malformed_record_uses_refusal_contract(tmp_path, variant, code):
+    document = yaml.safe_load(_profile("sensor_extrinsics.yaml").read_text())
+    if variant == "date":
+        text = "schema_version: 1\ncamera:\n  timestamp: 2026-99-99\n"
+    else:
+        if variant == "matrix":
+            document["camera"]["matrix"][0] = 10**400
+        else:
+            document["camera"]["residual"] = (
+                {1: 2.5, "1": 0.3} if variant == "keys" else {"error": 10**400})
+        text = yaml.safe_dump(document)
+    path = tmp_path / "malformed.yaml"
+    path.write_text(text, encoding="utf-8")
+    result = _run_to_exit(_profile("perception_runtime.yaml"),
+                          ("-p", f"calibration_record_path:={path}"))
+    combined = result.stdout + result.stderr
+    assert result.returncode == _REFUSAL_EXIT_CODE, combined
+    assert code in combined
+    assert "PERCEPTION_BRIDGE_CALIBRATION_REFUSED" in combined
+    assert "PERCEPTION_BRIDGE_STARTED" not in combined
+    assert "Traceback" not in combined
+
+
+def test_calibration_heartbeat_with_frozen_ros_time():
+    # No /clock publisher: ROS time stays at zero throughout this isolated test.
+    with _probe_node() as (node, executor):
+        received = []
+        node.create_subscription(
+            DiagnosticArray, _CALIBRATION_TOPIC, received.append, 10)
+        with _running_bridge(_profile("perception_runtime.yaml"),
+                             ("-p", "use_sim_time:=true"),
+                             log_name="frozen-clock") as (proc, log_path):
+            _wait_for_message(executor, received,
+                              time.monotonic() + _STARTUP_TIMEOUT_S, "frozen clock")
+            received.clear()
+            deadline = time.monotonic() + 4.5
+            while time.monotonic() < deadline:
+                executor.spin_once(timeout_sec=_POLL_PERIOD_S)
+            assert proc.poll() is None, str(log_path)
+            assert 3 <= len(received) <= 6, str(log_path)
+            assert all(msg.header.stamp.sec == 0 and msg.header.stamp.nanosec == 0
+                       for msg in received)
+
+
 def test_broken_matrix_refuses_startup(record_variants) -> None:
     result = _run_to_exit(
         _profile("perception_runtime.yaml"),

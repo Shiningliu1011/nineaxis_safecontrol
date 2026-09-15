@@ -45,6 +45,7 @@ from threading import Lock
 import numpy as np
 import rclpy
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup
+from rclpy.clock import Clock, ClockType
 from rclpy.exceptions import ParameterUninitializedException
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
@@ -308,8 +309,10 @@ class PerceptionBridge(Node):
             f"sha256={self._record.file_sha256} ids=[{identities}] "
             f"level={self._decision.level}")
         self._publish_calibration_status()
+        # Liveness must remain observable when /clock is absent or paused.
+        self._calibration_clock = Clock(clock_type=ClockType.STEADY_TIME)
         self._calibration_timer = self.create_timer(
-            1.0, self._publish_calibration_status)
+            1.0, self._publish_calibration_status, clock=self._calibration_clock)
 
     # ------------------------------------------------------------------
     # Parameter declaration

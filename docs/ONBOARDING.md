@@ -63,6 +63,11 @@ final launch 在启动任何节点前拒绝 `hardware_mode=live`；`hardware_bri
 旧参数 `use_tf` / `camera_to_world_static` / `lidar_to_world_static` 只保留声明作探测器
 （非默认值即拒绝启动），**没有 TF 输入路径，也没有 identity 兜底**。身份与准入结论发布在
 `/perception/calibration_status`（`DiagnosticArray`，1 Hz 心跳 + 启动即发一份）。
+心跳使用单调时钟，`use_sim_time=true` 且 `/clock` 停止时仍持续发布；消息时间戳
+仍采用 ROS 时间，消费端不得用该时间戳判断报告新鲜度。记录规范化中的映射键必须为
+字符串（禁止把数字键转为字符串后覆盖同名键）；超出浮点范围的数值和非法 YAML 日期
+按标定错误拒绝启动，不绕过退出码 3 契约。修复与复现见
+[OFF-01 交付记录](planning/oscbf-reuse/handoffs/45-calibration-record.md)。
 未标定几何只允许在部署 profile 显式逐源声明 `allow_uncalibrated_debug` 时启动，
 且不构成准入。契约见 ADR 0004 与 ADR 0009。
 
