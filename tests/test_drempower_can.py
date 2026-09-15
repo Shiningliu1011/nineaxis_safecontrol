@@ -62,7 +62,7 @@ class TestEncodePosition:
 
     def test_negative_and_high_speed(self) -> None:
         data = encode_position(2, -33.5, speed=0.06, filter_accel=-1.0)
-        assert data == struct.pack("<fhh", -33.5, 6, -100)
+        assert data == struct.pack("<fhh", -33.5, 6, 100)
 
     def test_invalid_rejected(self) -> None:
         with pytest.raises(ValueError):
@@ -123,19 +123,19 @@ class TestFeedbackDecode:
 class TestPropertyFrames:
     def test_read_frame_layout(self) -> None:
         data = encode_property_read(3, 31001)
-        assert data == struct.pack("<H", 31001) + b"\x00" * 6
+        assert data == bytes.fromhex("1979030000000000")
 
     def test_write_u16_layout(self) -> None:
         data = encode_property_write(3, 31001, 3, "u16")
-        assert data == struct.pack("<HH", 31001, 3) + b"\x00" * 4
+        assert data == bytes.fromhex("1979010003000000")
 
     def test_write_u32_layout(self) -> None:
         data = encode_property_write(3, 30001, 123, "u32")
-        assert data == struct.pack("<H", 30001) + struct.pack("<I", 123) + b"\x00" * 2
+        assert data == bytes.fromhex("317503007b000000")
 
     def test_write_f32_layout(self) -> None:
         data = encode_property_write(3, 35001, 34.5, "f32")
-        assert data == struct.pack("<H", 35001) + struct.pack("<f", 34.5) + b"\x00" * 2
+        assert data == bytes.fromhex("b988000000000a42")
 
     def test_invalid_kind_rejected(self) -> None:
         with pytest.raises(ValueError):
@@ -151,13 +151,13 @@ class TestEnableDisableSequence:
             can_id(2, CMD_SYSTEM), encode_system(2, SYSTEM_ORDER_CLEAR_ERROR)
         )
         assert frames[1][0] == can_id(2, CMD_PROPERTY_WRITE)
-        assert struct.unpack("<HH", frames[1][1][0:4]) == (30002, AXIS_STATE_CLOSED_LOOP)
+        assert frames[1] == (0x5F, bytes.fromhex("3375030008000000"))
 
     def test_disable_order(self) -> None:
         frames = disable_sequence(2)
         assert len(frames) == 1
         assert frames[0][0] == can_id(2, CMD_PROPERTY_WRITE)
-        assert struct.unpack("<HH", frames[0][1][0:4]) == (30002, AXIS_STATE_IDLE)
+        assert frames[0] == (0x5F, bytes.fromhex("3375030001000000"))
 
 
 def test_protocol_constants_are_commitments() -> None:
@@ -173,3 +173,32 @@ def test_no_numpy_state_leakage() -> None:
     a = encode_position(1, 10.0, speed=1.0, filter_accel=1.0)
     b = encode_position(1, 10.0, speed=1.0, filter_accel=1.0)
     assert np.array_equal(np.frombuffer(a, dtype=np.uint8), np.frombuffer(b, dtype=np.uint8))
+
+
+def test_mode0_vendor_truncation_and_bandwidth_limit():
+    assert encode_position(1, 90, speed=-1.239, filter_accel=-2.349) == bytes.fromhex("0000b4427b00ea00")
+    with pytest.raises(ValueError):
+        encode_position(1, 0, speed=1, filter_accel=301)
+
+
+def test_property_response_validates_envelope():
+    from robot_safecontrol_moveit.drempower_can import decode_property_reply
+    assert decode_property_reply(0x3E, bytes.fromhex("3275030008000000"), node_id=1, address=30002) == 8
+    for frame_id, data in [(0x5E, "3275030008000000"), (0x39, "3275030008000000"),
+                           (0x3E, "3375030008000000"), (0x3E, "3275010008000000")]:
+        with pytest.raises(ValueError):
+            decode_property_reply(frame_id, bytes.fromhex(data), node_id=1, address=30002)
+
+
+def test_vendor_pdf_page8_position_reply():
+    # Printed manufacturer example, independent of our encoder and fake motor.
+    from robot_safecontrol_moveit.drempower_can import decode_property_reply
+    assert encode_property_read(4, 38007, "f32") == bytes.fromhex("7794000000000000")
+    assert decode_property_reply(0x9E, bytes.fromhex("7794000038f0b8c2"),
+                                 node_id=4, address=38007, value_kind="f32") == pytest.approx(-92.469177, abs=.00001)
+
+
+@pytest.mark.parametrize("frame_id", [0x3E, 0x38, 0x19, 0x839])
+def test_non_feedback_ids_rejected(frame_id):
+    with pytest.raises(ValueError):
+        decode_feedback(frame_id, bytes.fromhex("0000b44200000000"))
