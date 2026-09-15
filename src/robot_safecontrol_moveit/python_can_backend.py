@@ -1,7 +1,8 @@
 """Thin, synchronous python-can adapter; no interface setup or automatic enable.
 
 One owner must serialize transactions. Received timestamps remain the original
-transport wall-clock timestamps; they are never promoted to motor freshness.
+transport wall-clock timestamps; callers must validate them before using them
+as feedback freshness.
 """
 from __future__ import annotations
 

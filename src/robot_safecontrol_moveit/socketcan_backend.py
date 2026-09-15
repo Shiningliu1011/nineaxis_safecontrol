@@ -194,7 +194,10 @@ def poll_node_state(
     # 发一个无害的属性读帧（不改变电机状态）
     sent = backend.send(can_id(node_id, 0x1E), b"\x00" * 8)
     result = backend.recv(node_id, timeout_s=timeout_s) if sent else None
-    frame = _coerce_received_frame(result)
+    try:
+        frame = _coerce_received_frame(result)
+    except (TypeError, ValueError):
+        return _offline_state(node_id, axis_error=True)
     if frame is None:
         return _offline_state(node_id)
     try:

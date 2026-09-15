@@ -313,6 +313,16 @@ def test_poll_rejects_property_frame_even_with_current_transport_time():
     assert np.isnan(state.pos_deg)
 
 
+def test_poll_rejects_malformed_backend_frame():
+    class Malformed(FakeCANBackend):
+        def recv(self, node_id, timeout_s=.01):
+            return object()
+
+    state = poll_node_state(1, Malformed(), time.time())
+    assert not state.online
+    assert state.axis_error
+
+
 def test_poll_preserves_transport_timestamp_and_rejects_old_frame():
     class Timestamped(FakeCANBackend):
         def __init__(self):
