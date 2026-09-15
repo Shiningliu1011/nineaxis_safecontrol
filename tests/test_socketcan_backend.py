@@ -27,6 +27,7 @@ from robot_safecontrol_moveit.socketcan_backend import (
     discover_nodes,
     poll_node_state,
 )
+from robot_safecontrol_moveit.python_can_backend import ReceivedFrame
 
 
 class FakeCANBackend(CANBusBackend):
@@ -67,7 +68,7 @@ class FakeCANBackend(CANBusBackend):
 
     def recv(
         self, node_id: int, timeout_s: float = 0.01,
-    ) -> tuple[int, bytes] | None:
+    ) -> ReceivedFrame | None:
         """接收：构造反馈帧，离线/错误节点返回 None 或带错误标志。"""
         if node_id in self.offline_nodes or node_id not in self.known_nodes:
             return None
@@ -82,7 +83,7 @@ class FakeCANBackend(CANBusBackend):
                 pos_deg = struct.unpack("<f", data[:4])[0]
                 break
         data = struct.pack("<fhh", pos_deg, 0, 0)
-        return resp_id, data
+        return ReceivedFrame(resp_id, data, time.time())
 
     def close(self) -> None:
         pass
@@ -213,7 +214,7 @@ class TestCANBus:
 
     def test_poll_all_nodes(self) -> None:
         backend = FakeCANBackend()
-        bus = SocketCANBus(_config(), backend=backend)
+        bus = SocketCANBus(_config(), backend=backend, motion_permit=lambda: True)
         bus.send_enable(1)
         # send_enable 发 clear_error + write_requested_state 两帧
         assert len(backend.sent_frames) == 2
@@ -263,7 +264,7 @@ def test_metrics_no_global_leak() -> None:
 
 def test_failed_clear_error_never_enables():
     backend = FakeCANBackend(loss_rate=1.0)
-    bus = SocketCANBus(_config(), backend=backend)
+    bus = SocketCANBus(_config(), backend=backend, motion_permit=lambda: True)
     assert not bus.send_enable(1)
     assert backend.sent_count == 1
     assert bus.metrics.lost == 1
@@ -271,7 +272,7 @@ def test_failed_clear_error_never_enables():
 
 def test_enable_and_disable_independent_vendor_frames():
     backend = FakeCANBackend()
-    bus = SocketCANBus(_config(), backend=backend)
+    bus = SocketCANBus(_config(), backend=backend, motion_permit=lambda: True)
     assert bus.send_enable(1)
     assert backend.sent_frames == [(0x28, bytes.fromhex("0400000000000000")),
                                    (0x3F, bytes.fromhex("3375030008000000"))]
@@ -298,6 +299,53 @@ def test_wrong_node_or_property_is_not_quick_feedback(frame_id):
     assert not state.online
     assert np.isnan(state.pos_deg)
     assert state.stamp_s == float("-inf")
+
+
+def test_poll_rejects_property_frame_even_with_current_transport_time():
+    class PropertyReply(FakeCANBackend):
+        def recv(self, node_id, timeout_s=.01):
+            return ReceivedFrame(
+                can_id(node_id, 0x1F), bytes.fromhex("3375030008000000"), time.time(),
+            )
+
+    state = poll_node_state(1, PropertyReply(), time.time())
+    assert not state.online
+    assert np.isnan(state.pos_deg)
+
+
+def test_poll_preserves_transport_timestamp_and_rejects_old_frame():
+    class Timestamped(FakeCANBackend):
+        def __init__(self):
+            super().__init__()
+            self.sample_time = None
+
+        def recv(self, node_id, timeout_s=.01):
+            data = struct.pack("<fhh", 12.0, 100, 200)
+            self.sample_time = time.time()
+            return ReceivedFrame(can_id(node_id, 0x1F), data, self.sample_time)
+
+    backend = Timestamped()
+    state = poll_node_state(1, backend, time.time(), feedback_timeout_s=1.0)
+    assert state.online
+    assert state.stamp_s == backend.sample_time
+
+    class Old(Timestamped):
+        def recv(self, node_id, timeout_s=.01):
+            data = struct.pack("<fhh", 12.0, 100, 200)
+            return ReceivedFrame(can_id(node_id, 0x1F), data, time.time() - 1.0)
+
+    old_state = poll_node_state(1, Old(), time.time(), feedback_timeout_s=.2)
+    assert not old_state.online
+    assert old_state.stamp_s == float("-inf")
+
+
+def test_motion_commands_require_explicit_permit():
+    backend = FakeCANBackend()
+    bus = SocketCANBus(_config(), backend=backend)
+    assert not bus.send_position(1, 10.0)
+    assert not bus.send_enable(1)
+    assert not bus.send_disable(1)
+    assert backend.sent_frames == []
 
 
 def test_disconnected_bus_rejects_poll_and_close_clears_cache():

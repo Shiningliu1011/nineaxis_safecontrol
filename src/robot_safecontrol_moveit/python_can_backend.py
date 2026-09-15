@@ -16,6 +16,22 @@ class ReceivedFrame:
     data: bytes
     timestamp_s: float
 
+    def __iter__(self):
+        """Keep the legacy ``frame_id, data = recv(...)`` unpacking seam."""
+        yield self.frame_id
+        yield self.data
+
+    def __eq__(self, other):
+        if isinstance(other, ReceivedFrame):
+            return (
+                self.frame_id == other.frame_id
+                and self.data == other.data
+                and self.timestamp_s == other.timestamp_s
+            )
+        if isinstance(other, tuple) and len(other) == 2:
+            return (self.frame_id, self.data) == other
+        return NotImplemented
+
 
 class PythonCANBackend:
     """SocketCAN in production; explicit virtual interface for offline tests."""
@@ -79,8 +95,8 @@ class PythonCANBackend:
             if time.monotonic() >= deadline:
                 return None
 
-    def recv(self, node_id: int, timeout_s: float = 0.01) -> tuple[int, bytes] | None:
-        """Compatibility seam; unrelated nodes are discarded, never cached as fresh."""
+    def recv(self, node_id: int, timeout_s: float = 0.01) -> ReceivedFrame | None:
+        """Return the node frame without discarding its transport timestamp."""
         if not 1 <= node_id <= 63 or not math.isfinite(timeout_s) or timeout_s < 0:
             raise ValueError("invalid node or timeout")
         deadline = time.monotonic() + timeout_s
@@ -89,7 +105,7 @@ class PythonCANBackend:
             if frame is None:
                 return None
             if frame.frame_id >> 5 == node_id:
-                return frame.frame_id, frame.data
+                return frame
             if time.monotonic() >= deadline:
                 return None
 

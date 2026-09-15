@@ -1,4 +1,5 @@
 """Actual python-can peers; virtual != Linux vcan != hardware acceptance."""
+import math
 import os
 import struct
 import subprocess
@@ -34,7 +35,9 @@ def test_two_peer_roundtrip_and_close(peers):
     assert bytes(request.data) == bytes.fromhex("3275030000000000")
     assert not request.is_extended_id
     peer.send(message())
-    assert backend.recv(1, .1) == (0x3E, bytes.fromhex("3275030008000000"))
+    received = backend.recv(1, .1)
+    assert received == (0x3E, bytes.fromhex("3275030008000000"))
+    assert received is not None and math.isfinite(received.timestamp_s)
     backend.close()
     backend.close()
     assert not backend.send(0x3E, b"\0" * 8)

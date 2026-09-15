@@ -2,18 +2,21 @@
 
 Real transport uses the optional python-can adapter. No automatic enable or
 network configuration occurs; sim/shadow bridge never constructs this bus.
+Motion commands require an explicit permit from the qualified safety owner;
+without it, the transport remains read-only even when a real CAN socket opens.
 """
 
 from __future__ import annotations
 
-import time
-import struct
 import math
+import struct
+import time
 from dataclasses import dataclass, field
-from typing import Protocol, Sequence
+from typing import Callable, Protocol
 
 import numpy as np
 
+from .python_can_backend import ReceivedFrame
 from .drempower_can import (
     MAX_NODE_ID,
     PROP_AXIS_REQUESTED_STATE,
@@ -47,8 +50,8 @@ class CANBusBackend(Protocol):
 
     def recv(
         self, node_id: int, timeout_s: float = 0.01,
-    ) -> tuple[int, bytes] | None:
-        """接收 node_id 的响应帧，超时返回 None。"""
+    ) -> ReceivedFrame | None:
+        """接收 node_id 的响应帧，并保留底层接收时间。"""
         ...
 
     def close(self) -> None:
@@ -139,28 +142,74 @@ class CANBusMetrics:
 
 # --- 自由函数 ----------------------------------------------------------------
 
+# Quick feedback keeps the 0x1E read command's bits 3..4 and sets bit 0.
+# Bits 1 and 2 carry trajectory-done and axis-error flags, respectively.
+_QUICK_FEEDBACK_MASK = 0x19
+_PROPERTY_TYPE_CODES = frozenset(range(5))
+_MAX_CLOCK_SKEW_S = 0.05
+
+
+def _offline_state(node_id: int, *, axis_error: bool = False) -> CANNodeState:
+    return CANNodeState(
+        node_id=node_id, pos_deg=math.nan, vel_rpm=math.nan, torque_nm=math.nan,
+        traj_done=False, axis_error=axis_error, stamp_s=float("-inf"), online=False,
+    )
+
+
+def _looks_like_property_reply(data: bytes) -> bool:
+    """Recognize the typed address/type envelope used by property replies.
+
+    Quick feedback uses address zero. A nonzero address with a valid type code
+    is therefore never a valid quick feedback payload and must not be decoded
+    as a motor state when it is left in the receive queue.
+    """
+    if len(data) != 8:
+        return False
+    address, type_code = struct.unpack_from("<HH", data)
+    return address != 0 and type_code in _PROPERTY_TYPE_CODES
+
+
+def _coerce_received_frame(result) -> ReceivedFrame | None:
+    """Normalize the legacy tuple seam without manufacturing a timestamp."""
+    if result is None:
+        return None
+    if isinstance(result, ReceivedFrame):
+        return result
+    if isinstance(result, tuple) and len(result) == 2:
+        # Legacy backends did not expose transport time. Treat those frames as
+        # unqualified for feedback rather than stamping them with ``now``.
+        return ReceivedFrame(int(result[0]), bytes(result[1]), float("nan"))
+    raise ValueError("backend recv must return ReceivedFrame or (frame_id, data)")
+
+
 def poll_node_state(
     node_id: int, backend: CANBusBackend, now_s: float, *, timeout_s: float = 0.01,
+    feedback_timeout_s: float = 0.2,
 ) -> CANNodeState:
     """单节点轮询：发一帧读状态，离线返回 offline 状态。"""
+    if (not math.isfinite(now_s) or not math.isfinite(feedback_timeout_s)
+            or feedback_timeout_s <= 0.0):
+        raise ValueError("finite poll time and positive feedback timeout required")
+    request_started_s = max(float(now_s), time.time())
     # 发一个无害的属性读帧（不改变电机状态）
     sent = backend.send(can_id(node_id, 0x1E), b"\x00" * 8)
     result = backend.recv(node_id, timeout_s=timeout_s) if sent else None
-    if result is None:
-        return CANNodeState(
-            node_id=node_id, pos_deg=math.nan, vel_rpm=math.nan, torque_nm=math.nan,
-            traj_done=False, axis_error=False, stamp_s=float("-inf"), online=False,
-        )
-    resp_id, data = result
+    frame = _coerce_received_frame(result)
+    if frame is None:
+        return _offline_state(node_id)
     try:
-        if resp_id >> 5 != node_id or resp_id & 0x1F == 0x1E:
-            raise ValueError("wrong node or property reply in quick feedback")
-        fb = decode_feedback(resp_id, data)
+        observed_s = time.time()
+        if (frame.frame_id >> 5 != node_id
+                or (frame.frame_id & _QUICK_FEEDBACK_MASK) != _QUICK_FEEDBACK_MASK
+                or not math.isfinite(frame.timestamp_s)
+                or frame.timestamp_s < request_started_s
+                or frame.timestamp_s > observed_s + _MAX_CLOCK_SKEW_S
+                or observed_s - frame.timestamp_s > feedback_timeout_s
+                or _looks_like_property_reply(frame.data)):
+            raise ValueError("stale, foreign, property or non-quick feedback frame")
+        fb = decode_feedback(frame.frame_id, frame.data)
     except (ValueError, struct.error):
-        return CANNodeState(
-            node_id=node_id, pos_deg=math.nan, vel_rpm=math.nan, torque_nm=math.nan,
-            traj_done=False, axis_error=True, stamp_s=float("-inf"), online=False,
-        )
+        return _offline_state(node_id, axis_error=True)
     return CANNodeState(
         node_id=node_id,
         pos_deg=fb.pos_deg,
@@ -168,7 +217,7 @@ def poll_node_state(
         torque_nm=fb.torque_nm,
         traj_done=fb.traj_done,
         axis_error=fb.axis_error,
-        stamp_s=now_s,
+        stamp_s=frame.timestamp_s,
         online=True,
     )
 
@@ -229,16 +278,23 @@ class SystemOrder:
 
 
 class SocketCANBus:
-    """CAN 总线管理器：轮询、发送、统计、重连。"""
+    """CAN 总线管理器：轮询、发送、统计、重连。
+
+    The transport is not itself a live-control qualification gate. Callers
+    must inject a safety-owned ``motion_permit`` before position, enable or
+    disable commands can be sent; the default is fail-closed.
+    """
 
     def __init__(
         self, config: CANBusConfig, *, backend: CANBusBackend | None = None,
+        motion_permit: Callable[[], bool] | None = None,
     ) -> None:
         self.config = config
         self.metrics = CANBusMetrics()
         self._node_states: dict[int, CANNodeState] = {}
         self._backend: CANBusBackend | None = backend
         self._connected = backend is not None
+        self._motion_permit = motion_permit
 
     @property
     def is_connected(self) -> bool:
@@ -271,7 +327,7 @@ class SocketCANBus:
     def send_position(self, node_id: int, target_deg: float, *,
                       speed: float = 1.0, filter_accel: float = 1.0) -> bool:
         """发送位置命令（0x19）。"""
-        if not self.is_connected:
+        if not self.is_connected or not self._motion_is_permitted():
             return False
         data = encode_position(node_id, target_deg, speed=speed,
                                filter_accel=filter_accel)
@@ -281,7 +337,7 @@ class SocketCANBus:
 
     def send_enable(self, node_id: int) -> bool:
         """使能节点（clear_error → requested_state=8）。"""
-        if not self.is_connected:
+        if not self.is_connected or not self._motion_is_permitted():
             return False
         # clear_error
         data_clear = encode_system(node_id, SYSTEM_ORDER_CLEAR_ERROR)
@@ -299,7 +355,7 @@ class SocketCANBus:
 
     def send_disable(self, node_id: int) -> bool:
         """失能节点（requested_state=IDLE）。"""
-        if not self.is_connected:
+        if not self.is_connected or not self._motion_is_permitted():
             return False
         data = encode_property_write(
             node_id, PROP_AXIS_REQUESTED_STATE, AXIS_STATE_IDLE, "u32")
@@ -317,6 +373,15 @@ class SocketCANBus:
         self.metrics.record_send(success)
         return success
 
+    def _motion_is_permitted(self) -> bool:
+        """Fail closed until a qualified safety owner supplies a permit."""
+        if self._motion_permit is None:
+            return False
+        try:
+            return bool(self._motion_permit())
+        except Exception:
+            return False
+
     def poll_all(self) -> list[CANNodeState]:
         """轮询所有配置节点并更新内部状态；返回状态列表。"""
         if not self.is_connected:
@@ -326,7 +391,10 @@ class SocketCANBus:
         for node_id in self.config.node_ids:
             prev = self._node_states.get(node_id)
             requested_at = time.monotonic()
-            state = poll_node_state(node_id, self._backend, now)
+            state = poll_node_state(
+                node_id, self._backend, now,
+                feedback_timeout_s=self.config.feedback_timeout_s,
+            )
             if state.online:
                 self.metrics.record_latency(time.monotonic() - requested_at)
             states.append(state)
