@@ -21,13 +21,18 @@ log/
 # Python 打包产物
 dist/
 
-# ZCode 本地配置
+# ZCode 本地配置与会话临时文件
 .zcode/
+.zcode_*
 
 # 本地实验、运行日志和外部厂商资料不进入版本库
 .scratch/
 Log/
 大然电机/
+
+# 架构重设计的本地工作产物：决定记录、spec 草稿与研究原型保留在工作区，不入库
+docs/planning/architecture-redesign/
+portable_oscbf/scripts/prototype_*
 
 # 研究复现产生的编译缓存
 docs/planning/oscbf-reuse/research/3-latency-evidence/**/jit-cache/
