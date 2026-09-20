@@ -35,6 +35,18 @@ class CylinderFit:
     def radius(self) -> float:
         return sqrt(max(self.radius_squared, 0.0))
 
+    def axis_point(self, axial_coordinate: float) -> np.ndarray:
+        """Point on the fitted axis at a caller-selected axial coordinate.
+
+        Geometry consumers use the path midpoint; the viewer may extend the
+        displayed cylinder to the floor. The fitted transverse centre is shared.
+        """
+        return (
+            self.center_xy[0] * self.u
+            + self.center_xy[1] * self.v
+            + axial_coordinate * self.axis
+        )
+
 
 def fit_circle(
     points: Sequence[Sequence[float]],
@@ -97,11 +109,7 @@ def snap_path_to_cylindrical_surface(
     radius = fit.radius
     axial_vals = values @ fit.axis
     axial_centre = 0.5 * (float(axial_vals.min()) + float(axial_vals.max()))
-    centre = (
-        fit.center_xy[0] * fit.u
-        + fit.center_xy[1] * fit.v
-        + axial_centre * fit.axis
-    )
+    centre = fit.axis_point(axial_centre)
     relative = values - centre
     axial = np.outer(relative @ fit.axis, fit.axis)
     radial = relative - axial
@@ -175,11 +183,7 @@ def compute_surface_normal_orientations(
 
     axial_vals = fit_values @ fit.axis
     axial_centre = 0.5 * (float(axial_vals.min()) + float(axial_vals.max()))
-    centre = (
-        fit.center_xy[0] * fit.u
-        + fit.center_xy[1] * fit.v
-        + axial_centre * fit.axis
-    )
+    centre = fit.axis_point(axial_centre)
 
     orientations: list[tuple[float, float, float, float]] = []
     for point in values:

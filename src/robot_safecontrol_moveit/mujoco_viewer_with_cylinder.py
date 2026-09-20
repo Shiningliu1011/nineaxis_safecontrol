@@ -413,7 +413,7 @@ class MuJoCoJointStateViewer(Node):
             axial_bottom = float(axial_values.min()) - height_margin_m
             height = axial_top - axial_bottom
             axial_center = 0.5 * (axial_bottom + axial_top)
-        center = center_x * fit.u + center_y * fit.v + axial_center * fit.axis
+        center = fit.axis_point(axial_center)
 
         plane_x = values @ fit.u
         plane_y = values @ fit.v
