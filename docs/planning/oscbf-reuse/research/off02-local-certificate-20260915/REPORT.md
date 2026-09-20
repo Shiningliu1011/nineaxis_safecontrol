@@ -14,8 +14,8 @@
 
 | 文件 | 作用 |
 |---|---|
-| `portable_oscbf/work/obb_geometry_admission.py` | 36 对点态 `separated / overlap / indeterminate`，稳定原因码、模型/配对身份，22 对相对运动连续界，以及 `covered / outside / indeterminate` 强绑定检查 |
-| `portable_oscbf/scripts/certify_obb_region.py` | 从显式 JSON 区域生成确定性证据，记录模型、mesh 和任务输入的 SHA-256 |
+| `portable_oscbf/work/obb_geometry_admission.py` | 36 对点态 `separated / overlap / indeterminate`，绑定 q/关节顺序、稳定原因码、模型/配对身份，22 对相对运动连续界，以及 `covered / outside / indeterminate` 强绑定检查 |
+| `portable_oscbf/scripts/certify_obb_region.py` | 从显式 JSON 区域生成确定性证据，记录输入哈希、模型、mesh、FK 和任务输入的 SHA-256 |
 | `portable_oscbf/tests/test_obb_geometry_admission.py` | 配对分区、已知反例、非有限输入、相对运动消去、区域证书和身份失配回归 |
 | `portable_oscbf/work/fcl_collision_mesh.py` | 离线 mesh checker 恢复 Link6，并只排除运动链直接相邻对；非相邻 Link3/Link5 不再永久豁免 |
 | `portable_oscbf/scripts/generate_obb_calibration.py` | 把 14 对表明确标为在线 CBF 子集，生成配置不再宣称 Link6 被 Link5 覆盖或 Link3/Link5 获得几何豁免 |
@@ -71,10 +71,10 @@ pair_policy_id = obb-pairs:v1:b0f9d288f60fc79239ce40f23d20368c1b2975104dc424a7fb
 certificate_id = obb-region:v1:e7a2c4e62fa0f9e262d8a86e4ad1388231dd62afaaa96a1028ac5b2028caa763
 certificate_pair_count = 22
 input_sha256 = d61b397cee3e6799760ba1679638c9a905bdd37e71c11720e29ee2f953211f39
-certificate_sha256 = 345d9d9384eb504471e04d54d2f78c8c8826aa5691723a07fdb66471b1b46e6c
+certificate_sha256 = da519a93963a0a8e0a3d12ae9c43ee37cdb71208adcd97916421842cf6de8414
 ```
 
-`certificate.json` 另含 10 个 STL、OBB 常量、运动链、证书实现、蝴蝶数据和控制/轨迹源码共 18 个实际文件哈希，以及 22 对逐对中心下界、活动关节、运动界和证书下界。`geometry_error_m`、`state_error_half_width_q` 和 `stop_half_width_q` 在本次模型证书中为零；对应来源字段和 `unknown_items` 明确声明这些零值不代表物理误差或停车能力。
+`certificate.json` 另含顶层输入/模型/配对/证书身份、10 个 STL、OBB 常量、运动链、FK 实现、证书实现、蝴蝶数据和控制/轨迹源码共 20 个实际文件哈希，以及 22 对逐对中心下界、活动关节、运动界和证书下界。点态结果同时保存被检查的九轴 q 和 `J1`…`J9` 顺序。`geometry_error_m`、`state_error_half_width_q` 和 `stop_half_width_q` 在本次模型证书中为零；对应来源字段和 `unknown_items` 明确声明这些零值不代表物理误差或停车能力。
 
 ## 实际验证
 
@@ -82,12 +82,12 @@ certificate_sha256 = 345d9d9384eb504471e04d54d2f78c8c8826aa5691723a07fdb66471b1b
 python3 -m pytest -q \
   portable_oscbf/tests/test_obb_geometry_admission.py \
   portable_oscbf/tests/test_obb_model.py
-# 19 passed in 4.91s
+# 23 passed in 5.40s
 ```
 
 覆盖了已知盲点拒绝、36=14+22 配对完备性、相邻免检、Link6 mesh 纳入、非有限输入、模型/证书身份失配、越域、共同上游运动相消、连续证书和生成器确定性。
 
-在同一主机、区域中心、预热 20 次后顺序执行 1000 次 36 对点查：均值 `5.916 ms`，p50 `5.909 ms`，p95 `5.951 ms`，p99 `6.125 ms`，最大 `6.332 ms`。这是隔离 Python 基准，只说明该实现单独运行低于 10 ms；它没有证明与完整 100 Hz 控制回路合并后的时延预算。
+在同一主机、区域中心、预热 20 次后顺序执行 1000 次 36 对点查：均值 `6.074 ms`，p50 `6.069 ms`，p95 `6.160 ms`，p99 `6.259 ms`，最大 `6.538 ms`。这是隔离 Python 基准，只说明该实现单独运行低于 10 ms；它没有证明与完整 100 Hz 控制回路合并后的时延预算。
 
 证据可复现为：
 

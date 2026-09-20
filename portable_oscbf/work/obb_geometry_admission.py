@@ -31,6 +31,7 @@ from work.obb_collision_model import (
 
 SCHEMA_VERSION = 1
 NUM_JOINTS = 9
+JOINT_ORDER = tuple(f"J{index}" for index in range(1, NUM_JOINTS + 1))
 POINT_BOUNDARIES = (
     "kernel_candidate",
     "filtered_command",
@@ -149,6 +150,8 @@ class PairPointAssessment:
 class PointCollisionAssessment:
     query_id: str
     boundary: str
+    q: tuple[float, ...] | None
+    joint_order: tuple[str, ...]
     status: str
     model_id: str
     pair_policy_id: str
@@ -332,20 +335,35 @@ def _invalid_point_assessment(
     boundary: str,
     task_id: str,
     attachment_id: str,
-    reason: str,
+    reason: str | Sequence[str],
+    q: tuple[float, ...] | None = None,
 ) -> PointCollisionAssessment:
+    reason_codes = (reason,) if isinstance(reason, str) else tuple(reason)
     return PointCollisionAssessment(
         query_id=query_id,
         boundary=boundary,
+        q=q,
+        joint_order=JOINT_ORDER,
         status=PointCollisionStatus.INDETERMINATE.value,
         model_id=GEOMETRY_MODEL_ID,
         pair_policy_id=ALL_NONADJACENT_POLICY_ID,
         checked_pair_count=0,
         task_id=task_id,
         attachment_id=attachment_id,
-        reason_codes=(reason,),
+        reason_codes=reason_codes,
         pairs=(),
     )
+
+
+def _is_nonblank_text(value: object) -> bool:
+    return isinstance(value, str) and bool(value.strip())
+
+
+def _is_finite_positive(value: object) -> bool:
+    try:
+        return math.isfinite(float(value)) and float(value) > 0.0
+    except (TypeError, ValueError, OverflowError):
+        return False
 
 
 def assess_point_collision(
@@ -360,40 +378,52 @@ def assess_point_collision(
 ) -> PointCollisionAssessment:
     """Assess all 36 non-adjacent OBB pairs at one bound state."""
 
+    safe_query_id = query_id if isinstance(query_id, str) else ""
+    safe_boundary = boundary if isinstance(boundary, str) else ""
+    safe_task_id = task_id if isinstance(task_id, str) else ""
+    safe_attachment_id = attachment_id if isinstance(attachment_id, str) else ""
+    reasons = []
     if (
-        not query_id.strip()
+        not _is_nonblank_text(query_id)
+        or not isinstance(boundary, str)
         or boundary not in POINT_BOUNDARIES
-        or not task_id.strip()
-        or not attachment_id.strip()
-        or not math.isfinite(numerical_tolerance_m)
-        or numerical_tolerance_m <= 0.0
+        or not _is_nonblank_text(task_id)
+        or not _is_nonblank_text(attachment_id)
+        or not _is_finite_positive(numerical_tolerance_m)
     ):
-        return _invalid_point_assessment(
-            query_id, boundary, task_id, attachment_id, GEOMETRY_INPUT_INVALID,
-        )
+        reasons.append(GEOMETRY_INPUT_INVALID)
     if expected_model_id is not None and expected_model_id != GEOMETRY_MODEL_ID:
-        return _invalid_point_assessment(
-            query_id, boundary, task_id, attachment_id,
-            CERTIFICATE_IDENTITY_MISMATCH,
-        )
+        reasons.append(CERTIFICATE_IDENTITY_MISMATCH)
     try:
         state = np.asarray(q, dtype=float)
-    except (TypeError, ValueError):
-        return _invalid_point_assessment(
-            query_id, boundary, task_id, attachment_id, GEOMETRY_INPUT_INVALID,
-        )
+    except (TypeError, ValueError, OverflowError):
+        state = None
+        reasons.append(GEOMETRY_INPUT_INVALID)
     lower = _ROBOT.joint_limits.q_min
     upper = _ROBOT.joint_limits.q_max
-    if (
+    reported_q = None
+    if state is not None and state.shape == (NUM_JOINTS,) \
+            and np.all(np.isfinite(state)):
+        reported_q = tuple(float(value) for value in state)
+    if state is None or (
         state.shape != (NUM_JOINTS,)
         or not np.all(np.isfinite(state))
         or np.any(state < lower)
         or np.any(state > upper)
     ):
+        if GEOMETRY_INPUT_INVALID not in reasons:
+            reasons.append(GEOMETRY_INPUT_INVALID)
+    if reasons:
         return _invalid_point_assessment(
-            query_id, boundary, task_id, attachment_id, GEOMETRY_INPUT_INVALID,
+            safe_query_id,
+            safe_boundary,
+            safe_task_id,
+            safe_attachment_id,
+            tuple(dict.fromkeys(reasons)),
+            q=reported_q,
         )
 
+    numerical_tolerance_m = float(numerical_tolerance_m)
     obbs = _world_obbs(state)
     pair_rows = []
     for i, j in ALL_NONADJACENT_PAIRS:
@@ -407,23 +437,28 @@ def assess_point_collision(
         ))
     if any(row.status == PointCollisionStatus.OVERLAP.value for row in pair_rows):
         status = PointCollisionStatus.OVERLAP
-        reasons = (GEOMETRY_OVERLAP,)
+        reasons = [GEOMETRY_OVERLAP]
     elif any(row.status == PointCollisionStatus.INDETERMINATE.value for row in pair_rows):
         status = PointCollisionStatus.INDETERMINATE
-        reasons = (GEOMETRY_NUMERICAL_INDETERMINATE,)
+        reasons = [GEOMETRY_NUMERICAL_INDETERMINATE]
     else:
         status = PointCollisionStatus.SEPARATED
-        reasons = ()
+        reasons = []
+    if any(row.status == PointCollisionStatus.INDETERMINATE.value for row in pair_rows) \
+            and GEOMETRY_NUMERICAL_INDETERMINATE not in reasons:
+        reasons.append(GEOMETRY_NUMERICAL_INDETERMINATE)
     return PointCollisionAssessment(
         query_id=query_id,
         boundary=boundary,
+        q=tuple(float(value) for value in state),
+        joint_order=JOINT_ORDER,
         status=status.value,
         model_id=GEOMETRY_MODEL_ID,
         pair_policy_id=ALL_NONADJACENT_POLICY_ID,
         checked_pair_count=len(pair_rows),
         task_id=task_id,
         attachment_id=attachment_id,
-        reason_codes=reasons,
+        reason_codes=tuple(reasons),
         pairs=tuple(pair_rows),
     )
 
@@ -550,18 +585,20 @@ def build_region_certificate(
                 reason_codes=row_reasons,
             ))
         evidence = tuple(rows)
-        if any(GEOMETRY_OVERLAP in row.reason_codes for row in evidence):
-            status = CertificateStatus.NOT_CERTIFIED.value
-            reasons = (GEOMETRY_OVERLAP,)
-        elif any(
-            GEOMETRY_NUMERICAL_INDETERMINATE in row.reason_codes
+        evidence_reasons = tuple(dict.fromkeys(
+            reason
             for row in evidence
-        ):
+            for reason in row.reason_codes
+        ))
+        if GEOMETRY_OVERLAP in evidence_reasons:
+            status = CertificateStatus.NOT_CERTIFIED.value
+            reasons = evidence_reasons
+        elif GEOMETRY_NUMERICAL_INDETERMINATE in evidence_reasons:
             status = CertificateStatus.INDETERMINATE.value
-            reasons = (GEOMETRY_NUMERICAL_INDETERMINATE,)
+            reasons = evidence_reasons
         elif not all(row.certified for row in evidence):
             status = CertificateStatus.NOT_CERTIFIED.value
-            reasons = (REQUIRED_ENVELOPE_INCOMPLETE,)
+            reasons = evidence_reasons or (REQUIRED_ENVELOPE_INCOMPLETE,)
         else:
             status = CertificateStatus.CERTIFIED.value
             reasons = ()
@@ -598,10 +635,21 @@ def assess_domain_coverage(
     model_id = GEOMETRY_MODEL_ID
     certificate_id = ""
     reasons = []
-    if not query_id.strip() or boundary not in POINT_BOUNDARIES:
+    result_query_id = query_id if isinstance(query_id, str) else ""
+    result_boundary = boundary if isinstance(boundary, str) else ""
+    query_is_valid = isinstance(query_id, str) and bool(query_id.strip())
+    required_is_valid = isinstance(required, JointRegionSpec)
+    if not query_is_valid \
+            or not isinstance(boundary, str) \
+            or boundary not in POINT_BOUNDARIES:
         reasons.append(GEOMETRY_INPUT_INVALID)
+    if not required_is_valid:
+        reasons.append(REQUIRED_ENVELOPE_INCOMPLETE)
     if certificate is None:
         reasons.append(CERTIFICATE_MISSING)
+    elif not isinstance(certificate, RegionCertificate):
+        reasons.extend((CERTIFICATE_IDENTITY_MISMATCH,
+                        REQUIRED_ENVELOPE_INCOMPLETE))
     else:
         certificate_id = certificate.certificate_id
         try:
@@ -625,6 +673,7 @@ def assess_domain_coverage(
             reasons.append(CERTIFICATE_IDENTITY_MISMATCH)
         if certificate.status != CertificateStatus.CERTIFIED.value:
             reasons.append(REQUIRED_ENVELOPE_INCOMPLETE)
+        reasons.extend(certificate.reason_codes)
         if certificate.model_id != model_id:
             reasons.append(CERTIFICATE_IDENTITY_MISMATCH)
         if certificate.pair_policy_id != OMITTED_PAIR_POLICY_ID \
@@ -637,7 +686,7 @@ def assess_domain_coverage(
                     for i, j in OMITTED_NONADJACENT_PAIRS
                 ):
             reasons.append(PAIR_POLICY_INCOMPLETE)
-        if (
+        if required_is_valid and (
             certificate.region.task_id != required.task_id
             or certificate.region.attachment_id != required.attachment_id
             or certificate.region.task_region_source
@@ -650,6 +699,19 @@ def assess_domain_coverage(
             != required.geometry_error_source
             or certificate.region.geometry_error_m
             < required.geometry_error_m
+        ):
+            reasons.append(CERTIFICATE_IDENTITY_MISMATCH)
+        if (
+            certificate.status == CertificateStatus.CERTIFIED.value
+            and (
+                certificate.reason_codes
+                or any(
+                    not row.certified
+                    or row.center_status != PointCollisionStatus.SEPARATED.value
+                    or row.reason_codes
+                    for row in certificate.pair_evidence
+                )
+            )
         ):
             reasons.append(CERTIFICATE_IDENTITY_MISMATCH)
     if expected_model_id is not None and expected_model_id != model_id:
@@ -666,17 +728,18 @@ def assess_domain_coverage(
         reasons.append(PAIR_POLICY_INCOMPLETE)
     if reasons:
         return DomainCoverageAssessment(
-            query_id=query_id,
-            boundary=boundary,
+            query_id=result_query_id,
+            boundary=result_boundary,
             status=DomainCoverageStatus.INDETERMINATE.value,
             model_id=model_id,
             certificate_id=certificate_id,
-            task_id=required.task_id,
-            attachment_id=required.attachment_id,
+            task_id=(required.task_id if required_is_valid else ""),
+            attachment_id=(required.attachment_id if required_is_valid else ""),
             reason_codes=tuple(dict.fromkeys(reasons)),
         )
 
     assert certificate is not None
+    assert required_is_valid
     required_center = np.asarray(required.center_q)
     required_half = np.asarray(required.total_half_width_q)
     certified_center = np.asarray(certificate.region.center_q)
@@ -686,7 +749,10 @@ def assess_domain_coverage(
         <= certified_half + certificate.numerical_tolerance_m
     )
     clearance_covered = all(
-        row.certified_clearance_lower_bound_m is not None
+        row.certified
+        and row.center_status == PointCollisionStatus.SEPARATED.value
+        and not row.reason_codes
+        and row.certified_clearance_lower_bound_m is not None
         and row.certified_clearance_lower_bound_m
         > required.required_clearance_m
         for row in certificate.pair_evidence
@@ -698,8 +764,8 @@ def assess_domain_coverage(
     if not clearance_covered:
         outside_reasons.append(REQUIRED_ENVELOPE_INCOMPLETE)
     return DomainCoverageAssessment(
-        query_id=query_id,
-        boundary=boundary,
+        query_id=result_query_id,
+        boundary=result_boundary,
         status=(
             DomainCoverageStatus.COVERED.value
             if covered else DomainCoverageStatus.OUTSIDE.value

@@ -38,6 +38,8 @@ MODEL_IDENTITY_FILES = (
     "portable_oscbf/work/obb_geometry_admission.py",
     "portable_oscbf/work/obb_collision_model.py",
     "portable_oscbf/work/kinematics_data.py",
+    "portable_oscbf/work/nineaxis_kinematics.py",
+    "portable_oscbf/work/robot_geometry.py",
     "portable_oscbf/scripts/certify_obb_region.py",
     "models/ninezzhou/meshes/base_link.STL",
     "models/ninezzhou/meshes/Link1.STL",
@@ -73,6 +75,21 @@ def _source_hashes(extra_files: list[str]) -> dict[str, str]:
     return dict(sorted(result.items()))
 
 
+def _json_bytes(value: object) -> bytes:
+    return json.dumps(
+        value,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+        default=_json_default,
+    ).encode("utf-8")
+
+
+def _document_sha256(document: dict) -> str:
+    return hashlib.sha256(_json_bytes(document)).hexdigest()
+
+
 def _region(data: dict) -> JointRegionSpec:
     vector_fields = (
         "center_q",
@@ -86,7 +103,11 @@ def _region(data: dict) -> JointRegionSpec:
     return JointRegionSpec(**values)
 
 
-def build_evidence(document: dict) -> dict:
+def build_evidence(
+    document: dict,
+    *,
+    input_sha256: str | None = None,
+) -> dict:
     scope = str(document.get("scope_statement", "")).strip()
     unknown_items = document.get("unknown_items")
     if not scope:
@@ -152,8 +173,14 @@ def build_evidence(document: dict) -> dict:
         + list(certificate.reason_codes)
     ))
     extra_files = [str(item) for item in document.get("identity_files", [])]
+    if input_sha256 is None:
+        input_sha256 = _document_sha256(document)
     return {
         "schema_version": 1,
+        "input_sha256": input_sha256,
+        "model_id": certificate.model_id,
+        "pair_policy_id": certificate.pair_policy_id,
+        "certificate_id": certificate.certificate_id,
         "scope_statement": scope,
         "admission_status": admission_status,
         "reason_codes": list(reason_codes),
@@ -183,7 +210,11 @@ def main() -> int:
     args = parser.parse_args()
 
     with args.input.open(encoding="utf-8") as stream:
-        evidence = build_evidence(json.load(stream))
+        document = json.load(stream)
+    evidence = build_evidence(
+        document,
+        input_sha256=_sha256(args.input),
+    )
     encoded = json.dumps(
         evidence,
         ensure_ascii=False,

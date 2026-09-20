@@ -116,9 +116,11 @@ class FclMeshSelfCollisionChecker:
         self._mesh_objs: Dict[str, fcl.CollisionObject] = {}
 
         # 加载网格并简化 (BVHModel + 有效简化)
+        missing_files = []
         for link_name, stl_file in LINK_MESH_FILES.items():
             stl_path = os.path.join(mesh_dir, stl_file)
             if not os.path.exists(stl_path):
+                missing_files.append(stl_path)
                 continue
 
             mesh = trimesh.load(stl_path)
@@ -133,6 +135,13 @@ class FclMeshSelfCollisionChecker:
 
             # 存储可视化数据
             self.mesh_vis[link_name] = (simplified.vertices.copy(), simplified.faces.copy())
+
+        if missing_files:
+            missing = ", ".join(sorted(missing_files))
+            raise FileNotFoundError(
+                "OFF-02 mesh checker requires every non-EE link mesh; "
+                f"missing: {missing}"
+            )
 
         # 构建碰撞对 (排除相邻链接)
         self._build_collision_pairs()

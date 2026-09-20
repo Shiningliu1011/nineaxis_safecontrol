@@ -37,10 +37,25 @@
     "ik_position_error_m": 1.59e-16,
     "ik_tool_axis_error_rad": 3.66e-08
   },
+  "certificate_id": "obb-region:v1:e7a2c4e62fa0f9e262d8a86e4ad1388231dd62afaaa96a1028ac5b2028caa763",
+  "input_sha256": "d61b397cee3e6799760ba1679638c9a905bdd37e71c11720e29ee2f953211f39",
+  "model_id": "obb-model:v1:9e965e050aad0988a92974d62d952a55e74bdd2d05e5ec8e4f96272227ce20c2",
+  "pair_policy_id": "obb-pairs:v1:b0f9d288f60fc79239ce40f23d20368c1b2975104dc424a7fb2cfedd5d235f3c",
   "point_assessment": {
     "attachment_id": "none",
     "boundary": "kernel_candidate",
     "checked_pair_count": 36,
+    "joint_order": [
+      "J1",
+      "J2",
+      "J3",
+      "J4",
+      "J5",
+      "J6",
+      "J7",
+      "J8",
+      "J9"
+    ],
     "model_id": "obb-model:v1:9e965e050aad0988a92974d62d952a55e74bdd2d05e5ec8e4f96272227ce20c2",
     "pair_policy_id": "obb-pairs:v1:a3ff6dd17fe0bec0554b9ffb8458c6a26d53e863ef6166e16d4c8b2bcdef541d",
     "pairs": [
@@ -332,6 +347,17 @@
         ],
         "status": "separated"
       }
+    ],
+    "q": [
+      0.1726102532945,
+      -1.0629857782625,
+      1.249302600673,
+      0.0,
+      -0.7854,
+      0.349935804595,
+      0.007678057983,
+      -0.470839329787,
+      0.10400799107
     ],
     "query_id": "off02-butterfly-transition-box-v1-center",
     "reason_codes": [],
@@ -873,10 +899,12 @@
     "models/ninezzhou/meshes/Link8.STL": "ffad5ca923c0f66c7c0910438c0974af8d15f5b776f1151b068b65dcd0057d3b",
     "models/ninezzhou/meshes/Link9.STL": "7ebcf726b70288929d68b13c489b2b49ca52bab369109429a20f04850c5bb369",
     "models/ninezzhou/meshes/base_link.STL": "270e1f8fad8d036548a7e026656c92f8152c17ca87359bc74861070d7a6cea9e",
-    "portable_oscbf/scripts/certify_obb_region.py": "cfa2cb3bddb2a1b4bf415936056508dc09f738fbf58eb5916571172faed3f068",
+    "portable_oscbf/scripts/certify_obb_region.py": "bbff3d24cb5e6defcbe8af6cc98541ebd56768ce0d7fb17d00f82af202205e68",
     "portable_oscbf/work/kinematics_data.py": "9cfa1632748bee07c727a4b84726466ac9f7a7b5b267e31ecf88fd5b29a2db14",
+    "portable_oscbf/work/nineaxis_kinematics.py": "7cec2c14d630272d5c4e3ea38186284d90b459fd611c9554e92ceb80496e035f",
     "portable_oscbf/work/obb_collision_model.py": "89c4f7832b1778ce6b023c3c2bdecd85096c6a529c8292a7b419c43b21b831f8",
-    "portable_oscbf/work/obb_geometry_admission.py": "18432f271448013221835933971cb4fcdb573221745779283c97cf92c91d37fa",
+    "portable_oscbf/work/obb_geometry_admission.py": "584d2d99b39e8aa49e035be5e051413322fb0349a2092ba9a14d4e13ebabf3dc",
+    "portable_oscbf/work/robot_geometry.py": "ad5fd135009bdf0273ab258b4bcc0dba45aa379c7d116e830908d8ccfc24c9e5",
     "src/robot_safecontrol_moveit/cylinder_geometry.py": "81cf2e43414e4aa365f65997e84f05d8220f7450431253af0d35af9d16f32c2a",
     "src/robot_safecontrol_moveit/oscbf_trajectory.py": "883324c323bf8fd83bad2520ecd9a3c80f34e47b74d164150b3d46e422bed20c"
   },
@@ -885,6 +913,17 @@
       "attachment_id": "none",
       "boundary": "kernel_candidate",
       "checked_pair_count": 36,
+      "joint_order": [
+        "J1",
+        "J2",
+        "J3",
+        "J4",
+        "J5",
+        "J6",
+        "J7",
+        "J8",
+        "J9"
+      ],
       "model_id": "obb-model:v1:9e965e050aad0988a92974d62d952a55e74bdd2d05e5ec8e4f96272227ce20c2",
       "pair_policy_id": "obb-pairs:v1:a3ff6dd17fe0bec0554b9ffb8458c6a26d53e863ef6166e16d4c8b2bcdef541d",
       "pairs": [
@@ -1177,6 +1216,17 @@
           "status": "separated"
         }
       ],
+      "q": [
+        0.2,
+        -1.0,
+        1.2,
+        0.0,
+        -0.7854,
+        0.35,
+        0.0,
+        -0.47,
+        0.1
+      ],
       "query_id": "off02-butterfly-transition-box-v1-center:fixed_allowed_start",
       "reason_codes": [],
       "status": "separated",
@@ -1186,6 +1236,17 @@
       "attachment_id": "none",
       "boundary": "kernel_candidate",
       "checked_pair_count": 36,
+      "joint_order": [
+        "J1",
+        "J2",
+        "J3",
+        "J4",
+        "J5",
+        "J6",
+        "J7",
+        "J8",
+        "J9"
+      ],
       "model_id": "obb-model:v1:9e965e050aad0988a92974d62d952a55e74bdd2d05e5ec8e4f96272227ce20c2",
       "pair_policy_id": "obb-pairs:v1:a3ff6dd17fe0bec0554b9ffb8458c6a26d53e863ef6166e16d4c8b2bcdef541d",
       "pairs": [
@@ -1477,6 +1538,17 @@
           ],
           "status": "separated"
         }
+      ],
+      "q": [
+        0.145220506589,
+        -1.125971556525,
+        1.298605201346,
+        0.0,
+        -0.7854,
+        0.34987160919,
+        0.015356115966,
+        -0.471678659574,
+        0.10801598214
       ],
       "query_id": "off02-butterfly-transition-box-v1-center:butterfly_first_target_ik",
       "reason_codes": [],

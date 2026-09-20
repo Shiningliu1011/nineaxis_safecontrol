@@ -257,7 +257,7 @@ python3 -m pytest -q \
 - 模型 ID：`obb-model:v1:9e965e050aad0988a92974d62d952a55e74bdd2d05e5ec8e4f96272227ce20c2`。
 - 配对策略 ID：`obb-pairs:v1:b0f9d288f60fc79239ce40f23d20368c1b2975104dc424a7fb2cfedd5d235f3c`。
 - 证书 ID：`obb-region:v1:e7a2c4e62fa0f9e262d8a86e4ad1388231dd62afaaa96a1028ac5b2028caa763`。
-- 相关测试结果：19 passed；隔离执行 36 对点查的 1000 次基准 p95 约 5.951 ms。
+- 相关测试结果：23 passed；隔离执行 36 对点查的 1000 次基准 p95 约 6.160 ms。
 
 详细区域、逐对数据和输入哈希见：
 

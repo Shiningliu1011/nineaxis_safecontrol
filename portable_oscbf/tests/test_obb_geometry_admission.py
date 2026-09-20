@@ -13,11 +13,13 @@ import pytest
 from work.obb_geometry_admission import (
     ALL_NONADJACENT_PAIRS,
     ALL_NONADJACENT_POLICY_ID,
+    CERTIFICATE_MISSING,
     CERTIFICATE_IDENTITY_MISMATCH,
     DOMAIN_OUTSIDE_CERTIFICATE,
     GEOMETRY_INPUT_INVALID,
     GEOMETRY_MODEL_ID,
     GEOMETRY_OVERLAP,
+    JOINT_ORDER,
     OMITTED_NONADJACENT_PAIRS,
     OMITTED_PAIR_POLICY_ID,
     ONLINE_CONSTRAINT_PAIRS,
@@ -32,6 +34,7 @@ from work.obb_geometry_admission import (
     dump_certificate,
     relative_pair_motion_bound_m,
 )
+from scripts.certify_obb_region import build_evidence
 
 
 KNOWN_BLIND_OVERLAP_Q = (
@@ -98,6 +101,8 @@ def test_point_assessment_checks_all_36_pairs_at_zero_configuration():
     assert result.model_id == GEOMETRY_MODEL_ID
     assert result.pair_policy_id == ALL_NONADJACENT_POLICY_ID
     assert result.reason_codes == ()
+    assert result.q == (0.0,) * 9
+    assert result.joint_order == JOINT_ORDER
 
 
 def test_point_assessment_rejects_known_14_pair_blind_overlap():
@@ -124,6 +129,19 @@ def test_invalid_point_input_is_indeterminate(q):
     assert result.reason_codes == (GEOMETRY_INPUT_INVALID,)
 
 
+def test_invalid_point_metadata_fails_closed_without_raising():
+    result = assess_point_collision(
+        np.zeros(9),
+        query_id=None,
+        boundary="kernel_candidate",
+        task_id="butterfly-current-v1",
+        attachment_id="none",
+    )
+    assert result.status == PointCollisionStatus.INDETERMINATE.value
+    assert result.checked_pair_count == 0
+    assert result.q == (0.0,) * 9
+
+
 def test_model_identity_mismatch_is_indeterminate():
     result = assess_point_collision(
         np.zeros(9),
@@ -135,6 +153,7 @@ def test_model_identity_mismatch_is_indeterminate():
     )
     assert result.status == PointCollisionStatus.INDETERMINATE.value
     assert result.reason_codes == (CERTIFICATE_IDENTITY_MISMATCH,)
+    assert result.q == (0.0,) * 9
 
 
 def test_relative_motion_bound_cancels_common_upstream_motion():
@@ -223,6 +242,71 @@ def test_domain_coverage_binds_region_identity_and_clearance():
     )
     assert insufficient_clearance.status == DomainCoverageStatus.OUTSIDE.value
     assert insufficient_clearance.reason_codes == (REQUIRED_ENVELOPE_INCOMPLETE,)
+
+
+def test_domain_coverage_preserves_certificate_failure_reasons():
+    bad_certificate = build_region_certificate(
+        replace(_region(), center_q=(0.3, 0.0, 0.8, 0.9, 0.0, 0.0, 0.0, 0.0, 0.0),
+                task_half_width_q=(0.0,) * 9)
+    )
+    result = assess_domain_coverage(
+        _region(),
+        bad_certificate,
+        query_id="coverage-query",
+        boundary="filtered_command",
+    )
+    assert result.status == DomainCoverageStatus.INDETERMINATE.value
+    assert GEOMETRY_OVERLAP in result.reason_codes
+
+
+def test_domain_coverage_rejects_malformed_request_and_certificate():
+    malformed_request = assess_domain_coverage(
+        None,
+        None,
+        query_id=None,
+        boundary="kernel_candidate",
+    )
+    assert malformed_request.status == DomainCoverageStatus.INDETERMINATE.value
+    assert GEOMETRY_INPUT_INVALID in malformed_request.reason_codes
+    assert REQUIRED_ENVELOPE_INCOMPLETE in malformed_request.reason_codes
+    assert CERTIFICATE_MISSING in malformed_request.reason_codes
+
+    malformed_certificate = assess_domain_coverage(
+        _region(),
+        object(),
+        query_id="coverage-query",
+        boundary="kernel_candidate",
+    )
+    assert malformed_certificate.status == DomainCoverageStatus.INDETERMINATE.value
+    assert CERTIFICATE_IDENTITY_MISMATCH in malformed_certificate.reason_codes
+
+
+def test_offline_evidence_exports_input_and_geometry_identities():
+    region = _region()
+    document = {
+        "scope_statement": "OFF-02 test evidence",
+        "unknown_items": ["physical error bounds are unavailable"],
+        "region": {
+            "center_q": list(region.center_q),
+            "task_half_width_q": list(region.task_half_width_q),
+            "state_error_half_width_q": list(region.state_error_half_width_q),
+            "stop_half_width_q": list(region.stop_half_width_q),
+            "geometry_error_m": region.geometry_error_m,
+            "required_clearance_m": region.required_clearance_m,
+            "task_id": region.task_id,
+            "attachment_id": region.attachment_id,
+            "task_region_source": region.task_region_source,
+            "state_error_source": region.state_error_source,
+            "stop_envelope_source": region.stop_envelope_source,
+            "geometry_error_source": region.geometry_error_source,
+        },
+    }
+    evidence = build_evidence(document)
+    assert len(evidence["input_sha256"]) == 64
+    assert evidence["model_id"] == evidence["point_assessment"]["model_id"]
+    assert evidence["pair_policy_id"] == evidence["region_certificate"]["pair_policy_id"]
+    assert evidence["certificate_id"] == evidence["region_certificate"]["certificate_id"]
+    assert evidence["point_assessment"]["q"] == region.center_q
 
 
 def test_region_requires_explicit_evidence_sources():
