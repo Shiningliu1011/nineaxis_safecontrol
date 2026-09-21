@@ -20,8 +20,13 @@ from work.collision_envelope import (
 )
 
 
-# URDF joint chain — single source of truth in kinematics_data.py.
-from work.kinematics_data import JOINT_CHAIN
+# URDF 生成的关节链与位置限幅。
+from work.kinematics_data import (
+    JOINT_CHAIN,
+    JOINT_POSITION_LOWER,
+    JOINT_POSITION_UPPER,
+    N_JOINTS,
+)
 
 
 def _skew_jax(v):
@@ -123,17 +128,10 @@ class NineaxisManipulatorJAX:
     """9-DOF 冗余臂 JAX 运动学封装"""
 
     def __init__(self):
-        self.num_joints = 9
+        self.num_joints = N_JOINTS
 
-        # 关节限位 (基于电机模组参数)
-        self.joint_lower_limits = jnp.array([
-            0.0, -1.5708, -1.5708, -1.5708, -3.1416,
-            -1.48353, -1.48353, -1.48353, -1.48353
-        ])
-        self.joint_upper_limits = jnp.array([
-            0.585, 1.5708, 1.5708, 1.5708, 3.1416,
-            1.48353, 1.48353, 1.48353, 1.48353
-        ])
+        self.joint_lower_limits = jnp.array(JOINT_POSITION_LOWER)
+        self.joint_upper_limits = jnp.array(JOINT_POSITION_UPPER)
         # 扭矩限位 (基于电机模组参数)
         # B25-PD-36-G (J2-J6): 额定扭矩 25 Nm, 保守值 15.0 Nm (安全系数 0.6)
         # B06-PA-36-G (J7-J9): 额定扭矩 6 Nm, 保守值 3.6 Nm (安全系数 0.6)

@@ -377,7 +377,7 @@ if __name__ == "__main__":
     from work.nineaxis_kinematics import NineaxisKinematics
 
     mesh_dir = os.path.join(os.path.dirname(__file__),
-                            '..', 'assets', 'ninezzhouURDF', 'meshes')
+                            '..', '..', 'models', 'ninezzhou', 'meshes')
     checker = FclSelfCollisionChecker(mesh_dir)
     kin = NineaxisKinematics()
 

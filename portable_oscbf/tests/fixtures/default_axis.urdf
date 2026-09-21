@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<robot name="default_axis_fixture">
+  <link name="base_link" />
+  <link name="Link1" />
+  <joint name="J1" type="prismatic">
+    <parent link="base_link" />
+    <child link="Link1" />
+    <limit lower="0" upper="1" effort="1" velocity="1" />
+  </joint>
+</robot>

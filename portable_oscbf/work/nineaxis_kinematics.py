@@ -34,7 +34,13 @@ class JointLimits:
 
 # Shared kinematics data — single source of truth in kinematics_data.py.
 # Re-exported here for backward compatibility with existing imports.
-from work.kinematics_data import JOINT_CHAIN, N_JOINTS, LINK_NAMES
+from work.kinematics_data import (
+    JOINT_CHAIN,
+    JOINT_POSITION_LOWER,
+    JOINT_POSITION_UPPER,
+    LINK_NAMES,
+    N_JOINTS,
+)
 
 # 活动关节在 JOINT_CHAIN 中的索引
 _ACTIVE_IDX = [i for i, (_, _, jt, _, _, _, _, _, _, _) in enumerate(JOINT_CHAIN)
@@ -186,10 +192,8 @@ class NineaxisKinematics:
         # 速度/加速度统一从执行器资料导出。J1 的值仅可用于仿真或影子模式。
         self.actuator_limit_profile = load_actuator_limit_profile()
         self.joint_limits = JointLimits(
-            q_min=np.array([0.0, -1.5708, -1.5708, -1.5708, -3.1416,
-                           -1.48353, -1.48353, -1.48353, -1.48353]),
-            q_max=np.array([0.585, 1.5708, 1.5708, 1.5708, 3.1416,
-                           1.48353, 1.48353, 1.48353, 1.48353]),
+            q_min=np.array(JOINT_POSITION_LOWER),
+            q_max=np.array(JOINT_POSITION_UPPER),
             dq_max=self.actuator_limit_profile.velocity_limits.copy(),
             ddq_max=self.actuator_limit_profile.acceleration_limits.copy(),
         )

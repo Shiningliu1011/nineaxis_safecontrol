@@ -87,11 +87,8 @@ portable_oscbf/
 │   ├── realtime_interpolation_results.mat
 │   └── workspace_realtime_results.mat
 │
-├── urdf/                          # 机器人模型
-│   ├── ninezzhou.urdf             # URDF 描述文件
-│   └── meshes/                    # STL 网格文件 (10 个)
-│
 ├── scripts/                       # 校准/维护脚本
+│   ├── generate_kinematics_data.py # 从 models/ninezzhou 生成运动学常量
 │   ├── generate_obb_calibration.py
 │   ├── calibrate_dcol_alpha.py
 │   └── check_dependencies.py
@@ -148,13 +145,14 @@ CBF-QP 安全滤波器 (qpax 弹性 QP)
 | `trimesh` | STL 网格加载 | ✅ 碰撞检测 |
 | `osqp` | OSQP QP 求解器 (legacy 路径) | ⚠️ 可选 |
 | `PyYAML` | YAML 配置加载 | ✅ 配置 |
+| `urdfdom_py` (`urdf-parser-py`) | 解析 URDF 并生成运动学常量 | ✅ 生成与一致性测试 |
 
 ## 快速开始
 
 ### 安装依赖
 
 ```bash
-pip install jax jaxlib qpax cbfpy numpy scipy python-fcl trimesh osqp pyyaml
+pip install jax jaxlib qpax cbfpy numpy scipy python-fcl trimesh osqp pyyaml urdf-parser-py
 ```
 
 ### 基本使用
@@ -218,15 +216,26 @@ python -m pytest tests/ -v
 
 ## 移植到新项目
 
-### 步骤 1: 复制整个 `portable_oscbf/` 目录
+### 步骤 1: 复制控制内核与模型来源
 
 ```bash
-cp -r portable_oscbf/ /path/to/new_project/oscbf_controller/
+mkdir -p /path/to/new_project/models
+cp -r portable_oscbf /path/to/new_project/
+cp -r models/ninezzhou /path/to/new_project/models/
 ```
 
-### 步骤 2: 修改 URDF (如使用不同机器人)
+保持 `portable_oscbf/` 与 `models/ninezzhou/` 的相对目录结构。后者包含生成运动学常量所需的 URDF 与 STL 网格。
 
-编辑 `work/nineaxis_manipulator_jax.py` 和 `work/nineaxis_kinematics.py` 中的 `JOINT_CHAIN` 常量, 匹配新机器人的 DH 参数/关节链。
+### 步骤 2: 替换 URDF 并生成运动学常量
+
+替换 `models/ninezzhou/urdf/ninezzhou.urdf` 与对应网格，然后从项目根目录运行：
+
+```bash
+python3 portable_oscbf/scripts/generate_kinematics_data.py
+python3 portable_oscbf/scripts/generate_kinematics_data.py --check
+```
+
+生成结果写入 `portable_oscbf/work/kinematics_data.py`，包含 `JOINT_CHAIN`、关节位置限幅与关节数量。两个运动学模块直接读取该文件，无需手工维护第二份常量。
 
 ### 步骤 3: 修改碰撞模型
 
