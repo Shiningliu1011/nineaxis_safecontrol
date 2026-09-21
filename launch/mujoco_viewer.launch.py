@@ -10,6 +10,8 @@ from pathlib import Path
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
 
@@ -21,12 +23,24 @@ def generate_launch_description() -> LaunchDescription:
 
     return LaunchDescription(
         [
+            DeclareLaunchArgument("show_obb", default_value="false"),
+            DeclareLaunchArgument(
+                "show_obb_sample_spheres", default_value="false"
+            ),
             Node(
                 package="robot_safecontrol_moveit",
                 executable="mujoco_viewer",
                 name="mujoco_joint_state_viewer",
                 output="screen",
-                parameters=[params_file],
+                parameters=[
+                    params_file,
+                    {
+                        "show_obb": LaunchConfiguration("show_obb"),
+                        "show_obb_sample_spheres": LaunchConfiguration(
+                            "show_obb_sample_spheres"
+                        ),
+                    },
+                ],
             )
         ]
     )

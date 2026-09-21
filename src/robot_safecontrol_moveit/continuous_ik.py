@@ -21,19 +21,7 @@ from moveit_msgs.srv import GetPositionIK
 from pymoveit2 import MoveIt2
 from sensor_msgs.msg import JointState
 
-
-class IKError(RuntimeError):
-    """Base error raised when MoveIt cannot provide a usable IK solution."""
-
-
-class IKServiceUnavailable(IKError):
-    """The ``/compute_ik`` service is not reachable."""
-
-    def __init__(self):
-        super().__init__(
-            "IK_SERVICE_UNAVAILABLE: /compute_ik service is not reachable. "
-            "Ensure move_group is running."
-        )
+from .transition_executor import IKError, IKServiceUnavailable
 
 
 class IKFailure(IKError):

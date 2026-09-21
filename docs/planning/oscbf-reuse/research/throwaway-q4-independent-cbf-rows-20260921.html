@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Q4 临时原型：独立 CBF 行与聚合行</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #172033;
+      --muted: #667085;
+      --line: #d8deea;
+      --panel: #ffffff;
+      --page: #f4f6fa;
+      --accent: #3157d5;
+      --accent-light: #eaf0ff;
+      --good: #176b45;
+      --good-bg: #e9f8f0;
+      --warn: #9a5b00;
+      --warn-bg: #fff4dc;
+      --bad: #a43131;
+      --bad-bg: #fff0f0;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--page);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      line-height: 1.55;
+    }
+    main { max-width: 1180px; margin: 0 auto; padding: 32px 22px 56px; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { font-size: 30px; margin-bottom: 8px; }
+    h2 { font-size: 20px; margin-bottom: 14px; }
+    h3 { font-size: 16px; margin-bottom: 8px; }
+    .intro, .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 18px;
+    }
+    .tag {
+      display: inline-block;
+      margin-bottom: 10px;
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: var(--warn-bg);
+      color: var(--warn);
+      font-weight: 700;
+      font-size: 13px;
+    }
+    .muted { color: var(--muted); }
+    .formula {
+      background: #f7f8fb;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      overflow-x: auto;
+    }
+    .controls { display: flex; flex-wrap: wrap; gap: 9px; }
+    button {
+      border: 1px solid #b9c3d6;
+      border-radius: 9px;
+      background: #fff;
+      color: var(--ink);
+      padding: 9px 12px;
+      font: inherit;
+      cursor: pointer;
+    }
+    button:hover { border-color: var(--accent); color: var(--accent); }
+    button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    button.done { background: var(--good-bg); border-color: #92c9ad; color: var(--good); }
+    button:disabled { opacity: .55; cursor: default; }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .metric-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+    .metric, .row-card, .method-card {
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      padding: 13px;
+      background: #fff;
+    }
+    .metric .value { display: block; margin-top: 4px; font-size: 18px; font-weight: 750; }
+    .method-card.good { border-color: #92c9ad; background: var(--good-bg); }
+    .method-card.warn { border-color: #e4bd76; background: var(--warn-bg); }
+    .method-card.bad { border-color: #d9a0a0; background: var(--bad-bg); }
+    .status { font-weight: 750; }
+    .rows { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; }
+    .row-card.inactive { opacity: .58; }
+    .kv { display: grid; grid-template-columns: 145px 1fr; gap: 4px 10px; }
+    .kv span:nth-child(odd) { color: var(--muted); }
+    .tabs { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 14px; }
+    .tabs button.active { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .steps { display: grid; gap: 9px; }
+    .step { display: flex; align-items: center; gap: 12px; }
+    .step button { min-width: 150px; }
+    .verdict { border-left: 5px solid var(--accent); }
+    .verdict[data-level="warn"] { border-left-color: var(--warn); }
+    .verdict[data-level="bad"] { border-left-color: var(--bad); }
+    @media (max-width: 760px) {
+      .grid, .metric-grid { grid-template-columns: 1fr; }
+      .kv { grid-template-columns: 1fr; }
+      .step { align-items: flex-start; flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="intro">
+      <span class="tag">临时逻辑原型 · 不进入生产代码</span>
+      <h1>Q4：多个 ellipsoid pair 应独立约束还是聚合约束？</h1>
+      <p>本原型在二维关节速度局部模型中比较两种 CBF 构造。重点观察多个接触方向相反时，<code>softmin</code> 梯度是否抵消，以及一次控制周期后的各 primitive barrier 是否仍保持非负。</p>
+      <div class="formula">独立行：gᵢ·u ≥ −γhᵢ　　聚合行：ḡ·u ≥ −γh̄，h̄ = softmin(hᵢ)</div>
+      <p class="muted" style="margin:12px 0 0">实验只验证约束组织方式。数值采用局部线性 barrier 和二维速度投影，不代表九轴机器人的最终性能数据。</p>
+    </section>
+
+    <section class="panel">
+      <h2>自由操作</h2>
+      <div class="controls" id="free-play"></div>
+    </section>
+
+    <section class="panel">
+      <h2>当前实验状态</h2>
+      <div class="metric-grid" id="state-metrics"></div>
+      <h3 style="margin-top:16px">Primitive pair</h3>
+      <div class="rows" id="pair-rows"></div>
+    </section>
+
+    <section class="grid" id="method-results"></section>
+
+    <section class="panel verdict" id="verdict-panel">
+      <h2>本场景观察</h2>
+      <p id="verdict-text"></p>
+    </section>
+
+    <section class="panel">
+      <h2>引导实验</h2>
+      <div class="tabs" id="walkthrough-tabs"></div>
+      <div id="walkthrough-copy"></div>
+      <div class="steps" id="walkthrough-steps"></div>
+    </section>
+  </main>
+
+  <script>
+    const CollisionRowExperiment = (() => {
+      const ln2 = Math.log(2);
+
+      const scenarios = {
+        single: {
+          name: "单个危险 pair",
+          note: "只有一个有效 pair 时，两种方法应给出相同结果。",
+          gamma: 5,
+          tau: 0.02,
+          dt: 0.02,
+          uMax: 1,
+          desired: [-0.60, 0.00],
+          rows: [
+            { id: "E2 ↔ E7", h: 0.020, g: [1.00, 0.00], active: true }
+          ]
+        },
+        aligned: {
+          name: "同向接近",
+          note: "两个 pair 的梯度方向接近，聚合行通常仍能表达主要避让方向。",
+          gamma: 5,
+          tau: 0.02,
+          dt: 0.02,
+          uMax: 1,
+          desired: [-0.60, -0.20],
+          rows: [
+            { id: "E2a ↔ E7a", h: 0.020, g: [1.00, 0.00], active: true },
+            { id: "E2b ↔ E7b", h: 0.032, g: [0.92, 0.18], active: true }
+          ]
+        },
+        opposing: {
+          name: "对称夹持",
+          note: "两个同等危险 pair 给出相反梯度，测试聚合梯度抵消。",
+          gamma: 5,
+          tau: 0.02,
+          dt: 0.02,
+          uMax: 1,
+          desired: [0.80, 0.00],
+          rows: [
+            { id: "左侧 pair", h: 0.02 * ln2 + 0.001, g: [1.00, 0.00], active: true },
+            { id: "右侧 pair", h: 0.02 * ln2 + 0.001, g: [-1.00, 0.00], active: true }
+          ]
+        },
+        asymmetric: {
+          name: "轻微不对称",
+          note: "接触距离稍有变化后，聚合梯度会快速改变方向。",
+          gamma: 5,
+          tau: 0.02,
+          dt: 0.02,
+          uMax: 1,
+          desired: [0.80, 0.00],
+          rows: [
+            { id: "左侧 pair", h: 0.035, g: [1.00, 0.00], active: true },
+            { id: "右侧 pair", h: 0.010, g: [-1.00, 0.00], active: true }
+          ]
+        },
+        masked: {
+          name: "失活槽位",
+          note: "失活 pair 即使带有负 barrier，也不能影响查询结果。",
+          gamma: 5,
+          tau: 0.02,
+          dt: 0.02,
+          uMax: 1,
+          desired: [-0.50, 0.10],
+          rows: [
+            { id: "有效 pair", h: 0.020, g: [1.00, 0.00], active: true },
+            { id: "失活 pair", h: -0.200, g: [-1.00, 0.00], active: false }
+          ]
+        },
+        trapped: {
+          name: "双侧穿入",
+          note: "两个相反方向的 pair 都已穿入，任何速度都无法同时满足恢复条件。",
+          gamma: 5,
+          tau: 0.02,
+          dt: 0.02,
+          uMax: 1,
+          desired: [0.00, 0.00],
+          rows: [
+            { id: "左侧 pair", h: -0.005, g: [1.00, 0.00], active: true },
+            { id: "右侧 pair", h: -0.005, g: [-1.00, 0.00], active: true }
+          ]
+        }
+      };
+
+      const cloneScenario = key => structuredClone({ key, ...scenarios[key] });
+      const initialState = () => ({ ...cloneScenario("single"), lastAction: "载入默认场景" });
+      const dot = (a, b) => a[0] * b[0] + a[1] * b[1];
+      const add = (a, b) => [a[0] + b[0], a[1] + b[1]];
+      const scale = (a, k) => [a[0] * k, a[1] * k];
+      const normSq = a => dot(a, a);
+      const distanceSq = (a, b) => normSq([a[0] - b[0], a[1] - b[1]]);
+
+      function reduce(state, action) {
+        if (action.type === "LOAD_SCENARIO") {
+          return { ...cloneScenario(action.key), lastAction: `载入“${scenarios[action.key].name}”` };
+        }
+        if (action.type === "SET_DESIRED_X") {
+          return { ...state, desired: [action.value, state.desired[1]], lastAction: `期望速度 u₁ = ${action.value.toFixed(2)}` };
+        }
+        if (action.type === "SET_TAU") {
+          return { ...state, tau: action.value, lastAction: `聚合温度 τ = ${action.value.toFixed(3)}` };
+        }
+        if (action.type === "TOGGLE_LAST") {
+          const rows = state.rows.map((row, index) => index === state.rows.length - 1 ? { ...row, active: !row.active } : row);
+          return { ...state, rows, lastAction: "切换最后一个 pair 的 active_mask" };
+        }
+        return state;
+      }
+
+      function lineProjection(point, constraint) {
+        const n2 = normSq(constraint.a);
+        if (n2 < 1e-12) return null;
+        return add(point, scale(constraint.a, (constraint.b - dot(constraint.a, point)) / n2));
+      }
+
+      function lineIntersection(left, right) {
+        const det = left.a[0] * right.a[1] - left.a[1] * right.a[0];
+        if (Math.abs(det) < 1e-12) return null;
+        return [
+          (left.b * right.a[1] - left.a[1] * right.b) / det,
+          (left.a[0] * right.b - left.b * right.a[0]) / det
+        ];
+      }
+
+      function solveVelocity(desired, collisionConstraints, uMax) {
+        const bounds = [
+          { id: "u₁ lower", a: [1, 0], b: -uMax },
+          { id: "u₁ upper", a: [-1, 0], b: -uMax },
+          { id: "u₂ lower", a: [0, 1], b: -uMax },
+          { id: "u₂ upper", a: [0, -1], b: -uMax }
+        ];
+        const constraints = [...collisionConstraints, ...bounds];
+        const zeroDirectionConflict = constraints.some(item => normSq(item.a) < 1e-12 && item.b > 1e-10);
+        if (zeroDirectionConflict) return { feasible: false, u: [0, 0], reason: "约束缺少可用梯度方向" };
+
+        const usable = constraints.filter(item => normSq(item.a) >= 1e-12);
+        const feasible = point => constraints.every(item => dot(item.a, point) >= item.b - 1e-9);
+        const candidates = [desired];
+        usable.forEach(item => {
+          const projected = lineProjection(desired, item);
+          if (projected) candidates.push(projected);
+        });
+        for (let i = 0; i < usable.length; i += 1) {
+          for (let j = i + 1; j < usable.length; j += 1) {
+            const point = lineIntersection(usable[i], usable[j]);
+            if (point) candidates.push(point);
+          }
+        }
+        const valid = candidates.filter(feasible).sort((a, b) => distanceSq(a, desired) - distanceSq(b, desired));
+        if (!valid.length) return { feasible: false, u: [0, 0], reason: "速度集合为空" };
+        return { feasible: true, u: valid[0], reason: "找到最接近期望速度的可行解" };
+      }
+
+      function softMinimum(rows, tau) {
+        if (!rows.length) return { h: Infinity, g: [0, 0], weights: [] };
+        const minH = Math.min(...rows.map(row => row.h));
+        const terms = rows.map(row => Math.exp(-(row.h - minH) / tau));
+        const total = terms.reduce((sum, value) => sum + value, 0);
+        const weights = terms.map(value => value / total);
+        const h = minH - tau * Math.log(total);
+        const g = rows.reduce((sum, row, index) => add(sum, scale(row.g, weights[index])), [0, 0]);
+        return { h, g, weights };
+      }
+
+      function predictRows(rows, command, dt) {
+        return rows.map(row => ({ ...row, hNext: row.h + dt * dot(row.g, command) }));
+      }
+
+      function assess(state, method) {
+        const activeRows = state.rows.filter(row => row.active);
+        let constraints;
+        let aggregate = null;
+        if (method === "independent") {
+          constraints = activeRows.map(row => ({ id: row.id, a: row.g, b: -state.gamma * row.h }));
+        } else {
+          aggregate = softMinimum(activeRows, state.tau);
+          constraints = activeRows.length ? [{ id: "聚合行", a: aggregate.g, b: -state.gamma * aggregate.h }] : [];
+        }
+        const solution = solveVelocity(state.desired, constraints, state.uMax);
+        const predicted = predictRows(state.rows, solution.u, state.dt);
+        const activePredicted = predicted.filter(row => row.active);
+        const minNext = activePredicted.length ? Math.min(...activePredicted.map(row => row.hNext)) : Infinity;
+        const aggregateNext = softMinimum(activePredicted.map(row => ({ ...row, h: row.hNext })), state.tau).h;
+        const intervention = Math.sqrt(distanceSq(solution.u, state.desired));
+        return {
+          method,
+          constraints,
+          aggregate,
+          ...solution,
+          predicted,
+          minNext,
+          aggregateNext,
+          intervention,
+          safeNext: solution.feasible && minNext >= -1e-9
+        };
+      }
+
+      function evaluate(state) {
+        return {
+          independent: assess(state, "independent"),
+          aggregated: assess(state, "aggregated")
+        };
+      }
+
+      return { scenarios, initialState, reduce, evaluate };
+    })();
+  </script>
+
+  <script>
+    const walkthroughs = {
+      baseline: {
+        title: "基准一致性",
+        copy: "确认只有一个 pair 时，两种构造给出相同命令。",
+        steps: [
+          { label: "载入单 pair", action: { type: "LOAD_SCENARIO", key: "single" }, hint: "观察两张结果卡的命令。" },
+          { label: "朝危险方向", action: { type: "SET_DESIRED_X", value: -0.8 }, hint: "两种方法应施加相同限制。" }
+        ]
+      },
+      aligned: {
+        title: "同向梯度",
+        copy: "两个接触方向接近时，聚合行通常保留主要方向。",
+        steps: [
+          { label: "载入同向场景", action: { type: "LOAD_SCENARIO", key: "aligned" }, hint: "比较命令和下一周期最小 h。" },
+          { label: "增大 τ", action: { type: "SET_TAU", value: 0.05 }, hint: "观察聚合行的保守程度变化。" }
+        ]
+      },
+      opposing: {
+        title: "对称夹持",
+        copy: "两个相反梯度权重相同时，聚合梯度接近零。",
+        steps: [
+          { label: "载入对称场景", action: { type: "LOAD_SCENARIO", key: "opposing" }, hint: "聚合方法会保留期望速度。" },
+          { label: "向左运动", action: { type: "SET_DESIRED_X", value: -0.8 }, hint: "危险侧改变，梯度仍然抵消。" },
+          { label: "载入轻微不对称", action: { type: "LOAD_SCENARIO", key: "asymmetric" }, hint: "微小距离变化会使聚合方向明显改变。" }
+        ]
+      },
+      mask: {
+        title: "槽位掩码",
+        copy: "失活槽位需要从两种计算中完全移除。",
+        steps: [
+          { label: "载入失活场景", action: { type: "LOAD_SCENARIO", key: "masked" }, hint: "负 barrier 的失活 pair 不产生影响。" },
+          { label: "启用最后一项", action: { type: "TOGGLE_LAST" }, hint: "启用后，约束集合应立即变为不可行。" }
+        ]
+      },
+      trapped: {
+        title: "恢复不可行",
+        copy: "双侧同时穿入时，两种方法都应报告缺少可行速度。",
+        steps: [
+          { label: "载入双侧穿入", action: { type: "LOAD_SCENARIO", key: "trapped" }, hint: "观察可行状态和原因。" }
+        ]
+      }
+    };
+
+    let state = CollisionRowExperiment.initialState();
+    let activeWalkthrough = "baseline";
+    let completedSteps = new Set();
+    const fmt = value => Number.isFinite(value) ? value.toFixed(5) : "—";
+    const vec = value => `[${value.map(item => item.toFixed(4)).join(", ")}]`;
+
+    function dispatch(action) {
+      state = CollisionRowExperiment.reduce(state, action);
+      render();
+    }
+
+    function button(label, action, className = "") {
+      const node = document.createElement("button");
+      node.textContent = label;
+      node.className = className;
+      node.addEventListener("click", () => dispatch(action));
+      return node;
+    }
+
+    function renderFreePlay() {
+      const root = document.querySelector("#free-play");
+      root.replaceChildren();
+      Object.entries(CollisionRowExperiment.scenarios).forEach(([key, scenario]) => {
+        root.append(button(scenario.name, { type: "LOAD_SCENARIO", key }, state.key === key ? "primary" : ""));
+      });
+      root.append(button("u₁ = −0.8", { type: "SET_DESIRED_X", value: -0.8 }));
+      root.append(button("u₁ = 0", { type: "SET_DESIRED_X", value: 0 }));
+      root.append(button("u₁ = +0.8", { type: "SET_DESIRED_X", value: 0.8 }));
+      root.append(button("τ = 0.005", { type: "SET_TAU", value: 0.005 }));
+      root.append(button("τ = 0.020", { type: "SET_TAU", value: 0.020 }));
+      root.append(button("τ = 0.050", { type: "SET_TAU", value: 0.050 }));
+      root.append(button("切换最后一项", { type: "TOGGLE_LAST" }));
+    }
+
+    function renderState() {
+      const metrics = [
+        ["场景", state.name],
+        ["期望速度", vec(state.desired)],
+        ["γ / τ / Δt", `${state.gamma.toFixed(2)} / ${state.tau.toFixed(3)} / ${state.dt.toFixed(3)} s`],
+        ["刚执行的操作", state.lastAction]
+      ];
+      document.querySelector("#state-metrics").innerHTML = metrics.map(([label, value]) =>
+        `<div class="metric"><span class="muted">${label}</span><span class="value">${value}</span></div>`
+      ).join("");
+
+      document.querySelector("#pair-rows").innerHTML = state.rows.map(row =>
+        `<article class="row-card ${row.active ? "" : "inactive"}">
+          <h3>${row.id}</h3>
+          <div class="kv">
+            <span>active_mask</span><strong>${row.active ? "启用" : "失活"}</strong>
+            <span>当前 h</span><strong>${fmt(row.h)}</strong>
+            <span>关节梯度 g</span><strong>${vec(row.g)}</strong>
+          </div>
+        </article>`
+      ).join("");
+    }
+
+    function statusOf(result) {
+      if (!result.feasible) return { level: "bad", label: "不可行" };
+      if (!result.safeNext) return { level: "warn", label: "下一周期出现负 barrier" };
+      return { level: "good", label: "下一周期保持非负" };
+    }
+
+    function renderMethod(title, result) {
+      const status = statusOf(result);
+      const aggregateFields = result.aggregate ? `
+        <span>聚合 h</span><strong>${fmt(result.aggregate.h)}</strong>
+        <span>聚合梯度</span><strong>${vec(result.aggregate.g)}</strong>
+        <span>权重</span><strong>[${result.aggregate.weights.map(fmt).join(", ")}]</strong>` : "";
+      const nextRows = result.predicted.filter(row => row.active).map(row => `${row.id}: ${fmt(row.hNext)}`).join("<br>");
+      return `<article class="method-card ${status.level}">
+        <h2>${title}</h2>
+        <p class="status">${status.label}</p>
+        <div class="kv">
+          <span>求解状态</span><strong>${result.reason}</strong>
+          <span>输出速度</span><strong>${vec(result.u)}</strong>
+          <span>命令改变量</span><strong>${fmt(result.intervention)}</strong>
+          <span>约束行数</span><strong>${result.constraints.length}</strong>
+          ${aggregateFields}
+          <span>下一周期最小 h</span><strong>${fmt(result.minNext)}</strong>
+          <span>下一周期聚合 h</span><strong>${fmt(result.aggregateNext)}</strong>
+          <span>各 pair 下一周期 h</span><strong>${nextRows || "无有效 pair"}</strong>
+        </div>
+      </article>`;
+    }
+
+    function renderResults() {
+      const result = CollisionRowExperiment.evaluate(state);
+      document.querySelector("#method-results").innerHTML =
+        renderMethod("每个 primitive pair 独立一行", result.independent) +
+        renderMethod("每个 link pair 聚合一行", result.aggregated);
+
+      let text;
+      let level = "good";
+      if (state.key === "opposing") {
+        text = `两个梯度方向相反且权重相同，聚合梯度为 ${vec(result.aggregated.aggregate.g)}。聚合行保留期望速度后，下一周期最小 h 为 ${fmt(result.aggregated.minNext)}；独立行输出 ${vec(result.independent.u)}，下一周期最小 h 为 ${fmt(result.independent.minNext)}。`;
+        level = "warn";
+      } else if (state.key === "single") {
+        text = "单个有效 pair 下，两种方法产生相同约束，说明独立行没有改变单 pair 语义。";
+      } else if (state.key === "aligned") {
+        text = "梯度方向接近时，两种方法都能限制危险方向；聚合温度会改变聚合 barrier 和命令介入程度。";
+      } else if (state.key === "asymmetric") {
+        text = `轻微不对称使聚合梯度变为 ${vec(result.aggregated.aggregate.g)}。这说明聚合方向会随最近 pair 的变化快速转向。`;
+        level = "warn";
+      } else if (state.key === "masked") {
+        text = state.rows.at(-1).active ? "最后一个 pair 已启用。两个相反恢复要求会共同进入约束。" : "失活 pair 已从独立行和聚合行中移除，其负 barrier 不影响命令。";
+      } else {
+        text = "两个相反方向的 pair 同时穿入，可行速度集合为空。碰撞约束若允许松弛，求解器可能仍输出违反安全要求的命令。";
+        level = "bad";
+      }
+      const panel = document.querySelector("#verdict-panel");
+      panel.dataset.level = level;
+      document.querySelector("#verdict-text").textContent = text;
+    }
+
+    function renderWalkthroughs() {
+      const tabs = document.querySelector("#walkthrough-tabs");
+      tabs.replaceChildren();
+      Object.entries(walkthroughs).forEach(([key, item]) => {
+        const node = document.createElement("button");
+        node.textContent = item.title;
+        node.className = activeWalkthrough === key ? "active" : "";
+        node.addEventListener("click", () => {
+          activeWalkthrough = key;
+          completedSteps = new Set();
+          renderWalkthroughs();
+        });
+        tabs.append(node);
+      });
+
+      const selected = walkthroughs[activeWalkthrough];
+      document.querySelector("#walkthrough-copy").innerHTML = `<p>${selected.copy}</p>`;
+      const steps = document.querySelector("#walkthrough-steps");
+      steps.replaceChildren();
+      selected.steps.forEach((step, index) => {
+        const row = document.createElement("div");
+        row.className = "step";
+        const node = document.createElement("button");
+        node.textContent = `${index + 1}. ${step.label}`;
+        if (completedSteps.has(index)) node.className = "done";
+        node.addEventListener("click", () => {
+          dispatch(step.action);
+          completedSteps.add(index);
+          renderWalkthroughs();
+        });
+        const hint = document.createElement("span");
+        hint.className = "muted";
+        hint.textContent = step.hint;
+        row.append(node, hint);
+        steps.append(row);
+      });
+    }
+
+    function render() {
+      renderFreePlay();
+      renderState();
+      renderResults();
+      renderWalkthroughs();
+    }
+
+    render();
+  </script>
+</body>
+</html>

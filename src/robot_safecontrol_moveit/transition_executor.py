@@ -14,13 +14,36 @@ from pathlib import Path
 from time import monotonic
 from typing import Any, Callable
 
-from .continuous_ik import IKError, IKServiceUnavailable
-from .motion_planning import PlanningError, StateValidityError
 from .task_target import (
     compute_first_task_orientation,
     load_first_task_target,
 )
-from .trajectory_execution import ExecutionError
+
+
+class IKError(RuntimeError):
+    """MoveIt 无法给出可用 IK 解。"""
+
+
+class IKServiceUnavailable(IKError):
+    """无法连接 ``/compute_ik`` 服务。"""
+
+    def __init__(self):
+        super().__init__(
+            "IK_SERVICE_UNAVAILABLE: /compute_ik service is not reachable. "
+            "Ensure move_group is running."
+        )
+
+
+class PlanningError(RuntimeError):
+    """MoveIt 无法创建或校验过渡轨迹。"""
+
+
+class StateValidityError(PlanningError):
+    """起点或终点未通过 MoveIt 碰撞与限位校验。"""
+
+
+class ExecutionError(RuntimeError):
+    """轨迹无法安全提交给 MoveIt 执行。"""
 
 # All codes considered a successful outcome (Issue #6).
 SUCCESS_CODES = frozenset({

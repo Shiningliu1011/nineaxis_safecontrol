@@ -12,11 +12,11 @@ import jax.numpy as jnp
 import numpy as np
 from typing import Tuple
 
-from work.collision_envelope import (
-    ENVIRONMENT_SPHERE_LINK_INDICES,
-    ENVIRONMENT_SPHERE_LOCAL_CENTERS_M,
-    ENVIRONMENT_SPHERE_RADII_M,
-    NUM_ENVIRONMENT_COLLISION_SPHERES,
+from work.obb_collision_model import (
+    NUM_OBB_SAMPLE_SPHERES,
+    OBB_SAMPLE_SPHERE_LINK_INDICES,
+    OBB_SAMPLE_SPHERE_LOCAL_CENTERS_M,
+    OBB_SAMPLE_SPHERE_RADII_M,
 )
 
 
@@ -158,13 +158,13 @@ class NineaxisManipulatorJAX:
 
         # Environment and point-cloud safety use a mesh-conservative outer
         # envelope. Self-collision uses OBB-OBB distances (dpax_collision).
-        self.num_environment_collision_spheres = NUM_ENVIRONMENT_COLLISION_SPHERES
+        self.num_environment_collision_spheres = NUM_OBB_SAMPLE_SPHERES
         self._environment_sphere_link_indices = jnp.asarray(
-            ENVIRONMENT_SPHERE_LINK_INDICES)
+            OBB_SAMPLE_SPHERE_LINK_INDICES)
         self._environment_sphere_local_centers = jnp.asarray(
-            ENVIRONMENT_SPHERE_LOCAL_CENTERS_M)
+            OBB_SAMPLE_SPHERE_LOCAL_CENTERS_M)
         self._environment_sphere_radii = jnp.asarray(
-            ENVIRONMENT_SPHERE_RADII_M)
+            OBB_SAMPLE_SPHERE_RADII_M)
 
         # JIT 编译纯函数
         self._ee_position_jit = jax.jit(ee_position_fn, static_argnums=())

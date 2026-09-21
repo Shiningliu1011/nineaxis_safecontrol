@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import subprocess
 import sys
-import tempfile
 from pathlib import Path
 
 import _path_setup  # noqa: F401
@@ -27,6 +26,11 @@ from work.obb_collision_model import (
     OBB_LINK_NAMES,
     OBB_LOCAL_CENTERS_M,
     OBB_LOCAL_ROTATIONS,
+    OBB_SAMPLE_GRID_SHAPES,
+    OBB_SAMPLE_SPHERE_LINK_INDICES,
+    OBB_SAMPLE_SPHERE_LOCAL_CENTERS_M,
+    OBB_SAMPLE_SPHERE_PADDING_M,
+    OBB_SAMPLE_SPHERE_RADII_M,
 )
 
 
@@ -88,6 +92,36 @@ def test_obb_encloses_all_stl_vertices():
             f"{link_name}: vertex exceeds OBB upper bound")
         assert np.all(local >= -half - tolerance), (
             f"{link_name}: vertex exceeds OBB lower bound")
+
+
+def test_obb_sample_spheres_follow_registered_grids():
+    expected_link_indices = []
+    expected_centers = []
+    expected_radii = []
+    for link_index, grid_shape in enumerate(OBB_SAMPLE_GRID_SHAPES):
+        half_extents = np.asarray(OBB_HALF_EXTENTS_M[link_index])
+        cell_half_extents = half_extents / grid_shape
+        for cell_index in np.ndindex(*grid_shape):
+            center_obb = (-half_extents +
+                          (np.asarray(cell_index) + 0.5) *
+                          (2.0 * cell_half_extents))
+            expected_link_indices.append(link_index)
+            expected_centers.append(
+                OBB_LOCAL_CENTERS_M[link_index]
+                + OBB_LOCAL_ROTATIONS[link_index] @ center_obb)
+            expected_radii.append(
+                np.linalg.norm(cell_half_extents)
+                + OBB_SAMPLE_SPHERE_PADDING_M)
+
+    assert len(expected_link_indices) == 32
+    np.testing.assert_array_equal(
+        OBB_SAMPLE_SPHERE_LINK_INDICES, expected_link_indices)
+    np.testing.assert_allclose(
+        OBB_SAMPLE_SPHERE_LOCAL_CENTERS_M, expected_centers,
+        rtol=0.0, atol=5.0e-10)
+    np.testing.assert_allclose(
+        OBB_SAMPLE_SPHERE_RADII_M, expected_radii,
+        rtol=0.0, atol=5.0e-10)
 
 
 def test_obb_volume_ratio_above_threshold():
@@ -160,22 +194,15 @@ def test_zero_configuration_has_no_obb_overlap_and_fcl_clearance():
             f"({distance_by_pair[key]:.6f} m)")
 
 
-def test_generator_is_deterministic():
-    with tempfile.TemporaryDirectory() as tmp:
-        tmp_dir = Path(tmp)
-        outputs = []
-        for _ in range(2):
-            output_py = tmp_dir / "obb_collision_model.py"
-            output_yaml = tmp_dir / "obb_model.yaml"
-            subprocess.run(
-                [sys.executable, str(GENERATOR),
-                 "--mesh-dir", str(MESH_DIR),
-                 "--output-py", str(output_py),
-                 "--output-yaml", str(output_yaml)],
-                check=True, capture_output=True, text=True)
-            outputs.append((output_py.read_bytes(), output_yaml.read_bytes()))
-        assert outputs[0] == outputs[1], (
-            "OBB generator output is not deterministic")
+def test_generated_obb_files_match_meshes_and_sampling_rules():
+    result = subprocess.run(
+        [sys.executable, str(GENERATOR), "--check"],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
 
 
 def test_generated_yaml_marks_14_pairs_as_online_subset():
@@ -183,6 +210,10 @@ def test_generated_yaml_marks_14_pairs_as_online_subset():
         (REPO_ROOT / "portable_oscbf" / "config" / "obb_model.yaml")
         .read_text(encoding="utf-8")
     )
+    assert document["sample_sphere_padding_m"] == 0.002
+    assert document["sample_sphere_count"] == 32
+    assert [entry["sample_grid_shape"] for entry in document["links"]] == (
+        np.asarray(OBB_SAMPLE_GRID_SHAPES).tolist())
     assert document["collision_pairs_role"] == "online_cbf_subset"
     assert document["exclusions"] == []
     assert document["pair_policy"] == {

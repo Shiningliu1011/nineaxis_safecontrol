@@ -78,6 +78,55 @@ OBB_LOCAL_ROTATIONS = np.array(
   [0, 1, 0],
   [0, 0, 1]]])
 
+# 每个 OBB 沿自身 x、y、z 轴的环境采样分格数。
+OBB_SAMPLE_GRID_SHAPES = np.array(
+[[1, 1, 6],
+ [1, 3, 2],
+ [3, 1, 1],
+ [3, 1, 1],
+ [1, 2, 1],
+ [1, 1, 3],
+ [2, 1, 1],
+ [2, 1, 1],
+ [2, 1, 1],
+ [3, 1, 1]], dtype=np.int32)
+OBB_SAMPLE_SPHERE_PADDING_M = 0.002
+
+
+def _generate_sample_spheres():
+    link_indices = []
+    local_centers = []
+    radii = []
+    for link_index, grid_shape in enumerate(OBB_SAMPLE_GRID_SHAPES):
+        half_extents = OBB_HALF_EXTENTS_M[link_index]
+        cell_half_extents = half_extents / grid_shape
+        for cell_index in np.ndindex(*grid_shape):
+            center_obb = (-half_extents +
+                          (np.asarray(cell_index) + 0.5) *
+                          (2.0 * cell_half_extents))
+            center_link = (OBB_LOCAL_CENTERS_M[link_index] +
+                           OBB_LOCAL_ROTATIONS[link_index] @ center_obb)
+            link_indices.append(link_index)
+            local_centers.append(center_link)
+            radii.append(np.linalg.norm(cell_half_extents) +
+                         OBB_SAMPLE_SPHERE_PADDING_M)
+    return (np.asarray(link_indices, dtype=np.int32),
+            np.asarray(local_centers, dtype=np.float64),
+            np.asarray(radii, dtype=np.float64))
+
+
+(OBB_SAMPLE_SPHERE_LINK_INDICES,
+ OBB_SAMPLE_SPHERE_LOCAL_CENTERS_M,
+ OBB_SAMPLE_SPHERE_RADII_M) = _generate_sample_spheres()
+NUM_OBB_SAMPLE_SPHERES = int(len(OBB_SAMPLE_SPHERE_RADII_M))
+
+if not (
+        NUM_OBB_SAMPLE_SPHERES == 32
+        and OBB_SAMPLE_SPHERE_LINK_INDICES.shape == (32,)
+        and OBB_SAMPLE_SPHERE_LOCAL_CENTERS_M.shape == (32, 3)
+        and np.all(OBB_SAMPLE_SPHERE_RADII_M > 0.0)):
+    raise RuntimeError("OBB 采样球几何无效")
+
 # Online CBF subset; omitted non-adjacent pairs are not exemptions.
 OBB_COLLISION_PAIRS = np.array(
 [[0, 4],

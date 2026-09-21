@@ -2,7 +2,8 @@
 """Generate the OBB collision model for the ninezzhou arm (M2).
 
 For every link STL the script computes a tight oriented bounding box aligned
-with the link-frame principal axes (PCA), then writes:
+with the link-frame principal axes (PCA), registers the environment-sampling
+grid for that link, then writes:
 
 - ``work/obb_collision_model.py`` (numpy constants consumed by the control
   core and by M3's DCOL collision path);
@@ -52,6 +53,21 @@ COLLISION_PAIRS = (
     (2, 7), (2, 8), (2, 9),
     (3, 8), (3, 9),
 )
+
+# 每个连杆的 OBB 分格数；轴顺序是 OBB 的 x、y、z。
+SAMPLE_GRID_SHAPES = {
+    "base_link": (1, 1, 6),
+    "Link1": (1, 3, 2),
+    "Link2": (3, 1, 1),
+    "Link3": (3, 1, 1),
+    "Link4": (1, 2, 1),
+    "Link5": (1, 1, 3),
+    "Link6": (2, 1, 1),
+    "Link7": (2, 1, 1),
+    "Link8": (2, 1, 1),
+    "Link9": (3, 1, 1),
+}
+SAMPLE_SPHERE_PADDING_M = 0.002
 
 
 def _principal_obb(vertices: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -142,11 +158,13 @@ def _format_array(value) -> str:
         formatter={"float_kind": lambda v: f"{v:.12g}"})
 
 
-def write_python_module(data: dict, path: Path) -> None:
+def render_python_module(data: dict) -> str:
     entries = data["entries"]
     centers = np.stack([e["center_m"] for e in entries])
     half_extents = np.stack([e["half_extents_m"] for e in entries])
     rotations = np.stack([e["rotation"] for e in entries])
+    sample_grid_shapes = np.asarray(
+        [SAMPLE_GRID_SHAPES[e["link"]] for e in entries], dtype=np.int32)
     pairs = np.asarray(COLLISION_PAIRS, dtype=np.int32)
     lines = [
         '"""Auto-generated OBB collision model (M2).',
@@ -173,27 +191,75 @@ def write_python_module(data: dict, path: Path) -> None:
         "OBB_LOCAL_ROTATIONS = np.array(",
         _format_array(rotations) + ")",
         "",
+        "# 每个 OBB 沿自身 x、y、z 轴的环境采样分格数。",
+        "OBB_SAMPLE_GRID_SHAPES = np.array(",
+        _format_array(sample_grid_shapes) + ", dtype=np.int32)",
+        "OBB_SAMPLE_SPHERE_PADDING_M = " + repr(SAMPLE_SPHERE_PADDING_M),
+        "",
+        "",
+        "def _generate_sample_spheres():",
+        "    link_indices = []",
+        "    local_centers = []",
+        "    radii = []",
+        "    for link_index, grid_shape in enumerate(OBB_SAMPLE_GRID_SHAPES):",
+        "        half_extents = OBB_HALF_EXTENTS_M[link_index]",
+        "        cell_half_extents = half_extents / grid_shape",
+        "        for cell_index in np.ndindex(*grid_shape):",
+        "            center_obb = (-half_extents +",
+        "                          (np.asarray(cell_index) + 0.5) *",
+        "                          (2.0 * cell_half_extents))",
+        "            center_link = (OBB_LOCAL_CENTERS_M[link_index] +",
+        "                           OBB_LOCAL_ROTATIONS[link_index] @ center_obb)",
+        "            link_indices.append(link_index)",
+        "            local_centers.append(center_link)",
+        "            radii.append(np.linalg.norm(cell_half_extents) +",
+        "                         OBB_SAMPLE_SPHERE_PADDING_M)",
+        "    return (np.asarray(link_indices, dtype=np.int32),",
+        "            np.asarray(local_centers, dtype=np.float64),",
+        "            np.asarray(radii, dtype=np.float64))",
+        "",
+        "",
+        "(OBB_SAMPLE_SPHERE_LINK_INDICES,",
+        " OBB_SAMPLE_SPHERE_LOCAL_CENTERS_M,",
+        " OBB_SAMPLE_SPHERE_RADII_M) = _generate_sample_spheres()",
+        "NUM_OBB_SAMPLE_SPHERES = int(len(OBB_SAMPLE_SPHERE_RADII_M))",
+        "",
+        "if not (",
+        "        NUM_OBB_SAMPLE_SPHERES == 32",
+        "        and OBB_SAMPLE_SPHERE_LINK_INDICES.shape == (32,)",
+        "        and OBB_SAMPLE_SPHERE_LOCAL_CENTERS_M.shape == (32, 3)",
+        "        and np.all(OBB_SAMPLE_SPHERE_RADII_M > 0.0)):",
+        "    raise RuntimeError(\"OBB 采样球几何无效\")",
+        "",
         "# Online CBF subset; omitted non-adjacent pairs are not exemptions.",
         "OBB_COLLISION_PAIRS = np.array(",
         _format_array(pairs.astype(np.float64)) + ", dtype=np.int32)",
         "",
     ]
+    return "\n".join(lines)
+
+
+def write_python_module(data: dict, path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("\n".join(lines), encoding="utf-8")
+    path.write_text(render_python_module(data), encoding="utf-8")
 
 
-def write_yaml(data: dict, path: Path) -> None:
+def render_yaml(data: dict) -> str:
     entries = data["entries"]
     document = {
         "schema_version": 1,
         "generated_by": "portable_oscbf/scripts/generate_obb_calibration.py",
         "control_point": "ee_link (URDF tool0 equivalent)",
+        "sample_sphere_padding_m": SAMPLE_SPHERE_PADDING_M,
+        "sample_sphere_count": sum(
+            int(np.prod(SAMPLE_GRID_SHAPES[e["link"]])) for e in entries),
         "links": [
             {
                 "link": e["link"],
                 "index": e["index"],
                 "center_m": [float(v) for v in e["center_m"]],
                 "half_extents_m": [float(v) for v in e["half_extents_m"]],
+                "sample_grid_shape": list(SAMPLE_GRID_SHAPES[e["link"]]),
                 "rotation": [[float(v) for v in row] for row in e["rotation"]],
                 "method": e["method"],
             }
@@ -210,8 +276,22 @@ def write_yaml(data: dict, path: Path) -> None:
             "omitted_pair_evidence": "OFF-02 bounded-region certificate",
         },
     }
+    return yaml.safe_dump(document, sort_keys=False)
+
+
+def write_yaml(data: dict, path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(yaml.safe_dump(document, sort_keys=False), encoding="utf-8")
+    path.write_text(render_yaml(data), encoding="utf-8")
+
+
+def output_matches(path: Path, expected: str) -> bool:
+    if not path.is_file():
+        print(f"缺少生成文件：{path}")
+        return False
+    if path.read_text(encoding="utf-8") != expected:
+        print(f"生成文件需要更新：{path}")
+        return False
+    return True
 
 
 def main() -> int:
@@ -219,9 +299,21 @@ def main() -> int:
     parser.add_argument("--mesh-dir", type=Path, default=DEFAULT_MESH_DIR)
     parser.add_argument("--output-py", type=Path, default=DEFAULT_OUTPUT_PY)
     parser.add_argument("--output-yaml", type=Path, default=DEFAULT_OUTPUT_YAML)
+    parser.add_argument(
+        "--check", action="store_true",
+        help="检查仓库里的生成文件是否与 mesh 和分格规则一致")
     args = parser.parse_args()
 
     data = compute_obb_data(args.mesh_dir)
+    if args.check:
+        python_matches = output_matches(
+            args.output_py, render_python_module(data))
+        yaml_matches = output_matches(args.output_yaml, render_yaml(data))
+        if not (python_matches and yaml_matches):
+            return 1
+        print("OBB 生成文件与 mesh 和分格规则一致")
+        return 0
+
     write_python_module(data, args.output_py)
     write_yaml(data, args.output_yaml)
 

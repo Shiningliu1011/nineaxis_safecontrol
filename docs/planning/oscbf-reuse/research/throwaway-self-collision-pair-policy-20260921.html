@@ -1,0 +1,686 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Throwaway Self-Collision Pair Policy</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: Inter, "Noto Sans SC", system-ui, sans-serif;
+      background: #f3f6f8;
+      color: #1d2935;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 24px;
+    }
+
+    main {
+      max-width: 1180px;
+      margin: 0 auto;
+      display: grid;
+      gap: 16px;
+    }
+
+    header, section {
+      background: #ffffff;
+      border: 1px solid #d5dde5;
+      border-radius: 10px;
+      padding: 18px;
+    }
+
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { margin-bottom: 8px; font-size: 1.5rem; }
+    h2 { font-size: 1.12rem; }
+    h3 { font-size: 0.98rem; }
+
+    code, .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+
+    .throwaway {
+      display: inline-block;
+      margin-bottom: 10px;
+      padding: 4px 8px;
+      border: 1px solid #9a6700;
+      border-radius: 6px;
+      background: #fff8c5;
+      color: #6f4b00;
+      font-weight: 700;
+    }
+
+    .question {
+      max-width: 930px;
+      margin-bottom: 0;
+      line-height: 1.55;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .summary-card, .panel {
+      border: 1px solid #d5dde5;
+      border-radius: 8px;
+      padding: 12px;
+      min-width: 0;
+    }
+
+    .summary-card strong {
+      display: block;
+      margin-top: 4px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      overflow-wrap: anywhere;
+    }
+
+    .label {
+      color: #596979;
+      font-size: 0.8rem;
+    }
+
+    .status-ok { border-color: #2e8540; background: #eff9f1; }
+    .status-review { border-color: #b7791f; background: #fff8e8; }
+    .status-risk { border-color: #b42318; background: #fff1f0; }
+
+    .actions, .tabs, .steps {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    button {
+      border: 1px solid #99a7b5;
+      border-radius: 7px;
+      padding: 8px 11px;
+      background: #f8fafc;
+      color: #1d2935;
+      cursor: pointer;
+    }
+
+    button:hover { background: #edf3f8; }
+    button[aria-selected="true"], button.primary {
+      border-color: #1769aa;
+      background: #e7f2fb;
+      color: #0d4f83;
+      font-weight: 700;
+    }
+
+    button:disabled {
+      cursor: default;
+      opacity: 0.52;
+    }
+
+    .state-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .list {
+      margin: 8px 0 0;
+      padding-left: 20px;
+      max-height: 240px;
+      overflow: auto;
+      line-height: 1.5;
+    }
+
+    .list li { margin-bottom: 5px; }
+
+    .link-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 7px;
+      margin-top: 8px;
+    }
+
+    .link-chip {
+      border: 1px solid #d5dde5;
+      border-radius: 6px;
+      padding: 8px;
+      background: #f8fafc;
+    }
+
+    .verdict {
+      margin: 12px 0 0;
+      padding: 12px;
+      border-left: 4px solid #1769aa;
+      background: #f3f8fc;
+      line-height: 1.5;
+    }
+
+    .scenario-copy {
+      min-height: 92px;
+      margin: 12px 0;
+      padding: 12px;
+      border-radius: 7px;
+      background: #f6f8fa;
+      line-height: 1.5;
+    }
+
+    .scenario-copy p:last-child { margin-bottom: 0; }
+
+    .event-log {
+      margin: 0;
+      padding-left: 22px;
+      max-height: 180px;
+      overflow: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.86rem;
+    }
+
+    .event-log li { margin-bottom: 5px; }
+
+    @media (max-width: 850px) {
+      body { padding: 12px; }
+      .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .state-layout { grid-template-columns: 1fr; }
+      .link-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <span class="throwaway">THROWAWAY / 可删除逻辑原型</span>
+      <h1>Q3：完整自碰撞候选集合与允许接触列表</h1>
+      <p class="question">验证问题：从全部 link pair 生成候选集合，并且只让具备验证依据、适用几何身份的允许接触记录排除 pair，能否在工具变化、记录失效和旧 14 pair 模式下保持可解释的覆盖结果？本页只验证集合逻辑和数据含义，不进行几何计算。</p>
+    </header>
+
+    <section>
+      <h2>自由操作</h2>
+      <div class="actions" id="free-actions"></div>
+    </section>
+
+    <section>
+      <h2>当前完整状态</h2>
+      <div class="summary-grid" id="summary"></div>
+      <div class="verdict" id="verdict"></div>
+      <div class="state-layout">
+        <div class="panel">
+          <h3>机器人 link 与有效 ellipsoid</h3>
+          <div class="link-grid" id="links"></div>
+        </div>
+        <div class="panel">
+          <h3>当前生效的允许接触记录</h3>
+          <ul class="list" id="valid-records"></ul>
+        </div>
+        <div class="panel">
+          <h3>未生效记录及原因</h3>
+          <ul class="list" id="invalid-records"></ul>
+        </div>
+        <div class="panel">
+          <h3>进入碰撞查询的 link pair</h3>
+          <ul class="list" id="candidate-pairs"></ul>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>引导场景</h2>
+      <div class="tabs" id="scenario-tabs"></div>
+      <div class="scenario-copy" id="scenario-copy"></div>
+      <div class="steps" id="scenario-steps"></div>
+    </section>
+
+    <section>
+      <h2>操作记录</h2>
+      <ol class="event-log" id="event-log"></ol>
+    </section>
+  </main>
+
+  <script>
+    const PairPolicyModel = (() => {
+      const linkSeed = [
+        ["base_link", 1, "base-v1"],
+        ["Link1", 2, "link1-v1"],
+        ["Link2", 2, "link2-v1"],
+        ["Link3", 2, "link3-v1"],
+        ["Link4", 3, "link4-v1"],
+        ["Link5", 2, "link5-v1"],
+        ["Link6", 2, "link6-v1"],
+        ["Link7", 2, "link7-v1"],
+        ["Link8", 2, "link8-v1"],
+        ["Link9", 2, "link9-v1"],
+        ["Tool", 1, "tool-v1"]
+      ];
+
+      const legacyPairs = [
+        ["base_link", "Link4"],
+        ["base_link", "Link5"],
+        ["base_link", "Link7"],
+        ["base_link", "Link8"],
+        ["base_link", "Link9"],
+        ["Link1", "Link5"],
+        ["Link1", "Link7"],
+        ["Link1", "Link8"],
+        ["Link1", "Link9"],
+        ["Link2", "Link7"],
+        ["Link2", "Link8"],
+        ["Link2", "Link9"],
+        ["Link3", "Link8"],
+        ["Link3", "Link9"]
+      ];
+
+      function pairKey(a, b) {
+        return [a, b].sort().join(" ↔ ");
+      }
+
+      function globalHash(links) {
+        return links.map(link => `${link.name}:${link.geometryId}`).join("|");
+      }
+
+      function pairHash(links, a, b) {
+        const byName = new Map(links.map(link => [link.name, link]));
+        if (!byName.has(a) || !byName.has(b)) return "unknown";
+        return [byName.get(a), byName.get(b)]
+          .sort((left, right) => left.name.localeCompare(right.name))
+          .map(link => `${link.name}:${link.geometryId}`)
+          .join("|");
+      }
+
+      function makeRecord(links, a, b, evidence) {
+        return {
+          a,
+          b,
+          verified: true,
+          evidence,
+          pairGeometryHash: pairHash(links, a, b),
+          globalGeometryHash: globalHash(links)
+        };
+      }
+
+      function initialState() {
+        const links = linkSeed.map(([name, activeEllipsoids, geometryId]) => ({
+          name,
+          activeEllipsoids,
+          geometryId
+        }));
+        const adjacent = links.slice(0, -1).map((link, index) => [
+          link.name,
+          links[index + 1].name
+        ]);
+        return {
+          links,
+          policy: "complete",
+          hashScope: "pair-local",
+          allowRecords: adjacent.map(([a, b]) => makeRecord(
+            links, a, b, "关节连接区域验证记录"
+          )),
+          events: ["载入完整候选集合与相邻关节允许接触记录"]
+        };
+      }
+
+      function reduce(state, action) {
+        if (action.type === "reset") return initialState();
+
+        if (action.type === "set-policy") {
+          return {
+            ...state,
+            policy: action.value,
+            events: [...state.events, action.value === "complete"
+              ? "启用完整候选集合"
+              : "启用旧 14 pair 对照模式"]
+          };
+        }
+
+        if (action.type === "set-hash-scope") {
+          return {
+            ...state,
+            hashScope: action.value,
+            events: [...state.events, action.value === "pair-local"
+              ? "允许接触记录改用 pair 局部几何身份"
+              : "允许接触记录改用全机器人几何身份"]
+          };
+        }
+
+        if (action.type === "replace-tool") {
+          const links = state.links.map(link => link.name === "Tool"
+            ? { ...link, geometryId: "tool-v2", activeEllipsoids: 2 }
+            : link);
+          return {
+            ...state,
+            links,
+            events: [...state.events, "工具变为 tool-v2，并启用两个 ellipsoid"]
+          };
+        }
+
+        if (action.type === "recertify-tool") {
+          const key = pairKey("Link9", "Tool");
+          const remaining = state.allowRecords.filter(record => pairKey(record.a, record.b) !== key);
+          return {
+            ...state,
+            allowRecords: [
+              ...remaining,
+              makeRecord(state.links, "Link9", "Tool", "新工具连接区域验证记录")
+            ],
+            events: [...state.events, "更新 Link9 ↔ Tool 允许接触记录"]
+          };
+        }
+
+        if (action.type === "add-unverified") {
+          const key = pairKey("Link2", "Link8");
+          const remaining = state.allowRecords.filter(record => pairKey(record.a, record.b) !== key);
+          return {
+            ...state,
+            allowRecords: [
+              ...remaining,
+              {
+                a: "Link2",
+                b: "Link8",
+                verified: false,
+                evidence: "",
+                pairGeometryHash: pairHash(state.links, "Link2", "Link8"),
+                globalGeometryHash: globalHash(state.links)
+              }
+            ],
+            events: [...state.events, "加入缺少验证依据的 Link2 ↔ Link8 排除请求"]
+          };
+        }
+
+        if (action.type === "certify-nonadjacent") {
+          const key = pairKey("Link2", "Link8");
+          const remaining = state.allowRecords.filter(record => pairKey(record.a, record.b) !== key);
+          return {
+            ...state,
+            allowRecords: [
+              ...remaining,
+              makeRecord(state.links, "Link2", "Link8", "完整关节范围不可接触证明 R-028")
+            ],
+            events: [...state.events, "Link2 ↔ Link8 获得不可接触证明 R-028"]
+          };
+        }
+
+        if (action.type === "add-link4-ellipsoid") {
+          const links = state.links.map(link => link.name === "Link4"
+            ? { ...link, activeEllipsoids: Math.min(link.activeEllipsoids + 1, 4) }
+            : link);
+          return {
+            ...state,
+            links,
+            events: [...state.events, "Link4 增加一个有效 ellipsoid"]
+          };
+        }
+
+        return state;
+      }
+
+      function allPairs(links) {
+        const pairs = [];
+        for (let i = 0; i < links.length; i += 1) {
+          for (let j = i + 1; j < links.length; j += 1) {
+            pairs.push([links[i].name, links[j].name]);
+          }
+        }
+        return pairs;
+      }
+
+      function assessRecord(state, record) {
+        const names = new Set(state.links.map(link => link.name));
+        if (!names.has(record.a) || !names.has(record.b)) return "link 不存在";
+        if (record.a === record.b) return "pair 两端相同";
+        if (!record.verified) return "尚未验证";
+        if (!record.evidence) return "缺少验证依据";
+        const expected = state.hashScope === "pair-local"
+          ? pairHash(state.links, record.a, record.b)
+          : globalHash(state.links);
+        const recorded = state.hashScope === "pair-local"
+          ? record.pairGeometryHash
+          : record.globalGeometryHash;
+        if (recorded !== expected) return "几何身份已变化";
+        return "valid";
+      }
+
+      function derive(state) {
+        const assessed = state.allowRecords.map(record => ({
+          record,
+          reason: assessRecord(state, record)
+        }));
+        const validRecords = assessed.filter(item => item.reason === "valid");
+        const invalidRecords = assessed.filter(item => item.reason !== "valid");
+        const excluded = new Set(validRecords.map(item => pairKey(item.record.a, item.record.b)));
+        const completeCandidates = allPairs(state.links)
+          .filter(([a, b]) => !excluded.has(pairKey(a, b)));
+        const selectedCandidates = state.policy === "complete"
+          ? completeCandidates
+          : legacyPairs;
+        const selectedKeys = new Set(selectedCandidates.map(([a, b]) => pairKey(a, b)));
+        const missingPairs = completeCandidates.filter(([a, b]) => !selectedKeys.has(pairKey(a, b)));
+        const byName = new Map(state.links.map(link => [link.name, link]));
+        const primitivePairCount = selectedCandidates.reduce((total, [a, b]) => {
+          const left = byName.get(a);
+          const right = byName.get(b);
+          if (!left || !right) return total;
+          return total + left.activeEllipsoids * right.activeEllipsoids;
+        }, 0);
+        const totalPrimitivePairs = allPairs(state.links).reduce((total, [a, b]) => (
+          total + byName.get(a).activeEllipsoids * byName.get(b).activeEllipsoids
+        ), 0);
+
+        let verdict;
+        if (state.policy === "legacy") {
+          verdict = `旧 14 pair 模式遗漏 ${missingPairs.length} 个当前应查询的 link pair，不能作为完整覆盖来源。`;
+        } else if (invalidRecords.length > 0) {
+          verdict = `${invalidRecords.length} 条允许接触记录未生效，对应 pair 已重新进入碰撞查询；覆盖保持完整，可能增加保守约束。`;
+        } else {
+          verdict = "全部排除项均具备验证依据和适用几何身份，剩余 link pair 全部进入查询。";
+        }
+
+        return {
+          validRecords,
+          invalidRecords,
+          completeCandidates,
+          selectedCandidates,
+          missingPairs,
+          primitivePairCount,
+          totalPrimitivePairs,
+          verdict
+        };
+      }
+
+      return { initialState, reduce, derive, pairKey };
+    })();
+
+    const actions = [
+      ["恢复基准状态", { type: "reset" }],
+      ["使用完整候选集合", { type: "set-policy", value: "complete" }],
+      ["切换到旧 14 pair", { type: "set-policy", value: "legacy" }],
+      ["更换末端工具", { type: "replace-tool" }],
+      ["重新验证工具接触", { type: "recertify-tool" }],
+      ["加入无依据排除请求", { type: "add-unverified" }],
+      ["登记不可接触证明", { type: "certify-nonadjacent" }],
+      ["使用 pair 局部身份", { type: "set-hash-scope", value: "pair-local" }],
+      ["使用全机器人身份", { type: "set-hash-scope", value: "global" }],
+      ["Link4 增加 ellipsoid", { type: "add-link4-ellipsoid" }]
+    ];
+
+    const scenarios = [
+      {
+        id: "coverage",
+        title: "完整覆盖",
+        copy: "观察完整候选集合如何从全部 link pair 中仅减去有效允许接触记录。然后切换到旧 14 pair，对比遗漏数量。",
+        steps: [
+          ["载入基准状态", { type: "reset" }],
+          ["查看旧 14 pair", { type: "set-policy", value: "legacy" }],
+          ["恢复完整候选集合", { type: "set-policy", value: "complete" }]
+        ]
+      },
+      {
+        id: "tool",
+        title: "工具变化",
+        copy: "pair 局部几何身份让工具变化只影响 Link9 ↔ Tool 记录。该记录失效后，对应 pair 自动恢复查询；重新验证后才允许排除。",
+        steps: [
+          ["载入基准状态", { type: "reset" }],
+          ["更换末端工具", { type: "replace-tool" }],
+          ["更新工具接触记录", { type: "recertify-tool" }]
+        ]
+      },
+      {
+        id: "invalid",
+        title: "无效排除",
+        copy: "尝试排除 Link2 ↔ Link8，但不给出验证依据。记录不会生效，该 pair 仍在查询集合中。登记完整关节范围证明后，排除才会生效。",
+        steps: [
+          ["载入基准状态", { type: "reset" }],
+          ["加入无依据排除请求", { type: "add-unverified" }],
+          ["登记不可接触证明", { type: "certify-nonadjacent" }]
+        ]
+      },
+      {
+        id: "scope",
+        title: "身份范围",
+        copy: "全机器人几何身份会让一次工具变化使全部允许接触记录失效。pair 局部身份只影响包含变化 link 的记录。这个场景用于判断记录应保存哪一种身份。",
+        steps: [
+          ["载入基准状态", { type: "reset" }],
+          ["使用全机器人身份", { type: "set-hash-scope", value: "global" }],
+          ["更换末端工具", { type: "replace-tool" }],
+          ["改用 pair 局部身份", { type: "set-hash-scope", value: "pair-local" }]
+        ]
+      }
+    ];
+
+    let state = PairPolicyModel.initialState();
+    let activeScenario = scenarios[0].id;
+    let activeStep = 0;
+
+    function dispatch(action) {
+      state = PairPolicyModel.reduce(state, action);
+      render();
+    }
+
+    function listOrEmpty(element, items, formatter) {
+      element.innerHTML = "";
+      if (items.length === 0) {
+        const item = document.createElement("li");
+        item.textContent = "无";
+        element.appendChild(item);
+        return;
+      }
+      items.forEach(value => {
+        const item = document.createElement("li");
+        item.textContent = formatter(value);
+        element.appendChild(item);
+      });
+    }
+
+    function renderSummary(derived) {
+      const summary = document.getElementById("summary");
+      const statusClass = state.policy === "legacy"
+        ? "status-risk"
+        : derived.invalidRecords.length > 0 ? "status-review" : "status-ok";
+      const cards = [
+        ["查询规则", state.policy === "complete" ? "完整候选集合" : "旧 14 pair", statusClass],
+        ["允许记录身份", state.hashScope === "pair-local" ? "pair 局部" : "全机器人", ""],
+        ["生效 / 未生效记录", `${derived.validRecords.length} / ${derived.invalidRecords.length}`, ""],
+        ["查询 link pair", String(derived.selectedCandidates.length), ""],
+        ["查询 primitive pair", String(derived.primitivePairCount), ""],
+        ["全部 primitive pair", String(derived.totalPrimitivePairs), ""],
+        ["旧模式遗漏 link pair", String(derived.missingPairs.length), derived.missingPairs.length ? "status-risk" : "status-ok"],
+        ["机器人几何身份", state.links.map(link => link.geometryId).join(" · "), ""]
+      ];
+      summary.innerHTML = cards.map(([label, value, className]) => `
+        <div class="summary-card ${className}">
+          <span class="label">${label}</span>
+          <strong>${value}</strong>
+        </div>
+      `).join("");
+      document.getElementById("verdict").textContent = derived.verdict;
+    }
+
+    function renderState(derived) {
+      document.getElementById("links").innerHTML = state.links.map(link => `
+        <div class="link-chip">
+          <strong>${link.name}</strong><br>
+          <span class="label">${link.activeEllipsoids} ellipsoid · ${link.geometryId}</span>
+        </div>
+      `).join("");
+
+      listOrEmpty(
+        document.getElementById("valid-records"),
+        derived.validRecords,
+        item => `${PairPolicyModel.pairKey(item.record.a, item.record.b)} · ${item.record.evidence}`
+      );
+      listOrEmpty(
+        document.getElementById("invalid-records"),
+        derived.invalidRecords,
+        item => `${PairPolicyModel.pairKey(item.record.a, item.record.b)} · ${item.reason}`
+      );
+      listOrEmpty(
+        document.getElementById("candidate-pairs"),
+        derived.selectedCandidates,
+        pair => PairPolicyModel.pairKey(pair[0], pair[1])
+      );
+      listOrEmpty(
+        document.getElementById("event-log"),
+        state.events,
+        item => item
+      );
+    }
+
+    function renderFreeActions() {
+      const host = document.getElementById("free-actions");
+      host.innerHTML = "";
+      actions.forEach(([label, action]) => {
+        const button = document.createElement("button");
+        button.textContent = label;
+        button.addEventListener("click", () => dispatch(action));
+        host.appendChild(button);
+      });
+    }
+
+    function selectScenario(id) {
+      activeScenario = id;
+      activeStep = 0;
+      state = PairPolicyModel.initialState();
+      render();
+    }
+
+    function renderScenarios() {
+      const tabs = document.getElementById("scenario-tabs");
+      tabs.innerHTML = "";
+      scenarios.forEach(scenario => {
+        const button = document.createElement("button");
+        button.textContent = scenario.title;
+        button.setAttribute("aria-selected", scenario.id === activeScenario ? "true" : "false");
+        button.addEventListener("click", () => selectScenario(scenario.id));
+        tabs.appendChild(button);
+      });
+
+      const scenario = scenarios.find(item => item.id === activeScenario);
+      document.getElementById("scenario-copy").innerHTML = `
+        <p><strong>${scenario.title}</strong></p>
+        <p>${scenario.copy}</p>
+      `;
+      const steps = document.getElementById("scenario-steps");
+      steps.innerHTML = "";
+      scenario.steps.forEach(([label, action], index) => {
+        const button = document.createElement("button");
+        button.textContent = `${index + 1}. ${label}`;
+        button.disabled = index !== activeStep;
+        button.className = index === activeStep ? "primary" : "";
+        button.addEventListener("click", () => {
+          state = PairPolicyModel.reduce(state, action);
+          activeStep += 1;
+          render();
+        });
+        steps.appendChild(button);
+      });
+    }
+
+    function render() {
+      const derived = PairPolicyModel.derive(state);
+      renderSummary(derived);
+      renderState(derived);
+      renderFreeActions();
+      renderScenarios();
+    }
+
+    render();
+  </script>
+</body>
+</html>

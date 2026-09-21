@@ -9,7 +9,10 @@ date: 2026-09-07
 
 优先评估直接依赖；不能覆盖项目需求时，记录缺口，再比较适配、上游补丁和必要的项目扩展。已有本地实现的存在本身不构成继续自研的理由；上游有演示也不构成本项目可直接采用的证据。
 
-用户后续明确以实际效果择优保留，详见[边界补充决议](../planning/oscbf-reuse/issues/03-reuse-boundary.md#用户补充决议按实际效果择优保留待发布)。复用优先表示优先评估成熟上游；已有实现具有比较优势时可以保留，替换应有满足验证要求且收益明确的证据。自碰撞的具体 OBB 保留决定见[控制接入阶段决议](../planning/oscbf-reuse/issues/05-control-adoption.md#阶段决议自碰撞保留现有-obb)。
+用户后续明确以实际效果择优保留，详见[边界补充决议](../planning/oscbf-reuse/issues/03-reuse-boundary.md#用户补充决议按实际效果择优保留待发布)。复用优先表示优先评估成熟上游；已有实现具有比较优势时可以保留，替换应有满足验证要求且收益明确的证据。控制接入阶段曾决定保留自碰撞 OBB；该项已由 [ADR 0010](0010-unified-scale-collision-safety-module.md) 替代。
+
+自研规划器不再使用 MoveIt/OMPL 运行路径，AEB-RRT* 研究方法与 JAX trajectory
+optimization 的组合见 [ADR 0024](0024-aeb-rrtstar-with-jax-trajectory-optimization.md)。
 
 ## 取舍与后果
 

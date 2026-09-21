@@ -1,0 +1,644 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Throwaway Unified Scale Collision Logic</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: Inter, "Noto Sans SC", system-ui, sans-serif;
+      background: #f4f7fa;
+      color: #17202a;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 24px;
+    }
+
+    main {
+      max-width: 1180px;
+      margin: 0 auto;
+      display: grid;
+      gap: 16px;
+    }
+
+    header, section {
+      background: white;
+      border: 1px solid #d8e0e8;
+      border-radius: 10px;
+      padding: 18px;
+    }
+
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { font-size: 1.45rem; margin-bottom: 8px; }
+    h2 { font-size: 1.1rem; }
+    h3 { font-size: 0.98rem; }
+
+    .throwaway {
+      display: inline-block;
+      margin-bottom: 10px;
+      padding: 4px 8px;
+      border: 1px solid #9a6700;
+      border-radius: 6px;
+      background: #fff8c5;
+      color: #6f4b00;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    .question {
+      max-width: 900px;
+      margin-bottom: 0;
+      line-height: 1.55;
+    }
+
+    .tabs, .button-row, .scenario-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    button {
+      border: 1px solid #9aa8b6;
+      border-radius: 7px;
+      padding: 8px 11px;
+      background: #f8fafc;
+      color: #17202a;
+      cursor: pointer;
+    }
+
+    button:hover { background: #edf3f8; }
+    button[aria-selected="true"], button.primary {
+      border-color: #1769aa;
+      background: #e7f2fb;
+      color: #0d4f83;
+      font-weight: 700;
+    }
+
+    button.danger {
+      border-color: #b42318;
+      color: #8f1d14;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(360px, 0.9fr);
+      gap: 16px;
+    }
+
+    .panel {
+      border: 1px solid #d8e0e8;
+      border-radius: 8px;
+      padding: 14px;
+    }
+
+    .stage-grid, .state-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .stage, .state-item {
+      border: 1px solid #d8e0e8;
+      border-radius: 7px;
+      padding: 10px;
+      min-width: 0;
+    }
+
+    .stage.allow { border-color: #2e8540; background: #eef9f0; }
+    .stage.hold { border-color: #c13c32; background: #fff1f0; }
+
+    .label {
+      display: block;
+      color: #5d6b78;
+      font-size: 0.78rem;
+      margin-bottom: 4px;
+    }
+
+    .value {
+      display: block;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      overflow-wrap: anywhere;
+    }
+
+    .formula {
+      padding: 10px;
+      border-radius: 7px;
+      background: #f6f8fa;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      margin-bottom: 12px;
+    }
+
+    .reason {
+      margin: 8px 0 0;
+      min-height: 2.7em;
+      color: #4b5661;
+      line-height: 1.4;
+    }
+
+    .scenario-copy {
+      min-height: 86px;
+      margin: 12px 0;
+      padding: 12px;
+      background: #f6f8fa;
+      border-radius: 7px;
+    }
+
+    .scenario-copy p { margin-bottom: 6px; }
+
+    .history {
+      margin: 0;
+      padding-left: 22px;
+      max-height: 260px;
+      overflow: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.86rem;
+    }
+
+    .history li { margin-bottom: 6px; }
+
+    .hidden { display: none; }
+
+    @media (max-width: 860px) {
+      body { padding: 12px; }
+      .workspace { grid-template-columns: 1fr; }
+      .stage-grid, .state-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <span class="throwaway">THROWAWAY / 可删除逻辑原型</span>
+      <h1>统一 scale collision query 与三阶段准入</h1>
+      <p class="question">设计问题：能否用统一的 <code>proximity_scale</code>、带 revision 的点云快照和明确的 freshness/slack 规则，让 planning、replay 与 OSCBF 遵循同一套准入含义？本页采用线性归一化 <code>h = proximity_scale - scale_margin</code>，只验证状态变化与接口含义，不进行物理仿真。</p>
+    </header>
+
+    <section>
+      <div class="tabs" role="tablist" aria-label="原型模式">
+        <button id="guided-tab" role="tab" aria-selected="true">引导场景</button>
+        <button id="free-tab" role="tab" aria-selected="false">自由操作</button>
+      </div>
+    </section>
+
+    <section id="guided-panel">
+      <h2>引导场景</h2>
+      <div id="scenario-tabs" class="scenario-tabs"></div>
+      <div id="scenario-copy" class="scenario-copy"></div>
+      <div class="button-row">
+        <button id="scenario-reset">重新开始此场景</button>
+        <button id="scenario-next" class="primary">执行下一步</button>
+      </div>
+    </section>
+
+    <section id="free-panel" class="hidden">
+      <h2>自由操作</h2>
+      <div class="button-row" id="free-actions"></div>
+    </section>
+
+    <section class="workspace">
+      <div class="panel">
+        <h2>三阶段准入</h2>
+        <div class="formula" id="formula"></div>
+        <div class="stage-grid" id="stage-grid"></div>
+
+        <h2 style="margin-top: 18px;">完整状态</h2>
+        <div class="state-grid" id="state-grid"></div>
+      </div>
+
+      <div class="panel">
+        <h2>动作记录</h2>
+        <ol class="history" id="history"></ol>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const CollisionLogic = (() => {
+      const finite = Number.isFinite;
+      const nearBoundaryLimit = 0.15;
+      const gradientTolerance = 1e-5;
+
+      function initialState() {
+        return {
+          phase: "NO_SNAPSHOT",
+          sceneRevision: 0,
+          plannedRevision: null,
+          replayCheckedRevision: null,
+          cloudAgeMs: null,
+          freshnessLimitMs: 250,
+          coverage: "UNKNOWN",
+          barrierForm: "LINEAR_NORMALIZED",
+          proximityScale: null,
+          scaleMargin: 1.05,
+          h: null,
+          gradientNorm: null,
+          solverOk: false,
+          collisionSlack: 0,
+          slackTolerance: 1e-6,
+          lastAction: "RESET",
+          history: ["RESET → 等待点云快照"]
+        };
+      }
+
+      function commonReasons(state) {
+        const reasons = [];
+        const h = finite(state.proximityScale)
+          ? state.proximityScale - state.scaleMargin
+          : null;
+        if (state.sceneRevision <= 0) reasons.push("缺少场景快照");
+        if (!finite(state.cloudAgeMs) || state.cloudAgeMs > state.freshnessLimitMs) {
+          reasons.push("点云 freshness 超限");
+        }
+        if (state.coverage !== "KNOWN") reasons.push("工作区包含 unknown 区域");
+        if (!finite(state.proximityScale) || !finite(h)) reasons.push("scale query 无有限结果");
+        if (finite(h) && h < 0) reasons.push("h < 0，已越过 scale 安全边界");
+        return reasons;
+      }
+
+      function admission(stage, state) {
+        const reasons = commonReasons(state);
+        const h = finite(state.proximityScale)
+          ? state.proximityScale - state.scaleMargin
+          : null;
+
+        if (stage === "REPLAY") {
+          if (state.plannedRevision === null) reasons.push("缺少规划 revision");
+          if (
+            state.sceneRevision > 0 &&
+            state.plannedRevision !== state.sceneRevision &&
+            state.replayCheckedRevision !== state.sceneRevision
+          ) {
+            reasons.push("当前 revision 尚未复查轨迹 horizon");
+          }
+        }
+
+        if (stage === "OSCBF") {
+          if (!state.solverOk) reasons.push("QP solver 未通过");
+          if (!finite(state.collisionSlack) || state.collisionSlack > state.slackTolerance) {
+            reasons.push("collision slack 超过容差");
+          }
+          if (
+            finite(h) && h <= nearBoundaryLimit &&
+            (!finite(state.gradientNorm) || state.gradientNorm <= gradientTolerance)
+          ) {
+            reasons.push("近边界 gradient 无可用方向");
+          }
+        }
+
+        return {
+          allowed: reasons.length === 0,
+          reasons,
+          decision: reasons.length === 0 ? "ALLOW" : "HOLD"
+        };
+      }
+
+      function derive(state) {
+        const h = finite(state.proximityScale)
+          ? state.proximityScale - state.scaleMargin
+          : null;
+        const derived = { ...state, h };
+        const planning = admission("PLANNING", derived);
+        const replay = admission("REPLAY", derived);
+        const oscbf = admission("OSCBF", derived);
+        return {
+          ...derived,
+          freshnessOk: finite(state.cloudAgeMs) && state.cloudAgeMs <= state.freshnessLimitMs,
+          planning,
+          replay,
+          oscbf,
+          command: oscbf.allowed ? "COMMAND_ALLOWED" : "HOLD_COMMAND"
+        };
+      }
+
+      function append(state, action, note) {
+        return {
+          ...state,
+          lastAction: action,
+          history: [...state.history, `${action} → ${note}`]
+        };
+      }
+
+      function reduce(state, action) {
+        let next = { ...state };
+        switch (action) {
+          case "RESET":
+            return initialState();
+          case "NEW_SAFE_CLOUD":
+            next = {
+              ...next,
+              phase: "SCENE_READY",
+              sceneRevision: next.sceneRevision + 1,
+              replayCheckedRevision: null,
+              cloudAgeMs: 20,
+              coverage: "KNOWN",
+              proximityScale: 1.32,
+              gradientNorm: 0.46,
+              solverOk: true,
+              collisionSlack: 0
+            };
+            return append(next, action, "安全快照，revision 增加");
+          case "NEW_NEAR_CLOUD":
+            next = {
+              ...next,
+              phase: "SCENE_READY",
+              sceneRevision: next.sceneRevision + 1,
+              replayCheckedRevision: null,
+              cloudAgeMs: 20,
+              coverage: "KNOWN",
+              proximityScale: 1.08,
+              gradientNorm: 0.18,
+              solverOk: true,
+              collisionSlack: 0
+            };
+            return append(next, action, "近边界快照，revision 增加");
+          case "PLAN": {
+            const gate = admission("PLANNING", derive(next));
+            if (gate.allowed) {
+              next = {
+                ...next,
+                phase: "PLANNED",
+                plannedRevision: next.sceneRevision,
+                replayCheckedRevision: next.sceneRevision
+              };
+              return append(next, action, "规划准入并记录 revision");
+            }
+            return append(next, action, `规划保持：${gate.reasons.join("；")}`);
+          }
+          case "RECHECK_REPLAY": {
+            const gate = admission("PLANNING", derive(next));
+            if (gate.allowed && next.plannedRevision !== null) {
+              next = {
+                ...next,
+                phase: "REPLAY_RECHECKED",
+                replayCheckedRevision: next.sceneRevision
+              };
+              return append(next, action, "当前 revision 的轨迹 horizon 已复查");
+            }
+            return append(next, action, `复查保持：${gate.reasons.join("；")}`);
+          }
+          case "START_REPLAY": {
+            const gate = admission("REPLAY", derive(next));
+            if (gate.allowed) {
+              next = { ...next, phase: "REPLAY_ACTIVE" };
+              return append(next, action, "回放准入");
+            }
+            next = { ...next, phase: "HOLD" };
+            return append(next, action, `回放保持：${gate.reasons.join("；")}`);
+          }
+          case "OSCBF_STEP": {
+            const gate = admission("OSCBF", derive(next));
+            next = { ...next, phase: gate.allowed ? "OSCBF_ACTIVE" : "HOLD" };
+            return append(next, action, gate.allowed ? "OSCBF 放行命令" : `OSCBF 保持：${gate.reasons.join("；")}`);
+          }
+          case "AGE_CLOUD":
+            next = { ...next, cloudAgeMs: 420, phase: "HOLD" };
+            return append(next, action, "点云超过 freshness 上限");
+          case "REFRESH_CLOUD":
+            next = { ...next, cloudAgeMs: 18 };
+            return append(next, action, "同一 revision 的 freshness 恢复");
+          case "SET_UNKNOWN":
+            next = { ...next, coverage: "UNKNOWN", phase: "HOLD" };
+            return append(next, action, "工作区 coverage 变为 unknown");
+          case "SET_PENETRATION":
+            next = {
+              ...next,
+              proximityScale: 0.82,
+              gradientNorm: 0.51,
+              phase: "HOLD"
+            };
+            return append(next, action, "穿透状态仍保留 scale 与 gradient");
+          case "SET_ZERO_GRADIENT":
+            next = { ...next, proximityScale: 1.08, gradientNorm: 0, phase: "HOLD" };
+            return append(next, action, "近边界 gradient 变为零");
+          case "SET_SLACK":
+            next = { ...next, collisionSlack: 0.002, phase: "HOLD" };
+            return append(next, action, "collision slack 超过容差");
+          case "CLEAR_SLACK":
+            next = { ...next, collisionSlack: 0 };
+            return append(next, action, "collision slack 清零");
+          case "SOLVER_FAIL":
+            next = { ...next, solverOk: false, phase: "HOLD" };
+            return append(next, action, "QP solver 状态异常");
+          default:
+            throw new Error(`Unknown action: ${action}`);
+        }
+      }
+
+      return { initialState, derive, admission, reduce };
+    })();
+
+    const scenarios = [
+      {
+        id: "happy",
+        name: "安全路径",
+        description: "新点云、规划、回放和 OSCBF 使用同一 revision 与 scale 判据。",
+        steps: ["NEW_SAFE_CLOUD", "PLAN", "START_REPLAY", "OSCBF_STEP"]
+      },
+      {
+        id: "revision",
+        name: "回放期间场景变化",
+        description: "新扫描使旧规划 revision 失效；复查当前 horizon 后才允许继续回放。",
+        steps: ["NEW_SAFE_CLOUD", "PLAN", "START_REPLAY", "NEW_NEAR_CLOUD", "START_REPLAY", "RECHECK_REPLAY", "START_REPLAY"]
+      },
+      {
+        id: "stale",
+        name: "点云过期",
+        description: "scale 仍为安全值时，freshness 超限仍会让三个阶段保持。",
+        steps: ["NEW_SAFE_CLOUD", "PLAN", "AGE_CLOUD", "OSCBF_STEP", "REFRESH_CLOUD", "OSCBF_STEP"]
+      },
+      {
+        id: "slack",
+        name: "Collision slack",
+        description: "规划与回放仍可通过，OSCBF 因 collision slack 超限而保持命令。",
+        steps: ["NEW_NEAR_CLOUD", "PLAN", "SET_SLACK", "OSCBF_STEP", "CLEAR_SLACK", "OSCBF_STEP"]
+      },
+      {
+        id: "penetration",
+        name: "穿透与 gradient",
+        description: "proximity_scale 小于 1 时仍显示有限 gradient，同时 h 为负并拒绝命令。",
+        steps: ["NEW_SAFE_CLOUD", "SET_PENETRATION", "OSCBF_STEP"]
+      }
+    ];
+
+    const actionLabels = {
+      RESET: "重置",
+      NEW_SAFE_CLOUD: "新安全点云",
+      NEW_NEAR_CLOUD: "新近边界点云",
+      PLAN: "规划",
+      RECHECK_REPLAY: "复查回放 horizon",
+      START_REPLAY: "开始回放",
+      OSCBF_STEP: "执行 OSCBF 周期",
+      AGE_CLOUD: "让点云过期",
+      REFRESH_CLOUD: "刷新点云年龄",
+      SET_UNKNOWN: "设为 unknown",
+      SET_PENETRATION: "设为穿透",
+      SET_ZERO_GRADIENT: "设为零 gradient",
+      SET_SLACK: "增加 collision slack",
+      CLEAR_SLACK: "清除 collision slack",
+      SOLVER_FAIL: "设为 solver 异常"
+    };
+
+    let state = CollisionLogic.initialState();
+    let selectedScenario = 0;
+    let scenarioStep = 0;
+
+    const format = (value, digits = 4) => {
+      if (value === null || value === undefined) return "—";
+      if (typeof value === "number") return Number.isFinite(value) ? value.toFixed(digits) : String(value);
+      return String(value);
+    };
+
+    function dispatch(action) {
+      state = CollisionLogic.reduce(state, action);
+      render();
+    }
+
+    function selectMode(mode) {
+      const guided = mode === "guided";
+      document.getElementById("guided-tab").setAttribute("aria-selected", String(guided));
+      document.getElementById("free-tab").setAttribute("aria-selected", String(!guided));
+      document.getElementById("guided-panel").classList.toggle("hidden", !guided);
+      document.getElementById("free-panel").classList.toggle("hidden", guided);
+    }
+
+    function renderScenarioTabs() {
+      const host = document.getElementById("scenario-tabs");
+      host.replaceChildren(...scenarios.map((scenario, index) => {
+        const button = document.createElement("button");
+        button.textContent = scenario.name;
+        button.setAttribute("aria-selected", String(index === selectedScenario));
+        button.addEventListener("click", () => {
+          selectedScenario = index;
+          scenarioStep = 0;
+          state = CollisionLogic.initialState();
+          render();
+        });
+        return button;
+      }));
+    }
+
+    function renderScenarioCopy() {
+      const scenario = scenarios[selectedScenario];
+      const nextAction = scenario.steps[scenarioStep];
+      document.getElementById("scenario-copy").innerHTML = `
+        <p><strong>${scenario.name}</strong></p>
+        <p>${scenario.description}</p>
+        <p>进度：${scenarioStep} / ${scenario.steps.length}；下一步：${nextAction ? actionLabels[nextAction] : "场景完成"}</p>
+      `;
+      const button = document.getElementById("scenario-next");
+      button.disabled = !nextAction;
+      button.textContent = nextAction ? `执行下一步：${actionLabels[nextAction]}` : "场景完成";
+    }
+
+    function renderFreeActions() {
+      const actions = [
+        "RESET", "NEW_SAFE_CLOUD", "NEW_NEAR_CLOUD", "PLAN", "RECHECK_REPLAY",
+        "START_REPLAY", "OSCBF_STEP", "AGE_CLOUD", "REFRESH_CLOUD", "SET_UNKNOWN",
+        "SET_PENETRATION", "SET_ZERO_GRADIENT", "SET_SLACK", "CLEAR_SLACK", "SOLVER_FAIL"
+      ];
+      const host = document.getElementById("free-actions");
+      host.replaceChildren(...actions.map((action) => {
+        const button = document.createElement("button");
+        button.textContent = actionLabels[action];
+        if (["SET_PENETRATION", "SET_SLACK", "SOLVER_FAIL"].includes(action)) {
+          button.classList.add("danger");
+        }
+        button.addEventListener("click", () => dispatch(action));
+        return button;
+      }));
+    }
+
+    function renderStages(view) {
+      const stages = [
+        ["Planning", view.planning],
+        ["Replay", view.replay],
+        ["OSCBF", view.oscbf]
+      ];
+      const host = document.getElementById("stage-grid");
+      host.replaceChildren(...stages.map(([name, gate]) => {
+        const card = document.createElement("div");
+        card.className = `stage ${gate.allowed ? "allow" : "hold"}`;
+        card.innerHTML = `
+          <span class="label">${name}</span>
+          <span class="value">${gate.decision}</span>
+          <p class="reason">${gate.allowed ? "所有准入条件通过" : gate.reasons.join("；")}</p>
+        `;
+        return card;
+      }));
+    }
+
+    function renderState(view) {
+      const fields = [
+        ["phase", view.phase],
+        ["sceneRevision", view.sceneRevision],
+        ["plannedRevision", view.plannedRevision],
+        ["replayCheckedRevision", view.replayCheckedRevision],
+        ["cloudAgeMs", view.cloudAgeMs],
+        ["freshnessLimitMs", view.freshnessLimitMs],
+        ["freshnessOk", view.freshnessOk],
+        ["coverage", view.coverage],
+        ["barrierForm", view.barrierForm],
+        ["proximityScale", format(view.proximityScale)],
+        ["scaleMargin", format(view.scaleMargin)],
+        ["h", format(view.h)],
+        ["gradientNorm", format(view.gradientNorm)],
+        ["solverOk", view.solverOk],
+        ["collisionSlack", format(view.collisionSlack, 6)],
+        ["slackTolerance", format(view.slackTolerance, 6)],
+        ["command", view.command],
+        ["lastAction", view.lastAction]
+      ];
+      const host = document.getElementById("state-grid");
+      host.replaceChildren(...fields.map(([label, value]) => {
+        const item = document.createElement("div");
+        item.className = "state-item";
+        item.innerHTML = `<span class="label">${label}</span><span class="value">${value ?? "—"}</span>`;
+        return item;
+      }));
+    }
+
+    function renderHistory(view) {
+      const host = document.getElementById("history");
+      host.replaceChildren(...view.history.map((entry) => {
+        const item = document.createElement("li");
+        item.textContent = entry;
+        return item;
+      }));
+      host.scrollTop = host.scrollHeight;
+    }
+
+    function render() {
+      const view = CollisionLogic.derive(state);
+      document.getElementById("formula").textContent = `h = proximity_scale - scale_margin = ${format(view.proximityScale)} - ${format(view.scaleMargin)} = ${format(view.h)}`;
+      renderScenarioTabs();
+      renderScenarioCopy();
+      renderStages(view);
+      renderState(view);
+      renderHistory(view);
+    }
+
+    document.getElementById("guided-tab").addEventListener("click", () => selectMode("guided"));
+    document.getElementById("free-tab").addEventListener("click", () => selectMode("free"));
+    document.getElementById("scenario-reset").addEventListener("click", () => {
+      scenarioStep = 0;
+      state = CollisionLogic.initialState();
+      render();
+    });
+    document.getElementById("scenario-next").addEventListener("click", () => {
+      const scenario = scenarios[selectedScenario];
+      const action = scenario.steps[scenarioStep];
+      if (!action) return;
+      scenarioStep += 1;
+      dispatch(action);
+    });
+
+    renderFreeActions();
+    render();
+  </script>
+</body>
+</html>

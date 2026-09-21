@@ -23,8 +23,7 @@ portable_oscbf/
 │   │  ── 运动学与碰撞几何 ──
 │   ├── nineaxis_manipulator_jax.py # 9-DOF POE FK/Jacobian (JAX)
 │   ├── nineaxis_kinematics.py     # POE FK/Jacobian/IK (NumPy+SciPy)
-│   ├── collision_envelope.py       # 17-球碰撞模型数据
-│   ├── obb_collision_model.py      # OBB 包络模型 (UPAKI)
+│   ├── obb_collision_model.py      # OBB 包络与 32 个环境采样球 (UPAKI)
 │   ├── dpax_collision.py           # DCOL OBB 距离内核 (可微碰撞)
 │   ├── fcl_collision.py           # FCL 基元自碰撞检测
 │   ├── fcl_collision_mesh.py      # FCL BVHModel 网格碰撞
@@ -239,11 +238,17 @@ python3 portable_oscbf/scripts/generate_kinematics_data.py --check
 
 ### 步骤 3: 修改碰撞模型
 
-编辑 `work/collision_envelope.py` 中的球体模型:
-- `NUM_ENVIRONMENT_COLLISION_SPHERES` — 碰撞球数量
-- `ENVIRONMENT_SPHERE_LINK_INDICES` — 每个球附着的连杆
-- `ENVIRONMENT_SPHERE_LOCAL_CENTERS_M` — 球心在连杆坐标系中的位置
-- `ENVIRONMENT_SPHERE_RADII_M` — 球半径
+替换 STL 网格或调整 `scripts/generate_obb_calibration.py` 中各连杆的
+`SAMPLE_GRID_SHAPES`，然后从项目根目录运行：
+
+```bash
+python3 portable_oscbf/scripts/generate_obb_calibration.py
+python3 portable_oscbf/scripts/generate_obb_calibration.py --check
+```
+
+生成结果写入 `work/obb_collision_model.py` 与 `config/obb_model.yaml`。
+32 个环境采样球由 OBB 分格直接生成；球心取格心，半径取格半对角线并加
+2 mm。
 
 ### 步骤 4: 替换轨迹数据
 

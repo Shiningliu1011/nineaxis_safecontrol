@@ -5,12 +5,12 @@ safe commands on another; keeping the names and QoS in one place prevents
 publisher/subscriber mismatches across nodes.
 """
 
-from rclpy.qos import (
-    DurabilityPolicy,
-    HistoryPolicy,
-    QoSProfile,
-    ReliabilityPolicy,
-)
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from rclpy.qos import QoSProfile
 
 JOINT_STATE_TOPIC = "/mujoco_joint_states"
 OSCBF_COMMAND_TOPIC = "/oscbf_command"
@@ -23,6 +23,13 @@ def state_stream_qos() -> QoSProfile:
     ``qos_profile_sensor_data`` (depth 5) overflows under plant bursts, which
     showed up as long-run p95 latency > 10 ms.
     """
+    from rclpy.qos import (
+        DurabilityPolicy,
+        HistoryPolicy,
+        QoSProfile,
+        ReliabilityPolicy,
+    )
+
     return QoSProfile(
         history=HistoryPolicy.KEEP_LAST,
         depth=20,

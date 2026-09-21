@@ -27,7 +27,11 @@ from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import JointState
 
 from .cylinder_geometry import fit_circle
-from .oscbf_trajectory import load_calibrated_path
+from .oscbf_trajectory import (
+    bootstrap_portable,
+    default_portable_root,
+    load_calibrated_path,
+)
 from .robot_spec import DEFAULT_JOINT_NAMES
 from .ros_conventions import JOINT_STATE_TOPIC
 
@@ -133,9 +137,19 @@ class MuJoCoJointStateViewer(Node):
             raw_mjcf, target_path, tracking_cylinder,
             joint_names=self._joint_names,
         )
-        if bool(self.get_parameter("show_obb").value):
-            scene_mjcf = self._inject_obb_boxes(scene_mjcf)
-            self.get_logger().info("OBB collision envelopes enabled (show_obb=true)")
+        show_obb = bool(self.get_parameter("show_obb").value)
+        show_obb_sample_spheres = bool(
+            self.get_parameter("show_obb_sample_spheres").value)
+        if show_obb or show_obb_sample_spheres:
+            scene_mjcf = self._inject_obb_geometry(
+                scene_mjcf,
+                show_boxes=show_obb,
+                show_sample_spheres=show_obb_sample_spheres,
+            )
+            self.get_logger().info(
+                "OBB 可视化已启用："
+                f"boxes={show_obb}, sample_spheres={show_obb_sample_spheres}"
+            )
         self._model = mujoco.MjModel.from_xml_string(scene_mjcf)
         self._model.opt.gravity[:] = 0.0
         self._data = mujoco.MjData(self._model)
@@ -208,6 +222,7 @@ class MuJoCoJointStateViewer(Node):
         # to avoid z-fighting. This changes visualization only, not IK input.
         self.declare_parameter("path_surface_offset_m", 0.002)
         self.declare_parameter("show_obb", False)
+        self.declare_parameter("show_obb_sample_spheres", False)
 
     def _joint_state_callback(self, message: JointState) -> None:
         positions = dict(zip(message.name, message.position))
@@ -304,7 +319,12 @@ class MuJoCoJointStateViewer(Node):
         urdf_xml = urdf_xml.replace(
             "package://ninezzhou/meshes/", f"{mesh_directory}/"
         )
-        with TemporaryDirectory(prefix="robot_safecontrol_mujoco_") as temporary_directory:
+        scratch_directory = Path.cwd() / ".scratch" / "mujoco"
+        scratch_directory.mkdir(parents=True, exist_ok=True)
+        with TemporaryDirectory(
+            prefix="robot_safecontrol_mujoco_",
+            dir=scratch_directory,
+        ) as temporary_directory:
             temporary_root = Path(temporary_directory)
             temporary_urdf = temporary_root / "ninezzhou.urdf"
             temporary_mjcf = temporary_root / "ninezzhou_converted.xml"
@@ -461,76 +481,113 @@ class MuJoCoJointStateViewer(Node):
         return result
 
     # ------------------------------------------------------------------
-    #  OBB collision envelopes (display-only, group 2)
-    #  Semi-transparent blue boxes matching the OBB collision model used
-    #  by the OSCBF controller.  Data is inlined from
-    #  ``portable_oscbf/work/obb_collision_model.py`` to avoid a
-    #  cross-package import dependency in the viewer node.
+    # OBB 与环境采样球可视化（只显示，MuJoCo group 2）
     # ------------------------------------------------------------------
 
-    _OBB_LINK_NAMES: tuple[str, ...] = (
-        "base_link", "Link1", "Link2", "Link3", "Link4",
-        "Link5", "Link6", "Link7", "Link8", "Link9",
-    )
-
-    # OBB centre in the link-local frame (m).
-    _OBB_LOCAL_CENTERS_M: np.ndarray = np.array([
-        [-1.36345624924e-06, 0.00600035488605, 0.113499969244],
-        [0, 0.188649997115, -0.0612499937415],
-        [0.112499993294, -1.86264514923e-09, -7.45058059692e-09],
-        [0.112499993294, 0, -7.45058059692e-09],
-        [0, -0.0515107642859, -7.45058059692e-09],
-        [1.86264514923e-09, -3.72529029846e-09, -0.1012747325],
-        [0.0629254467785, -1.86264514923e-09, 3.72529029846e-09],
-        [0.0550207030028, -3.72529029846e-09, 0],
-        [0.05323269777, -3.54405492544e-05, -1.11758708954e-08],
-        [0.103750595823, -8.89413058758e-07, -0.0138150909916],
-    ], dtype=np.float64)
-
-    # OBB half-extents along the OBB axes (m).
-    _OBB_HALF_EXTENTS_M: np.ndarray = np.array([
-        [0.0750013664365, 0.0640003532171, 0.448500007391],
-        [0.077500000596, 0.212349995971, 0.123749993742],
-        [0.152550000697, 0.0400000009686, 0.0799999982119],
-        [0.174949306995, 0.0625, 0.0799999982119],
-        [0.0599999986589, 0.100489245728, 0.0799999982119],
-        [0.0609999988228, 0.0489999949932, 0.162225272506],
-        [0.111903931946, 0.0520000029355, 0.0620000064373],
-        [0.10597932525, 0.0509999990463, 0.0570000000298],
-        [0.0932672638446, 0.039964562282, 0.0569999963045],
-        [0.131250580773, 0.0274723032489, 0.0331849111244],
-    ], dtype=np.float64)
-
-    _OBB_RGBA = "0.2 0.55 0.85 0.15"
+    _OBB_RGBA = "0.2 0.55 0.85 0.14"
+    _OBB_SAMPLE_SPHERE_RGBA = "1.0 0.35 0.05 0.20"
 
     @staticmethod
-    def _inject_obb_boxes(mjcf_xml: str) -> str:
-        """Inject one semi-transparent box geom per link for OBB visualisation.
+    def _obb_visualization_data():
+        """读取控制器使用的 OBB 与 32 个采样球生成数据。"""
+        bootstrap_portable(default_portable_root())
+        from work.obb_collision_model import (
+            OBB_HALF_EXTENTS_M,
+            OBB_LINK_NAMES,
+            OBB_LOCAL_CENTERS_M,
+            OBB_LOCAL_ROTATIONS,
+            OBB_SAMPLE_SPHERE_LINK_INDICES,
+            OBB_SAMPLE_SPHERE_LOCAL_CENTERS_M,
+            OBB_SAMPLE_SPHERE_RADII_M,
+        )
 
-        Each box is a child body of its owning link so it moves automatically
-        with the arm.  All OBBs are currently AABB (identity local rotation),
-        so ``pos`` = local centre and ``size`` = half-extents.
-        """
+        return (
+            tuple(OBB_LINK_NAMES),
+            np.asarray(OBB_LOCAL_CENTERS_M, dtype=np.float64),
+            np.asarray(OBB_HALF_EXTENTS_M, dtype=np.float64),
+            np.asarray(OBB_LOCAL_ROTATIONS, dtype=np.float64),
+            np.asarray(OBB_SAMPLE_SPHERE_LINK_INDICES, dtype=np.int32),
+            np.asarray(OBB_SAMPLE_SPHERE_LOCAL_CENTERS_M, dtype=np.float64),
+            np.asarray(OBB_SAMPLE_SPHERE_RADII_M, dtype=np.float64),
+        )
+
+    @staticmethod
+    def _inject_obb_geometry(
+        mjcf_xml: str,
+        *,
+        show_boxes: bool,
+        show_sample_spheres: bool,
+    ) -> str:
+        """把 OBB 和采样球作为随连杆运动的只显示 geom 加入 MJCF。"""
+        if not (show_boxes or show_sample_spheres):
+            return mjcf_xml
+
         viewer = MuJoCoJointStateViewer
-        for i, link_name in enumerate(viewer._OBB_LINK_NAMES):
-            cx, cy, cz = viewer._OBB_LOCAL_CENTERS_M[i]
-            hx, hy, hz = viewer._OBB_HALF_EXTENTS_M[i]
-            child_body = (
-                f'        <body name="obb_{link_name}" '
-                f'pos="{cx:.10f} {cy:.10f} {cz:.10f}" quat="1 0 0 0">\n'
-                f'          <geom name="obb_{link_name}_box" type="box" '
-                f'size="{hx:.10f} {hy:.10f} {hz:.10f}" '
-                f'rgba="{viewer._OBB_RGBA}" '
-                f'contype="0" conaffinity="0" group="2"/>\n'
-                f'        </body>\n'
+        (
+            link_names,
+            local_centers,
+            half_extents,
+            local_rotations,
+            sphere_link_indices,
+            sphere_local_centers,
+            sphere_radii,
+        ) = viewer._obb_visualization_data()
+
+        for link_index, link_name in enumerate(link_names):
+            additions: list[str] = []
+            if show_boxes:
+                center = " ".join(
+                    f"{float(value):.12g}" for value in local_centers[link_index])
+                size = " ".join(
+                    f"{float(value):.12g}" for value in half_extents[link_index])
+                rotation = local_rotations[link_index]
+                xyaxes = " ".join(
+                    f"{float(value):.12g}"
+                    for value in np.concatenate((rotation[:, 0], rotation[:, 1]))
+                )
+                additions.append(
+                    f'        <body name="obb_{link_name}_visual" '
+                    f'pos="{center}" xyaxes="{xyaxes}">\n'
+                    f'          <geom name="obb_{link_name}_box" type="box" '
+                    f'size="{size}" rgba="{viewer._OBB_RGBA}" '
+                    f'contype="0" conaffinity="0" group="2"/>\n'
+                    f'        </body>\n'
+                )
+
+            if show_sample_spheres:
+                indices = np.flatnonzero(sphere_link_indices == link_index)
+                for sphere_index in indices:
+                    center = " ".join(
+                        f"{float(value):.12g}"
+                        for value in sphere_local_centers[sphere_index]
+                    )
+                    radius = float(sphere_radii[sphere_index])
+                    additions.append(
+                        f'        <geom name="obb_sample_sphere_{sphere_index:02d}" '
+                        f'type="sphere" pos="{center}" size="{radius:.12g}" '
+                        f'rgba="{viewer._OBB_SAMPLE_SPHERE_RGBA}" '
+                        f'contype="0" conaffinity="0" group="2"/>\n'
+                    )
+
+            if link_name == "base_link":
+                if re.search(r'<body\s[^>]*\bname="display_frame"', mjcf_xml):
+                    pattern = re.compile(
+                        r'(<body\s[^>]*\bname="display_frame"[^>]*>)'
+                    )
+                else:
+                    pattern = re.compile(r"(<worldbody>)")
+            else:
+                pattern = re.compile(
+                    rf'(<body\s[^>]*\bname="{re.escape(link_name)}"[^>]*>)'
+                )
+            replacement = "".join(additions)
+            mjcf_xml, match_count = pattern.subn(
+                lambda match, content=replacement: match.group(0) + "\n" + content,
+                mjcf_xml,
+                count=1,
             )
-            pattern = re.compile(
-                rf'(<body\s[^>]*\bname="{re.escape(link_name)}"[^>]*>)'
-            )
-            mjcf_xml = pattern.sub(
-                lambda m, cb=child_body: m.group(0) + "\n" + cb,
-                mjcf_xml, count=1,
-            )
+            if match_count != 1:
+                raise ValueError(f"MuJoCo 模型缺少连杆 {link_name}")
         return mjcf_xml
 
     # ------------------------------------------------------------------

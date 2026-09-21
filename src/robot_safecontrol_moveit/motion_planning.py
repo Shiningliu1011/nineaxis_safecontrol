@@ -19,13 +19,7 @@ from pymoveit2 import MoveIt2
 from sensor_msgs.msg import JointState
 from trajectory_msgs.msg import JointTrajectory
 
-
-class PlanningError(RuntimeError):
-    """MoveIt could not create or validate a transition trajectory."""
-
-
-class StateValidityError(PlanningError):
-    """The start or goal state failed MoveIt's collision/limit checks."""
+from .transition_executor import PlanningError, StateValidityError
 
 
 @dataclass(frozen=True)

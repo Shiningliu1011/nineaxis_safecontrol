@@ -21,6 +21,19 @@ date: 2026-09-07
 用户进一步确认[观测票中的第三轮修订推荐](../planning/oscbf-reuse/issues/04-safety-observation.md)：双源正常互补，按各自采样时刻和视点过滤，再形成保留来源与有效性的统一观测。采用该边界意味着不能用单一最新时间掩盖旧源数据年龄，也不能用一个源的视线否定另一源的有效障碍；上游几何过滤的输出还需要项目有效性适配。具体研究证据和完整处置仍以票据及其链接报告为准。
 
 
-## 首版过滤接入范围
+## 自体过滤范围
 
-用户确认首版复用 MoveIt Humble 的基础本体几何过滤，先分别过滤双源可信本体点再融合；阴影射线过滤留待实测需求出现后评估。该选择沿用已有技术栈，同时接受未有证据的遮挡区域仍须按未知处理。完整接口与验证责任以[观测票的最终决议](../planning/oscbf-reuse/issues/04-safety-observation.md)为准；本记录不宣称上游已构建或实机覆盖已验证。
+LiDAR 使用不依赖 MoveIt 的 mesh 射线级自体过滤，按 point 采集时间计算机器人表面预计
+首次交点；机器人表面之前的环境返回保留为 occupied，机器人遮挡后的空间保持 unknown，
+ambiguous 区域不能取得覆盖准入。具体决定见
+[ADR 0028](0028-mesh-ray-lidar-self-filter.md)。
+
+## 固定模型与 LiDAR 的共享表示
+
+工作台、固定夹具和地面等经过验证的固定几何转换为版本化
+`support_point + rho_mm`，与 LiDAR occupied evidence 在 `CollisionScene` 中取并集。
+LiDAR 可以增加 occupied，free 射线不能清除固定模型中的 occupied；两者冲突时采用
+occupied。固定模型只能为已经验证的固定几何提供覆盖，不能替代 LiDAR 对变化环境的观测。
+
+固定模型携带 `model_revision`、来源记录和误差范围。几何或误差范围变化后生成新 revision，
+依赖旧 revision 的规划结果、前视证明和剩余轨迹准入全部失效。

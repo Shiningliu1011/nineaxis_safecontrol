@@ -16,9 +16,7 @@ from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import JointState
 from trajectory_msgs.msg import JointTrajectory
 
-
-class ExecutionError(RuntimeError):
-    """The trajectory cannot be safely submitted to MoveIt for execution."""
+from .transition_executor import ExecutionError
 
 
 @dataclass(frozen=True)

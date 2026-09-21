@@ -90,8 +90,12 @@ def generate_launch_description() -> LaunchDescription:
             DeclareLaunchArgument("oscbf_randomize_start", default_value="false"),
             # Trigger the transition plan automatically on startup.
             DeclareLaunchArgument("auto_plan_once", default_value="true"),
-            # Show OBB collision envelopes in the MuJoCo viewer.
+            # 在 MuJoCo viewer 中显示 OBB 包络。
             DeclareLaunchArgument("show_obb", default_value="false"),
+            # 显示从 OBB 生成的 32 个环境采样球。
+            DeclareLaunchArgument(
+                "show_obb_sample_spheres", default_value="false"
+            ),
             # Refuse before any Node or TimerAction can start a process.
             OpaqueFunction(function=_validate_hardware_mode),
             # Log startup info.
@@ -266,6 +270,10 @@ def generate_launch_description() -> LaunchDescription:
                             {
                                 "show_obb":
                                     LaunchConfiguration("show_obb"),
+                                "show_obb_sample_spheres":
+                                    LaunchConfiguration(
+                                        "show_obb_sample_spheres"
+                                    ),
                             },
                         ],
                     ),
