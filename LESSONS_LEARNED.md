@@ -196,7 +196,6 @@
 | L1 | 纯 P、无 kd | 显式 Euler 下 kd≥1 发散 |
 | L15 | OSCBF 任务一致性 P 必须保留 | 否则避障干扰末端任务 |
 | L67 | JAX 边界 = 控制 + 碰撞数值图 | 原始点云/ESDF 构建留在 JAX 外 |
-| L70 | qpax warm-start 默认关闭 | 冷启动每步迭代多但更安全 |
 | L77 | ESDF dtype 必须 float32 | float64 触发首帧重编译 |
 | L79 | 求解器 slack ≠ 物理速率违例 | 弹性 QP 用真实残差判断 |
 | L83 | 腕部反向点放大 omega_per_m | 运行时硬上限 ell_dot ≤ 0.15/‖omega_per_m‖ |

@@ -20,8 +20,8 @@ dataclass:
   that may legitimately not apply carry a 0-d boolean measurement flag
   instead -- ``min_obs_dist_measured`` / ``min_esdf_dist_measured`` -- so the
   numeric sentinel the kernel substitutes is never mistaken for a
-  measurement.  See ``work.qpax_warmstart.WarmStartState.valid`` for the same
-  pattern applied to cross-step state.
+  measurement.  The flag remains part of the compiled value and can change on
+  every step without changing the pytree structure.
 """
 
 from __future__ import annotations

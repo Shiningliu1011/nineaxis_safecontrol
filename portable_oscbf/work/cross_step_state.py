@@ -8,12 +8,11 @@ moved.  All of it lives in one named structure so that "what is remembered
 between steps, and has it been measured" is answered in one place instead of
 by loose attributes on the loop.
 
-The shape follows ``work.qpax_warmstart.WarmStartState``: a ``NamedTuple``
-that names everything remembered between steps.  It expresses "not measured"
-with ``None`` and ``NaN`` rather than with that structure's validity bit,
-because this state never crosses the jit boundary itself: the previous CBF
-telemetry keeps the ``None`` the facade has always stored there, and the two
-delta norms above it are ``NaN`` when the step carried no telemetry.
+The ``NamedTuple`` names everything remembered between steps.  It expresses
+"not measured" with ``None`` and ``NaN`` because this state never crosses the
+jit boundary itself: the previous CBF telemetry keeps the ``None`` the facade
+has always stored there, and the two delta norms above it are ``NaN`` when the
+step carried no telemetry.
 """
 
 from __future__ import annotations

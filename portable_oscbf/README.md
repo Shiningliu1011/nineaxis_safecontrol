@@ -34,8 +34,6 @@ portable_oscbf/
 │   ├── controller_step_cache.py   # 每步 FK 缓存
 │   │
 │   │  ── QP 求解器层 ──
-│   ├── qpax_solver.py             # qpax 弹性 QP 求解器
-│   ├── qpax_warmstart.py          # PDIP warm-start 适配器
 │   ├── qp_solver_health.py        # QP 健康检查
 │   ├── oscbf_qp_solver.py         # OSQP QP 求解器 (legacy 排除项)
 │   │
@@ -146,12 +144,17 @@ CBF-QP 安全滤波器 (qpax 弹性 QP)
 | `PyYAML` | YAML 配置加载 | ✅ 配置 |
 | `urdfdom_py` (`urdf-parser-py`) | 解析 URDF 并生成运动学常量 | ✅ 生成与一致性测试 |
 
+控制热路径固定使用 `cbfpy==0.0.1`、`jax==0.6.2`、`jaxlib==0.6.2`
+和 `qpax==0.1.4`。版本清单见 `requirements.txt`，安装配置见仓库根目录
+`setup.py`。
+
 ## 快速开始
 
 ### 安装依赖
 
 ```bash
-pip install jax jaxlib qpax cbfpy numpy scipy python-fcl trimesh osqp pyyaml urdf-parser-py
+python3 -m pip install -r portable_oscbf/requirements.txt
+python3 -m pip install numpy scipy python-fcl trimesh osqp pyyaml urdf-parser-py
 ```
 
 ### 基本使用

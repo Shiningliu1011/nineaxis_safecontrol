@@ -118,7 +118,6 @@ class JaxControlLoop:
                  enable_x64: bool = True,
                  solver_tol: float = 1e-3,
                  collect_cbf_diagnostics: bool = True,
-                 qp_warm_start: bool = False,
                  task_mode: str = TASK_MODE_POSE_6D,
                  joint_limit_lower: np.ndarray | None = None,
                  joint_limit_upper: np.ndarray | None = None,
@@ -144,16 +143,11 @@ class JaxControlLoop:
         # Enabling x64 only in init_cbf cannot recover already-rounded arrays.
         jax.config.update('jax_enable_x64', self.enable_x64)
         self.solver_tol = float(solver_tol)
-        self.qp_warm_start = bool(qp_warm_start)
         self.task_mode = str(task_mode)
         self.nullspace_policy = nullspace_policy
         if self.task_mode not in SUPPORTED_TASK_MODES:
             raise ValueError(
                 f'task_mode must be one of {SUPPORTED_TASK_MODES}, got {self.task_mode!r}')
-        if self.qp_warm_start:
-            raise ValueError(
-                'the custom qpax PDIP warm-start path is archived; '
-                'production JAX control uses qpax baseline solves')
         self.collect_cbf_diagnostics = bool(collect_cbf_diagnostics)
         self.enable_rate_limit = bool(
             self.rate_limit_du_max is not None
@@ -351,12 +345,6 @@ class JaxControlLoop:
             joint_limit_upper=self.q_max,
             joint_limit_cbf_margin=self.joint_limit_cbf_margin)
         self._cbf = CBF.from_config(self._config)
-        # Monkey-patch qp_solver for cbfpy 0.0.1 compatibility
-        if not hasattr(self._cbf, 'qp_solver'):
-            import qpax
-            def _qp_solver(Q, q, A, b, G, h, solver_tol=1e-3):
-                return qpax.solve_qp(Q, q, A, b, G, h, solver_tol=solver_tol)
-            self._cbf.qp_solver = _qp_solver
         self._build_step_fn()
         self._warmup()
 

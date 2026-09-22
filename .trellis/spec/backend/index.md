@@ -14,6 +14,7 @@
 - [目录与模块职责](./directory-structure.md)：代码位置、依赖方向和公共入口。
 - [ROS 接口、坐标与时间](./ros-interfaces.md)：topic、QoS、关节身份、坐标变换和 freshness。
 - [配置与生成文件](./configuration-and-generated-files.md)：生产配置、资源解析、launch 参数和生成物维护。
+- [控制内核运行依赖](./control-kernel-dependencies.md)：cbfpy、JAX、qpax 固定版本，运行接口和升级验证。
 - [错误处理](./error-handling.md)：输入校验、错误类型、边界转换和清理规则。
 - [日志与运行证据](./logging-guidelines.md)：日志级别、稳定事件码、报告和运行快照。
 - [安全边界](./safety-guidelines.md)：仿真、shadow、live、反馈来源和控制安全门。
@@ -23,6 +24,7 @@
 
 - 修改 ROS node 或 launch 时，至少读取 ROS、配置、错误、日志和质量规范。
 - 修改 `portable_oscbf/work` 时，至少读取目录、配置、安全和质量规范。
+- 修改控制内核依赖、`CBFConfig` 或 QP 求解接口时，必须读取控制内核运行依赖规范。
 - 修改真机、感知、碰撞或控制门控时，必须读取安全规范，并核对相关 ADR 与测试。
 - 数据跨越三个以上组件时，同时读取 `../guides/cross-layer-thinking-guide.md`。
 - 准备新增公共常量或转换函数时，同时读取 `../guides/code-reuse-thinking-guide.md`。

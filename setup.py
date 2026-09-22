@@ -6,6 +6,13 @@ from setuptools import find_packages, setup
 
 package_name = "robot_safecontrol_moveit"
 
+PORTABLE_OSCBF_RUNTIME_REQUIREMENTS = [
+    "cbfpy==0.0.1",
+    "jax==0.6.2",
+    "jaxlib==0.6.2",
+    "qpax==0.1.4",
+]
+
 
 def _glob_models(pattern: str) -> list[str]:
     """Glob files under ``models/`` relative to the project root."""
@@ -47,11 +54,15 @@ setup(
             glob("portable_oscbf/config/*.yaml"),
         ),
         (
+            f"share/{package_name}/portable_oscbf",
+            ["portable_oscbf/requirements.txt"],
+        ),
+        (
             f"share/{package_name}/portable_oscbf/vendor/dpax/dpax",
             glob("portable_oscbf/vendor/dpax/dpax/*.py"),
         ),
     ],
-    install_requires=["setuptools"],
+    install_requires=["setuptools", *PORTABLE_OSCBF_RUNTIME_REQUIREMENTS],
     extras_require={"hardware": ["python-can==4.6.1", "PyYAML>=5.4.1,<7"]},
     tests_require=["pytest"],
     zip_safe=True,
