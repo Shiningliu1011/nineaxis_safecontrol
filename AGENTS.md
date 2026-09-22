@@ -38,3 +38,35 @@ ROS 2 Humble / MoveIt2 / MuJoCo 的九轴仿真闭环，控制内核位于 `port
 ## 交付
 
 默认使用初学者容易理解的中文，说明结果、原因、涉及入口、实际验证与重要限制。行为或运行方式改变时同步相关文档；不要求小修改填写固定长模板。
+
+## Agent skills
+
+### Issue tracker
+
+Issues and specs are tracked in GitHub Issues for this repository. See `docs/agents/issue-tracker.md`.
+
+### Domain docs
+
+This repository uses a single-context layout with `CONTEXT.md` and `docs/adr/`. See `docs/agents/domain.md`.
+
+<!-- TRELLIS:START -->
+# Trellis Instructions
+
+These instructions are for AI assistants working in this project.
+
+This project is managed by Trellis. The working knowledge you need lives under `.trellis/`:
+
+- `.trellis/workflow.md` — development phases, when to create tasks, skill routing
+- `.trellis/spec/` — package- and layer-scoped coding guidelines (read before writing code in a given layer)
+- `.trellis/workspace/` — per-developer journals and session traces
+- `.trellis/tasks/` — active and archived tasks (PRDs, research, jsonl context)
+
+If a Trellis command is available on your platform (e.g. `/trellis:finish-work`, `/trellis:continue`), prefer it over manual steps. Not every platform exposes every command.
+
+If you're using Codex or another agent-capable tool, additional project-scoped helpers may live in:
+- `.agents/skills/` — reusable Trellis skills
+- `.codex/agents/` — optional custom subagents
+
+Managed by Trellis. Edits outside this block are preserved; edits inside may be overwritten by a future `trellis update`.
+
+<!-- TRELLIS:END -->
