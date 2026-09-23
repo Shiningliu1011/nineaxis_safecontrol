@@ -23,7 +23,7 @@ environment (the `aeb_rrtstar_ompl/AEBRRTstarPlannerManager` plugin running insi
 `config/plan_transition.yaml` (removed in the 2026-08 C1 refactor; see docs/adr/0001) with `execute_transition:=false`, `max_points=50`,
 `align_tool_x_to_surface_normal:=true`, `planner_id:=AEBRRTstarFaithfulConfigDefault`.
 
-Raw log: `validate_final.log`
+Raw log: `benchmarks/aeb_rrtstar/real_fcl/validate_final.log`
 
 ```
 Computed 50 surface-normal-aligned orientation(s); cylinder fitted on 14992 full trajectory samples
@@ -48,8 +48,8 @@ first trajectory waypoint solves to an **interior** configuration
 
 ## Benchmark: AEB-RRT* vs RRTConnect (real FCL)
 
-Script: `../run_real_fcl_benchmark.py` (6 interior IK goals × 3 trials, zero start).
-Raw JSON: `bench_real_fcl2.json`.
+Script: `benchmarks/aeb_rrtstar/run_real_fcl_benchmark.py` (6 interior IK goals × 3 trials, zero start).
+Raw JSON: `benchmarks/aeb_rrtstar/real_fcl/bench_real_fcl2.json`.
 
 | planner | success | mean best-time |
 |---|---|---|

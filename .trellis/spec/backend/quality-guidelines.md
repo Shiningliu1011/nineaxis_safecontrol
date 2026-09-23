@@ -46,7 +46,7 @@ accepted = finite & (kkt_residual <= solver_tol)
 
 ## 审查清单
 
-- 规则来源是否来自 `CONTEXT.md`、相关 ADR 或公共源码入口。
+- 规则来源是否来自 `docs/CONTEXT.md`、相关 ADR 或公共源码入口。
 - 数据流是否覆盖输入、转换、状态保存、输出和诊断。
 - 关节身份、顺序、frame、单位、dtype 和时间基准是否在每个边界一致。
 - topic、QoS、remap、callback group 和 node 所有权是否明确。

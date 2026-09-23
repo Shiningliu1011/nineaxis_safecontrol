@@ -79,8 +79,8 @@
   `robot_params.yaml` 的 `real_model_todo` 节、`launch/mujoco_transition_test.launch.py`
   （引用不存在的 `config/obstacles.yaml`）、`portable_oscbf/config/obstacle_params.yaml`
   中过时注释视情况更新。
-- 更新过时文档计数：`portable_oscbf/README.md`（模块与测试数）、`docs/ONBOARDING.md`
-  （"15+ 单测"→实际）、`OSCBF_PORTING_GUIDE.md` §9 过时段落。
+- 更新过时文档计数：`docs/modules/portable-oscbf/structure.md`（模块与测试数）、`docs/ONBOARDING.md`
+  （"15+ 单测"→实际）、`docs/guides/oscbf-porting/09-steps.md` 过时段落。
 - 新增 `make test-all` 形式的统一测试入口脚本（主包 + portable），README/CLAUDE.md
   补一行。
 - 验收证据归档策略：`output/` 关键产物（M6/M10 性能报告、验收报告、基线 npy）移入
@@ -186,7 +186,7 @@
   九轴低速、传感器、故障恢复，每步含停止条件与回滚。
 - 证据归档：各阶段日志/报告（H2–H6）入 `docs/evidence/`；README/CLAUDE.md 增
   「真机运行」小节。
-- 更新 `CONTEXT.md` 词汇表（真机执行端、硬件桥接、安全网关词条）。
+- 更新 `docs/CONTEXT.md` 索引及对应词汇页面（真机执行端、硬件桥接、安全网关词条）。
 - AC：H7.1 全部 H1–H6 证据齐备且一致；H7.2 `perftest`/`pytest` 全绿；
   H7.3 文档无过时计数与悬空引用。
 

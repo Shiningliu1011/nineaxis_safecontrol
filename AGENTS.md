@@ -13,12 +13,19 @@
 ROS 2 Humble / MoveIt2 / MuJoCo 的九轴仿真闭环，控制内核位于 `portable_oscbf/work`。
 
 - 架构、入口和状态流 ownership：查 `docs/ONBOARDING.md` 对应章节。
-- 控制内核依赖：查 `portable_oscbf/README.md`；生产配置和入口契约：查 `config/oscbf_controller.yaml` 与 `README.md`。
-- 领域词汇、坐标语义和既有设计：查 `CONTEXT.md` 与相关 `docs/adr/`，区分设计目标与实际完成进度。
+- 控制内核依赖：查 `docs/modules/portable_oscbf.md`；生产配置和入口说明：查 `config/oscbf_controller.yaml` 与 `docs/PROJECT_GUIDE.md`。
+- 领域词汇、坐标语义和既有设计：查 `docs/CONTEXT.md` 与相关 `docs/adr/`，区分设计目标与实际完成进度。
 - ROS topic/QoS、关节身份/顺序、共享轨迹变换分别以 `src/robot_safecontrol_moveit/ros_conventions.py`、`robot_spec.py`、`oscbf_trajectory.py` 为规范来源。
-- 参数与接口教训按主题检索 `LESSONS_LEARNED.md`；代码审查参考 `CODING_STANDARDS.md`。
+- 参数与接口教训按主题检索 `docs/LESSONS_LEARNED.md`；代码审查参考 `docs/CODING_STANDARDS.md`。
 - 需要 tracker 或领域文档操作时才读 `docs/agents/issue-tracker.md`、`docs/agents/domain.md`。
-- 实机评估参考 `docs/real_robot_runbook.md` 与当前实现。保留的 `CLAUDE.md` 是历史导航资料，不作为 Codex 的流程前置文件。
+- 实机评估参考 `docs/real_robot_runbook.md` 与当前实现。`docs/agents/legacy/CLAUDE.md` 是历史导航资料。
+
+## 文档维护
+
+- 面向读者的文档统一放在 `docs/`；根目录 `README.md` 只提供项目简介和文档索引。文档总目录见 `docs/README.md`，编排要求见 `docs/documentation.md`。
+- 文档按主题保持简短。导读只写概要和目录，详细内容链接到对应主题页面；新增或移动页面时检查相对链接。
+- 修改功能时必须在同一次工作中修改相关文档。检查运行步骤、配置、接口、当前能力与验收说明，交付时说明文档修改和验证结果。
+- 讨论方案按正常流程进行；方案确认并执行时同步修改文档。维护人员每月核对近期功能变更与文档，补充遗漏内容。
 
 ## 构建和验证
 
@@ -37,7 +44,7 @@ ROS 2 Humble / MoveIt2 / MuJoCo 的九轴仿真闭环，控制内核位于 `port
 
 ## 交付
 
-默认使用初学者容易理解的中文，说明结果、原因、涉及入口、实际验证与重要限制。行为或运行方式改变时同步相关文档；不要求小修改填写固定长模板。
+默认使用初学者容易理解的中文，说明结果、原因、涉及入口、实际验证与重要限制；不要求小修改填写固定长模板。
 
 ## Agent skills
 
@@ -47,7 +54,7 @@ Issues and specs are tracked in GitHub Issues for this repository. See `docs/age
 
 ### Domain docs
 
-This repository uses a single-context layout with `CONTEXT.md` and `docs/adr/`. See `docs/agents/domain.md`.
+This repository uses a single-context layout with `docs/CONTEXT.md` and `docs/adr/`. See `docs/agents/domain.md`.
 
 <!-- TRELLIS:START -->
 # Trellis Instructions

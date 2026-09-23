@@ -5,7 +5,7 @@
 ## 资料优先级
 
 1. 根目录及目标目录中的 `AGENTS.md` 负责工作方式和授权边界。
-2. `CONTEXT.md` 与 `docs/adr/` 负责领域术语、坐标语义和设计决定。阅读时要区分设计目标与当前完成状态。
+2. `docs/CONTEXT.md` 与 `docs/adr/` 负责领域术语、坐标语义和设计决定。阅读时要区分设计目标与当前完成状态。
 3. 公共源码入口负责运行时取值，例如 `robot_spec.py`、`ros_conventions.py` 和 `oscbf_trajectory.py`。
 4. 生产配置、launch 文件与当前测试负责证明当前行为。
 

@@ -34,7 +34,7 @@ PERCEPTION_TRACKS_TOPIC = "/perception/tracks"
 - Transition server 负责 MoveIt 服务调用、过渡轨迹和向 OSCBF 的交接。
 - Hardware bridge 在当前 containment 中不发布真实硬件状态。
 
-新增 subscription、publisher、service 或 timer 时，要说明其 node、callback group、输入真源、输出消费者和停止时的行为。`CODING_STANDARDS.md` 要求在代码审查时逐项核对这些所有权信息。
+新增 subscription、publisher、service 或 timer 时，要说明其 node、callback group、输入真源、输出消费者和停止时的行为。`docs/CODING_STANDARDS.md` 要求在代码审查时逐项核对这些所有权信息。
 
 ## 坐标语义
 

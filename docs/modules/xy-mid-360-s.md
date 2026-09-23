@@ -2,6 +2,8 @@
 
 纯 Python 的 Livox MID-360 / MID-360S 驱动：设备发现、设备控制面、连续点云接收，以及可选的 ROS 2 节点。不依赖厂商 SDK（Livox-SDK2）也不需要 colcon 构建；除 ROS 节点外不依赖 ROS。
 
+以下安装、测试和相对路径命令均在仓库的 `xy-mid-360-s/` 目录执行。
+
 ## 来源与许可边界
 
 本包是 robot_safecontrol 项目内模块 `src/robot_safecontrol_moveit/livox_mid360/` 的独立副本，原始来源为用户提供的 `tmbs-main.zip`（`backend/app/drivers/mid360_driver.py`）。完整的复用与适配记录见 robot_safecontrol 仓库的 `docs/planning/oscbf-reuse/research/tmbs-mid360-python-driver-reuse.md`。

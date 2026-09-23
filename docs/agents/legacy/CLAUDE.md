@@ -13,7 +13,7 @@ bash run_demo.sh             # 仿真演示；会清理旧 demo 进程
 ```
 
 修改 AEB C++ 后需重新构建并重启 launch，运行中的 move_group 不会热加载 `.so`。
-环境依赖见 [ONBOARDING](docs/ONBOARDING.md) 与 [控制内核 README](portable_oscbf/README.md)。
+环境依赖见 [ONBOARDING](../../ONBOARDING.md) 与 [控制内核说明](../../modules/portable_oscbf.md)。
 当前测试真值由上述命令产生；历史测试数量和 issue body 不代表当前 HEAD。
 当前 tracker 见 [GitHub 地图](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/1)。
 
@@ -27,13 +27,13 @@ bash run_demo.sh             # 仿真演示；会清理旧 demo 进程
 
 ## Canonical sources 与导航
 
-- 架构、入口与当前状态流 ownership：[ONBOARDING](docs/ONBOARDING.md)。
-- 领域词汇与坐标语义：[CONTEXT](CONTEXT.md)、[ADR](docs/adr/)；ADR 目标与实现进度分开核对。
-- ROS topic/QoS：[ros_conventions.py](src/robot_safecontrol_moveit/ros_conventions.py)。
-- 关节身份/顺序：[robot_spec.py](src/robot_safecontrol_moveit/robot_spec.py)。
-- 共享轨迹变换：[oscbf_trajectory.py](src/robot_safecontrol_moveit/oscbf_trajectory.py)。
-- 生产 OSCBF 配置：[oscbf_controller.yaml](config/oscbf_controller.yaml)，入口契约见 [README](README.md)。
-- 参数/接口历史教训：[LESSONS_LEARNED](LESSONS_LEARNED.md)；复用时核对适用环境。
-- Reviewer 检查：[CODING_STANDARDS](CODING_STANDARDS.md)。
-- Tracker 操作：[issue-tracker](docs/agents/issue-tracker.md)；领域文档流程：[domain](docs/agents/domain.md)。
-- 真机目标与验收步骤：[runbook](docs/real_robot_runbook.md)；当前能力以 containment 实现和 #13 最新进展为准。
+- 架构、入口与当前状态流 ownership：[ONBOARDING](../../ONBOARDING.md)。
+- 领域词汇与坐标语义：[CONTEXT](../../CONTEXT.md)、[ADR](../../adr/)；ADR 目标与实现进度分开核对。
+- ROS topic/QoS：[ros_conventions.py](../../../src/robot_safecontrol_moveit/ros_conventions.py)。
+- 关节身份/顺序：[robot_spec.py](../../../src/robot_safecontrol_moveit/robot_spec.py)。
+- 共享轨迹变换：[oscbf_trajectory.py](../../../src/robot_safecontrol_moveit/oscbf_trajectory.py)。
+- 生产 OSCBF 配置：[oscbf_controller.yaml](../../../config/oscbf_controller.yaml)，入口说明见 [项目运行说明](../../PROJECT_GUIDE.md)。
+- 参数/接口历史教训：[LESSONS_LEARNED](../../LESSONS_LEARNED.md)；复用时核对适用环境。
+- Reviewer 检查：[CODING_STANDARDS](../../CODING_STANDARDS.md)。
+- Tracker 操作：[issue-tracker](../issue-tracker.md)；领域文档流程：[domain](../domain.md)。
+- 真机目标与验收步骤：[runbook](../../real_robot_runbook.md)；当前能力以 containment 实现和 #13 最新进展为准。
