@@ -22,6 +22,7 @@ from .robot_spec import DEFAULT_JOINT_NAMES
 from .ros_conventions import (
     JOINT_STATE_TOPIC,
     OSCBF_COMMAND_TOPIC,
+    command_stream_qos,
     state_stream_qos,
 )
 
@@ -101,7 +102,7 @@ class OscbfPlant(Node):
             JointState,
             str(self.get_parameter("command_topic").value),
             self._on_command,
-            state_stream_qos(),
+            command_stream_qos(),
         )
         self._state_pub = self.create_publisher(
             JointState,

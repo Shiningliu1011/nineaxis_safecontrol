@@ -33,13 +33,12 @@ from pymoveit2 import MoveIt2
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
-from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import JointState
 from std_srvs.srv import Trigger
 
 from .motion_planning import MotionPlanner, PlanningOptions
 from .robot_spec import DEFAULT_JOINT_NAMES
-from .ros_conventions import JOINT_STATE_TOPIC
+from .ros_conventions import JOINT_STATE_TOPIC, state_stream_qos
 from .task_target import solve_first_task_state
 from .trajectory_execution import TrajectoryExecutor
 from .transition_executor import (
@@ -138,7 +137,7 @@ class TransitionPlanningServer(Node):
             JointState,
             str(self.get_parameter("joint_state_topic").value),
             self._persistent_js_cb,
-            qos_profile_sensor_data,
+            state_stream_qos(),
         )
 
         # Health-check clients for MoveIt services (created once, reused).

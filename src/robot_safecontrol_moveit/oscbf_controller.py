@@ -46,6 +46,7 @@ from .runtime_snapshot import (
     sha256_bytes,
 )
 from .ros_conventions import (
+    command_stream_qos,
     state_stream_qos,
 )
 from .tracking_evaluator import TrackingEvaluator, step_from_result
@@ -151,7 +152,7 @@ class OscbfController(Node):
             state_stream_qos(),
         )
         self._publisher = self.create_publisher(
-            JointState, publish_topic, qos_profile_sensor_data
+            JointState, publish_topic, command_stream_qos()
         )
         period_s = 1.0 / float(
             self._runtime_config["publish_frequency_hz"]

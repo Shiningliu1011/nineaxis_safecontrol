@@ -57,6 +57,28 @@ def test_plant_starts_at_zero(plant_fixture):
     assert node._q_max[0] == pytest.approx(0.585)
 
 
+def test_plant_stream_endpoint_qos(plant_fixture):
+    from robot_safecontrol_moveit.ros_conventions import (
+        command_stream_qos,
+        state_stream_qos,
+    )
+
+    node = plant_fixture["node"]
+    command_subscriptions = [
+        subscription for subscription in node.subscriptions
+        if subscription.topic == "/oscbf_command"
+    ]
+    assert len(command_subscriptions) == 1
+    for actual, expected in (
+        (node._state_pub.qos_profile, state_stream_qos()),
+        (command_subscriptions[0].qos_profile, command_stream_qos()),
+    ):
+        assert actual.depth == expected.depth
+        assert actual.history == expected.history
+        assert actual.reliability == expected.reliability
+        assert actual.durability == expected.durability
+
+
 def test_plant_converges_and_respects_limits(plant_fixture):
     node = plant_fixture["node"]
     node._target = _TARGET.copy()

@@ -1,19 +1,23 @@
 # 端到端时延测量与两套 QoS 常量定稿
 
-## Goal
+## 来源与目标
 
-完成 Issue 93 的端到端时延测量、状态流与指令流 QoS 常量及验收证据
+- 来源：[[I13] 端到端时延测量与两套 QoS 常量定稿](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/93)；依据为已定案的速度级 OSCBF 规格中「通信与依赖规则」。
+- 通过同一主机上的真实 ROS 2 仿真进程测量状态发出、控制器完成计算、指令到达被控对象三个事件，据此分别确定状态流和指令流的缓存条数。
 
-## Requirements
+## 需求与范围
 
-- TBD
+- 控制器和 `oscbf_plant` 保持独立进程。测量使用真实 ROS 2 话题、实际控制器和仿真被控对象，不发送真机命令。
+- 比较状态流订阅端缓存 5 条和 20 条，以及指令流发布端与订阅端同时缓存 5 条和 20 条。四种组合使用相同的控制器设定频率、初始位姿、轨迹和运行时间，并记录实际指令数量。
+- 每种组合记录三个事件的关联样本数、状态发出至控制器完成、控制器完成至指令到达、完整链路的时延分布，以及未能关联的消息数量。记录运行环境、代码版本和配置身份。
+- 根据测量结果确定两条流各自的缓存条数。仓库拥有的状态流端点共用一套 QoS，指令流端点共用另一套 QoS；控制器特有话题名继续读取 `config/oscbf_controller.yaml`。
+- 用户已确认：感知和 LiDAR 话题保留现有独立 QoS；外部包的端点保持其现有配置。
+- 将测量数据、选定数值及依据写入项目文档和本票的票尾评论。
 
-## Acceptance Criteria
+## 验收条件
 
-- [ ] TBD
-
-## Notes
-
-- Keep `prd.md` focused on requirements, constraints, and acceptance criteria.
-- Lightweight tasks can remain PRD-only.
-- For complex tasks, add `design.md` for technical design and `implement.md` for execution planning before `task.py start`.
+- [x] 提供可重复运行的测量入口；四种缓存组合均有实际进程测量结果与运行条件记录。
+- [x] 三段时延均由相同消息身份关联，报告有效样本数、p50、p95、p99、最大值与无法关联的数量；不将控制器单步计算时间写成完整链路时延。
+- [x] `ros_conventions.py` 定义状态流与指令流各自的缓存条数和 QoS 构造入口；仓库拥有的对应端点使用各自入口，控制器话题名仍来自生产配置。
+- [ ] 文档说明两条流的最终缓存条数、测量依据和适用的仿真环境；本票票尾评论包含测量结果、证据位置和实际验收命令。
+- [x] 受影响测试和 `bash run_all_tests.sh` 通过；仿真、shadow、live 的现有硬件边界保持有效。

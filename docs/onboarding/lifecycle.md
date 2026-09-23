@@ -9,9 +9,10 @@
 5. `tracking_evaluator.py` 可订阅状态与命令计算跟踪指标；查看器、过渡服务器和
    控制器共用 `oscbf_trajectory.py` 的轨迹变换。
 
-**当前 QoS**：canonical [ros_conventions.py](../../src/robot_safecontrol_moveit/ros_conventions.py)
-的 `state_stream_qos()` 是 KEEP_LAST / depth 20 / BEST_EFFORT / VOLATILE。
-被控对象的状态发布和命令订阅、控制器的状态订阅及 shadow bridge 的命令订阅使用它。
-viewer、过渡服务器的状态订阅、过渡回放发布和控制器的命令发布仍使用
-`qos_profile_sensor_data`（depth 5 / BEST_EFFORT / VOLATILE）。深度差异仍存在，
-这里记录当前实体，不代表全面 QoS 已统一；不存在 viewer 发布 transient-local 状态的链路。
+**当前 QoS**：[ros_conventions.py](../../src/robot_safecontrol_moveit/ros_conventions.py)
+分别提供 `state_stream_qos()`（KEEP_LAST / depth 20 / BEST_EFFORT / VOLATILE）和
+`command_stream_qos()`（KEEP_LAST / depth 5 / BEST_EFFORT / VOLATILE）。被控对象与
+过渡回放的状态发布，以及控制器、过渡服务器、查看器和感知桥的关节状态订阅使用
+状态流设置。控制器与过渡回放的指令发布，以及被控对象和 shadow bridge 的指令订阅
+使用指令流设置。感知和 LiDAR 话题继续使用各自的 QoS。两条流的测量数据与选择依据见
+[QoS 时延验证记录](../validation/qos-latency-2026-09-23.md)。

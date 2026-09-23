@@ -12,10 +12,10 @@ from bisect import bisect_right
 from builtin_interfaces.msg import Duration
 from controller_manager_msgs.srv import SwitchController
 from pymoveit2 import MoveIt2, MoveIt2State
-from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import JointState
 from trajectory_msgs.msg import JointTrajectory
 
+from .ros_conventions import command_stream_qos, state_stream_qos
 from .transition_executor import ExecutionError
 
 
@@ -88,12 +88,12 @@ class TrajectoryExecutor:
         broadcaster_was_active = self._switch_broadcaster(activate=False)
 
         pub = self._node.create_publisher(
-            JointState, topic, qos_profile_sensor_data
+            JointState, topic, state_stream_qos()
         )
         command_pub = None
         if command_topic:
             command_pub = self._node.create_publisher(
-                JointState, command_topic, qos_profile_sensor_data
+                JointState, command_topic, command_stream_qos()
             )
         sleep(0.3)
 

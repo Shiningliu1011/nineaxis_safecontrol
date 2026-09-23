@@ -100,15 +100,35 @@ def _in_bounds(node, positions: np.ndarray) -> bool:
     )
 
 
-def test_state_subscription_uses_deep_best_effort_queue():
-    # 状态流 QoS 契约已集中到 ros_conventions.state_stream_qos()（构造与
-    # 消费共用同一函数），此处断言其属性防回归。
-    from robot_safecontrol_moveit.ros_conventions import state_stream_qos
+def test_state_and_command_stream_qos(controller_fixture):
+    from robot_safecontrol_moveit.ros_conventions import (
+        command_stream_qos,
+        state_stream_qos,
+    )
 
-    qos = state_stream_qos()
-    assert qos.depth == 20
-    assert qos.reliability == rclpy.qos.ReliabilityPolicy.BEST_EFFORT
-    assert qos.durability == rclpy.qos.DurabilityPolicy.VOLATILE
+    state_qos = state_stream_qos()
+    command_qos = command_stream_qos()
+    assert state_qos.depth == 20
+    assert command_qos.depth == 5
+    for qos in (state_qos, command_qos):
+        assert qos.history == rclpy.qos.HistoryPolicy.KEEP_LAST
+        assert qos.reliability == rclpy.qos.ReliabilityPolicy.BEST_EFFORT
+        assert qos.durability == rclpy.qos.DurabilityPolicy.VOLATILE
+
+    node = controller_fixture["node"]
+    state_subscriptions = [
+        subscription for subscription in node.subscriptions
+        if subscription.topic == _STATE_TOPIC
+    ]
+    assert len(state_subscriptions) == 1
+    for actual, expected in (
+        (state_subscriptions[0].qos_profile, state_qos),
+        (node._publisher.qos_profile, command_qos),
+    ):
+        assert actual.depth == expected.depth
+        assert actual.history == expected.history
+        assert actual.reliability == expected.reliability
+        assert actual.durability == expected.durability
 
 
 def test_node_starts_without_move_group(controller_fixture):

@@ -71,6 +71,7 @@ from robot_safecontrol_moveit.calibration_record import (
 from robot_safecontrol_moveit.ros_conventions import (
     JOINT_STATE_TOPIC,
     PERCEPTION_TRACKS_TOPIC,
+    state_stream_qos,
 )
 
 # --- portable_oscbf on path (pure-python calculation core) --------------------
@@ -250,7 +251,7 @@ class PerceptionBridge(Node):
                 PointCloud2, source_topic_lidar, self._lidar_callback,
                 qos_profile_sensor_data, callback_group=self._sensor_cbg)
 
-        # JointState subscription for self-filtering (latest-only, no history buffer).
+        # self-filter 仅保存最近一次 JointState；DDS 订阅使用状态流 QoS。
         # TODO(self-filter): 当前仅缓存, 未消费。需实现 FK→碰撞球体管线:
         #   JointState → pin.forward_kinematics → 碰撞球体 → robot_spheres 参数
         #   传入 engine.feed_camera(feed_lidar)。届时 _fusion_callback 需读取
@@ -259,7 +260,7 @@ class PerceptionBridge(Node):
         self._joint_lock = Lock()
         self._joint_sub = self.create_subscription(
             JointState, JOINT_STATE_TOPIC, self._joint_state_callback,
-            qos_profile_sensor_data, callback_group=self._sensor_cbg)
+            state_stream_qos(), callback_group=self._sensor_cbg)
 
         # Fusion timer: 20 Hz, MutuallyExclusiveCallbackGroup.
         self._fusion_timer = self.create_timer(

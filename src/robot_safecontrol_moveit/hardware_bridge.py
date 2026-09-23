@@ -25,7 +25,7 @@ from .hardware_contract import (
     WatchdogConfig,
 )
 from .robot_spec import DEFAULT_JOINT_NAMES
-from .ros_conventions import OSCBF_COMMAND_TOPIC, state_stream_qos
+from .ros_conventions import OSCBF_COMMAND_TOPIC, command_stream_qos
 from .socketcan_backend import CANBusBackend
 from .unit_conversion import (
     JointCalibrationTable,
@@ -91,7 +91,7 @@ class HardwareBridge(Node):
             if mode == "shadow":
                 self._cmd_sub = self.create_subscription(
                     JointState, OSCBF_COMMAND_TOPIC, self._on_command,
-                    state_stream_qos(),
+                    command_stream_qos(),
                 )
             # No bus, polling timer or state publisher exists in containment.
             self.get_logger().info(

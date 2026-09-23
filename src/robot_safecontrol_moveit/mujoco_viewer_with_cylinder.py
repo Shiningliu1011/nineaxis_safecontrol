@@ -23,7 +23,6 @@ import mujoco.viewer
 import rclpy
 from ament_index_python.packages import PackageNotFoundError, get_package_share_directory
 from rclpy.node import Node
-from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import JointState
 
 from .cylinder_geometry import fit_circle
@@ -33,7 +32,7 @@ from .oscbf_trajectory import (
     load_calibrated_path,
 )
 from .robot_spec import DEFAULT_JOINT_NAMES
-from .ros_conventions import JOINT_STATE_TOPIC
+from .ros_conventions import JOINT_STATE_TOPIC, state_stream_qos
 
 
 # The project URDF is authored in the legacy Y-up convention.  The wrapper is
@@ -163,7 +162,7 @@ class MuJoCoJointStateViewer(Node):
             JointState,
             topic,
             self._joint_state_callback,
-            qos_profile_sensor_data,
+            state_stream_qos(),
         )
 
         self.get_logger().info(

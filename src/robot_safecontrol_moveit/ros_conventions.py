@@ -15,14 +15,11 @@ if TYPE_CHECKING:
 JOINT_STATE_TOPIC = "/mujoco_joint_states"
 OSCBF_COMMAND_TOPIC = "/oscbf_command"
 PERCEPTION_TRACKS_TOPIC = "/perception/tracks"
+STATE_STREAM_QOS_DEPTH = 20
+COMMAND_STREAM_QOS_DEPTH = 5
 
 
-def state_stream_qos() -> QoSProfile:
-    """BEST_EFFORT with depth 20 for the 100 Hz joint-state stream.
-
-    ``qos_profile_sensor_data`` (depth 5) overflows under plant bursts, which
-    showed up as long-run p95 latency > 10 ms.
-    """
+def _stream_qos(depth: int) -> QoSProfile:
     from rclpy.qos import (
         DurabilityPolicy,
         HistoryPolicy,
@@ -32,7 +29,17 @@ def state_stream_qos() -> QoSProfile:
 
     return QoSProfile(
         history=HistoryPolicy.KEEP_LAST,
-        depth=20,
+        depth=depth,
         reliability=ReliabilityPolicy.BEST_EFFORT,
         durability=DurabilityPolicy.VOLATILE,
     )
+
+
+def state_stream_qos() -> QoSProfile:
+    """关节反馈状态流使用的 QoS。"""
+    return _stream_qos(STATE_STREAM_QOS_DEPTH)
+
+
+def command_stream_qos() -> QoSProfile:
+    """关节位置指令流使用的 QoS。"""
+    return _stream_qos(COMMAND_STREAM_QOS_DEPTH)
