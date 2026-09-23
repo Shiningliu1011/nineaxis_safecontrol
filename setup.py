@@ -54,6 +54,10 @@ setup(
             glob("portable_oscbf/config/*.yaml"),
         ),
         (
+            f"share/{package_name}/portable_oscbf/data",
+            ["portable_oscbf/data/ik_input.mat"],
+        ),
+        (
             f"share/{package_name}/portable_oscbf",
             ["portable_oscbf/requirements.txt"],
         ),

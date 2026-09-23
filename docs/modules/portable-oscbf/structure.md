@@ -62,21 +62,13 @@ portable_oscbf/
 ├── config/                        # 机器人配置 (YAML)
 │   ├── nineaxis.yaml              # 机器人参数
 │   ├── actuator_modules.yaml      # 执行器限位
-│   ├── controller_params.yaml     # 遗留 torque 配置（生产 ROS 不消费）
-│   ├── fcl_params.yaml            # FCL 碰撞参数
 │   ├── obb_model.yaml             # OBB 包络数据
 │   ├── dcol_alpha.yaml            # DCOL alpha 校准
 │   ├── obstacle_params.yaml       # 障碍物参数
-│   ├── ompl_params.yaml           # OMPL 规划参数
 │   └── robot_params.yaml          # 机器人参数
 │
-├── data/                          # 轨迹数据 (.mat)
-│   ├── ik_input.mat               # 主轨迹数据
-│   ├── workspace_ik_input.mat     # 工作空间轨迹
-│   ├── nurbs_blocks.mat           # NURBS 块数据
-│   ├── workspace_nurbs_blocks.mat # 工作空间 NURBS 块
-│   ├── realtime_interpolation_results.mat
-│   └── workspace_realtime_results.mat
+├── data/                          # 冻结的回归参考轨迹
+│   └── ik_input.mat               # 内核轨迹加载测试使用
 │
 ├── scripts/                       # 校准/维护脚本
 │   ├── generate_kinematics_data.py # 从 models/ninezzhou 生成运动学常量

@@ -75,8 +75,8 @@
 
 ### H0 仓库欠账清理与仿真基线（无功能变更）
 
-- 删除死配置/悬空文件：`portable_oscbf/config/fcl_params.yaml` 的 `fcl_todo` 节、
-  `robot_params.yaml` 的 `real_model_todo` 节、`launch/mujoco_transition_test.launch.py`
+- 清理待办项与悬空文件：`robot_params.yaml` 的 `real_model_todo` 节、
+  `launch/mujoco_transition_test.launch.py`
   （引用不存在的 `config/obstacles.yaml`）、`portable_oscbf/config/obstacle_params.yaml`
   中过时注释视情况更新。
 - 更新过时文档计数：`docs/modules/portable-oscbf/structure.md`（模块与测试数）、`docs/ONBOARDING.md`
