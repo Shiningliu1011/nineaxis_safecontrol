@@ -6,7 +6,7 @@
 - [x] 对状态订阅深度 5/20 与指令两端深度 5/20 运行四种组合，保存原始数据和运行条件。
 - [x] 根据结果确定两条流的缓存条数，并用最终设置复测完整链路。
 - [x] 在 `ros_conventions.py` 保存两条流的设置，更新仓库拥有的状态与指令端点及相关测试。
-- [ ] 在项目文档和本票票尾评论记录测量结果、选值依据、证据位置与验收命令。
+- [x] 在项目文档和本票票尾评论记录测量结果、选值依据、证据位置与验收命令。
 - [x] 运行受影响的 ROS 测试、`bash run_all_tests.sh`、`trellis-check` 和适用的代码审查。
 
 ## 计划运行的命令
@@ -34,6 +34,10 @@ p99 为 13.263 ms，状态未到达 0、指令未到达 1、时间逆序 0。`su
 - `bash run_all_tests.sh`：主包 `544 passed, 1 skipped in 162.72s`；
   `portable_oscbf` 为 `178 passed, 34 skipped in 465.65s`；退出码 0。
 - 规范与需求双线审查已完成，复核结果见 `research/review.md`，无待处理发现。
+- 实现提交 `c9271960d70b1b0d58ce211d33f56d8298895ab4` 已推送到
+  `codex/i13-latency-qos`；[本票验收评论](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/93#issuecomment-5790907798)
+  已发布，本票已关闭，[执行地图](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/133)
+  已增加索引。
 
 ## 规范审查
 
