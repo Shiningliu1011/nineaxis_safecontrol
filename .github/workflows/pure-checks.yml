@@ -20,7 +20,7 @@ jobs:
         with:
           python-version: '3.10'
       - name: Install pure-check dependencies
-        run: python3 -m pip install numpy==1.26.4 pytest==8.3.5
+        run: python3 -m pip install numpy==1.26.4 scipy==1.15.3 PyYAML==6.0.2 pytest==8.3.5
       # Compile, shell syntax, and pure contracts only. No ROS or device I/O.
       - name: Run fast checks
         run: bash scripts/agent_check.sh
