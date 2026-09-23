@@ -13,16 +13,19 @@
 
 - [领域词汇](CONTEXT.md)：系统结构、机器人、轨迹、观测和安全要求。
 - [控制内核](modules/portable_oscbf.md)：模块、依赖和移植入口。
-- [MID-360 / MID-360S 驱动](modules/xy-mid-360-s.md)：安装、设备接口和验证范围。
+- [MID-360 / MID-360S 驱动](modules/livox_mid360.md)：安装、设备接口和验证范围。
 - [传感器布局与标定](sensor_layout_and_calibration.md)：坐标和安装方案。
 
 ## 设计与实施资料
 
 - [设计决定](adr/)：按编号阅读已记录的决定。
 - [规格](specs/)：各主题的详细要求。
-- [OSCBF 移植指南](guides/OSCBF_PORTING_GUIDE.md)与[执行计划](guides/OSCBF_EXECUTION_PLAN.md)：移植目标和阶段安排。
 - [复用研究索引](planning/oscbf-reuse/README.md)：研究、交接和验证证据。
 - [代码审查检查项](CODING_STANDARDS.md)与[经验教训](LESSONS_LEARNED.md)：修改相关模块时按主题查阅。
+
+## 历史资料
+
+- [OSCBF 移植指南](archive/OSCBF_PORTING_GUIDE.md)与[执行计划](archive/OSCBF_EXECUTION_PLAN.md)：旧阶段目标和实施记录，当前功能以源码与测试为准。
 
 ## 文档维护
 

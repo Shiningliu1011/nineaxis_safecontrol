@@ -3,6 +3,7 @@
 | Path | Purpose |
 |------|---------|
 | `src/robot_safecontrol_moveit/` | 主 ROS2 Python 包（节点 + 纯逻辑模块） |
+| `src/robot_safecontrol_moveit/livox_mid360/` | MID-360 / MID-360S 驱动的维护来源 |
 | `src/aeb_rrtstar/` | 独立 Python AEB-RRT* 规划器 + 基准测试（不依赖 ROS） |
 | `src/aeb_rrtstar_ompl/` | 嵌套 C++ MoveIt2 OMPL 插件包 |
 | `portable_oscbf/` | 可移植 JAX OSCBF 控制核心（work/ 为 Python 包，随包分发） |
@@ -18,5 +19,6 @@
 | `tests/` | 主包 pytest 测试（含 launch 集成测试） |
 | `scripts/` | 辅助脚本（零位标定、vcan 测试、清场启动） |
 | `docs/` | 文档（本指南、ADR、specs、runbook） |
+| `docs/archive/` | 旧 OSCBF 移植指南与执行计划 |
 | `output/` | 生成文件（已 gitignore） |
 | `build/ install/ log/` | colcon 产物（已 gitignore） |

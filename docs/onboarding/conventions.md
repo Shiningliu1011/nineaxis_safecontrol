@@ -16,5 +16,5 @@
   硬件合同网关可生成拒绝/保持结果并锁存原因；当前 bridge 无 CAN 发送能力，不能据此推断物理停车。
 - **测试**：pytest（`testpaths = tests`），主包含 launch 集成测试
   （launch_testing）；`portable_oscbf/tests` 有独立 conftest；
-  C++ 包有自测可执行文件（test_aeb_full.cpp 等）。全量入口：`bash run_all_tests.sh`。
+  C++ 包的四个测试可执行文件已登记为 ctest。全量入口：`bash run_all_tests.sh`。
 - **Git**：单 main 分支；提交信息中英混合、多为 feat:/fix:/perf: 前缀或中文摘要。

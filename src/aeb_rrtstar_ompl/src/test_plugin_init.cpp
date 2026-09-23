@@ -15,23 +15,19 @@ int main(int argc, char **argv)
 {
     rclcpp::init(argc, argv);
     auto node = std::make_shared<rclcpp::Node>("test_aeb_init");
+    node->declare_parameter(
+        "test_aeb.arm.planner_configs",
+        std::vector<std::string>{"AEBRRTstarFaithfulConfigDefault"});
+    node->declare_parameter(
+        "test_aeb.planner_configs.AEBRRTstarFaithfulConfigDefault.type",
+        std::string("geometric::AEBRRTstarFaithful"));
 
-    // Find the URDF and SRDF from the installed ninezzhou packages
-    std::string urdf_path, srdf_path;
-    try {
-        std::string share = ament_index_cpp::get_package_share_directory("ninezzhou");
-        urdf_path = share + "/urdf/ninezzhou.urdf";
-    } catch (...) {
-        // Fallback: use absolute path from workspace
-        urdf_path = "/home/lsn/robot_safecontrol/models/ninezzhou/urdf/ninezzhou.urdf";
-    }
-    try {
-        std::string share = ament_index_cpp::get_package_share_directory(
-            "ninezzhou_moveit_config");
-        srdf_path = share + "/config/ninezzhou.srdf";
-    } catch (...) {
-        srdf_path = "/home/lsn/robot_safecontrol/models/ninezzhou_moveit_config/config/ninezzhou.srdf";
-    }
+    // 使用构建脚本安装的主包模型资源。
+    const std::string share = ament_index_cpp::get_package_share_directory(
+        "robot_safecontrol_moveit");
+    const std::string urdf_path = share + "/models/ninezzhou/urdf/ninezzhou.urdf";
+    const std::string srdf_path =
+        share + "/models/ninezzhou_moveit_config/config/ninezzhou.srdf";
 
     std::cout << "URDF: " << urdf_path << std::endl;
     std::cout << "SRDF: " << srdf_path << std::endl;
@@ -41,11 +37,23 @@ int main(int argc, char **argv)
     node->declare_parameter("robot_description_semantic", "");
 
     std::ifstream urdf_file(urdf_path);
+    if (!urdf_file)
+    {
+        std::cerr << "Missing URDF: " << urdf_path << std::endl;
+        rclcpp::shutdown();
+        return 1;
+    }
     std::string urdf_xml((std::istreambuf_iterator<char>(urdf_file)),
                           std::istreambuf_iterator<char>());
     node->set_parameter(rclcpp::Parameter("robot_description", urdf_xml));
 
     std::ifstream srdf_file(srdf_path);
+    if (!srdf_file)
+    {
+        std::cerr << "Missing SRDF: " << srdf_path << std::endl;
+        rclcpp::shutdown();
+        return 1;
+    }
     std::string srdf_xml((std::istreambuf_iterator<char>(srdf_file)),
                           std::istreambuf_iterator<char>());
     node->set_parameter(rclcpp::Parameter("robot_description_semantic", srdf_xml));

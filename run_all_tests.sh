@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 全量测试入口：主包（ROS 侧）+ portable_oscbf（JAX 内核侧）。
+# 全量测试入口：主包、portable_oscbf 与 AEB-RRT* 插件。
 # 依赖：ROS 2 Humble 与 install/setup.bash 必须存在（先跑 build_aeb_moveit.sh）。
 set -euo pipefail
 
@@ -30,10 +30,15 @@ echo "==> portable_oscbf/tests/"
 kernel_status=0
 python3 -m pytest portable_oscbf/tests -q || kernel_status=$?
 
+echo "==> AEB-RRT* 插件 ctest"
+plugin_status=0
+ctest --test-dir build/aeb_rrtstar_ompl --output-on-failure --no-tests=error || plugin_status=$?
+
 echo "==> 测试汇总"
 echo "主包退出码: $main_status"
 echo "portable_oscbf 退出码: $kernel_status"
-if (( main_status == 0 && kernel_status == 0 )); then
+echo "AEB-RRT* 插件退出码: $plugin_status"
+if (( main_status == 0 && kernel_status == 0 && plugin_status == 0 )); then
   echo "==> 全部通过"
   exit 0
 fi

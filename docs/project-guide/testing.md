@@ -1,10 +1,12 @@
 ## 测试与已知问题
 
-`run_all_tests.sh` 已修复 ROS setup 与 `set -u` 的兼容问题；两个套件分别执行并汇总退出码，首套失败仍会运行第二套，只有两套均通过才返回成功：
+`run_all_tests.sh` 加载 ROS 与项目环境，依次运行主包 pytest、控制内核 pytest 和 AEB-RRT* 插件 ctest，分别汇总退出码。任一套件失败时返回失败。先执行 `bash build_aeb_moveit.sh`：
 
 ```bash
 bash run_all_tests.sh
 ```
+
+插件 ctest 登记 `test_aeb_rrtstar`、`test_aeb_full`、`test_plugin_load` 和 `test_plugin_init`，其中插件初始化测试从安装后的主包资源读取 URDF 与 SRDF。可以使用 `ctest --test-dir build/aeb_rrtstar_ompl -N` 检查登记结果。
 
 已实施的测试工具修订（链接保留各自历史验收记录）：
 

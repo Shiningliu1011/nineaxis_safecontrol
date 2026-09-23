@@ -107,5 +107,11 @@ install(TARGETS test_aeb_rrtstar test_aeb_full test_plugin_load test_plugin_init
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
+enable_testing()
+add_test(NAME test_aeb_rrtstar COMMAND $<TARGET_FILE:test_aeb_rrtstar>)
+add_test(NAME test_aeb_full COMMAND $<TARGET_FILE:test_aeb_full>)
+add_test(NAME test_plugin_load COMMAND $<TARGET_FILE:test_plugin_load>)
+add_test(NAME test_plugin_init COMMAND $<TARGET_FILE:test_plugin_init>)
+
 # ---- Ament ----
 ament_package()

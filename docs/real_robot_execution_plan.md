@@ -1,7 +1,7 @@
 # 真机落地执行文档（H0–H7）
 
 > 日期：2026-08-22
-> 基线：仿真闭环（M0–M12 主干已完成，见 `OSCBF_EXECUTION_PLAN.md`）
+> 基线：仿真闭环（M0–M12 主干已完成，见 `archive/OSCBF_EXECUTION_PLAN.md`）
 > 模板与验收规则沿用 OSCBF 执行文档：阶段严格串行，每个阶段全部 AC 通过才算完成；未通过记录偏差，不跳过。
 
 ## 1. 目的与范围
@@ -80,7 +80,7 @@
   （引用不存在的 `config/obstacles.yaml`）、`portable_oscbf/config/obstacle_params.yaml`
   中过时注释视情况更新。
 - 更新过时文档计数：`docs/modules/portable-oscbf/structure.md`（模块与测试数）、`docs/ONBOARDING.md`
-  （"15+ 单测"→实际）、`docs/guides/oscbf-porting/09-steps.md` 过时段落。
+  （"15+ 单测"→实际）、`docs/archive/oscbf-porting/09-steps.md` 过时段落。
 - 新增 `make test-all` 形式的统一测试入口脚本（主包 + portable），README/CLAUDE.md
   补一行。
 - 验收证据归档策略：`output/` 关键产物（M6/M10 性能报告、验收报告、基线 npy）移入

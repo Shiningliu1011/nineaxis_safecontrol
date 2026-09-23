@@ -1,9 +1,7 @@
 /*********************************************************************
- * Simplified collision model for the ninezzhou 9-DOF robot arm.
- *
- * Mirrors the Python robot_model / collision_checker for fair
- * comparison.  Uses joint limits + FK-based obstacle clearance.
- * The authoritative collision check is MoveIt2 + FCL.
+ * test_aeb_full.cpp 使用的九轴简化碰撞模型。
+ * 使用关节限位和 FK 采样间距检查测试中的规划算法。
+ * 当前生产 AEB-RRT* 插件通过 MoveIt2/FCL 查询碰撞；此模型只供测试。
  *********************************************************************/
 
 #ifndef AEB_RRTSTAR_OMPL_NINEZZHOU_COLLISION_H_

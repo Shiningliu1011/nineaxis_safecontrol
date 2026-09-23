@@ -14,7 +14,7 @@ ros2 launch robot_safecontrol_moveit mujoco_transition_final.launch.py \
 
 # 测试：结果以当前 checkout 实际执行为准
 bash scripts/agent_check.sh              # 快速启发式检查
-bash run_all_tests.sh                    # 完整主包 + 内核回归
+bash run_all_tests.sh                    # 主包、内核与 AEB 插件回归
 
 # 独立脚本（无 ROS）
 python3 src/aeb_rrtstar/single_run.py    # 查看 aeb_rrtstar 用法
