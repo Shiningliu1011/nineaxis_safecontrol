@@ -1,6 +1,6 @@
 ---
 name: trellis-check
-description: "Comprehensive quality verification: spec compliance, lint, type-check, tests, cross-layer data flow, code reuse, and consistency checks. Use when code is written and needs quality verification, before committing changes, or to catch context drift during long sessions."
+description: 当前 Trellis 任务完成代码修改后，按影响范围检查需求、项目规范与相关测试，并处理任务范围内的发现。
 ---
 
 # Code Quality Check
@@ -38,7 +38,7 @@ Read the specific guideline files referenced — the index is a pointer, not the
 
 ## Step 3: Run Project Checks
 
-Run the project's lint, type-check, and test commands. Fix any failures before proceeding.
+按影响范围运行适用的 lint、类型检查、构建和测试。涉及多模块或集成风险时运行相应的完整检查；修复本次改动引起的失败后，重跑受影响的检查。
 
 ## Step 4: Review Against Checklist
 
@@ -52,15 +52,15 @@ Run the project's lint, type-check, and test commands. Fix any failures before p
 
 ### Test Coverage
 
-- [ ] New function → unit test added?
-- [ ] Bug fix → regression test added?
-- [ ] Changed behavior → existing tests updated?
+- [ ] 行为变化是否需要能够观察结果的测试？
+- [ ] 故障修复是否覆盖原有症状？
+- [ ] 现有测试是否需要更新？
 
 ### Spec Sync
 
-- [ ] Does `.trellis/spec/` need updates? (new patterns, conventions, lessons learned)
+- [ ] 本次工作是否产生稳定、可复用且经过验证的项目知识？
 
-> "If I fixed a bug or discovered something non-obvious, should I document it so future me won't hit the same issue?" → If YES, update the relevant spec doc.
+如有，将候选知识和目标文件记录在任务交接中。按照 Phase 3.3，经用户确认后再使用 `trellis-update-spec` 修改规范。
 
 ### Scope Discipline
 
@@ -85,7 +85,7 @@ Skip this step if your change is confined to a single layer.
 
 - [ ] Searched for existing similar code before creating new?
   ```bash
-  grep -r "pattern" src/
+  rg "pattern" src/
   ```
 - [ ] If the same value repeats, does it represent one stable concept whose callers must change together? Extract only then — two literals that merely happen to match today should stay separate.
 - [ ] After batch modification, all occurrences updated?
@@ -106,6 +106,6 @@ Skip this step if your change is confined to a single layer.
 Report every violation you find. Then:
 
 - Mechanical and local (lint nit, missing type, wrong import, dead branch, failing assertion) → fix in place, then re-run project checks.
-- Design or judgment (naming a shared concept, moving a module boundary, changing a public interface, reassigning where behavior lives) → record the evidence and your recommendation, and stop. Do not rewrite it silently.
+- Design or judgment (naming a shared concept, moving a module boundary, changing a public interface, reassigning where behavior lives) → record the evidence and complete the correction when the existing task authorization covers it. Ask for a decision when the change would expand the authorized scope.
 
 If a fix would touch files outside the current task's scope, say so and stop instead of widening the change.

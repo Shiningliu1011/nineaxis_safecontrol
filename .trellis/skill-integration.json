@@ -1,0 +1,82 @@
+{
+  "schema": 1,
+  "required_states": [
+    "no_task",
+    "planning",
+    "planning-inline",
+    "in_progress",
+    "in_progress-inline"
+  ],
+  "routes": [
+    {
+      "skill": "grill-with-docs",
+      "owner": "matt",
+      "mode": "conditional",
+      "phase": "planning",
+      "trigger": "Codex planning review of an issue or spec with decisions affecting acceptance",
+      "artifacts": [
+        ".trellis/tasks/<active>/prd.md",
+        ".trellis/tasks/<active>/design.md"
+      ],
+      "gate": "record confirmed decisions before task.py start"
+    },
+    {
+      "skill": "implement",
+      "owner": "matt",
+      "mode": "conditional",
+      "phase": "implementation",
+      "trigger": "Codex implementation of reviewed issue, spec, or active Trellis planning artifacts",
+      "artifacts": [
+        ".trellis/tasks/<active>/implement.md"
+      ],
+      "gate": "load project specs through trellis-before-dev and complete relevant verification before trellis-check"
+    },
+    {
+      "skill": "diagnosing-bugs",
+      "owner": "matt",
+      "mode": "conditional",
+      "phase": "implementation",
+      "trigger": "reported defect, incorrect result, or performance regression in an active task",
+      "artifacts": [
+        ".trellis/tasks/<active>/research/diagnosis.md"
+      ],
+      "gate": "reproduce the reported symptom and verify the repair before trellis-check"
+    },
+    {
+      "skill": "tdd",
+      "owner": "matt",
+      "mode": "conditional",
+      "phase": "implementation",
+      "trigger": "user requests test-first development or integration tests",
+      "artifacts": [
+        ".trellis/tasks/<active>/implement.md"
+      ],
+      "gate": "record the public test boundary and red-green evidence before trellis-check"
+    },
+    {
+      "skill": "code-review",
+      "owner": "matt",
+      "mode": "conditional",
+      "phase": "review",
+      "trigger": "recorded high-risk change to shared control, hardware safety, ROS public interface, or migration",
+      "artifacts": [
+        ".trellis/tasks/<active>/research/review.md"
+      ],
+      "gate": "complete trellis-check and address blocking findings before spec update or commit"
+    }
+  ],
+  "review_order": [
+    "trellis-check",
+    "code-review"
+  ],
+  "hook": {
+    "event": "UserPromptSubmit",
+    "command_contains": [
+      "inject-workflow-state.py"
+    ],
+    "output_markers": [
+      "workflow-state",
+      "skill-routing"
+    ]
+  }
+}

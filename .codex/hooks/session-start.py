@@ -275,7 +275,7 @@ def _get_task_status(trellis_dir: Path, hook_input: dict) -> str:
     if not has_prd:
         return (
             f"Status: PLANNING\nTask: {task_title}\nPresent: {present_line}\n"
-            "Next: Load trellis-brainstorm and write prd.md. Stay in planning."
+            "Next: Review the issue/spec with grill-with-docs and write prd.md. Stay in planning."
         )
 
     if task_status == "planning":

@@ -1,6 +1,6 @@
 ---
 name: trellis-break-loop
-description: "Deep bug analysis to break the fix-forget-repeat cycle. Analyzes root cause category, why fixes failed, prevention mechanisms, and captures knowledge into specs. Use after fixing a bug to prevent the same class of bugs."
+description: 当前 Trellis 任务反复遇到同类故障时，分析原因和预防办法，并审查是否产生可保存的项目知识。
 ---
 
 # Break the Loop - Deep Bug Analysis
@@ -58,13 +58,11 @@ What broader problems does this bug reveal?
 
 ### 5. Knowledge Capture
 
-Solidify insights into the system:
+记录已验证的原因与预防办法，并列出可能需要保存的项目知识：
 
-- [ ] Update `.trellis/spec/guides/` thinking guides
-- [ ] Update relevant `.trellis/spec/` docs
-- [ ] Create issue record (if applicable)
-- [ ] Create feature ticket for root fix
-- [ ] Update check guidelines if needed
+- [ ] 当前任务的 `research/retrospective.md` 是否记录了分析证据？
+- [ ] 是否有稳定、可复用且经过验证的规范候选内容？
+- [ ] 是否有需要用户授权的 GitHub issue 或其他外部记录？
 
 ---
 
@@ -95,21 +93,19 @@ Please output analysis in this format:
 - **Process Improvement**: [Development process suggestions]
 
 ### 5. Knowledge Capture
-- [ ] [Documents to update / tickets to create]
+- [ ] [规范候选内容与可能需要的后续工作]
 ```
 
 ---
 
-## Core Philosophy
+## 分析目标
 
-> **The value of debugging is not in fixing the bug, but in making this class of bugs never happen again.**
+记录经过验证的故障原因、修复证据和可能有效的预防办法。
 
 Three levels of insight:
 1. **Tactical**: How to fix THIS bug
 2. **Strategic**: How to prevent THIS CLASS of bugs
 3. **Philosophical**: How to expand thinking patterns
-
-30 minutes of analysis saves 30 hours of future debugging.
 
 ## Thinking Framework: Bayesian Reasoning
 
@@ -155,7 +151,7 @@ Don't gather more of the same. Find evidence that **differs strongly** between t
 | Confidence | Action |
 |------------|--------|
 | 90%+ | Proceed with fix, monitor |
-| 70-90% | Proceed, add fallback check |
+| 70-90% | Gather evidence for the remaining uncertainty |
 | 50-70% | Test hypothesis before committing |
 | <50% | Need more evidence, don't guess |
 
@@ -171,18 +167,8 @@ Never express binary certainty when evidence is incomplete. Use "most likely", "
 
 ---
 
-## After Analysis: Immediate Actions
+## 分析交接
 
-**IMPORTANT**: After completing the analysis above, you MUST immediately:
+当前 Trellis 任务已授权记录工作内容时，将复现证据、原因和预防办法写入任务的 `research/retrospective.md`。用户仅要求分析时，在答复中报告结论，不修改文件。
 
-1. **Update spec/guides** - Don't just list TODOs, actually update the relevant files:
-   - If it's a cross-platform issue → update `cross-platform-thinking-guide.md`
-   - If it's a cross-layer issue → update `cross-layer-thinking-guide.md`
-   - If it's a code reuse issue → update `code-reuse-thinking-guide.md`
-   - If it's domain-specific → update `backend/*.md` or `frontend/*.md`
-
-2. **Sync templates** - After updating `.trellis/spec/`, sync to `src/templates/markdown/spec/`
-
-3. **Commit the spec updates** - This is the primary output, not just the analysis text
-
-> **The analysis is worthless if it stays in chat. The value is in the updated specs.**
+按照 Phase 3.3 审查规范候选内容。只有知识稳定、可复用、已经验证，且用户确认了内容和目标文件后，才调用 `trellis-update-spec`。创建或修改 GitHub issue、提交、推送以及创建 PR 仍按用户的明确授权执行。

@@ -1,13 +1,13 @@
 ---
 name: trellis-update-spec
-description: "Captures executable contracts and coding conventions into .trellis/spec/ documents. Use when learning something valuable from debugging, implementing, or discussion that should be preserved for future sessions."
+description: 当前 Trellis 任务产生稳定、可复用且经过验证的项目知识，并已由用户确认内容和目标文件后，将其写入项目规范。
 ---
 
 # Update Code-Spec - Capture Executable Contracts
 
-When you learn something valuable (from debugging, implementing, or discussion), use this to update the relevant code-spec documents.
+仅在 `.trellis/workflow.md` Phase 3.3 的规范保存条件满足，并且用户确认了拟保存的内容与目标文件后，修改相关规范。故障分析或代码检查可以提出候选内容；这些步骤本身不触发规范写入。
 
-**Timing**: After completing a task, fixing a bug, or discovering a new pattern
+**Timing**: 完成验证并取得用户确认后。
 
 ---
 
@@ -18,11 +18,11 @@ In this project, "spec" for implementation work means **code-spec**:
 - Concrete signatures, payload fields, env keys, and boundary behavior
 - Testable validation/error behavior
 
-If the change touches infra or cross-layer contracts, code-spec depth is mandatory.
+用户确认的知识涉及 infra 或跨层接口时，按下方要求记录可以检查的技术内容。
 
-### Mandatory Triggers
+### 需要详细记录的范围
 
-Apply code-spec depth when the change includes any of:
+获准保存的知识涉及以下内容时，使用下方完整结构：
 - New/changed command or API signature
 - Cross-layer request/response contract change
 - Database schema/migration change
@@ -41,7 +41,9 @@ For triggered tasks, include all sections below:
 
 ---
 
-## When to Update Code-Specs
+## 可能产生规范候选内容的工作
+
+以下工作可以产生候选内容。先确认其稳定、可复用并经过验证，再取得用户确认；单次实现或故障修复不会自动触发规范写入。
 
 | Trigger | Example | Target Spec |
 |---------|---------|-------------|
@@ -53,21 +55,16 @@ For triggered tasks, include all sections below:
 | **Established a convention** | Team agreed on naming pattern | Quality guidelines |
 | **New thinking trigger** | "Don't forget to check X before doing Y" | `guides/*.md` (as a checklist item) |
 
-**Key Insight**: Code-spec updates are NOT just for problems. Every feature implementation contains design decisions and contracts that future AI/developers need to execute safely.
+功能实现中的决定只有满足上述条件并经用户确认，才写入项目规范。
 
 ---
 
 ## Spec Structure Overview
 
-```
-.trellis/spec/
-├── <layer>/           # Per-layer coding standards (e.g., backend/, frontend/, api/)
-│   ├── index.md       # Overview and links
-│   └── *.md           # Topic-specific guidelines
-└── guides/            # Thinking checklists (NOT coding specs!)
-    ├── index.md       # Guide index
-    └── *.md           # Topic-specific guides
-```
+- `.trellis/spec/<layer>/index.md`：对应代码层的入口与链接。
+- `.trellis/spec/<layer>/*.md`：对应主题的具体规范。
+- `.trellis/spec/guides/index.md`：跨代码层检查项的入口。
+- `.trellis/spec/guides/*.md`：按主题组织的检查项。
 
 ### CRITICAL: Code-Spec vs Guide - Know the Difference
 
@@ -299,10 +296,10 @@ If you're unsure what to update, answer these prompts:
    - Better approach (pattern)
 
 3. **Would future AI/developers need to know this?**
-   - To understand how the code works → Yes, update spec
-   - To maintain or extend the feature → Yes, update spec
-   - To avoid repeating mistakes → Yes, update spec
-   - Purely one-off implementation detail → Maybe skip
+   - To understand how the code works → 提出候选内容并检查证据
+   - To maintain or extend the feature → 提出候选内容并检查复用价值
+   - To avoid repeating mistakes → 提出候选内容并检查验证结果
+   - Purely one-off implementation detail → 不写入项目规范
 
 4. **Which area does it relate to?**
    - [ ] Backend code
@@ -330,19 +327,12 @@ Before finishing your code-spec update:
 
 ---
 
-## Relationship to Other Commands
+## 与其他技能的关系
 
-```
-Development Flow:
-  Learn something → `update-spec` (Trellis command) → Knowledge captured
-       ↑                                  ↓
-  `break-loop` (Trellis command) ←──────────────────── Future sessions benefit
-  (deep bug analysis)
-```
-
-- ``break-loop` (Trellis command)` - Analyzes bugs deeply, often reveals spec updates needed
-- ``update-spec` (Trellis command)` - Actually makes the updates
-- ``finish-work` (Trellis command)` - Reminds you to check if specs need updates
+- `trellis-break-loop` 分析重复故障并提出规范候选内容。
+- `trellis-check` 检查本次改动和证据，记录可能需要保存的知识。
+- `trellis-update-spec` 仅在 Phase 3.3 条件满足并经用户确认后修改规范。
+- `trellis-finish-work` 只处理已授权的归档或会话记录；Git 提交另按明确要求执行。
 
 ---
 

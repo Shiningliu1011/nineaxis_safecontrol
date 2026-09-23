@@ -1,9 +1,9 @@
 ---
 name: trellis-before-dev
-description: "Discovers and injects project-specific coding guidelines from .trellis/spec/ before implementation begins. Reads spec indexes, pre-development checklists, and shared thinking guides for the target package. Use when starting a new coding task, before writing any code, switching to a different package, or needing to refresh project conventions and standards."
+description: 当前 Trellis 任务进入实现阶段时，读取受影响代码层的项目规范、规划文件和相关检查项。
 ---
 
-Read the relevant development guidelines before starting your task.
+当前 Trellis 任务开始修改代码前，读取相关开发规范。
 
 Execute these steps:
 
@@ -28,7 +28,7 @@ Execute these steps:
    ```
    Follow the **"Pre-Development Checklist"** section in the index.
 
-5. **Read the specific guideline files** listed in the Pre-Development Checklist that are relevant to your task. The index is NOT the goal — it points you to the actual guideline files (e.g., `error-handling.md`, `conventions.md`, `mock-strategies.md`). Read those files to understand the coding standards and patterns.
+5. **Read the specific guideline files** listed in the Pre-Development Checklist that are relevant to your task. The index points to the actual guideline files (e.g., `error-handling.md`, `conventions.md`, `testing.md`). Read those files to understand the coding standards and patterns.
 
 6. **Always read shared guides**:
    ```bash
@@ -48,4 +48,4 @@ Execute these steps:
 
 8. Understand the coding standards and patterns you need to follow, then proceed with your development plan.
 
-This step is **mandatory** before writing any code.
+当前 Trellis 任务修改代码前必须完成此步骤。Inline 任务按当前需求读取相关文件和项目规则。
