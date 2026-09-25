@@ -18,3 +18,4 @@
 
 - Phase 3.3：本票实现的是已有规格与 ADR 确认的接口形状，当前没有需要加入 `.trellis/spec/`、`CONTEXT.md` 或 ADR 的新通用规则。
 - Phase 3.4：用户已授权仅提交并推送本票改动，随后关闭对应 GitHub 票据、更新统一执行地图、归档本地任务，并在合并后只保留 `main` 分支。`docs/agents/issue-tracker.md` 的已有改动不属于本票提交范围。
+- 实现提交 `1b61e2f` 已快进合并并推送至 `main`；[固定 CollisionSafety 公开接口与 typed result](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/103) 已写入验收记录并关闭；[速度级 OSCBF 与 CollisionSafety 统一执行地图（仅激光雷达感知）](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/133) 已更新决定索引。
