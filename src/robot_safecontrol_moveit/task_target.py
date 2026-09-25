@@ -26,17 +26,10 @@ from .cylinder_geometry import compute_surface_normal_orientations
 
 def load_first_task_target(
     trajectory_mat: Path,
-    offset_m: tuple[float, float, float],
     max_points: int,
     point_stride: int,
 ) -> tuple[list[tuple[float, float, float]], list[float]]:
-    """Load trajectory positions and times used for first-target IK.
-
-    ``offset_m`` is retained for call-site compatibility but is ignored: the
-    first target must sit exactly on the OSCBF controller's calibrated path.
-
-    Returns (positions, times).
-    """
+    """Load calibrated trajectory positions and times for first-target IK."""
     from .oscbf_trajectory import load_calibrated_path_with_times
 
     positions, times = load_calibrated_path_with_times(
@@ -57,7 +50,6 @@ def compute_first_task_orientation(
     cylinder_axis_direction: tuple[float, float, float],
     orientation_xyzw: tuple[float, float, float, float],
     trajectory_mat: Path | None = None,
-    offset_m: tuple[float, float, float] = (0.0, 0.343, 1.587),
 ) -> tuple[tuple[float, float, float, float], list[tuple[float, float, float, float]] | None]:
     """Compute first-target orientation (and optionally all per-point orientations).
 

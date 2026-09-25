@@ -24,7 +24,6 @@ transition_planning_server:
     base_frame: base_link
     tool_link: tool0
 
-    trajectory_offset_m: [0.0, 0.343, 1.587]
 
     orientation_xyzw: [0.0, 0.0, 0.0, 1.0]
 

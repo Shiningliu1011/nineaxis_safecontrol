@@ -14,6 +14,28 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
 
+import yaml
+
+from work.actuator_limits import JOINT_NAMES
+
+
+def load_kinematics_config(config_yaml_path: str | Path) -> dict:
+    """读取轨迹配置并核对九轴关节顺序。"""
+    path = Path(config_yaml_path)
+    document = yaml.safe_load(path.read_text(encoding="utf-8"))
+    if not isinstance(document, dict):
+        raise ValueError(f"robot config must be a mapping: {path}")
+    if "joint_limits" in document:
+        raise ValueError(f"robot config must use generated joint limits: {path}")
+    if document.get("joint_names") != list(JOINT_NAMES):
+        raise ValueError(
+            f"robot config joint_names must match {list(JOINT_NAMES)!r}: {path}"
+        )
+    kinematics = document.get("kinematics")
+    if not isinstance(kinematics, dict):
+        raise ValueError(f"robot config kinematics must be a mapping: {path}")
+    return kinematics
+
 
 def reference_trajectory_transform(
         mat_path: str,
@@ -25,10 +47,7 @@ def reference_trajectory_transform(
 
     Mirrors the reference runner's ``_compute_traj_transform``: rotate the raw
     trajectory by ``align_rotation``, scale it so its largest span covers 60%
-    of the J1 prismatic stroke, and align its centroid to ``ee_center``.  The
-    simple translation used by the ROS display path is intentionally NOT used
-    here because it places the path start outside the reachable workspace.
-
+    of the J1 prismatic stroke, and align its centroid to ``ee_center``.
     Returns a 4x4 homogeneous transform ``T_traj_to_base`` (uniform scale in
     the rotation block, matching ``IKTrajectoryData``'s scale handling).
     """
@@ -74,13 +93,10 @@ def load_repository_trajectory(
     integration layer.
     """
 
-    import yaml
-
     if config_yaml_path is None:
         config_yaml_path = str(
             Path(__file__).resolve().parents[1] / "config" / "nineaxis.yaml")
-    with open(config_yaml_path, encoding="utf-8") as stream:
-        kinematics_config = yaml.safe_load(stream)["kinematics"]
+    kinematics_config = load_kinematics_config(config_yaml_path)
     transform = reference_trajectory_transform(
         mat_path,
         np.asarray(kinematics_config["trajectory_align_rotation"], dtype=float),

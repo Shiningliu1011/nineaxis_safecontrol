@@ -52,7 +52,7 @@ def test_transition_first_target_is_controller_path_start():
     from robot_safecontrol_moveit.task_target import load_first_task_target
     from work.ik_data_loader import load_repository_trajectory
 
-    positions, times = load_first_task_target(MAT_PATH, (0.0, 0.0, 0.0), 64, 1)
+    positions, times = load_first_task_target(MAT_PATH, 64, 1)
     start = load_repository_trajectory(
         str(MAT_PATH)
     ).path_geometry().positions_m[0]

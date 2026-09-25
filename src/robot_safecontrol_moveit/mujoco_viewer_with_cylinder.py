@@ -202,9 +202,6 @@ class MuJoCoJointStateViewer(Node):
         self.declare_parameter("mesh_directory", "")
         self.declare_parameter("show_target_path", True)
         self.declare_parameter("trajectory_mat", "")
-        # Legacy display offset; superseded by the calibrated transform in
-        # ``oscbf_trajectory``.  Kept declared so old parameter files still load.
-        self.declare_parameter("trajectory_offset_m", [0.0, 0.343, 1.587])
         self.declare_parameter("path_max_points", 300)
         # The trajectory data uses the project URDF/MoveIt Y-up coordinates.
         # Its fitted cylinder axis is therefore +Y even though MuJoCo displays

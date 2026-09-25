@@ -19,7 +19,7 @@ python3 portable_oscbf/scripts/generate_kinematics_data.py
 python3 portable_oscbf/scripts/generate_kinematics_data.py --check
 ```
 
-生成结果写入 `portable_oscbf/work/kinematics_data.py`，包含 `JOINT_CHAIN`、关节位置限幅与关节数量。两个运动学模块直接读取该文件，无需手工维护第二份常量。
+生成结果写入 `portable_oscbf/work/kinematics_data.py`，包含 `JOINT_CHAIN`、关节位置限幅与关节数量。两个运动学模块直接读取该文件。轨迹配置加载时校验 `nineaxis.yaml` 的关节顺序；速度及加速度限幅由 `actuator_modules.yaml` 提供。
 
 ### 步骤 3: 修改碰撞模型
 
@@ -42,7 +42,7 @@ python3 portable_oscbf/scripts/generate_obb_calibration.py --check
 ### 步骤 5: 调整配置
 
 编辑 `config/` 下的 YAML 文件:
-- `nineaxis.yaml` — 关节限位, 速度限制
+- `nineaxis.yaml` — 轨迹标定、几何和控制参考配置；`joint_names` 与项目关节顺序一致
 - `actuator_modules.yaml` — 执行器限位
 - `obb_model.yaml` — OBB 包络数据
 - `obstacle_params.yaml` — 障碍物参数

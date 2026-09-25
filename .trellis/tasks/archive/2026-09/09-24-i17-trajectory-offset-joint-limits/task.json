@@ -1,0 +1,28 @@
+{
+  "id": "i17-trajectory-offset-joint-limits",
+  "name": "i17-trajectory-offset-joint-limits",
+  "title": "I17 轨迹参数清理与关节限幅来源统一",
+  "description": "按 GitHub 实现票 I17 清理无效轨迹参数并统一关节限幅来源，完成轨迹一致性与全量测试验收",
+  "status": "completed",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "Lsn",
+  "assignee": "Lsn",
+  "createdAt": "2026-09-24",
+  "completedAt": "2026-09-25",
+  "branch": "codex/i17-trajectory-limits",
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {
+    "issue_url": "https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/128"
+  }
+}

@@ -69,7 +69,6 @@ class _Ports:
         "max_joint_state_age_s": 0.5,
         "allow_joint_state_fallback": False,
         "trajectory_mat": "",
-        "trajectory_offset_m": (0.0, 0.0, 0.0),
         "max_points": 1,
         "point_stride": 1,
         "align_tool_x_to_surface_normal": False,

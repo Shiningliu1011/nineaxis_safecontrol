@@ -33,18 +33,21 @@ MoveIt planned a transition with 64 trajectory point(s).   <- AEB-RRT* via real 
 
 ## IK interior check
 
-The boundary IK solution that motivated the fix
-(`J6=1.483` at its `±1.48353` limit) is an **artifact of the synthetic test offset**
-`trajectory_offset_m=[0,0,0.3]`, which pushed targets to the workspace edge.
+The boundary IK solution in this benchmark
+(`J6=1.483` at its `±1.48353` limit) came from a synthetic target translation
+of `[0, 0, 0.3]`, which pushed targets to the workspace edge.
 
-With the **real** offset `[0, 0.343, 1.587]` and surface-normal alignment, the
-first trajectory waypoint solves to an **interior** configuration
+With the benchmark's `[0, 0.343, 1.587]` placement and surface-normal alignment, the
+first trajectory waypoint solved to an **interior** configuration
 (`J1=0.2096, J7=0.2944, J9=-0.2944`, others ≈ 0) — all joints well inside limits.
 
-| offset | J1 | J6 | result |
+| benchmark translation | J1 | J6 | result |
 |---|---|---|---|
 | `[0,0,0.3]` (test) | 0.48/0.58 | 0.91/1.48 | boundary / limit or IK fail |
-| `[0,0.343,1.587]` (real) | 0.2096 | 0.0001 | interior |
+| `[0,0.343,1.587]` | 0.2096 | 0.0001 | interior |
+
+Current trajectory consumers use the shared calibrated transform in
+`oscbf_trajectory.py`.
 
 ## Benchmark: AEB-RRT* vs RRTConnect (real FCL)
 

@@ -99,8 +99,7 @@ QP 失败 0(旧配置 kp_pos=60/lead=1e-5);JIT 预热 28.75s;p95 6.177ms。
 
 ### 1.7 Coordinate frames
 - **已实现:** 控制器/感知 `world_frame=base_link`;tool0 名义工具;
-  `trajectory_offset_m=[0,0.343,1.587]`(整条参考轨迹被平移);MATLAB 蝴蝶曲线
-  被**径向投影到最小二乘圆柱面**再作为参考(近似工具轴=柱轴心)。
+  轨迹由共享标定变换转换；MATLAB 蝴蝶曲线被**径向投影到最小二乘圆柱面**再作为参考(近似工具轴=柱轴心)。
 - **未知决策 [DISCUSS-D]:** 参考轨迹为什么是圆柱投影(原始 MATLAB 轨迹无姿态,
   投影假设来自哪?);base_link vs 环境系。
 - **tickets:** #05A/#05B、#06A/#06B。

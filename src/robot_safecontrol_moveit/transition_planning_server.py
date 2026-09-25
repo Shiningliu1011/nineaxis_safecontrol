@@ -335,7 +335,6 @@ class TransitionPlanningServer(Node):
         self.declare_parameter("base_frame", "base_link")
         self.declare_parameter("tool_link", "tool0")
         self.declare_parameter("trajectory_mat", "")
-        self.declare_parameter("trajectory_offset_m", [0.0, 0.343, 1.587])
         self.declare_parameter("max_points", 1)
         self.declare_parameter("point_stride", 1)
         self.declare_parameter("joint_state_topic", JOINT_STATE_TOPIC)

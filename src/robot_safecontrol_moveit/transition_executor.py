@@ -155,12 +155,11 @@ class TransitionExecutor:
         traj_file = _resolve_path(
             str(get("trajectory_mat").value), "data/nurbs/ik_input.mat"
         )
-        offset = tuple(float(v) for v in get("trajectory_offset_m").value)
         max_pts = int(get("max_points").value)
         stride = int(get("point_stride").value)
 
         try:
-            positions, _ = load_first_task_target(traj_file, offset, max_pts, stride)
+            positions, _ = load_first_task_target(traj_file, max_pts, stride)
         except Exception as e:
             return _format_result(
                 "TRAJECTORY_LOAD_ERROR", 0, monotonic() - plan_start, f"detail={e}"
@@ -176,7 +175,6 @@ class TransitionExecutor:
             cylinder_axis_direction=cylinder_axis,
             orientation_xyzw=orientation_xyzw,
             trajectory_mat=traj_file,
-            offset_m=offset,
         )
 
         ports.log.info(

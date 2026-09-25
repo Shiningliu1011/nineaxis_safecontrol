@@ -102,8 +102,7 @@ QP 失败 0(旧配置 kp_pos=60/lead=1e-5);JIT 预热 28.75s;p95 6.177ms。
 
 ### 1.7 Coordinate frames
 - **已实现:** 控制器/感知 `world_frame=base_link`;tool0 名义工具;
-  `trajectory_offset_m=[0,0.343,1.587]`(整条参考轨迹被平移);MATLAB 蝴蝶曲线
-  被**径向投影到最小二乘圆柱面**再作为参考(近似工具轴=柱轴心)。
+  轨迹由共享标定变换转换；MATLAB 蝴蝶曲线被**径向投影到最小二乘圆柱面**再作为参考(近似工具轴=柱轴心)。
 - **决策 [DISCUSS-D] 已定(2026-09-05,05B):** base_link vs 独立环境系之争拍板为
   **A——全系统 base_link**;base_link 正式定义为用户规定的 Y-up 机架固定系
   (+Y 竖直、+Z 导轨水平、+X 横向),MuJoCo Z-up 仅 viewer 显示。

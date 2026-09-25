@@ -2,12 +2,8 @@
 
 The OSCBF controller tracks ``data/nurbs/ik_input.mat`` through the reference
 runner's calibrated transform (rotate -> scale to fit the J1 prismatic stroke
--> align the centroid to ``ee_center``).  Every other consumer of the same
-``.mat`` — the MuJoCo viewer's displayed target path and the transition
-server's first-task target — MUST use this same transform.  Mixing it with
-the legacy ``[0, 0.343, 1.587]`` translation made the displayed butterfly sit
-~0.22 m above the curve the controller actually tracked, so tool0 never
-touched the visible path.
+-> align the centroid to ``ee_center``).  The MuJoCo viewer's displayed target
+path and the transition server's first-task target use this same transform.
 """
 
 from __future__ import annotations
@@ -50,16 +46,16 @@ def trajectory_to_base_transform(
     config_yaml_path: Path | str | None = None,
 ) -> np.ndarray:
     """4x4 ``T_traj_to_base`` matching the OSCBF controller exactly."""
-    import yaml
-
     portable_root = default_portable_root()
     bootstrap_portable(portable_root)
-    from work.ik_data_loader import reference_trajectory_transform
+    from work.ik_data_loader import (
+        load_kinematics_config,
+        reference_trajectory_transform,
+    )
 
     if config_yaml_path is None:
         config_yaml_path = portable_root / "config" / "nineaxis.yaml"
-    with open(config_yaml_path, encoding="utf-8") as stream:
-        kinematics_config = yaml.safe_load(stream)["kinematics"]
+    kinematics_config = load_kinematics_config(config_yaml_path)
     return reference_trajectory_transform(
         str(mat_path),
         np.asarray(
