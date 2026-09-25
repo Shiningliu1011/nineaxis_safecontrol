@@ -8,4 +8,5 @@
 - [快速开始](portable-oscbf/quickstart.md)：安装、调用与测试。
 - [移植到新项目](portable-oscbf/porting.md)：模型、轨迹和控制框架接入。
 - [排除的 ROS 文件](portable-oscbf/exclusions.md)：模块边界。
+- [CollisionSafety 接口](portable-oscbf/collision-safety.md)：三个公开操作、固定结果结构和当前准入状态。
 - [参考文献](portable-oscbf/references.md)：相关资料。
