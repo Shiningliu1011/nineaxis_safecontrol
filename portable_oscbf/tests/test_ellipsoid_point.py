@@ -7,6 +7,7 @@ import numpy as np
 import pytest
 
 from test_ellipsoid_dcol import _geometry, _module, _prepared, _sign_geometry, _world
+from collision_scene_inputs import scene_input, signed_scene
 from work.collision_safety import (
     CollisionScene, CollisionStatus, PrimitiveKind, QueryBatch, QueryMode, SupportTrackStatus,
 )
@@ -21,17 +22,15 @@ def _environment(radii=(0.05, 0.05, 0.05), link="Link1", capacity=1, **limits):
     })
 
 
-def _scene(module, points, rho=10.0, tracks=None):
+def _scene(module, points, rho=10.0, tracks=None, velocity=None):
     points = np.asarray(points, dtype=float).reshape((-1, 3))
     count = len(points)
     prepared = _prepared(module)
-    scene = CollisionScene(**{name: getattr(prepared, name) for name in CollisionScene._fields})._replace(
-        support_points_m=jnp.asarray(np.pad(points, ((0, 3-count), (0, 0)))),
-        support_radii_mm=jnp.asarray([rho] * count + [0.0] * (3-count)),
-        support_ids=jnp.asarray([101, 202, 303], dtype=jnp.int32),
-        support_mask=jnp.arange(3) < count,
-        support_track_status=jnp.asarray(tracks or [0, 1, 0], dtype=jnp.int32),
-    )
+    scene = scene_input(module.config, prepared.identities,
+                        points=np.pad(points, ((0, 3-count), (0, 0))),
+                        radii=[rho] * count + [0.0] * (3-count), mask=np.arange(3) < count,
+                        tracks=tracks, velocity=velocity)
+    scene = signed_scene(scene._replace(support_ids=np.array([101, 202, 303], dtype=np.int32)))
     return module.prepare_scene(scene, prepared.identities)
 
 
@@ -212,9 +211,10 @@ def test_distance_iteration_limit_and_deadline_clear_all_admission_masks():
     assert not np.any(result.distance_valid_mask)
     assert not np.any(result.valid_mask)
     _, late = _environment(query_deadline_ns=1)
-    result = _run(late, _scene(late, [[0.2, 0, 0]]))
+    late_scene = _scene(late, [[0.2, 0, 0]])
+    result = _run(late, late_scene)
     assert int(result.header.status) == CollisionStatus.DEADLINE_MISSED
-    assert int(result.header.source_stamp_ns) == 100
+    assert result.header.source_stamp_ns == late_scene.source_stamp_ns
     assert not np.any(result.distance_valid_mask)
     assert not np.any(result.state_valid_mask)
     assert not np.any(result.valid_mask)
@@ -241,8 +241,8 @@ def test_scene_status_identity_and_track_validation_reject_distance():
 
 def test_symmetric_environment_rows_and_support_time_derivative():
     _, module = _environment()
-    scene = _scene(module, [[0, 0, 0.08], [0, 0, -0.08]])
-    scene = scene._replace(support_velocity_m_s=jnp.array([[0., 0., -0.01], [0., 0., 0.01], [0., 0., 0.]]))
+    scene = _scene(module, [[0, 0, 0.08], [0, 0, -0.08]], tracks=[1, 1, 0],
+                   velocity=[[0., 0., -0.01], [0., 0., 0.01], [0., 0., 0.]])
     result = _run(module, scene, QueryMode.OSCBF_BARRIER)
     assert int(result.header.status) == CollisionStatus.OK
     rows = [3, 4]

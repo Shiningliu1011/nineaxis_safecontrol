@@ -12,6 +12,7 @@ import numpy as np
 import pytest
 
 from collision_parameter_inputs import DEVICE, SCENARIO, parameter_payload
+from collision_scene_inputs import scene_input
 from work.collision_parameters import CollisionParameterArtifact, CollisionPolicy
 
 from work.collision_safety import (
@@ -44,24 +45,14 @@ def _identities(config: CollisionSafetyConfig | None = None) -> CollisionIdentit
         geometry_hash=jnp.asarray(np.frombuffer(b"g" * 32, dtype=np.uint8)),
         kernel_version=jnp.asarray(np.frombuffer(b"k" * 32, dtype=np.uint8)),
         collision_policy_hash=jnp.asarray(np.frombuffer(config.collision_policy_hash, dtype=np.uint8)),
+        fixed_environment_revision=jnp.int64(1),
+        required_space_hash=jnp.full(32, 42, dtype=jnp.uint8),
     )
 
 
-def _scene(status: CollisionStatus = CollisionStatus.OK) -> CollisionScene:
-    return CollisionScene(
-        support_points_m=jnp.asarray(
-            [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6], [0.0, 0.0, 0.0]], dtype=jnp.float32
-        ),
-        support_radii_mm=jnp.asarray([10.0, 20.0, 0.0], dtype=jnp.float64),
-        required_clearance_mm=jnp.asarray([30.0, 30.0, 0.0], dtype=jnp.float64),
-        support_velocity_m_s=jnp.zeros((3, 3), dtype=jnp.float64),
-        support_ids=jnp.asarray([11, 12, 0], dtype=jnp.int32),
-        support_mask=jnp.asarray([True, True, False]),
-        source_stamp_ns=jnp.asarray(100, dtype=jnp.int64),
-        prepared_stamp_ns=jnp.asarray(120, dtype=jnp.int64),
-        status=jnp.asarray(int(status), dtype=jnp.int32),
-        support_track_status=jnp.asarray([0, 1, 0], dtype=jnp.int32),
-    )
+def _scene(status: CollisionStatus = CollisionStatus.OK, *, config=None, identities=None) -> CollisionScene:
+    config = config or _config()
+    return scene_input(config, identities or _identities(config), status)
 
 
 def _query_batch() -> QueryBatch:
@@ -83,7 +74,7 @@ def _segment_batch() -> SegmentBatch:
 
 def test_prepare_scene_converts_lidar_coordinates_and_compiles() -> None:
     module = CollisionSafety(_config())
-    prepared = jax.jit(module.prepare_scene)(_scene(), _identities())
+    prepared = jax.jit(lambda scene: scene)(module.prepare_scene(_scene(), _identities()))
 
     assert prepared.support_points_m.dtype == jnp.float64
     assert prepared.support_points_m.shape == (3, 3)
@@ -113,7 +104,7 @@ def test_query_returns_fixed_fail_closed_result_for_each_mode(mode: QueryMode) -
     assert not np.any(np.asarray(result.distance_valid_mask))
     assert not np.any(np.asarray(compiled_result.valid_mask))
     assert int(result.header.scene_revision) == 7
-    assert int(result.header.source_stamp_ns) == 100
+    assert result.header.source_stamp_ns == prepared.source_stamp_ns
     assert np.array_equal(np.asarray(result.header.geometry_hash), np.frombuffer(b"g" * 32, dtype=np.uint8))
     assert int(result.header.started_ns) <= int(result.header.completed_ns)
     assert int(result.header.runtime_ns) == (
@@ -133,7 +124,7 @@ def test_certify_returns_fixed_unproved_result() -> None:
     assert result.lower_bound.shape == (2,)
     assert result.failure_interval_s.shape == (2, 2)
     assert result.lower_bound.dtype == jnp.float64
-    assert int(result.header.source_stamp_ns) == 100
+    assert result.header.source_stamp_ns == prepared.source_stamp_ns
     assert not np.any(np.asarray(result.valid_mask))
     assert not np.any(np.asarray(result.certified_mask))
     assert not np.any(np.asarray(compiled_result.certified_mask))
@@ -159,7 +150,7 @@ def test_all_public_status_codes_preserve_fail_closed_masks(status: CollisionSta
 
 def test_deadline_miss_overrides_unavailable_kernel_status() -> None:
     module = CollisionSafety(_config(query_deadline_ns=1, certify_deadline_ns=1))
-    prepared = module.prepare_scene(_scene(), _identities(module.config))
+    prepared = module.prepare_scene(_scene(config=module.config), _identities(module.config))
     query = module.query(_query_batch(), prepared, QueryMode.STATE_VALIDITY)
     certificate = module.certify(_segment_batch(), prepared)
 
@@ -196,7 +187,7 @@ def test_invalid_shape_dtype_mode_and_numeric_batch_fail_at_interface() -> None:
     with pytest.raises(ValueError, match="scene.support_points_m"):
         module.prepare_scene(_scene()._replace(support_points_m=jnp.zeros((2, 3), dtype=jnp.float32)), _identities())
     with pytest.raises(TypeError, match="scene.support_radii_mm"):
-        module.prepare_scene(_scene()._replace(support_radii_mm=jnp.zeros((3,), dtype=jnp.float32)), _identities())
+        module.prepare_scene(_scene()._replace(support_radii_mm=jnp.zeros((3,), dtype=jnp.int32)), _identities())
     with pytest.raises(ValueError, match="query_batch.q"):
         module.query(_query_batch()._replace(q=jnp.zeros((1, 9), dtype=jnp.float64)), prepared, QueryMode.OSCBF_BARRIER)
     with pytest.raises(ValueError, match="query_mode"):

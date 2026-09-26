@@ -4,19 +4,19 @@
 
 ## 公开操作
 
-- `prepare_scene(scene, identities)` 检查固定 shape、数据类型、有限值、时间顺序和身份。原始 support 坐标可用 `float32`；返回的 `PreparedScene` 中，参与计算的数组统一为 `float64`。
+- `prepare_scene(scene, identities)` 在 host 核验完整场景副本，检查 checksum、frame、单位、固定 shape、身份、时间、覆盖、容量和 tracking。浮点输入可用 `float32` 或 `float64`；返回的不可变 `PreparedScene` 中，参与计算的数组统一为 `float64`。完整字段与失败规则见 [场景准入](scene-preparation.md)。
 - `query(query_batch, prepared_scene, query_mode)` 接受 `QueryMode.STATE_VALIDITY`、`QueryMode.OSCBF_BARRIER` 或 `QueryMode.DISTANCE_MM`。九轴状态批次形状由 `CollisionSafetyConfig.query_batch_size` 固定。
 - `certify(segment_batch, prepared_scene)` 接受固定数量的九轴区间及起止时间。
 
 `CollisionSafetyConfig.from_policy(policy)` 从已验证的 [CollisionParameterArtifact](collision-parameter-artifact.md) 读取 support、查询批次、primitive 行和区间批次容量，以及查询与证明的 deadline。配置必须绑定 policy，所有值都须与 artifact 一致。模块的 `config` 只读，artifact 与 policy 均深层不可变。
 
-配置包含 32 字节的 geometry、kernel 和 policy identity。`CollisionIdentities` 还包含 16 字节的 `scene_epoch` 和整数 `scene_revision`。身份在 JAX 边界使用 `uint8` 数组，所有运行时间字段使用同一进程的单调时钟，单位为纳秒。场景采集时间与准备时间必须由同一时间基准产生。
+配置包含 32 字节的 geometry、kernel 和 policy identity。`CollisionIdentities` 还包含 16 字节的 `scene_epoch`、整数 `scene_revision`、整数 `fixed_environment_revision` 和 32 字节的 `required_space_hash`。hash 与 epoch 在 JAX 边界使用 `uint8` 数组，revision 使用 `int64` 标量。场景采集、准备和有效期使用同一机器的 `time.monotonic_ns()`，运行时间使用进程内单调计时，单位均为纳秒。
 
 三个操作都核对当前 identity；已经准备的场景也必须符合当前 policy。有效 support 的 environment clearance 必须等于 artifact 中的数值，半径不能超过其上限。检查失败返回 `INVALID_SCENE` 并保持结果无效，超时仍由 `DEADLINE_MISSED` 表达。
 
 ## 固定结果
 
-`QueryResult` 与 `SegmentCertificateBatch` 都包含 `ResultHeader`：status、scene epoch/revision、geometry/kernel/policy identity、场景采集时间 `source_stamp_ns`、查询开始时间、完成时间、运行时间、deadline 和超时标志。成功与失败结果均携带输入场景的采集时间。它们采用 JAX PyTree 可识别的 `NamedTuple` 结构。
+`QueryResult` 与 `SegmentCertificateBatch` 都包含 `ResultHeader`：status、scene epoch/revision、geometry/kernel/policy identity、固定模型 revision、required-space hash、场景采集时间 `source_stamp_ns`、查询开始时间、完成时间、运行时间、deadline 和超时标志。成功与失败结果均携带输入场景的采集时间。它们采用 JAX PyTree 可识别的 `NamedTuple` 结构。
 
 `QueryResult` 的 OSCBF 字段包括 `valid_mask`、`barrier`、`grad_h_q`、`partial_h_partial_t`、`proximity_scale`、primitive pair identity、solver residual、iteration 和 health。状态有效性与毫米距离各有独立的有效 mask。`SegmentCertificateBatch` 包含区间有效 mask、证明结果、下界、二分深度和失败区间。所有未测量字段的有效 mask 均为 `False`；数值槽位不能单独说明安全。
 

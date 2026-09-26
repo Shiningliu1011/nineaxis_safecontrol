@@ -15,29 +15,16 @@ from work.collision_parameters import CollisionPolicy
 from work._collision_geometry import _SelfGeometry
 from work._ellipsoid_dcol import _build_self_query
 from work._ellipsoid_point import _build_environment_queries
-
-
-class CollisionStatus(IntEnum):
-    OK = 0
-    REVISION_PENDING = 1
-    INVALID_SCENE = 2
-    UNKNOWN_REQUIRED_SPACE = 3
-    CAPACITY_OVERFLOW = 4
-    CONSTRAINT_OVERFLOW = 5
-    SOLVER_UNHEALTHY = 6
-    CERTIFICATE_FAILED = 7
-    DEADLINE_MISSED = 8
+from work._collision_scene import (
+    CollisionIdentities, CollisionScene, CollisionStatus, PreparedScene, SceneMetadata,
+    SceneTracks, SupportTrackStatus, _identity_specs, _prepare_scene, _track_specs, _tracks_valid,
+)
 
 
 class QueryMode(IntEnum):
     STATE_VALIDITY = 0
     OSCBF_BARRIER = 1
     DISTANCE_MM = 2
-
-
-class SupportTrackStatus(IntEnum):
-    UNTRACKED = 0
-    TRACKED = 1
 
 
 class PrimitiveKind(IntEnum):
@@ -98,41 +85,6 @@ class CollisionSafetyConfig:
                 raise ValueError(f"{name} cannot override the collision policy")
 
 
-class CollisionIdentities(NamedTuple):
-    scene_epoch: jax.Array
-    scene_revision: jax.Array
-    geometry_hash: jax.Array
-    kernel_version: jax.Array
-    collision_policy_hash: jax.Array
-
-
-class CollisionScene(NamedTuple):
-    support_points_m: jax.Array
-    support_radii_mm: jax.Array
-    required_clearance_mm: jax.Array
-    support_velocity_m_s: jax.Array
-    support_ids: jax.Array
-    support_mask: jax.Array
-    source_stamp_ns: jax.Array
-    prepared_stamp_ns: jax.Array
-    status: jax.Array
-    support_track_status: jax.Array
-
-
-class PreparedScene(NamedTuple):
-    support_points_m: jax.Array
-    support_radii_mm: jax.Array
-    required_clearance_mm: jax.Array
-    support_velocity_m_s: jax.Array
-    support_ids: jax.Array
-    support_mask: jax.Array
-    source_stamp_ns: jax.Array
-    prepared_stamp_ns: jax.Array
-    identities: CollisionIdentities
-    status: jax.Array
-    support_track_status: jax.Array
-
-
 class QueryBatch(NamedTuple):
     q: jax.Array
     active_mask: jax.Array
@@ -153,6 +105,8 @@ class ResultHeader(NamedTuple):
     geometry_hash: jax.Array
     kernel_version: jax.Array
     collision_policy_hash: jax.Array
+    fixed_environment_revision: jax.Array
+    required_space_hash: jax.Array
     source_stamp_ns: jax.Array
     started_ns: jax.Array
     completed_ns: jax.Array
@@ -246,80 +200,7 @@ class CollisionSafety:
     def prepare_scene(
         self, scene: CollisionScene, identities: CollisionIdentities
     ) -> PreparedScene:
-        if not isinstance(scene, CollisionScene):
-            raise TypeError("scene must be CollisionScene")
-        if not isinstance(identities, CollisionIdentities):
-            raise TypeError("identities must be CollisionIdentities")
-        count = self.config.max_support_points
-        points = _array(
-            scene.support_points_m,
-            "scene.support_points_m",
-            (count, 3),
-            (jnp.dtype("float32"), jnp.dtype("float64")),
-        ).astype(jnp.float64)
-        radii = _array(
-            scene.support_radii_mm, "scene.support_radii_mm", (count,), (jnp.dtype("float64"),)
-        )
-        clearance = _array(
-            scene.required_clearance_mm,
-            "scene.required_clearance_mm",
-            (count,),
-            (jnp.dtype("float64"),),
-        )
-        velocity = _array(
-            scene.support_velocity_m_s,
-            "scene.support_velocity_m_s",
-            (count, 3),
-            (jnp.dtype("float64"),),
-        )
-        ids = _array(scene.support_ids, "scene.support_ids", (count,), (jnp.dtype("int32"),))
-        mask = _array(scene.support_mask, "scene.support_mask", (count,), (jnp.dtype("bool"),))
-        track = _array(scene.support_track_status, "scene.support_track_status", (count,),
-                       (jnp.dtype("int32"),))
-        source_stamp = _array(
-            scene.source_stamp_ns, "scene.source_stamp_ns", (), (jnp.dtype("int64"),)
-        )
-        prepared_stamp = _array(
-            scene.prepared_stamp_ns, "scene.prepared_stamp_ns", (), (jnp.dtype("int64"),)
-        )
-        source_status = _array(scene.status, "scene.status", (), (jnp.dtype("int32"),))
-        epoch = _array(
-            identities.scene_epoch, "identities.scene_epoch", (16,), (jnp.dtype("uint8"),)
-        )
-        revision = _array(
-            identities.scene_revision, "identities.scene_revision", (), (jnp.dtype("int64"),)
-        )
-        geometry = _array(
-            identities.geometry_hash, "identities.geometry_hash", (32,), (jnp.dtype("uint8"),)
-        )
-        kernel = _array(
-            identities.kernel_version, "identities.kernel_version", (32,), (jnp.dtype("uint8"),)
-        )
-        policy = _array(
-            identities.collision_policy_hash,
-            "identities.collision_policy_hash",
-            (32,),
-            (jnp.dtype("uint8"),),
-        )
-        checked_identities = CollisionIdentities(epoch, revision, geometry, kernel, policy)
-        checked_scene = CollisionScene(
-            points, radii, clearance, velocity, ids, mask, source_stamp, prepared_stamp, source_status, track
-        )
-        valid = self._scene_values_valid(checked_scene, checked_identities)
-        status = jnp.where(valid, source_status, int(CollisionStatus.INVALID_SCENE)).astype(jnp.int32)
-        return PreparedScene(
-            points,
-            radii,
-            clearance,
-            velocity,
-            ids,
-            mask,
-            source_stamp,
-            prepared_stamp,
-            checked_identities,
-            status,
-            track,
-        )
+        return _prepare_scene(scene, identities, self.config.policy)
 
     def query(
         self, query_batch: QueryBatch, prepared_scene: PreparedScene, query_mode: QueryMode
@@ -334,7 +215,7 @@ class CollisionSafety:
         active = _array(query_batch.active_mask, "query_batch.active_mask", (count,), (jnp.dtype("bool"),))
         if not bool(np.all(np.isfinite(np.asarray(q)))):
             raise ValueError("query_batch.q must be finite")
-        started_ns = time.perf_counter_ns()
+        started_ns = time.monotonic_ns()
         scene_status = self._scene_status(prepared_scene)
         status = scene_status if scene_status is not CollisionStatus.OK else CollisionStatus.SOLVER_UNHEALTHY
         rows = self.config.max_primitive_rows
@@ -374,7 +255,17 @@ class CollisionSafety:
             distance_status, result_fields = self._distance_payload(q, active, prepared_scene, result_fields)
             status = CollisionStatus(int(distance_status))
         jax.block_until_ready(result_fields)
-        completed_ns = time.perf_counter_ns()
+        if status is CollisionStatus.OK:
+            status = self._scene_status(prepared_scene)
+        valid_until = int(prepared_scene.valid_until_ns)
+        coverage_until = int(prepared_scene.coverage_valid_until_ns)
+        tracking_until = int(prepared_scene.tracking_valid_until_ns)
+        completed_ns = time.monotonic_ns()
+        if status is CollisionStatus.OK:
+            if completed_ns > valid_until or completed_ns > tracking_until:
+                status = CollisionStatus.INVALID_SCENE
+            elif completed_ns > coverage_until:
+                status = CollisionStatus.UNKNOWN_REQUIRED_SPACE
         header = self._header(
             status, prepared_scene.identities, prepared_scene.source_stamp_ns,
             started_ns, completed_ns, self.config.query_deadline_ns
@@ -511,7 +402,7 @@ class CollisionSafety:
             raise ValueError("segment_batch numeric fields must be finite")
         if not bool(np.all(np.asarray(time_end) >= np.asarray(time_start))):
             raise ValueError("segment_batch.time_end_s must follow time_start_s")
-        started_ns = time.perf_counter_ns()
+        started_ns = time.monotonic_ns()
         scene_status = self._scene_status(prepared_scene)
         status = scene_status if scene_status is not CollisionStatus.OK else CollisionStatus.CERTIFICATE_FAILED
         result_fields = dict(
@@ -521,7 +412,7 @@ class CollisionSafety:
             bisection_depth=jnp.zeros((count,), dtype=jnp.int32),
             failure_interval_s=jnp.zeros((count, 2), dtype=jnp.float64),
         )
-        completed_ns = time.perf_counter_ns()
+        completed_ns = time.monotonic_ns()
         header = self._header(
             status, prepared_scene.identities, prepared_scene.source_stamp_ns,
             started_ns, completed_ns, self.config.certify_deadline_ns
@@ -570,6 +461,15 @@ class CollisionSafety:
         )
         _array(prepared_scene.support_track_status, "prepared_scene.support_track_status", (count,),
                (jnp.dtype("int32"),))
+        for name, dtype in (("support_valid_mask", "bool"), ("support_track_ids", "int32")):
+            _array(getattr(prepared_scene, name), f"prepared_scene.{name}", (count,), (jnp.dtype(dtype),))
+        if not isinstance(prepared_scene.tracks, SceneTracks):
+            raise TypeError("prepared_scene.tracks must be SceneTracks")
+        for name, (shape, dtype) in _track_specs(self.config.policy.artifact.parameters["max_tracks"]["value"]).items():
+            _array(getattr(prepared_scene.tracks, name), f"prepared_scene.tracks.{name}", shape,
+                   (jnp.dtype("float64" if dtype == "float" else dtype),))
+        for name in ("valid_until_ns", "coverage_valid_until_ns", "tracking_valid_until_ns"):
+            _array(getattr(prepared_scene, name), f"prepared_scene.{name}", (), (jnp.dtype("int64"),))
         _array(
             prepared_scene.source_stamp_ns,
             "prepared_scene.source_stamp_ns",
@@ -603,12 +503,16 @@ class CollisionSafety:
                 (32,),
                 (jnp.dtype("uint8"),),
             )
+        for name in ("fixed_environment_revision", "required_space_hash"):
+            shape, dtype = _identity_specs()[name]
+            _array(getattr(prepared_scene.identities, name), f"prepared_scene.identities.{name}", shape,
+                   (jnp.dtype(dtype),))
         _array(prepared_scene.status, "prepared_scene.status", (), (jnp.dtype("int32"),))
         CollisionStatus(int(np.asarray(prepared_scene.status)))
 
     @partial(jax.jit, static_argnums=0)
     def _scene_values_valid(
-        self, scene: CollisionScene | PreparedScene, identities: CollisionIdentities
+        self, scene: PreparedScene, identities: CollisionIdentities, now_ns: int
     ) -> jax.Array:
         parameters = self.config.policy.artifact.parameters
         return (
@@ -630,6 +534,8 @@ class CollisionSafety:
             & (scene.prepared_stamp_ns >= scene.source_stamp_ns)
             & jnp.any(identities.scene_epoch != 0)
             & (identities.scene_revision >= 0)
+            & (identities.fixed_environment_revision >= 0)
+            & jnp.any(identities.required_space_hash != 0)
             & jnp.array_equal(identities.geometry_hash, self._geometry_hash)
             & jnp.array_equal(identities.kernel_version, self._kernel_version)
             & jnp.array_equal(identities.collision_policy_hash, self._collision_policy_hash)
@@ -642,13 +548,28 @@ class CollisionSafety:
                 ~scene.support_mask
                 | (scene.support_radii_mm <= parameters["support_radius_limit_mm"]["value"])
             )
+            & ((scene.status != int(CollisionStatus.OK))
+               | (jnp.all(~scene.support_mask | scene.support_valid_mask) & _tracks_valid(scene, now_ns, jnp)))
         )
 
     def _scene_status(self, prepared_scene: PreparedScene) -> CollisionStatus:
-        valid = self._scene_values_valid(prepared_scene, prepared_scene.identities)
+        now_ns = time.monotonic_ns()
+        valid = self._scene_values_valid(prepared_scene, prepared_scene.identities, now_ns)
         if not bool(np.asarray(valid)):
             return CollisionStatus.INVALID_SCENE
-        return CollisionStatus(int(np.asarray(prepared_scene.status)))
+        status = CollisionStatus(int(np.asarray(prepared_scene.status)))
+        if status is not CollisionStatus.OK:
+            return status
+        prepared_stamp = int(prepared_scene.prepared_stamp_ns)
+        valid_until = int(prepared_scene.valid_until_ns)
+        tracking_until = int(prepared_scene.tracking_valid_until_ns)
+        coverage_until = int(prepared_scene.coverage_valid_until_ns)
+        now_ns = time.monotonic_ns()
+        if now_ns < prepared_stamp or now_ns > valid_until or now_ns > tracking_until:
+            return CollisionStatus.INVALID_SCENE
+        if now_ns > coverage_until:
+            return CollisionStatus.UNKNOWN_REQUIRED_SPACE
+        return CollisionStatus.OK
 
     @staticmethod
     def _header(
@@ -670,6 +591,8 @@ class CollisionSafety:
             geometry_hash=identities.geometry_hash,
             kernel_version=identities.kernel_version,
             collision_policy_hash=identities.collision_policy_hash,
+            fixed_environment_revision=identities.fixed_environment_revision,
+            required_space_hash=identities.required_space_hash,
             source_stamp_ns=source_stamp_ns,
             started_ns=jnp.asarray(started_ns, dtype=jnp.int64),
             completed_ns=jnp.asarray(completed_ns, dtype=jnp.int64),

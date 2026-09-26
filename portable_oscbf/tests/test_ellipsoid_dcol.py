@@ -12,6 +12,7 @@ import numpy as np
 import pytest
 
 from collision_parameter_inputs import DEVICE, SCENARIO, parameter_payload
+from collision_scene_inputs import scene_input
 from work.collision_parameters import CollisionParameterArtifact, CollisionPolicy
 from work.collision_safety import (
     CollisionIdentities, CollisionSafety, CollisionSafetyConfig, CollisionScene,
@@ -68,19 +69,14 @@ def _module(document, clearance_mm=1.0, **limits):
 
 def _prepared(module, status=CollisionStatus.OK, occupied=False):
     config = module.config
-    scene = CollisionScene(
-        jnp.zeros((3, 3)), jnp.zeros(3),
-        jnp.full(3, config.policy.artifact.parameters["environment_clearance_mm"]["value"]),
-        jnp.zeros((3, 3)),
-        jnp.arange(3, dtype=jnp.int32), jnp.array([occupied, False, False]),
-        jnp.int64(100), jnp.int64(120), jnp.int32(status),
-        jnp.zeros(3, dtype=jnp.int32),
-    )
     identities = CollisionIdentities(
         jnp.ones(16, dtype=jnp.uint8), jnp.int64(1),
         *[jnp.asarray(np.frombuffer(getattr(config, field), dtype=np.uint8))
           for field in ("geometry_hash", "kernel_version", "collision_policy_hash")],
+        jnp.int64(1), jnp.full(32, 42, dtype=jnp.uint8),
     )
+    scene = scene_input(config, identities, status, points=np.zeros((3, 3)), radii=np.zeros(3),
+                        mask=[occupied, False, False], tracks=[0, 0, 0])
     return module.prepare_scene(scene, identities)
 
 

@@ -304,7 +304,7 @@ def test_all_operations_reject_prepared_scene_from_previous_policy(change: str) 
             "evidence": "解析接触记录的序列化检查", "geometry_hash": (b"g" * 32).hex(),
         },))
     module = CollisionSafety(CollisionSafetyConfig.from_policy(policy))
-    prepared = jax.jit(module.prepare_scene)(_scene(), _identities(old_config))
+    prepared = module.prepare_scene(_scene(), _identities(old_config))
     assert int(prepared.status) == CollisionStatus.INVALID_SCENE
     query = module.query(_query_batch(), old_prepared, QueryMode.OSCBF_BARRIER)
     certificate = module.certify(_segment_batch(), old_prepared)
@@ -317,7 +317,7 @@ def test_all_operations_reject_prepared_scene_from_previous_policy(change: str) 
         geometry_hash=jnp.asarray(np.frombuffer(policy.geometry_hash, dtype=np.uint8)),
         kernel_version=jnp.asarray(np.frombuffer(policy.kernel_version, dtype=np.uint8)),
     )
-    current = module.prepare_scene(_scene(), current_identities)
+    current = module.prepare_scene(_scene(config=module.config, identities=current_identities), current_identities)
     assert int(current.status) == CollisionStatus.OK
 
 
