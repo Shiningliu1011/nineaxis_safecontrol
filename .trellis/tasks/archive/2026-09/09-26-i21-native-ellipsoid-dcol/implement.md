@@ -28,6 +28,8 @@
 
 [票尾验收证据](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/107#issuecomment-5843138448)已发布。票据已关闭，统一执行地图已增加本票的索引。
 
+交付提交：`84ad97dba341aceefcb775d4d347819eee91fe36`，已推送至 `origin/main`。本地和远端均仅保留 `main`；用户授权归档本任务。
+
 ## 交付边界
 
 独立规范及需求审查见 `research/review.md`，无待处理发现。当前内容遵循既有 ADR，没有需要提升到 `.trellis/spec/`、`CONTEXT.md` 或新 ADR 的决定。用户授权仅提交和推送本票改动、维护议题与地图并归档本任务，分支仅保留 `main`。提交范围限定为本票实现、测试、接口文档及 Trellis 记录；已有 T1 文件保持原状。
