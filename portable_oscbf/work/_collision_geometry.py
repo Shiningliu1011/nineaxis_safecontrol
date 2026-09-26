@@ -21,6 +21,8 @@ class _SelfGeometry:
     link_indices: jax.Array
     pairs: jax.Array
     margins: jax.Array
+    active_ids: jax.Array
+    slot_capacity: int
 
     @classmethod
     def from_artifact(cls, document: dict, policy: CollisionPolicy) -> _SelfGeometry:
@@ -104,4 +106,21 @@ class _SelfGeometry:
             jnp.asarray(link_indices, dtype=jnp.int32),
             jnp.asarray(pairs, dtype=jnp.int32).reshape((-1, 2)),
             jnp.asarray(margins, dtype=jnp.float64),
+            jnp.asarray(np.flatnonzero(active), dtype=jnp.int32),
+            capacity,
         )
+
+
+def _build_world_geometry(geometry: _SelfGeometry):
+    from work.nineaxis_manipulator_jax import NineaxisManipulatorJAX
+
+    robot = NineaxisManipulatorJAX()
+
+    def world_geometry(q: jax.Array) -> tuple[jax.Array, jax.Array]:
+        poses = robot._compute_all_link_transforms(q)[geometry.link_indices]
+        rotation = poses[:, :3, :3]
+        centers = jnp.einsum("nij,nj->ni", rotation, geometry.centers) + poses[:, :3, 3]
+        factors = rotation * geometry.radii[:, None, :]
+        return centers, factors
+
+    return world_geometry

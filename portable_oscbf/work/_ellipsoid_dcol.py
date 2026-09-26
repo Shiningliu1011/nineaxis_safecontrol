@@ -5,6 +5,8 @@ from typing import NamedTuple
 import jax
 import jax.numpy as jnp
 
+from work._collision_geometry import _build_world_geometry
+
 
 class _DcolResult(NamedTuple):
     scale: jax.Array
@@ -83,17 +85,8 @@ def _solve_pair(
 
 
 def _build_self_query(geometry, max_iterations: int, primal_limit: float, dual_limit: float):
-    from work.nineaxis_manipulator_jax import NineaxisManipulatorJAX
-
-    robot = NineaxisManipulatorJAX()
     pairs = geometry.pairs
-
-    def world_geometry(q: jax.Array) -> tuple[jax.Array, jax.Array]:
-        poses = robot._compute_all_link_transforms(q)[geometry.link_indices]
-        rotation = poses[:, :3, :3]
-        centers = jnp.einsum("nij,nj->ni", rotation, geometry.centers) + poses[:, :3, 3]
-        factors = rotation * geometry.radii[:, None, :]
-        return centers, factors
+    world_geometry = _build_world_geometry(geometry)
 
     def solve(ca, la, cb, lb):
         return _solve_pair(ca, la, cb, lb, max_iterations, primal_limit, dual_limit)

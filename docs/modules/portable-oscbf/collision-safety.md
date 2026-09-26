@@ -16,11 +16,11 @@
 
 ## 固定结果
 
-`QueryResult` 与 `SegmentCertificateBatch` 都包含 `ResultHeader`：status、scene epoch/revision、geometry/kernel/policy identity、开始时间、完成时间、运行时间、deadline 和超时标志。它们采用 JAX PyTree 可识别的 `NamedTuple` 结构。
+`QueryResult` 与 `SegmentCertificateBatch` 都包含 `ResultHeader`：status、scene epoch/revision、geometry/kernel/policy identity、场景采集时间 `source_stamp_ns`、查询开始时间、完成时间、运行时间、deadline 和超时标志。成功与失败结果均携带输入场景的采集时间。它们采用 JAX PyTree 可识别的 `NamedTuple` 结构。
 
 `QueryResult` 的 OSCBF 字段包括 `valid_mask`、`barrier`、`grad_h_q`、`partial_h_partial_t`、`proximity_scale`、primitive pair identity、solver residual、iteration 和 health。状态有效性与毫米距离各有独立的有效 mask。`SegmentCertificateBatch` 包含区间有效 mask、证明结果、下界、二分深度和失败区间。所有未测量字段的有效 mask 均为 `False`；数值槽位不能单独说明安全。
 
-`query` 已支持原生 JAX ellipsoid–ellipsoid self DCOL。`certify` 仍返回 `CERTIFICATE_FAILED`，环境 point-scale 与毫米距离等待对应能力接入。场景已有的非 `OK` 状态会进入结果 header；超过 deadline 时返回 `DEADLINE_MISSED`。输入 shape、dtype、配置或 `query_mode` 不合法时，公开方法直接抛出异常。
+`query` 支持原生 JAX ellipsoid–ellipsoid self DCOL、environment point-scale 与独立毫米距离。`certify` 仍返回 `CERTIFICATE_FAILED`。场景已有的非 `OK` 状态会进入结果 header；超过 deadline 时返回 `DEADLINE_MISSED`。输入 shape、dtype、配置或 `query_mode` 不合法时，公开方法直接抛出异常。
 
 ## Self DCOL
 
@@ -36,7 +36,7 @@ Interface 将 `clearance_mm` 乘以 `1e-3`，再计算
 
 `solver_primal_residual` 是 witness 超过原始 ellipsoid scaling inequality 的最大量；`solver_dual_residual` 汇集归一化 stationarity、dual 权重归一性、双方 scaling 一致性、complementarity 和线性方程 residual。两个 residual 都采用无量纲值，阈值和最大二分次数来自 parameter artifact。`solver_iteration` 记录初始中点之后的二分次数。只有全部数值与梯度有限、两个 residual 均在限值内且梯度有定义时，`solver_healthy` 才有效。中心重合时 scale 为零，线性 scale 梯度不唯一，该 pair 返回无效 health。
 
-在 scene 为 `OK`、没有有效 environment support、全部活动 self pair 健康且查询未超时时，`STATE_VALIDITY` 与 `OSCBF_BARRIER` 返回 `OK`；`state_valid` 另外要求所有 self barrier 非负。带有有效 environment support 的查询当前提供 self 数值诊断并返回非 `OK`，全部准入 mask 无效。缺少 geometry、请求尚未实现的距离模式或任一活动 pair 未收敛时，同样返回非 `OK`。查询测量包含等待 device 计算完成的时间；首次 JIT 编译也计入 deadline，调用方应在进入周期任务前完成预热。
+在 scene 为 `OK`、全部活动 self/environment pair 健康、容量充足且查询未超时时，`STATE_VALIDITY` 与 `OSCBF_BARRIER` 返回 `OK`；`state_valid` 另外要求所有 barrier 非负。缺少 geometry 或任一活动 pair 未收敛时返回非 `OK`。查询测量包含等待 device 计算完成的时间；首次 JIT 编译也计入 deadline，调用方应在进入周期任务前完成预热。
 
 数值测试通过三个公开操作调用真实求解器，涵盖解析球体、轴向 ellipsoid、80 位独立 KKT 参考、九轴差分梯度、相反危险方向、生产资产全部 45 个 pair、迭代上限与拒绝路径。安装高精度测试依赖使用 `portable_oscbf/requirements-collision-test.txt`。
 
@@ -47,3 +47,25 @@ python3 portable_oscbf/tests/reference/ellipsoid_dcol/generate.py --julia <julia
 ```
 
 本地数值证据不授予生产命令权限；目标设备 deadline 继续由独立验收处理。
+
+## Environment point-scale
+
+support 的中心坐标使用米；`support_radii_mm` 表示 occupied 包络半径 `rho_mm`，`required_clearance_mm` 单独保存。Interface 集中转换为米。对局部坐标 `u = R.T @ (support - center)`，计算 `point_scale_sq = sum((u / radii)^2)` 和
+`barrier = point_scale_sq - (1 + (rho_m + required_clearance_m) / min(radii))^2`。
+`proximity_scale` 返回线性 point scale。`grad_h_q` 由共享九轴运动学求导；`partial_h_partial_t` 包含输入 support 名义速度的解析贡献。
+
+每个有效 ellipsoid 与每个有效 support 都保留独立行。self 行之后按 geometry slot、support 输入位置排列环境行。`primitive_kind` 用 `PrimitiveKind.SELF` 与 `PrimitiveKind.ENVIRONMENT` 区分；环境 `primitive_pair_id` 保存机器人 primitive id 与 support id。未使用的 kind 为 `-1`，对应 mask 无效。活动 support id 必须非负且唯一。
+
+当前完整保留环境 pair，任何 pair 均没有省略证明。有效 support 数量超过 `max_environment_pairs_per_ellipsoid`，或 self 与 environment 总行数超过 `max_primitive_rows` 时，返回 `CONSTRAINT_OVERFLOW` 并清除全部准入 mask。后续活动集合、动态误差和连续证明按执行地图接入；本次数值查询不连接生产命令。
+
+## 独立毫米距离
+
+`QueryMode.DISTANCE_MM` 对全部有效 ellipsoid–support pair 求有符号欧氏距离，返回其中最小值。距离使用 ellipsoid 到 support 中心的有符号距离减去 `rho_m`；要求间距单独用于 `remaining_margin_mm = distance_mm - required_clearance_mm`。正值表示分离，零表示接触，负值表示所选保守 pair 相交。组合几何相交时输出最小 pair 的有符号距离。
+
+内部最近点求解采用单调 secular equation，处理内部点、中心、轴上点及重复最短半轴；几何依据见 [Eberly 的点到 ellipsoid 距离推导](https://geometrictools.com/Documentation/DistancePointEllipseEllipsoid.pdf)。迭代次数采用 artifact 的 `distance_max_iterations`，根区间 witness 误差界限采用 `distance_tolerance_mm`。超出次数仍不能满足误差界限时返回 `SOLVER_UNHEALTHY`。
+
+`nearest_pair_id` 保存 robot primitive id 与 support id；`nearest_link_index` 是 geometry artifact 的 link 顺序，`nearest_ellipsoid_slot` 是该 link 的槽位。`nearest_robot_point_m` 与 `nearest_support_point_m` 使用机器人规范坐标系和米，分别位于 ellipsoid 表面与 support sphere 表面。距离相等时按固定 primitive/support 顺序选择。
+
+`CollisionScene.support_track_status` 与 `PreparedScene.support_track_status` 为固定长度 `int32` 数组，取值 `SupportTrackStatus.UNTRACKED` 或 `SupportTrackStatus.TRACKED`。距离结果的 `track_status` 直接携带所选 support 的状态，独立于速度数值。
+
+距离模式只启用 `distance_valid_mask`，`valid_mask`、`state_valid_mask`、`state_valid` 和 solver/barrier 命令字段保持无效。空 support 场景返回 `OK` 与无效距离 mask，数值槽位不表示已测量间距。距离模式不受 barrier 行容量限制。任一活动距离 pair 无效、scene 不健康或查询超时，距离 mask 同样无效。

@@ -69,9 +69,12 @@ def _module(document, clearance_mm=1.0, **limits):
 def _prepared(module, status=CollisionStatus.OK, occupied=False):
     config = module.config
     scene = CollisionScene(
-        jnp.zeros((3, 3)), jnp.zeros(3), jnp.full(3, 30.0), jnp.zeros((3, 3)),
+        jnp.zeros((3, 3)), jnp.zeros(3),
+        jnp.full(3, config.policy.artifact.parameters["environment_clearance_mm"]["value"]),
+        jnp.zeros((3, 3)),
         jnp.arange(3, dtype=jnp.int32), jnp.array([occupied, False, False]),
         jnp.int64(100), jnp.int64(120), jnp.int32(status),
+        jnp.zeros(3, dtype=jnp.int32),
     )
     identities = CollisionIdentities(
         jnp.ones(16, dtype=jnp.uint8), jnp.int64(1),
@@ -181,7 +184,7 @@ def test_query_unconverged_and_concentric_are_unhealthy():
             assert result.proximity_scale[0, 0] == 0
 
 
-def test_query_masks_modes_deadline_and_unimplemented_environment():
+def test_query_masks_modes_deadline_and_empty_distance():
     doc = _geometry(["base_link", "Link1"], [[0, 0, 0], [0.2, 0, 0]], [[0.03]*3, [0.03]*3], capacity=2)
     module = _module(doc)
     _query(module)
@@ -190,11 +193,9 @@ def test_query_masks_modes_deadline_and_unimplemented_environment():
     assert np.array_equal(result.primitive_pair_id[0, 0], [0, 2])
     assert np.array_equal(result.valid_mask, [[True, False, False, False], [False]*4])
     assert np.array_equal(result.state_valid, [True, False])
-    for mode, occupied in ((QueryMode.DISTANCE_MM, False), (QueryMode.OSCBF_BARRIER, True)):
-        invalid = _query(module, mode=mode, occupied=occupied)
-        assert int(invalid.header.status) != CollisionStatus.OK
-        assert not np.any(invalid.valid_mask)
-        assert not np.any(invalid.distance_valid_mask)
+    empty = _query(module, mode=QueryMode.DISTANCE_MM)
+    assert not np.any(empty.valid_mask)
+    assert not np.any(empty.distance_valid_mask)
     late = _query(_module(doc, query_deadline_ns=1))
     assert int(late.header.status) == CollisionStatus.DEADLINE_MISSED
     assert not np.any(late.valid_mask)

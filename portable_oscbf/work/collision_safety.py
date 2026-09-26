@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import IntEnum
+from functools import partial
 import time
 from typing import NamedTuple
 
@@ -13,6 +14,7 @@ from work.kinematics_data import N_JOINTS
 from work.collision_parameters import CollisionPolicy
 from work._collision_geometry import _SelfGeometry
 from work._ellipsoid_dcol import _build_self_query
+from work._ellipsoid_point import _build_environment_queries
 
 
 class CollisionStatus(IntEnum):
@@ -31,6 +33,16 @@ class QueryMode(IntEnum):
     STATE_VALIDITY = 0
     OSCBF_BARRIER = 1
     DISTANCE_MM = 2
+
+
+class SupportTrackStatus(IntEnum):
+    UNTRACKED = 0
+    TRACKED = 1
+
+
+class PrimitiveKind(IntEnum):
+    SELF = 0
+    ENVIRONMENT = 1
 
 
 @dataclass(frozen=True, slots=True)
@@ -104,6 +116,7 @@ class CollisionScene(NamedTuple):
     source_stamp_ns: jax.Array
     prepared_stamp_ns: jax.Array
     status: jax.Array
+    support_track_status: jax.Array
 
 
 class PreparedScene(NamedTuple):
@@ -117,6 +130,7 @@ class PreparedScene(NamedTuple):
     prepared_stamp_ns: jax.Array
     identities: CollisionIdentities
     status: jax.Array
+    support_track_status: jax.Array
 
 
 class QueryBatch(NamedTuple):
@@ -139,6 +153,7 @@ class ResultHeader(NamedTuple):
     geometry_hash: jax.Array
     kernel_version: jax.Array
     collision_policy_hash: jax.Array
+    source_stamp_ns: jax.Array
     started_ns: jax.Array
     completed_ns: jax.Array
     runtime_ns: jax.Array
@@ -157,6 +172,7 @@ class QueryResult(NamedTuple):
     partial_h_partial_t: jax.Array
     proximity_scale: jax.Array
     primitive_pair_id: jax.Array
+    primitive_kind: jax.Array
     solver_primal_residual: jax.Array
     solver_dual_residual: jax.Array
     solver_iteration: jax.Array
@@ -166,6 +182,8 @@ class QueryResult(NamedTuple):
     required_clearance_mm: jax.Array
     remaining_margin_mm: jax.Array
     nearest_pair_id: jax.Array
+    nearest_link_index: jax.Array
+    nearest_ellipsoid_slot: jax.Array
     nearest_robot_point_m: jax.Array
     nearest_support_point_m: jax.Array
     track_status: jax.Array
@@ -205,6 +223,8 @@ class CollisionSafety:
         )
         self._self_geometry = None
         self._self_query = None
+        self._environment_query = None
+        self._distance_query = None
         if geometry_artifact is not None:
             self._self_geometry = _SelfGeometry.from_artifact(geometry_artifact, config.policy)
             parameters = config.policy.artifact.parameters
@@ -213,6 +233,10 @@ class CollisionSafety:
                 parameters["dcol_max_iterations"]["value"],
                 parameters["dcol_primal_residual_limit"]["value"],
                 parameters["dcol_dual_residual_limit"]["value"],
+            )
+            self._environment_query, self._distance_query = _build_environment_queries(
+                self._self_geometry, parameters["distance_max_iterations"]["value"],
+                parameters["distance_tolerance_mm"]["value"] * 1e-3,
             )
 
     @property
@@ -250,6 +274,8 @@ class CollisionSafety:
         )
         ids = _array(scene.support_ids, "scene.support_ids", (count,), (jnp.dtype("int32"),))
         mask = _array(scene.support_mask, "scene.support_mask", (count,), (jnp.dtype("bool"),))
+        track = _array(scene.support_track_status, "scene.support_track_status", (count,),
+                       (jnp.dtype("int32"),))
         source_stamp = _array(
             scene.source_stamp_ns, "scene.source_stamp_ns", (), (jnp.dtype("int64"),)
         )
@@ -277,7 +303,7 @@ class CollisionSafety:
         )
         checked_identities = CollisionIdentities(epoch, revision, geometry, kernel, policy)
         checked_scene = CollisionScene(
-            points, radii, clearance, velocity, ids, mask, source_stamp, prepared_stamp, source_status
+            points, radii, clearance, velocity, ids, mask, source_stamp, prepared_stamp, source_status, track
         )
         valid = self._scene_values_valid(checked_scene, checked_identities)
         status = jnp.where(valid, source_status, int(CollisionStatus.INVALID_SCENE)).astype(jnp.int32)
@@ -292,6 +318,7 @@ class CollisionSafety:
             prepared_stamp,
             checked_identities,
             status,
+            track,
         )
 
     def query(
@@ -322,6 +349,7 @@ class CollisionSafety:
             partial_h_partial_t=jnp.zeros((batch, rows), dtype=jnp.float64),
             proximity_scale=jnp.zeros((batch, rows), dtype=jnp.float64),
             primitive_pair_id=jnp.zeros((batch, rows, 2), dtype=jnp.int32),
+            primitive_kind=jnp.full((batch, rows), -1, dtype=jnp.int32),
             solver_primal_residual=jnp.zeros((batch, rows), dtype=jnp.float64),
             solver_dual_residual=jnp.zeros((batch, rows), dtype=jnp.float64),
             solver_iteration=jnp.zeros((batch, rows), dtype=jnp.int32),
@@ -331,41 +359,128 @@ class CollisionSafety:
             required_clearance_mm=jnp.zeros((batch,), dtype=jnp.float64),
             remaining_margin_mm=jnp.zeros((batch,), dtype=jnp.float64),
             nearest_pair_id=jnp.zeros((batch, 2), dtype=jnp.int32),
+            nearest_link_index=jnp.zeros((batch,), dtype=jnp.int32),
+            nearest_ellipsoid_slot=jnp.zeros((batch,), dtype=jnp.int32),
             nearest_robot_point_m=jnp.zeros((batch, 3), dtype=jnp.float64),
             nearest_support_point_m=jnp.zeros((batch, 3), dtype=jnp.float64),
             track_status=jnp.zeros((batch,), dtype=jnp.int32),
         )
         if (scene_status is CollisionStatus.OK and self._self_query is not None
                 and query_mode is not QueryMode.DISTANCE_MM):
-            geometry = self._self_geometry
-            solved, gradient = self._self_query(q)
-            n = geometry.pairs.shape[0]
-            row_mask = active[:, None] & solved.healthy
-            barrier = solved.scale - geometry.margins
-            for name, value in (
-                ("barrier", barrier), ("grad_h_q", gradient),
-                ("proximity_scale", solved.scale),
-                ("primitive_pair_id", jnp.broadcast_to(geometry.pairs, (batch, n, 2))),
-                ("solver_primal_residual", solved.primal), ("solver_dual_residual", solved.dual),
-                ("solver_iteration", solved.iteration), ("solver_healthy", row_mask),
-            ):
-                result_fields[name] = result_fields[name].at[:, :n].set(value)
-            complete = bool(np.all(np.asarray(~active[:, None] | solved.healthy)))
-            complete = complete and not bool(np.any(np.asarray(prepared_scene.support_mask)))
-            if complete:
-                status = CollisionStatus.OK
-                result_fields["valid_mask"] = result_fields["valid_mask"].at[:, :n].set(row_mask)
-                result_fields["state_valid_mask"] = active
-                result_fields["state_valid"] = active & jnp.all(barrier >= 0.0, axis=1)
+            barrier_status, result_fields = self._barrier_payload(q, active, prepared_scene, result_fields)
+            status = CollisionStatus(int(barrier_status))
+        elif (scene_status is CollisionStatus.OK and self._distance_query is not None
+              and query_mode is QueryMode.DISTANCE_MM):
+            distance_status, result_fields = self._distance_payload(q, active, prepared_scene, result_fields)
+            status = CollisionStatus(int(distance_status))
         jax.block_until_ready(result_fields)
         completed_ns = time.perf_counter_ns()
         header = self._header(
-            status, prepared_scene.identities, started_ns, completed_ns, self.config.query_deadline_ns
+            status, prepared_scene.identities, prepared_scene.source_stamp_ns,
+            started_ns, completed_ns, self.config.query_deadline_ns
         )
         if int(header.status) != CollisionStatus.OK:
             for name in ("valid_mask", "state_valid_mask", "state_valid", "distance_valid_mask"):
                 result_fields[name] = jnp.zeros_like(result_fields[name])
         return QueryResult(header=header, **result_fields)
+
+    @partial(jax.jit, static_argnums=0)
+    def _barrier_payload(self, q, active, scene, fields):
+        geometry = self._self_geometry
+        batch = self.config.query_batch_size
+        solved, gradient = self._self_query(q)
+        n = geometry.pairs.shape[0]
+        row_mask = active[:, None] & solved.healthy
+        barrier = solved.scale - geometry.margins
+        for name, value in (
+            ("barrier", barrier), ("grad_h_q", gradient),
+            ("proximity_scale", solved.scale),
+            ("primitive_pair_id", jnp.broadcast_to(geometry.pairs, (batch, n, 2))),
+            ("primitive_kind", jnp.full((batch, n), int(PrimitiveKind.SELF), dtype=jnp.int32)),
+            ("solver_primal_residual", solved.primal), ("solver_dual_residual", solved.dual),
+            ("solver_iteration", solved.iteration), ("solver_healthy", row_mask),
+        ):
+            fields[name] = fields[name].at[:, :n].set(value)
+        environment_complete, overflow, environment_safe, fields = jax.lax.cond(
+            jnp.any(scene.support_mask),
+            lambda fields: self._environment_payload(q, active, scene, fields, n),
+            lambda fields: (jnp.bool_(True), jnp.bool_(False), jnp.ones(batch, dtype=jnp.bool_), fields),
+            fields,
+        )
+        complete = jnp.all(~active[:, None] | solved.healthy) & environment_complete
+        status = jnp.where(overflow, int(CollisionStatus.CONSTRAINT_OVERFLOW),
+                           jnp.where(complete, int(CollisionStatus.OK), int(CollisionStatus.SOLVER_UNHEALTHY)))
+        fields["valid_mask"] = fields["valid_mask"].at[:, :n].set(row_mask)
+        fields["state_valid_mask"] = active
+        fields["state_valid"] = active & jnp.all(barrier >= 0.0, axis=1) & environment_safe
+        return status, fields
+
+    @partial(jax.jit, static_argnums=(0, 5))
+    def _environment_payload(self, q, active, scene, fields, offset):
+        batch = self.config.query_batch_size
+        geometry = self._self_geometry
+        support_count = self.config.max_support_points
+        pair_mask = jnp.broadcast_to(scene.support_mask, (geometry.active_ids.size, support_count)).ravel()
+        count = jnp.sum(pair_mask)
+        capacity = self.config.max_primitive_rows - offset
+        support_limit = self.config.policy.artifact.parameters["max_environment_pairs_per_ellipsoid"]["value"]
+        overflow = (count > capacity) | (jnp.sum(scene.support_mask) > support_limit)
+        solved = self._environment_query(
+            q, scene.support_points_m, scene.support_radii_mm * 1e-3,
+            scene.required_clearance_mm * 1e-3, scene.support_velocity_m_s,
+        )
+        healthy = solved.healthy.reshape((batch, -1))
+        complete = jnp.all(~active[:, None] | ~pair_mask[None, :] | healthy)
+        safe = jnp.all(~pair_mask[None, :] | (solved.barrier.reshape((batch, -1)) >= 0.0), axis=1)
+        indices = jnp.nonzero(pair_mask, size=capacity, fill_value=0)[0]
+        used = jnp.arange(capacity) < count
+        row_mask = active[:, None] & used[None, :] & healthy[:, indices]
+        robot_ids = jnp.repeat(geometry.active_ids, support_count)
+        support_ids = jnp.tile(scene.support_ids, geometry.active_ids.size)
+        pair_ids = jnp.stack((robot_ids, support_ids), axis=-1)[indices]
+        for name, value in (
+            ("barrier", solved.barrier.reshape((batch, -1))[:, indices]),
+            ("grad_h_q", solved.gradient.reshape((batch, -1, N_JOINTS))[:, indices]),
+            ("proximity_scale", solved.scale.reshape((batch, -1))[:, indices]),
+            ("partial_h_partial_t", solved.time_derivative.reshape((batch, -1))[:, indices]),
+            ("primitive_pair_id", jnp.broadcast_to(pair_ids, (batch, capacity, 2))),
+            ("primitive_kind", jnp.broadcast_to(jnp.where(used, int(PrimitiveKind.ENVIRONMENT), -1),
+                                                (batch, capacity))),
+            ("solver_healthy", row_mask), ("valid_mask", row_mask),
+        ):
+            fields[name] = fields[name].at[:, offset:].set(value)
+        return complete, overflow, safe, fields
+
+    @partial(jax.jit, static_argnums=0)
+    def _distance_payload(self, q, active, scene, fields):
+        solved = self._distance_query(q, scene.support_points_m, scene.support_radii_mm * 1e-3)
+        pair_mask = jnp.broadcast_to(scene.support_mask, solved.distance.shape)
+        complete = jnp.all(~active[:, None, None] | ~pair_mask | solved.healthy)
+        measured = jnp.any(scene.support_mask)
+        batch = self.config.query_batch_size
+        indices = jnp.argmin(jnp.where(pair_mask, solved.distance, jnp.inf).reshape((batch, -1)), axis=1)
+        support_index = indices % self.config.max_support_points
+        robot_id = self._self_geometry.active_ids[indices // self.config.max_support_points]
+        rows = jnp.arange(batch)
+        distance = solved.distance.reshape((batch, -1))[rows, indices] * 1e3
+        clearance = scene.required_clearance_mm[support_index]
+        fields.update(
+            distance_valid_mask=active & complete & measured,
+            distance_mm=distance, required_clearance_mm=clearance,
+            remaining_margin_mm=distance - clearance,
+            nearest_pair_id=jnp.stack((robot_id, scene.support_ids[support_index]), axis=-1),
+            nearest_link_index=robot_id // self._self_geometry.slot_capacity,
+            nearest_ellipsoid_slot=robot_id % self._self_geometry.slot_capacity,
+            nearest_robot_point_m=solved.robot_point.reshape((batch, -1, 3))[rows, indices],
+            nearest_support_point_m=solved.support_point.reshape((batch, -1, 3))[rows, indices],
+            track_status=scene.support_track_status[support_index],
+        )
+        for name in ("distance_mm", "required_clearance_mm", "remaining_margin_mm", "nearest_pair_id",
+                     "nearest_link_index", "nearest_ellipsoid_slot", "nearest_robot_point_m",
+                     "nearest_support_point_m", "track_status"):
+            fields[name] = jnp.where(measured, fields[name], jnp.zeros_like(fields[name]))
+        status = jnp.where(complete, int(CollisionStatus.OK), int(CollisionStatus.SOLVER_UNHEALTHY))
+        return status, fields
 
     def certify(
         self, segment_batch: SegmentBatch, prepared_scene: PreparedScene
@@ -408,7 +523,8 @@ class CollisionSafety:
         )
         completed_ns = time.perf_counter_ns()
         header = self._header(
-            status, prepared_scene.identities, started_ns, completed_ns, self.config.certify_deadline_ns
+            status, prepared_scene.identities, prepared_scene.source_stamp_ns,
+            started_ns, completed_ns, self.config.certify_deadline_ns
         )
         return SegmentCertificateBatch(header=header, **result_fields)
 
@@ -452,6 +568,8 @@ class CollisionSafety:
             (count,),
             (jnp.dtype("bool"),),
         )
+        _array(prepared_scene.support_track_status, "prepared_scene.support_track_status", (count,),
+               (jnp.dtype("int32"),))
         _array(
             prepared_scene.source_stamp_ns,
             "prepared_scene.source_stamp_ns",
@@ -488,6 +606,7 @@ class CollisionSafety:
         _array(prepared_scene.status, "prepared_scene.status", (), (jnp.dtype("int32"),))
         CollisionStatus(int(np.asarray(prepared_scene.status)))
 
+    @partial(jax.jit, static_argnums=0)
     def _scene_values_valid(
         self, scene: CollisionScene | PreparedScene, identities: CollisionIdentities
     ) -> jax.Array:
@@ -499,6 +618,14 @@ class CollisionSafety:
             & jnp.all(jnp.isfinite(scene.support_velocity_m_s))
             & jnp.all(scene.support_radii_mm >= 0.0)
             & jnp.all(scene.required_clearance_mm >= 0.0)
+            & jnp.all(jnp.isin(scene.support_track_status, jnp.asarray(
+                [int(item) for item in SupportTrackStatus], dtype=jnp.int32)))
+            & jnp.all(~scene.support_mask | (scene.support_ids >= 0))
+            & ~jnp.any(
+                (scene.support_ids[:, None] == scene.support_ids[None, :])
+                & scene.support_mask[:, None] & scene.support_mask[None, :]
+                & ~jnp.eye(self.config.max_support_points, dtype=jnp.bool_)
+            )
             & (scene.source_stamp_ns > 0)
             & (scene.prepared_stamp_ns >= scene.source_stamp_ns)
             & jnp.any(identities.scene_epoch != 0)
@@ -527,6 +654,7 @@ class CollisionSafety:
     def _header(
         status: CollisionStatus,
         identities: CollisionIdentities,
+        source_stamp_ns: jax.Array,
         started_ns: int,
         completed_ns: int,
         deadline_ns: int,
@@ -542,6 +670,7 @@ class CollisionSafety:
             geometry_hash=identities.geometry_hash,
             kernel_version=identities.kernel_version,
             collision_policy_hash=identities.collision_policy_hash,
+            source_stamp_ns=source_stamp_ns,
             started_ns=jnp.asarray(started_ns, dtype=jnp.int64),
             completed_ns=jnp.asarray(completed_ns, dtype=jnp.int64),
             runtime_ns=jnp.asarray(runtime_ns, dtype=jnp.int64),

@@ -60,6 +60,7 @@ def _scene(status: CollisionStatus = CollisionStatus.OK) -> CollisionScene:
         source_stamp_ns=jnp.asarray(100, dtype=jnp.int64),
         prepared_stamp_ns=jnp.asarray(120, dtype=jnp.int64),
         status=jnp.asarray(int(status), dtype=jnp.int32),
+        support_track_status=jnp.asarray([0, 1, 0], dtype=jnp.int32),
     )
 
 
@@ -112,6 +113,7 @@ def test_query_returns_fixed_fail_closed_result_for_each_mode(mode: QueryMode) -
     assert not np.any(np.asarray(result.distance_valid_mask))
     assert not np.any(np.asarray(compiled_result.valid_mask))
     assert int(result.header.scene_revision) == 7
+    assert int(result.header.source_stamp_ns) == 100
     assert np.array_equal(np.asarray(result.header.geometry_hash), np.frombuffer(b"g" * 32, dtype=np.uint8))
     assert int(result.header.started_ns) <= int(result.header.completed_ns)
     assert int(result.header.runtime_ns) == (
@@ -131,6 +133,7 @@ def test_certify_returns_fixed_unproved_result() -> None:
     assert result.lower_bound.shape == (2,)
     assert result.failure_interval_s.shape == (2, 2)
     assert result.lower_bound.dtype == jnp.float64
+    assert int(result.header.source_stamp_ns) == 100
     assert not np.any(np.asarray(result.valid_mask))
     assert not np.any(np.asarray(result.certified_mask))
     assert not np.any(np.asarray(compiled_result.certified_mask))
