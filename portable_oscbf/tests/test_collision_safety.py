@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from dataclasses import replace
 import os
 import subprocess
 import sys
@@ -9,6 +10,9 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import pytest
+
+from collision_parameter_inputs import DEVICE, SCENARIO, parameter_payload
+from work.collision_parameters import CollisionParameterArtifact, CollisionPolicy
 
 from work.collision_safety import (
     CollisionIdentities,
@@ -23,28 +27,23 @@ from work.collision_safety import (
 
 
 def _config(**changes: object) -> CollisionSafetyConfig:
-    values = dict(
-        max_support_points=3,
-        query_batch_size=2,
-        max_primitive_rows=4,
-        segment_batch_size=2,
-        query_deadline_ns=60_000_000_000,
-        certify_deadline_ns=60_000_000_000,
-        geometry_hash=b"g" * 32,
-        kernel_version=b"k" * 32,
-        collision_policy_hash=b"p" * 32,
+    payload = parameter_payload()
+    for name, value in changes.items():
+        payload["parameters"][name]["value"] = value
+    artifact = CollisionParameterArtifact.create(payload, device=DEVICE, scenario=SCENARIO)
+    return CollisionSafetyConfig.from_policy(
+        CollisionPolicy(artifact, geometry_hash=b"g" * 32, kernel_version=b"k" * 32)
     )
-    values.update(changes)
-    return CollisionSafetyConfig(**values)
 
 
-def _identities() -> CollisionIdentities:
+def _identities(config: CollisionSafetyConfig | None = None) -> CollisionIdentities:
+    config = config or _config()
     return CollisionIdentities(
         scene_epoch=jnp.asarray([1] + [0] * 15, dtype=jnp.uint8),
         scene_revision=jnp.asarray(7, dtype=jnp.int64),
         geometry_hash=jnp.asarray(np.frombuffer(b"g" * 32, dtype=np.uint8)),
         kernel_version=jnp.asarray(np.frombuffer(b"k" * 32, dtype=np.uint8)),
-        collision_policy_hash=jnp.asarray(np.frombuffer(b"p" * 32, dtype=np.uint8)),
+        collision_policy_hash=jnp.asarray(np.frombuffer(config.collision_policy_hash, dtype=np.uint8)),
     )
 
 
@@ -100,7 +99,8 @@ def test_query_returns_fixed_fail_closed_result_for_each_mode(mode: QueryMode) -
     result = module.query(_query_batch(), prepared, mode)
     compiled_result = jax.jit(lambda value: value)(result)
 
-    assert int(result.header.status) == CollisionStatus.SOLVER_UNHEALTHY
+    expected = CollisionStatus.DEADLINE_MISSED if bool(result.header.deadline_missed) else CollisionStatus.SOLVER_UNHEALTHY
+    assert int(result.header.status) == expected
     assert int(result.query_mode) == mode
     assert result.valid_mask.shape == (2, 4)
     assert result.grad_h_q.shape == (2, 4, 9)
@@ -117,7 +117,7 @@ def test_query_returns_fixed_fail_closed_result_for_each_mode(mode: QueryMode) -
     assert int(result.header.runtime_ns) == (
         int(result.header.completed_ns) - int(result.header.started_ns)
     )
-    assert not bool(result.header.deadline_missed)
+    assert bool(result.header.deadline_missed) == (int(result.header.runtime_ns) > module.config.query_deadline_ns)
 
 
 def test_certify_returns_fixed_unproved_result() -> None:
@@ -145,6 +145,8 @@ def test_all_public_status_codes_preserve_fail_closed_masks(status: CollisionSta
 
     assert int(prepared.status) == status
     expected_query = CollisionStatus.SOLVER_UNHEALTHY if status is CollisionStatus.OK else status
+    if bool(query.header.deadline_missed):
+        expected_query = CollisionStatus.DEADLINE_MISSED
     expected_certificate = CollisionStatus.CERTIFICATE_FAILED if status is CollisionStatus.OK else status
     assert int(query.header.status) == expected_query
     assert int(certificate.header.status) == expected_certificate
@@ -154,7 +156,7 @@ def test_all_public_status_codes_preserve_fail_closed_masks(status: CollisionSta
 
 def test_deadline_miss_overrides_unavailable_kernel_status() -> None:
     module = CollisionSafety(_config(query_deadline_ns=1, certify_deadline_ns=1))
-    prepared = module.prepare_scene(_scene(), _identities())
+    prepared = module.prepare_scene(_scene(), _identities(module.config))
     query = module.query(_query_batch(), prepared, QueryMode.STATE_VALIDITY)
     certificate = module.certify(_segment_batch(), prepared)
 
@@ -178,7 +180,10 @@ def test_invalid_scene_values_and_identity_return_invalid_scene() -> None:
     for scene, identities in ((invalid_points, _identities()), (_scene(), invalid_identity)):
         prepared = module.prepare_scene(scene, identities)
         assert int(prepared.status) == CollisionStatus.INVALID_SCENE
-        assert int(module.query(_query_batch(), prepared, QueryMode.OSCBF_BARRIER).header.status) == CollisionStatus.INVALID_SCENE
+        query = module.query(_query_batch(), prepared, QueryMode.OSCBF_BARRIER)
+        assert int(query.header.status) == (
+            CollisionStatus.DEADLINE_MISSED if bool(query.header.deadline_missed) else CollisionStatus.INVALID_SCENE
+        )
 
 
 def test_invalid_shape_dtype_mode_and_numeric_batch_fail_at_interface() -> None:
@@ -218,7 +223,7 @@ def test_invalid_shape_dtype_mode_and_numeric_batch_fail_at_interface() -> None:
 )
 def test_invalid_configuration_is_rejected(changes: dict[str, object]) -> None:
     with pytest.raises(ValueError):
-        CollisionSafety(_config(**changes))
+        CollisionSafety(replace(_config(), **changes))
 
 
 def test_collision_safety_operations_run_without_ros() -> None:

@@ -10,6 +10,7 @@ import jax.numpy as jnp
 import numpy as np
 
 from work.kinematics_data import N_JOINTS
+from work.collision_parameters import CollisionPolicy
 
 
 class CollisionStatus(IntEnum):
@@ -30,8 +31,9 @@ class QueryMode(IntEnum):
     DISTANCE_MM = 2
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class CollisionSafetyConfig:
+    policy: CollisionPolicy
     max_support_points: int
     query_batch_size: int
     max_primitive_rows: int
@@ -42,7 +44,25 @@ class CollisionSafetyConfig:
     kernel_version: bytes
     collision_policy_hash: bytes
 
+    @classmethod
+    def from_policy(cls, policy: CollisionPolicy) -> CollisionSafetyConfig:
+        if not isinstance(policy, CollisionPolicy):
+            raise TypeError("policy must be CollisionPolicy")
+        parameters = policy.artifact.parameters
+        return cls(
+            **{name: parameters[name]["value"] for name in (
+                "max_support_points", "query_batch_size", "max_primitive_rows",
+                "segment_batch_size", "query_deadline_ns", "certify_deadline_ns",
+            )},
+            geometry_hash=policy.geometry_hash,
+            kernel_version=policy.kernel_version,
+            collision_policy_hash=policy.collision_policy_hash,
+            policy=policy,
+        )
+
     def __post_init__(self) -> None:
+        if not isinstance(self.policy, CollisionPolicy):
+            raise TypeError("policy must be CollisionPolicy")
         for name in (
             "max_support_points",
             "query_batch_size",
@@ -54,10 +74,14 @@ class CollisionSafetyConfig:
             value = getattr(self, name)
             if type(value) is not int or value <= 0:
                 raise ValueError(f"{name} must be a positive integer")
+            if value != self.policy.artifact.parameters[name]["value"]:
+                raise ValueError(f"{name} cannot override the parameter artifact")
         for name in ("geometry_hash", "kernel_version", "collision_policy_hash"):
             value = getattr(self, name)
             if type(value) is not bytes or len(value) != 32:
                 raise ValueError(f"{name} must contain 32 bytes")
+            if value != getattr(self.policy, name):
+                raise ValueError(f"{name} cannot override the collision policy")
 
 
 class CollisionIdentities(NamedTuple):
@@ -171,12 +195,16 @@ class CollisionSafety:
         jax.config.update("jax_enable_x64", True)
         if not jax.config.jax_enable_x64:
             raise RuntimeError("CollisionSafety requires JAX x64")
-        self.config = config
+        self._config = config
         self._geometry_hash = jnp.asarray(np.frombuffer(config.geometry_hash, dtype=np.uint8))
         self._kernel_version = jnp.asarray(np.frombuffer(config.kernel_version, dtype=np.uint8))
         self._collision_policy_hash = jnp.asarray(
             np.frombuffer(config.collision_policy_hash, dtype=np.uint8)
         )
+
+    @property
+    def config(self) -> CollisionSafetyConfig:
+        return self._config
 
     def prepare_scene(
         self, scene: CollisionScene, identities: CollisionIdentities
@@ -234,22 +262,11 @@ class CollisionSafety:
             (32,),
             (jnp.dtype("uint8"),),
         )
-        valid = (
-            jnp.all(jnp.isfinite(points))
-            & jnp.all(jnp.isfinite(radii))
-            & jnp.all(jnp.isfinite(clearance))
-            & jnp.all(jnp.isfinite(velocity))
-            & jnp.all(radii >= 0.0)
-            & jnp.all(clearance >= 0.0)
-            & (source_stamp > 0)
-            & (prepared_stamp >= source_stamp)
-            & jnp.any(epoch != 0)
-            & (revision >= 0)
-            & jnp.array_equal(geometry, self._geometry_hash)
-            & jnp.array_equal(kernel, self._kernel_version)
-            & jnp.array_equal(policy, self._collision_policy_hash)
-            & jnp.isin(source_status, jnp.asarray([int(item) for item in CollisionStatus], dtype=jnp.int32))
+        checked_identities = CollisionIdentities(epoch, revision, geometry, kernel, policy)
+        checked_scene = CollisionScene(
+            points, radii, clearance, velocity, ids, mask, source_stamp, prepared_stamp, source_status
         )
+        valid = self._scene_values_valid(checked_scene, checked_identities)
         status = jnp.where(valid, source_status, int(CollisionStatus.INVALID_SCENE)).astype(jnp.int32)
         return PreparedScene(
             points,
@@ -260,7 +277,7 @@ class CollisionSafety:
             mask,
             source_stamp,
             prepared_stamp,
-            CollisionIdentities(epoch, revision, geometry, kernel, policy),
+            checked_identities,
             status,
         )
 
@@ -278,7 +295,7 @@ class CollisionSafety:
         if not bool(np.all(np.isfinite(np.asarray(q)))):
             raise ValueError("query_batch.q must be finite")
         started_ns = time.perf_counter_ns()
-        scene_status = CollisionStatus(int(np.asarray(prepared_scene.status)))
+        scene_status = self._scene_status(prepared_scene)
         status = scene_status if scene_status is not CollisionStatus.OK else CollisionStatus.SOLVER_UNHEALTHY
         rows = self.config.max_primitive_rows
         batch = count
@@ -341,7 +358,7 @@ class CollisionSafety:
         if not bool(np.all(np.asarray(time_end) >= np.asarray(time_start))):
             raise ValueError("segment_batch.time_end_s must follow time_start_s")
         started_ns = time.perf_counter_ns()
-        scene_status = CollisionStatus(int(np.asarray(prepared_scene.status)))
+        scene_status = self._scene_status(prepared_scene)
         status = scene_status if scene_status is not CollisionStatus.OK else CollisionStatus.CERTIFICATE_FAILED
         result_fields = dict(
             valid_mask=jnp.zeros((count,), dtype=jnp.bool_),
@@ -431,6 +448,41 @@ class CollisionSafety:
             )
         _array(prepared_scene.status, "prepared_scene.status", (), (jnp.dtype("int32"),))
         CollisionStatus(int(np.asarray(prepared_scene.status)))
+
+    def _scene_values_valid(
+        self, scene: CollisionScene | PreparedScene, identities: CollisionIdentities
+    ) -> jax.Array:
+        parameters = self.config.policy.artifact.parameters
+        return (
+            jnp.all(jnp.isfinite(scene.support_points_m))
+            & jnp.all(jnp.isfinite(scene.support_radii_mm))
+            & jnp.all(jnp.isfinite(scene.required_clearance_mm))
+            & jnp.all(jnp.isfinite(scene.support_velocity_m_s))
+            & jnp.all(scene.support_radii_mm >= 0.0)
+            & jnp.all(scene.required_clearance_mm >= 0.0)
+            & (scene.source_stamp_ns > 0)
+            & (scene.prepared_stamp_ns >= scene.source_stamp_ns)
+            & jnp.any(identities.scene_epoch != 0)
+            & (identities.scene_revision >= 0)
+            & jnp.array_equal(identities.geometry_hash, self._geometry_hash)
+            & jnp.array_equal(identities.kernel_version, self._kernel_version)
+            & jnp.array_equal(identities.collision_policy_hash, self._collision_policy_hash)
+            & jnp.isin(scene.status, jnp.asarray([int(item) for item in CollisionStatus], dtype=jnp.int32))
+            & jnp.all(
+                ~scene.support_mask
+                | (scene.required_clearance_mm == parameters["environment_clearance_mm"]["value"])
+            )
+            & jnp.all(
+                ~scene.support_mask
+                | (scene.support_radii_mm <= parameters["support_radius_limit_mm"]["value"])
+            )
+        )
+
+    def _scene_status(self, prepared_scene: PreparedScene) -> CollisionStatus:
+        valid = self._scene_values_valid(prepared_scene, prepared_scene.identities)
+        if not bool(np.asarray(valid)):
+            return CollisionStatus.INVALID_SCENE
+        return CollisionStatus(int(np.asarray(prepared_scene.status)))
 
     @staticmethod
     def _header(

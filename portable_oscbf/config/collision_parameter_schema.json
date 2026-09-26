@@ -1,0 +1,148 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CollisionParameterArtifact v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "generator", "input_data_hashes", "parameters", "self_clearance_mm", "parameter_hash"],
+  "properties": {
+    "schema_version": {"type": "integer", "const": 1},
+    "generator": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "version", "method"],
+      "properties": {
+        "name": {"$ref": "#/$defs/text"},
+        "version": {"$ref": "#/$defs/text"},
+        "method": {"$ref": "#/$defs/text"}
+      }
+    },
+    "input_data_hashes": {"$ref": "#/$defs/hashes"},
+    "parameter_hash": {"$ref": "#/$defs/hash"},
+    "parameters": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "lidar_range_error_mm", "lidar_angular_error_rad", "lidar_incidence_error_mm",
+        "extrinsic_translation_error_mm", "extrinsic_rotation_error_rad",
+        "point_timestamp_error_ns", "transport_delay_ns", "scene_preparation_delay_ns", "control_delay_ns",
+        "joint_interpolation_prismatic_error_mm", "joint_interpolation_revolute_error_rad",
+        "voxel_size_mm", "support_radius_limit_mm", "support_merge_radius_limit_mm", "support_merge_max_points",
+        "untracked_speed_mm_s", "untracked_acceleration_mm_s2",
+        "command_position_error_mm", "execution_feedback_error_mm", "stopping_distance_mm",
+        "environment_clearance_mm", "self_collision_cbf_rate_s_inv", "environment_cbf_rate_s_inv",
+        "max_support_points", "max_tracks", "max_environment_pairs_per_ellipsoid", "max_ellipsoids_per_link",
+        "max_primitive_rows", "query_batch_size", "segment_batch_size",
+        "dcol_max_iterations", "dcol_primal_residual_limit", "dcol_dual_residual_limit",
+        "qp_max_iterations", "qp_residual_limit", "distance_max_iterations", "distance_tolerance_mm", "bisection_max_depth",
+        "scene_preparation_deadline_ns", "device_transfer_deadline_ns", "query_deadline_ns", "qp_deadline_ns",
+        "control_deadline_ns", "certify_deadline_ns", "trajectory_validation_deadline_ns", "replanning_deadline_ns"
+      ],
+      "properties": {
+        "lidar_range_error_mm": {"$ref": "#/$defs/mm"},
+        "lidar_angular_error_rad": {"$ref": "#/$defs/rad"},
+        "lidar_incidence_error_mm": {"$ref": "#/$defs/mm"},
+        "extrinsic_translation_error_mm": {"$ref": "#/$defs/mm"},
+        "extrinsic_rotation_error_rad": {"$ref": "#/$defs/rad"},
+        "point_timestamp_error_ns": {"$ref": "#/$defs/ns"},
+        "transport_delay_ns": {"$ref": "#/$defs/ns"},
+        "scene_preparation_delay_ns": {"$ref": "#/$defs/ns"},
+        "control_delay_ns": {"$ref": "#/$defs/ns"},
+        "joint_interpolation_prismatic_error_mm": {"$ref": "#/$defs/mm"},
+        "joint_interpolation_revolute_error_rad": {"$ref": "#/$defs/rad"},
+        "voxel_size_mm": {"$ref": "#/$defs/positive_mm"},
+        "support_radius_limit_mm": {"$ref": "#/$defs/positive_mm"},
+        "support_merge_radius_limit_mm": {"$ref": "#/$defs/positive_mm"},
+        "support_merge_max_points": {"$ref": "#/$defs/count"},
+        "untracked_speed_mm_s": {"$ref": "#/$defs/record", "properties": {"unit": {"const": "mm/s"}}},
+        "untracked_acceleration_mm_s2": {"$ref": "#/$defs/record", "properties": {"unit": {"const": "mm/s^2"}}},
+        "command_position_error_mm": {"$ref": "#/$defs/mm"},
+        "execution_feedback_error_mm": {"$ref": "#/$defs/mm"},
+        "stopping_distance_mm": {"$ref": "#/$defs/mm"},
+        "environment_clearance_mm": {"$ref": "#/$defs/mm"},
+        "self_collision_cbf_rate_s_inv": {"$ref": "#/$defs/rate"},
+        "environment_cbf_rate_s_inv": {"$ref": "#/$defs/rate"},
+        "max_support_points": {"$ref": "#/$defs/count"},
+        "max_tracks": {"$ref": "#/$defs/count"},
+        "max_environment_pairs_per_ellipsoid": {"$ref": "#/$defs/count"},
+        "max_ellipsoids_per_link": {"$ref": "#/$defs/count"},
+        "max_primitive_rows": {"$ref": "#/$defs/count"},
+        "query_batch_size": {"$ref": "#/$defs/count"},
+        "segment_batch_size": {"$ref": "#/$defs/count"},
+        "dcol_max_iterations": {"$ref": "#/$defs/count"},
+        "dcol_primal_residual_limit": {"$ref": "#/$defs/tolerance"},
+        "dcol_dual_residual_limit": {"$ref": "#/$defs/tolerance"},
+        "qp_max_iterations": {"$ref": "#/$defs/count"},
+        "qp_residual_limit": {"$ref": "#/$defs/tolerance"},
+        "distance_max_iterations": {"$ref": "#/$defs/count"},
+        "distance_tolerance_mm": {"$ref": "#/$defs/positive_mm"},
+        "bisection_max_depth": {"$ref": "#/$defs/record", "properties": {"unit": {"const": "1"}, "value": {"type": "integer", "maximum": 2147483647}}},
+        "scene_preparation_deadline_ns": {"$ref": "#/$defs/deadline"},
+        "device_transfer_deadline_ns": {"$ref": "#/$defs/deadline"},
+        "query_deadline_ns": {"$ref": "#/$defs/deadline"},
+        "qp_deadline_ns": {"$ref": "#/$defs/deadline"},
+        "control_deadline_ns": {"$ref": "#/$defs/deadline"},
+        "certify_deadline_ns": {"$ref": "#/$defs/deadline"},
+        "trajectory_validation_deadline_ns": {"$ref": "#/$defs/deadline"},
+        "replanning_deadline_ns": {"$ref": "#/$defs/deadline"}
+      }
+    },
+    "self_clearance_mm": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["links", "clearance"],
+        "properties": {"links": {"$ref": "#/$defs/links"}, "clearance": {"$ref": "#/$defs/mm"}}
+      }
+    }
+  },
+  "$defs": {
+    "text": {"type": "string", "pattern": "\\S"},
+    "hash": {"type": "string", "minLength": 64, "maxLength": 64, "pattern": "^[0-9a-f]{64}$"},
+    "hashes": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/hash"}},
+    "texts": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/text"}},
+    "links": {"type": "array", "minItems": 2, "maxItems": 2, "uniqueItems": true, "items": {"$ref": "#/$defs/text"}},
+    "record": {
+      "type": "object", "additionalProperties": false,
+      "required": ["value", "unit", "source", "measurement_method", "calculation_method", "devices", "scenarios", "confidence_requirement", "validation"],
+      "properties": {
+        "value": {"type": "number", "minimum": 0},
+        "unit": {"$ref": "#/$defs/text"},
+        "source": {
+          "type": "object", "additionalProperties": false, "required": ["description", "data_hashes"],
+          "properties": {"description": {"$ref": "#/$defs/text"}, "data_hashes": {"$ref": "#/$defs/hashes"}}
+        },
+        "measurement_method": {"$ref": "#/$defs/text"},
+        "calculation_method": {"$ref": "#/$defs/text"},
+        "devices": {"$ref": "#/$defs/texts"},
+        "scenarios": {"$ref": "#/$defs/texts"},
+        "confidence_requirement": {"$ref": "#/$defs/text"},
+        "validation": {
+          "type": "object", "additionalProperties": false,
+          "required": ["data_hashes", "method", "result", "evidence"],
+          "properties": {
+            "data_hashes": {"$ref": "#/$defs/hashes"},
+            "method": {"$ref": "#/$defs/text"},
+            "result": {"const": "passed"},
+            "evidence": {"$ref": "#/$defs/text"}
+          }
+        }
+      }
+    },
+    "mm": {"$ref": "#/$defs/record", "properties": {"unit": {"const": "mm"}}},
+    "positive_mm": {"$ref": "#/$defs/mm", "properties": {"value": {"exclusiveMinimum": 0}}},
+    "rad": {"$ref": "#/$defs/record", "properties": {"unit": {"const": "rad"}}},
+    "ns": {"$ref": "#/$defs/record", "properties": {"unit": {"const": "ns"}, "value": {"type": "integer", "maximum": 9223372036854775807}}},
+    "deadline": {"$ref": "#/$defs/ns", "properties": {"value": {"exclusiveMinimum": 0}}},
+    "count": {"$ref": "#/$defs/record", "properties": {"unit": {"const": "1"}, "value": {"type": "integer", "minimum": 1, "maximum": 2147483647}}},
+    "rate": {"$ref": "#/$defs/record", "properties": {"unit": {"const": "s^-1"}, "value": {"exclusiveMinimum": 0}}},
+    "tolerance": {"$ref": "#/$defs/record", "properties": {"unit": {"const": "1"}, "value": {"exclusiveMinimum": 0}}},
+    "allowed_contacts": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["links", "reason", "evidence", "geometry_hash"],
+        "properties": {
+          "links": {"$ref": "#/$defs/links"}, "reason": {"$ref": "#/$defs/text"},
+          "evidence": {"$ref": "#/$defs/text"}, "geometry_hash": {"$ref": "#/$defs/hash"}
+        }
+      }
+    }
+  }
+}

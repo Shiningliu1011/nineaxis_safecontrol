@@ -8,7 +8,11 @@
 - `query(query_batch, prepared_scene, query_mode)` 接受 `QueryMode.STATE_VALIDITY`、`QueryMode.OSCBF_BARRIER` 或 `QueryMode.DISTANCE_MM`。九轴状态批次形状由 `CollisionSafetyConfig.query_batch_size` 固定。
 - `certify(segment_batch, prepared_scene)` 接受固定数量的九轴区间及起止时间。
 
-`CollisionSafetyConfig` 要求明确给出 support、查询批次、primitive 行和区间批次容量，以及查询与证明的 deadline。配置包含 32 字节的 geometry、kernel 和 policy identity。`CollisionIdentities` 还包含 16 字节的 `scene_epoch` 和整数 `scene_revision`。身份在 JAX 边界使用 `uint8` 数组，所有运行时间字段使用同一进程的单调时钟，单位为纳秒。场景采集时间与准备时间必须由同一时间基准产生。
+`CollisionSafetyConfig.from_policy(policy)` 从已验证的 [CollisionParameterArtifact](collision-parameter-artifact.md) 读取 support、查询批次、primitive 行和区间批次容量，以及查询与证明的 deadline。配置必须绑定 policy，所有值都须与 artifact 一致。模块的 `config` 只读，artifact 与 policy 均深层不可变。
+
+配置包含 32 字节的 geometry、kernel 和 policy identity。`CollisionIdentities` 还包含 16 字节的 `scene_epoch` 和整数 `scene_revision`。身份在 JAX 边界使用 `uint8` 数组，所有运行时间字段使用同一进程的单调时钟，单位为纳秒。场景采集时间与准备时间必须由同一时间基准产生。
+
+三个操作都核对当前 identity；已经准备的场景也必须符合当前 policy。有效 support 的 environment clearance 必须等于 artifact 中的数值，半径不能超过其上限。检查失败返回 `INVALID_SCENE` 并保持结果无效，超时仍由 `DEADLINE_MISSED` 表达。
 
 ## 固定结果
 
