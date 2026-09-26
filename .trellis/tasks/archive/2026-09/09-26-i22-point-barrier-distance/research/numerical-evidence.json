@@ -1,0 +1,84 @@
+{
+  "python": "3.10.12",
+  "jax": "0.6.2",
+  "jaxlib": "0.6.2",
+  "mpmath": "1.2.1",
+  "backend": "cpu",
+  "machine": "x86_64",
+  "geometry_hash": "5c6c41f82bea1796be396e6e8820abd06c0c3d5069ac15cc83f655cbd52ace3c",
+  "kernel_version": "6464646464646464646464646464646464646464646464646464646464646464",
+  "policy_hash": "fef7a84632eea657f95ad7d4b2c1651d8558853551b784c1673028b20315e510",
+  "parameter_hash": "552463d24e16fead4d5d82c6ac70dc9a73edee4bf0ede586e13bd1eb38d80f40",
+  "input_q": [
+    0.15,
+    0.1,
+    -0.2,
+    0.3,
+    0.15,
+    -0.25,
+    0.2,
+    0.05,
+    -0.1
+  ],
+  "input_radii_m": [
+    0.04,
+    0.03,
+    0.02
+  ],
+  "input_rho_mm": 7.0,
+  "source_stamp_ns": 100,
+  "data_sha256": "9705948e7ef54f84705328bf1f3ec3ebd749b30e494335a72e953eb43b13ecd9",
+  "source_sha256": {
+    "portable_oscbf/work/_ellipsoid_point.py": "6fcfb645f4c3d0c709d3f4306516fd697c30244a360577aac4ef572d0192e375",
+    "portable_oscbf/work/collision_safety.py": "2281ad971aa1171096abb5bb2a4b8e5a1d10314d07b4c7cf0310e626abbeeb9e",
+    "portable_oscbf/work/_collision_geometry.py": "828810448e21023fd63c2732f9e4d45f08f8b64728dcb078830e8b4ca528b433",
+    "portable_oscbf/work/_ellipsoid_dcol.py": "8ff1c44a445d693b20210fe157930170c29c244449a117a1fa7853350ad75e06",
+    "portable_oscbf/tests/test_ellipsoid_point.py": "acea2e74be918ac3d74ab185cd3629cd79cc9456d6b3a1ca4dca212638b7ab33",
+    "portable_oscbf/tests/test_ellipsoid_dcol.py": "05d9214ea3ad292e12a2787ebc57f704ea6bc9bb8c2541c4ae4c2aa5bdb6886a",
+    "portable_oscbf/tests/test_collision_safety.py": "fc07c1ea3d87780289f318bbcc6d56d2e0bcb90ceafbdcbd20c9ade8adc4b88a"
+  },
+  "cases": [
+    {
+      "local_point_m": [
+        0.2,
+        0.1,
+        0.04
+      ],
+      "distance_error_mm": 2.5579538487363607e-13,
+      "robot_witness_error_mm": 8.112169904931828e-11,
+      "support_witness_error_mm": 2.511302947111452e-11,
+      "gradient_max_absolute_error": 1.2453483577701263e-08,
+      "distance_runtime_ns": 1947851,
+      "barrier_runtime_ns": 2147809,
+      "command_mask_from_distance": false
+    },
+    {
+      "local_point_m": [
+        0.018,
+        0.01,
+        0.005
+      ],
+      "distance_error_mm": 3.552713678800501e-14,
+      "robot_witness_error_mm": 7.90766992126727e-09,
+      "support_witness_error_mm": 1.5801002764767443e-09,
+      "gradient_max_absolute_error": 1.3774688056855666e-09,
+      "distance_runtime_ns": 1501615,
+      "barrier_runtime_ns": 2119551,
+      "command_mask_from_distance": false
+    },
+    {
+      "local_point_m": [
+        -0.08,
+        0.01,
+        -0.03
+      ],
+      "distance_error_mm": 7.105427357601002e-14,
+      "robot_witness_error_mm": 1.063456532531979e-09,
+      "support_witness_error_mm": 5.225317128863718e-10,
+      "gradient_max_absolute_error": 1.2739505450554134e-08,
+      "distance_runtime_ns": 1579306,
+      "barrier_runtime_ns": 2220245,
+      "command_mask_from_distance": false
+    }
+  ]
+}
