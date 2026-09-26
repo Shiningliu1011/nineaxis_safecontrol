@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "urdf": "../../models/ninezzhou/urdf/ninezzhou_collision.urdf",
+  "source_provenance": "../../models/ninezzhou/collision_meshes/provenance.json",
+  "tool_identity": "ninezzhou-Link9-integrated-tool0-at-0.235m",
+  "tool_link": "Link9",
+  "slot_capacity": 4,
+  "links": [
+    {"link": "base_link", "mesh": "../../models/ninezzhou/collision_meshes/base_link.stl", "unit": "m"},
+    {"link": "Link1", "mesh": "../../models/ninezzhou/collision_meshes/Link1.stl", "unit": "m"},
+    {"link": "Link2", "mesh": "../../models/ninezzhou/collision_meshes/Link2.stl", "unit": "m"},
+    {"link": "Link3", "mesh": "../../models/ninezzhou/collision_meshes/Link3.stl", "unit": "m"},
+    {"link": "Link4", "mesh": "../../models/ninezzhou/collision_meshes/Link4.stl", "unit": "m"},
+    {"link": "Link5", "mesh": "../../models/ninezzhou/collision_meshes/Link5.stl", "unit": "m"},
+    {"link": "Link6", "mesh": "../../models/ninezzhou/collision_meshes/Link6.stl", "unit": "m"},
+    {"link": "Link7", "mesh": "../../models/ninezzhou/collision_meshes/Link7.stl", "unit": "m"},
+    {"link": "Link8", "mesh": "../../models/ninezzhou/collision_meshes/Link8.stl", "unit": "m"},
+    {"link": "Link9", "mesh": "../../models/ninezzhou/collision_meshes/Link9.stl", "unit": "m"}
+  ],
+  "allowed_contacts": []
+}

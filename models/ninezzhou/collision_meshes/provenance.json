@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "generator_sha256": "c88b553012763f300bd127d44b442c2079e1c7a6a8bb92f776498b33ed341b1b",
+  "source_urdf": "../urdf/ninezzhou.urdf",
+  "source_urdf_sha256": "766ea5870c41f110d7d57b46e6b31153335f45358faf15e641d465b3b31587a3",
+  "links": [
+    {
+      "link": "base_link",
+      "source_mesh": "../meshes/base_link.STL",
+      "source_mesh_sha256": "270e1f8fad8d036548a7e026656c92f8152c17ca87359bc74861070d7a6cea9e",
+      "closed_mesh": "base_link.stl",
+      "closed_mesh_sha256": "0f971745eee735b2671e7d5f1c4ba2fa7f3760b5294410c7540f0903350cd00e",
+      "maximum_source_vertex_excess_m": 2.7755575615628914e-17
+    },
+    {
+      "link": "Link1",
+      "source_mesh": "../meshes/Link1.STL",
+      "source_mesh_sha256": "1f22430ea24c38de90bf5446181a431a53737e4ea7c14f014938e67928091f37",
+      "closed_mesh": "Link1.stl",
+      "closed_mesh_sha256": "409ee10b0e5d10287a8f0d8f9fa27e4b5bcce0474fdc48c05c016b9074879728",
+      "maximum_source_vertex_excess_m": 4.388850394221322e-16
+    },
+    {
+      "link": "Link2",
+      "source_mesh": "../meshes/Link2.STL",
+      "source_mesh_sha256": "3ae18dfbf09ed2a6bf2434e8fd04cd706c0a26bcb48e50ad926dc86135e3f6a4",
+      "closed_mesh": "Link2.stl",
+      "closed_mesh_sha256": "516eb9c32146f6da99e51918e57bf486b2a506a131b4546f4607a2c7598afcd3",
+      "maximum_source_vertex_excess_m": 5.551115123125783e-17
+    },
+    {
+      "link": "Link3",
+      "source_mesh": "../meshes/Link3.STL",
+      "source_mesh_sha256": "30aedaa83b64cdba385c4cc37d90eae4716817b16877d59b78c5b61b572b3b82",
+      "closed_mesh": "Link3.stl",
+      "closed_mesh_sha256": "5c7a03305c27e9ee3e445fa99b5a130d8688fa64a2abdb747801cc0d4e19539e",
+      "maximum_source_vertex_excess_m": 5.551115123125783e-17
+    },
+    {
+      "link": "Link4",
+      "source_mesh": "../meshes/Link4.STL",
+      "source_mesh_sha256": "c3e34e7bc222f57228ef591dd93721cd1910b58da34397bb2cfdc68edb7c6842",
+      "closed_mesh": "Link4.stl",
+      "closed_mesh_sha256": "b575b4be4248d07d396fd68ee5577e994c8f1cbbca8940f37958f46bff67290d",
+      "maximum_source_vertex_excess_m": 2.7755575615628914e-17
+    },
+    {
+      "link": "Link5",
+      "source_mesh": "../meshes/Link5.STL",
+      "source_mesh_sha256": "396ee31ba138967a70e20eff23582f994f154a32a0381a0220d13739195af5cb",
+      "closed_mesh": "Link5.stl",
+      "closed_mesh_sha256": "33cfd5ed7c163cb9d3df37449d1acf1b72627de533affec5e65b122d515b06ca",
+      "maximum_source_vertex_excess_m": 5.551115123125783e-17
+    },
+    {
+      "link": "Link6",
+      "source_mesh": "../meshes/Link6.STL",
+      "source_mesh_sha256": "d5e01454e20ceecdc12d56c1714c7876aa74ba4e00f71fc4204f41e09a07a97d",
+      "closed_mesh": "Link6.stl",
+      "closed_mesh_sha256": "14015bad37b3cdf695a7181f4b3a330d0df5bf6730df5de6b3983adc794059d3",
+      "maximum_source_vertex_excess_m": 2.7755575615628914e-17
+    },
+    {
+      "link": "Link7",
+      "source_mesh": "../meshes/Link7.STL",
+      "source_mesh_sha256": "20b12ecf0336b1271d7ec39779b4c80635705c1c97894ef4acaf225e3e023a8a",
+      "closed_mesh": "Link7.stl",
+      "closed_mesh_sha256": "2ea7cbae1b4f026838b873457b2f316253f0a72b859199412a217eb35c7df19e",
+      "maximum_source_vertex_excess_m": 2.7755575615628914e-17
+    },
+    {
+      "link": "Link8",
+      "source_mesh": "../meshes/Link8.STL",
+      "source_mesh_sha256": "ffad5ca923c0f66c7c0910438c0974af8d15f5b776f1151b068b65dcd0057d3b",
+      "closed_mesh": "Link8.stl",
+      "closed_mesh_sha256": "60c1eeb7cf97fab213c6548201696da1b95fad28c23c2e73eddfd9eb69625338",
+      "maximum_source_vertex_excess_m": 1.3877787807814457e-17
+    },
+    {
+      "link": "Link9",
+      "source_mesh": "../meshes/Link9.STL",
+      "source_mesh_sha256": "7ebcf726b70288929d68b13c489b2b49ca52bab369109429a20f04850c5bb369",
+      "closed_mesh": "Link9.stl",
+      "closed_mesh_sha256": "df6faa44f60c4578a7a0b6c9916422d26bfed65b03a019d4bc69b306ee1441d7",
+      "maximum_source_vertex_excess_m": 4.5102810375396984e-17
+    }
+  ]
+}

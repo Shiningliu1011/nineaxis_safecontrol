@@ -41,6 +41,11 @@ setup(
             _glob_models("ninezzhou/meshes/*.STL"),
         ),
         (
+            f"share/{package_name}/models/ninezzhou/collision_meshes",
+            _glob_models("ninezzhou/collision_meshes/*.stl")
+            + _glob_models("ninezzhou/collision_meshes/*.json"),
+        ),
+        (
             f"share/{package_name}/models/ninezzhou_moveit_config/config",
             _glob_models("ninezzhou_moveit_config/config/*"),
         ),
@@ -51,7 +56,7 @@ setup(
         ),
         (
             f"share/{package_name}/portable_oscbf/config",
-            glob("portable_oscbf/config/*.yaml"),
+            glob("portable_oscbf/config/*.yaml") + glob("portable_oscbf/config/*.json"),
         ),
         (
             f"share/{package_name}/portable_oscbf/data",
@@ -59,7 +64,7 @@ setup(
         ),
         (
             f"share/{package_name}/portable_oscbf",
-            ["portable_oscbf/requirements.txt"],
+            ["portable_oscbf/requirements.txt", "portable_oscbf/requirements-geometry.txt"],
         ),
         (
             f"share/{package_name}/portable_oscbf/vendor/dpax/dpax",

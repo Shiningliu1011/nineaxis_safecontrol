@@ -9,4 +9,5 @@
 - [移植到新项目](portable-oscbf/porting.md)：模型、轨迹和控制框架接入。
 - [排除的 ROS 文件](portable-oscbf/exclusions.md)：模块边界。
 - [CollisionSafety 接口](portable-oscbf/collision-safety.md)：三个公开操作、固定结果结构和当前准入状态。
+- [Collision geometry artifact](portable-oscbf/collision-geometry-artifact.md)：封闭网格生成、离线几何资产与覆盖检查。
 - [参考文献](portable-oscbf/references.md)：相关资料。

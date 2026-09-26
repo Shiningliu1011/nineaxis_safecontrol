@@ -1,0 +1,1201 @@
+{
+  "geometry_hash": "add9743e201beff9ed1154af1ee2c7283d6f34533fde1b7b5bd169c30b7c5fc7",
+  "geometry": {
+    "schema_version": 1,
+    "generator_version": 1,
+    "generator_source_sha256": "f8d303b4137486d5c31cdfdfd9624afc5e832e78d487f7abfebb84b96e7a57b0",
+    "tetgen_version": "0.8.4",
+    "trimesh_version": "5.1.0",
+    "numpy_version": "1.26.4",
+    "scipy_version": "1.15.3",
+    "urdf_sha256": "081c8d5a7e1878b9d4c025544e957dcd09f5ab1755c3b6e96dedc244d41b8247",
+    "source_provenance_sha256": "9903874e0cc1c0bd2f852d57f9e4144450812f0b1e402b96fe3ded2403e9e087",
+    "tool_identity": "ninezzhou-Link9-integrated-tool0-at-0.235m",
+    "tool_link": "Link9",
+    "slot_capacity": 4,
+    "links": [
+      {
+        "link": "base_link",
+        "source_mesh": "../../models/ninezzhou/collision_meshes/base_link.stl",
+        "source_unit": "m",
+        "collision_origin_xyz_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "collision_origin_rpy_rad": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "urdf_mesh_scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "mesh_sha256": "0f971745eee735b2671e7d5f1c4ba2fa7f3760b5294410c7540f0903350cd00e",
+        "tetra_sha256": "287132f3ef671018724c63b4c2c0e58c4a335d321a0294c7949c5d590c83a5dc",
+        "mesh_volume_m3": 0.013540569688702082,
+        "ellipsoid_volume_sum_m3": 0.04685808047204176,
+        "envelope_bounds_m": [
+          [
+            -0.12990754089123246,
+            -0.10485150869921152,
+            -0.6633248315290088
+          ],
+          [
+            0.129904813978734,
+            0.1168522184713215,
+            0.8903247700170154
+          ]
+        ],
+        "slots": [
+          {
+            "active_mask": true,
+            "center_m": [
+              -1.3634562492370605e-06,
+              0.006000354886054993,
+              0.1134999692440033
+            ],
+            "radii_m": [
+              0.12990617743498323,
+              0.11085186358526651,
+              0.7768248007730121
+            ]
+          },
+          {
+            "active_mask": false,
+            "center_m": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "radii_m": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "active_mask": false,
+            "center_m": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "radii_m": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "active_mask": false,
+            "center_m": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "radii_m": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          }
+        ],
+        "coverage_proof": {
+          "tetrahedron_count": 131,
+          "coverage_count_by_slot": [
+            131
+          ],
+          "maximum_vertex_scale_squared": 0.999999998,
+          "witness_sha256": "c1dcdd7d8c2a5d273f73cca0b55d798344bf94f5834c1a6b852cb0ee709278d7"
+        }
+      },
+      {
+        "link": "Link1",
+        "source_mesh": "../../models/ninezzhou/collision_meshes/Link1.stl",
+        "source_unit": "m",
+        "collision_origin_xyz_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "collision_origin_rpy_rad": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "urdf_mesh_scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "mesh_sha256": "409ee10b0e5d10287a8f0d8f9fa27e4b5bcce0474fdc48c05c016b9074879728",
+        "tetra_sha256": "040bf877409f5bf0e51b1344b254b15c623c2dd60752944ce21a5bde8b345cdf",
+        "mesh_volume_m3": 0.010449037510469888,
+        "ellipsoid_volume_sum_m3": 0.04432713284127283,
+        "envelope_bounds_m": [
+          [
+            -0.13423393875320466,
+            -0.17915098526100964,
+            -0.27559127055248345
+          ],
+          [
+            0.13423393875320466,
+            0.55645097949128,
+            0.15309128306945888
+          ]
+        ],
+        "slots": [
+          {
+            "active_mask": true,
+            "center_m": [
+              0.0,
+              0.1886499971151352,
+              -0.0612499937415123
+            ],
+            "radii_m": [
+              0.13423393875320466,
+              0.36780098237614484,
+              0.21434127681097118
+            ]
+          },
+          {
+            "active_mask": false,
+            "center_m": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "radii_m": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "active_mask": false,
+            "center_m": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "radii_m": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "active_mask": false,
+            "center_m": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "radii_m": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          }
+        ],
+        "coverage_proof": {
+          "tetrahedron_count": 536,
+          "coverage_count_by_slot": [
+            536
+          ],
+          "maximum_vertex_scale_squared": 0.9509789718028697,
+          "witness_sha256": "2a0e323f3cb40a89a5381d6f63891f148a4ef89e523a1455104e75779f242a97"
+        }
+      },
+      {
+        "link": "Link2",
+        "source_mesh": "../../models/ninezzhou/collision_meshes/Link2.stl",
+        "source_unit": "m",
+        "collision_origin_xyz_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "collision_origin_rpy_rad": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "urdf_mesh_scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "mesh_sha256": "516eb9c32146f6da99e51918e57bf486b2a506a131b4546f4607a2c7598afcd3",
+        "tetra_sha256": "916e89aaaf9a7433e3e3ded04c362451e0a891955a255a6e06e85d1bc69af3a3",
+        "mesh_volume_m3": 0.003456624249268276,
+        "ellipsoid_volume_sum_m3": 0.010625091671973003,
+        "envelope_bounds_m": [
+          [
+            -0.15172435887226693,
+            -0.06928203591230421,
+            -0.13856406909750665
+          ],
+          [
+            0.37672434546122185,
+            0.06928203218701391,
+            0.13856405419634546
+          ]
+        ],
+        "slots": [
+          {
+            "active_mask": true,
+            "center_m": [
+              0.11249999329447746,
+              -1.862645149230957e-09,
+              -7.450580596923828e-09
+            ],
+            "radii_m": [
+              0.2642243521667444,
+              0.06928203404965906,
+              0.13856406164692606
+            ]
+          },
+          {
+            "active_mask": false,
+            "center_m": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "radii_m": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "active_mask": false,
+            "center_m": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "radii_m": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "active_mask": false,
+            "center_m": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "radii_m": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          }
+        ],
+        "coverage_proof": {
+          "tetrahedron_count": 432,
+          "coverage_count_by_slot": [
+            432
+          ],
+          "maximum_vertex_scale_squared": 0.7840060884880649,
+          "witness_sha256": "7636c9f8da9a82f9a9fcd804a25795a9c900e1c7e19f7442a7b113c8ccd64eb2"
+        }
+      },
+      {
+        "link": "Link3",
+        "source_mesh": "../../models/ninezzhou/collision_meshes/Link3.stl",
+        "source_unit": "m",
+        "collision_origin_xyz_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "collision_origin_rpy_rad": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "urdf_mesh_scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "mesh_sha256": "5c7a03305c27e9ee3e445fa99b5a130d8688fa64a2abdb747801cc0d4e19539e",
+        "tetra_sha256": "296a942571fa97be42e7d240fa248a769777b633b47c0b80f7b6859988745955",
+        "mesh_volume_m3": 0.00530039093805975,
+        "ellipsoid_volume_sum_m3": 0.019039376139564582,
+        "envelope_bounds_m": [
+          [
+            -0.19052109547228863,
+            -0.10825317558130801,
+            -0.13856406909750665
+          ],
+          [
+            0.41552108206124355,
+            0.10825317558130801,
+            0.13856405419634546
+          ]
+        ],
+        "slots": [
+          {
+            "active_mask": true,
+            "center_m": [
+              0.11249999329447746,
+              0.0,
+              -7.450580596923828e-09
+            ],
+            "radii_m": [
+              0.3030210887667661,
+              0.10825317558130801,
+              0.13856406164692606
+            ]
+          },
+          {
+            "active_mask": false,
+            "center_m": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "radii_m": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "active_mask": false,
+            "center_m": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "radii_m": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "active_mask": false,
+            "center_m": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "radii_m": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          }
+        ],
+        "coverage_proof": {
+          "tetrahedron_count": 956,
+          "coverage_count_by_slot": [
+            956
+          ],
+          "maximum_vertex_scale_squared": 0.6374674009766662,
+          "witness_sha256": "6fb704e5fcf552d284809d537774b3677c2cbc1b7f845efd72eccce9203f3510"
+        }
+      },
+      {
+        "link": "Link4",
+        "source_mesh": "../../models/ninezzhou/collision_meshes/Link4.stl",
+        "source_unit": "m",
+        "collision_origin_xyz_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "collision_origin_rpy_rad": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "urdf_mesh_scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "mesh_sha256": "b575b4be4248d07d396fd68ee5577e994c8f1cbbca8940f37958f46bff67290d",
+        "tetra_sha256": "99e4b830f750de965ec28e2049e7c812435133560e19d4773932e6a843e5388d",
+        "mesh_volume_m3": 0.002854328003534441,
+        "ellipsoid_volume_sum_m3": 0.01049859777093236,
+        "envelope_bounds_m": [
+          [
+            -0.10392304623519454,
+            -0.2255632436745524,
+            -0.13856406909750665
+          ],
+          [
+            0.10392304623519454,
+            0.12254171510270831,
+            0.13856405419634546
+          ]
+        ],
+        "slots": [
+          {
+            "active_mask": true,
+            "center_m": [
+              0.0,
+              -0.05151076428592205,
+              -7.450580596923828e-09
+            ],
+            "radii_m": [
+              0.10392304623519454,
+              0.17405247938863036,
+              0.13856406164692606
+            ]
+          },
+          {
+            "active_mask": false,
+            "center_m": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "radii_m": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "active_mask": false,
+            "center_m": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "radii_m": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "active_mask": false,
+            "center_m": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "radii_m": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          }
+        ],
+        "coverage_proof": {
+          "tetrahedron_count": 1331,
+          "coverage_count_by_slot": [
+            1331
+          ],
+          "maximum_vertex_scale_squared": 0.7368636077203666,
+          "witness_sha256": "cb50cf9acd96c953df17c7b6f3289361f4cbde8c562b2cc53d3c5a70b62d1800"
+        }
+      },
+      {
+        "link": "Link5",
+        "source_mesh": "../../models/ninezzhou/collision_meshes/Link5.stl",
+        "source_unit": "m",
+        "collision_origin_xyz_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "collision_origin_rpy_rad": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "urdf_mesh_scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "mesh_sha256": "33cfd5ed7c163cb9d3df37449d1acf1b72627de533affec5e65b122d515b06ca",
+        "tetra_sha256": "f68aedec884684bd874673d4b12548a039c6048243a2fd4bd740b0d78ad9232a",
+        "mesh_volume_m3": 0.003090015985188911,
+        "ellipsoid_volume_sum_m3": 0.010553945989762536,
+        "envelope_bounds_m": [
+          [
+            -0.10565509546575558,
+            -0.08487048470902082,
+            -0.38225714703421915
+          ],
+          [
+            0.10565509919104588,
+            0.08487047725844023,
+            0.17970768203358972
+          ]
+        ],
+        "slots": [
+          {
+            "active_mask": true,
+            "center_m": [
+              1.862645149230957e-09,
+              -3.725290298461914e-09,
+              -0.10127473250031471
+            ],
+            "radii_m": [
+              0.10565509732840073,
+              0.08487048098373053,
+              0.28098241453390443
+            ]
+          },
+          {
+            "active_mask": false,
+            "center_m": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "radii_m": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "active_mask": false,
+            "center_m": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "radii_m": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "active_mask": false,
+            "center_m": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "radii_m": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          }
+        ],
+        "coverage_proof": {
+          "tetrahedron_count": 1426,
+          "coverage_count_by_slot": [
+            1426
+          ],
+          "maximum_vertex_scale_squared": 0.7530812583803593,
+          "witness_sha256": "e4007e902f61599c8e2faba025e25d3df2abce80aa4973a0eebf27f1c1a4b3c4"
+        }
+      },
+      {
+        "link": "Link6",
+        "source_mesh": "../../models/ninezzhou/collision_meshes/Link6.stl",
+        "source_unit": "m",
+        "collision_origin_xyz_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "collision_origin_rpy_rad": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "urdf_mesh_scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "mesh_sha256": "14015bad37b3cdf695a7181f4b3a330d0df5bf6730df5de6b3983adc794059d3",
+        "tetra_sha256": "ad0f10fd711800649d41f2f8ca5da88f48e06f60bfaccdd42041a42c4028310f",
+        "mesh_volume_m3": 0.002242240671345428,
+        "ellipsoid_volume_sum_m3": 0.007852554186720043,
+        "envelope_bounds_m": [
+          [
+            -0.13089784911173144,
+            -0.09006664903077836,
+            -0.10738715760110075
+          ],
+          [
+            0.2567487426688031,
+            0.09006664530548807,
+            0.10738716505168135
+          ]
+        ],
+        "slots": [
+          {
+            "active_mask": true,
+            "center_m": [
+              0.06292544677853584,
+              -1.862645149230957e-09,
+              3.725290298461914e-09
+            ],
+            "radii_m": [
+              0.19382329589026728,
+              0.09006664716813322,
+              0.10738716132639105
+            ]
+          },
+          {
+            "active_mask": false,
+            "center_m": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "radii_m": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "active_mask": false,
+            "center_m": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "radii_m": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "active_mask": false,
+            "center_m": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "radii_m": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          }
+        ],
+        "coverage_proof": {
+          "tetrahedron_count": 1470,
+          "coverage_count_by_slot": [
+            1470
+          ],
+          "maximum_vertex_scale_squared": 0.6716032173059338,
+          "witness_sha256": "f245942364afb415ea6ad18219deb50faf117504c6e6a0bde047d23b12ff6431"
+        }
+      },
+      {
+        "link": "Link7",
+        "source_mesh": "../../models/ninezzhou/collision_meshes/Link7.stl",
+        "source_unit": "m",
+        "collision_origin_xyz_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "collision_origin_rpy_rad": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "urdf_mesh_scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "mesh_sha256": "2ea7cbae1b4f026838b873457b2f316253f0a72b859199412a217eb35c7df19e",
+        "tetra_sha256": "1af562c18e9adb8a0c2ffb3b823dfa90f99736f520f55d829d623355503b457d",
+        "mesh_volume_m3": 0.0018665260887008985,
+        "ellipsoid_volume_sum_m3": 0.006705584917833018,
+        "envelope_bounds_m": [
+          [
+            -0.12854087306525655,
+            -0.08833459334782527,
+            -0.09872689618177204
+          ],
+          [
+            0.2385822790708775,
+            0.08833458589724467,
+            0.09872689618177204
+          ]
+        ],
+        "slots": [
+          {
+            "active_mask": true,
+            "center_m": [
+              0.05502070300281048,
+              -3.725290298461914e-09,
+              0.0
+            ],
+            "radii_m": [
+              0.18356157606806703,
+              0.08833458962253497,
+              0.09872689618177204
+            ]
+          },
+          {
+            "active_mask": false,
+            "center_m": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "radii_m": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "active_mask": false,
+            "center_m": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "radii_m": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "active_mask": false,
+            "center_m": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "radii_m": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          }
+        ],
+        "coverage_proof": {
+          "tetrahedron_count": 961,
+          "coverage_count_by_slot": [
+            961
+          ],
+          "maximum_vertex_scale_squared": 0.6062831445676709,
+          "witness_sha256": "6e95a12b948493e2398de7e6f7afd3176c44277b4241ee992508fb3b81da8d66"
+        }
+      },
+      {
+        "link": "Link8",
+        "source_mesh": "../../models/ninezzhou/collision_meshes/Link8.stl",
+        "source_unit": "m",
+        "collision_origin_xyz_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "collision_origin_rpy_rad": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "urdf_mesh_scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "mesh_sha256": "60c1eeb7cf97fab213c6548201696da1b95fad28c23c2e73eddfd9eb69625338",
+        "tetra_sha256": "0923c643877391615263b24614a6932ddc7544950cef36e23b77d3e52691b3a9",
+        "mesh_volume_m3": 0.000940898490982952,
+        "ellipsoid_volume_sum_m3": 0.00462433850262452,
+        "envelope_bounds_m": [
+          [
+            -0.10831094205333916,
+            -0.06925609299309134,
+            -0.09872690090525087
+          ],
+          [
+            0.21477633759333817,
+            0.0691852118945825,
+            0.09872687855350908
+          ]
+        ],
+        "slots": [
+          {
+            "active_mask": true,
+            "center_m": [
+              0.053232697769999504,
+              -3.544054925441742e-05,
+              -1.1175870895385742e-08
+            ],
+            "radii_m": [
+              0.16154363982333866,
+              0.06922065244383692,
+              0.09872688972937997
+            ]
+          },
+          {
+            "active_mask": false,
+            "center_m": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "radii_m": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "active_mask": false,
+            "center_m": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "radii_m": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "active_mask": false,
+            "center_m": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "radii_m": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          }
+        ],
+        "coverage_proof": {
+          "tetrahedron_count": 677,
+          "coverage_count_by_slot": [
+            677
+          ],
+          "maximum_vertex_scale_squared": 0.7453002582641907,
+          "witness_sha256": "89aa50627dbc5ef2c71a61a5cf63dc625d19bcad9d35d5bb87ed0d5591c759b2"
+        }
+      },
+      {
+        "link": "Link9",
+        "source_mesh": "../../models/ninezzhou/collision_meshes/Link9.stl",
+        "source_unit": "m",
+        "collision_origin_xyz_m": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "collision_origin_rpy_rad": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "urdf_mesh_scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "mesh_sha256": "df6faa44f60c4578a7a0b6c9916422d26bfed65b03a019d4bc69b306ee1441d7",
+        "tetra_sha256": "aae2be65b579ea6bde5d61e797e0126effcad25c844bde33d21f3259ac7c69cf",
+        "mesh_volume_m3": 0.00044062562787924154,
+        "ellipsoid_volume_sum_m3": 0.0026043986231373815,
+        "envelope_bounds_m": [
+          [
+            -0.12358207882574118,
+            -0.04758431448874909,
+            -0.07129304316116733
+          ],
+          [
+            0.33108327047160185,
+            0.04758253566263158,
+            0.043662861178054034
+          ]
+        ],
+        "slots": [
+          {
+            "active_mask": true,
+            "center_m": [
+              0.10375059582293034,
+              -8.89413058757782e-07,
+              -0.013815090991556644
+            ],
+            "radii_m": [
+              0.22733267464867152,
+              0.047583425075690335,
+              0.05747795216961068
+            ]
+          },
+          {
+            "active_mask": false,
+            "center_m": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "radii_m": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "active_mask": false,
+            "center_m": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "radii_m": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "active_mask": false,
+            "center_m": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "radii_m": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          }
+        ],
+        "coverage_proof": {
+          "tetrahedron_count": 1150,
+          "coverage_count_by_slot": [
+            1150
+          ],
+          "maximum_vertex_scale_squared": 0.8691519455409598,
+          "witness_sha256": "efdadc212be2db6314795d2f7bece2878dd4f896619af78c265dae3703096e60"
+        }
+      }
+    ]
+  },
+  "self_collision": {
+    "candidate_pairs": [
+      [
+        "base_link",
+        "Link1"
+      ],
+      [
+        "base_link",
+        "Link2"
+      ],
+      [
+        "base_link",
+        "Link3"
+      ],
+      [
+        "base_link",
+        "Link4"
+      ],
+      [
+        "base_link",
+        "Link5"
+      ],
+      [
+        "base_link",
+        "Link6"
+      ],
+      [
+        "base_link",
+        "Link7"
+      ],
+      [
+        "base_link",
+        "Link8"
+      ],
+      [
+        "base_link",
+        "Link9"
+      ],
+      [
+        "Link1",
+        "Link2"
+      ],
+      [
+        "Link1",
+        "Link3"
+      ],
+      [
+        "Link1",
+        "Link4"
+      ],
+      [
+        "Link1",
+        "Link5"
+      ],
+      [
+        "Link1",
+        "Link6"
+      ],
+      [
+        "Link1",
+        "Link7"
+      ],
+      [
+        "Link1",
+        "Link8"
+      ],
+      [
+        "Link1",
+        "Link9"
+      ],
+      [
+        "Link2",
+        "Link3"
+      ],
+      [
+        "Link2",
+        "Link4"
+      ],
+      [
+        "Link2",
+        "Link5"
+      ],
+      [
+        "Link2",
+        "Link6"
+      ],
+      [
+        "Link2",
+        "Link7"
+      ],
+      [
+        "Link2",
+        "Link8"
+      ],
+      [
+        "Link2",
+        "Link9"
+      ],
+      [
+        "Link3",
+        "Link4"
+      ],
+      [
+        "Link3",
+        "Link5"
+      ],
+      [
+        "Link3",
+        "Link6"
+      ],
+      [
+        "Link3",
+        "Link7"
+      ],
+      [
+        "Link3",
+        "Link8"
+      ],
+      [
+        "Link3",
+        "Link9"
+      ],
+      [
+        "Link4",
+        "Link5"
+      ],
+      [
+        "Link4",
+        "Link6"
+      ],
+      [
+        "Link4",
+        "Link7"
+      ],
+      [
+        "Link4",
+        "Link8"
+      ],
+      [
+        "Link4",
+        "Link9"
+      ],
+      [
+        "Link5",
+        "Link6"
+      ],
+      [
+        "Link5",
+        "Link7"
+      ],
+      [
+        "Link5",
+        "Link8"
+      ],
+      [
+        "Link5",
+        "Link9"
+      ],
+      [
+        "Link6",
+        "Link7"
+      ],
+      [
+        "Link6",
+        "Link8"
+      ],
+      [
+        "Link6",
+        "Link9"
+      ],
+      [
+        "Link7",
+        "Link8"
+      ],
+      [
+        "Link7",
+        "Link9"
+      ],
+      [
+        "Link8",
+        "Link9"
+      ]
+    ],
+    "allowed_contacts": []
+  },
+  "runtime_evidence": {
+    "kind": "offline_generation",
+    "qualified_for_query_deadline": false,
+    "generation_runtime_ns": 9291768408,
+    "link_generation_runtime_ns": {
+      "base_link": 6947698,
+      "Link1": 7461485290,
+      "Link2": 6558229,
+      "Link3": 41945941,
+      "Link4": 717351883,
+      "Link5": 875764141,
+      "Link6": 106387903,
+      "Link7": 45085261,
+      "Link8": 8138111,
+      "Link9": 21631554
+    }
+  }
+}

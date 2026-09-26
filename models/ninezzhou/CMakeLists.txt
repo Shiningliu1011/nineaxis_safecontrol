@@ -4,7 +4,7 @@ project(ninezzhou)
 
 find_package(ament_cmake REQUIRED)
 
-foreach(directory config launch meshes urdf)
+foreach(directory config launch meshes collision_meshes urdf)
   install(
     DIRECTORY ${directory}/
     DESTINATION share/${PROJECT_NAME}/${directory}

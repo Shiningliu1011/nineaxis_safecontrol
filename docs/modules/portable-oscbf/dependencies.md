@@ -12,7 +12,10 @@
 | `osqp` | OSQP QP 求解器 (legacy 路径) | ⚠️ 可选 |
 | `PyYAML` | YAML 配置加载 | ✅ 配置 |
 | `urdfdom_py` (`urdf-parser-py`) | 解析 URDF 并生成运动学常量 | ✅ 生成与一致性测试 |
+| `tetgen` | 对经过检查的 closed collision mesh 执行离线四面体化 | ✅ 几何资产生成 |
 
 控制热路径固定使用 `cbfpy==0.0.1`、`jax==0.6.2`、`jaxlib==0.6.2`
 和 `qpax==0.1.4`。版本清单见 `requirements.txt`，安装配置见仓库根目录
 `setup.py`。
+
+离线几何资产生成依赖的固定版本见 `portable_oscbf/requirements-geometry.txt`。该文件用于生成与验证，不进入控制线程。
