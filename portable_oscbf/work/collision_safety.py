@@ -11,6 +11,8 @@ import numpy as np
 
 from work.kinematics_data import N_JOINTS
 from work.collision_parameters import CollisionPolicy
+from work._collision_geometry import _SelfGeometry
+from work._ellipsoid_dcol import _build_self_query
 
 
 class CollisionStatus(IntEnum):
@@ -189,7 +191,7 @@ def _array(value: object, name: str, shape: tuple[int, ...], dtypes: tuple[jnp.d
 
 
 class CollisionSafety:
-    def __init__(self, config: CollisionSafetyConfig) -> None:
+    def __init__(self, config: CollisionSafetyConfig, *, geometry_artifact: dict | None = None) -> None:
         if not isinstance(config, CollisionSafetyConfig):
             raise TypeError("config must be CollisionSafetyConfig")
         jax.config.update("jax_enable_x64", True)
@@ -201,6 +203,17 @@ class CollisionSafety:
         self._collision_policy_hash = jnp.asarray(
             np.frombuffer(config.collision_policy_hash, dtype=np.uint8)
         )
+        self._self_geometry = None
+        self._self_query = None
+        if geometry_artifact is not None:
+            self._self_geometry = _SelfGeometry.from_artifact(geometry_artifact, config.policy)
+            parameters = config.policy.artifact.parameters
+            self._self_query = _build_self_query(
+                self._self_geometry,
+                parameters["dcol_max_iterations"]["value"],
+                parameters["dcol_primal_residual_limit"]["value"],
+                parameters["dcol_dual_residual_limit"]["value"],
+            )
 
     @property
     def config(self) -> CollisionSafetyConfig:
@@ -291,7 +304,7 @@ class CollisionSafety:
             raise ValueError("query_mode must be a QueryMode value")
         count = self.config.query_batch_size
         q = _array(query_batch.q, "query_batch.q", (count, N_JOINTS), (jnp.dtype("float64"),))
-        _array(query_batch.active_mask, "query_batch.active_mask", (count,), (jnp.dtype("bool"),))
+        active = _array(query_batch.active_mask, "query_batch.active_mask", (count,), (jnp.dtype("bool"),))
         if not bool(np.all(np.isfinite(np.asarray(q)))):
             raise ValueError("query_batch.q must be finite")
         started_ns = time.perf_counter_ns()
@@ -322,10 +335,36 @@ class CollisionSafety:
             nearest_support_point_m=jnp.zeros((batch, 3), dtype=jnp.float64),
             track_status=jnp.zeros((batch,), dtype=jnp.int32),
         )
+        if (scene_status is CollisionStatus.OK and self._self_query is not None
+                and query_mode is not QueryMode.DISTANCE_MM):
+            geometry = self._self_geometry
+            solved, gradient = self._self_query(q)
+            n = geometry.pairs.shape[0]
+            row_mask = active[:, None] & solved.healthy
+            barrier = solved.scale - geometry.margins
+            for name, value in (
+                ("barrier", barrier), ("grad_h_q", gradient),
+                ("proximity_scale", solved.scale),
+                ("primitive_pair_id", jnp.broadcast_to(geometry.pairs, (batch, n, 2))),
+                ("solver_primal_residual", solved.primal), ("solver_dual_residual", solved.dual),
+                ("solver_iteration", solved.iteration), ("solver_healthy", row_mask),
+            ):
+                result_fields[name] = result_fields[name].at[:, :n].set(value)
+            complete = bool(np.all(np.asarray(~active[:, None] | solved.healthy)))
+            complete = complete and not bool(np.any(np.asarray(prepared_scene.support_mask)))
+            if complete:
+                status = CollisionStatus.OK
+                result_fields["valid_mask"] = result_fields["valid_mask"].at[:, :n].set(row_mask)
+                result_fields["state_valid_mask"] = active
+                result_fields["state_valid"] = active & jnp.all(barrier >= 0.0, axis=1)
+        jax.block_until_ready(result_fields)
         completed_ns = time.perf_counter_ns()
         header = self._header(
             status, prepared_scene.identities, started_ns, completed_ns, self.config.query_deadline_ns
         )
+        if int(header.status) != CollisionStatus.OK:
+            for name in ("valid_mask", "state_valid_mask", "state_valid", "distance_valid_mask"):
+                result_fields[name] = jnp.zeros_like(result_fields[name])
         return QueryResult(header=header, **result_fields)
 
     def certify(

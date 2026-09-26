@@ -1,0 +1,30 @@
+{
+  "id": "i21-native-ellipsoid-dcol",
+  "name": "i21-native-ellipsoid-dcol",
+  "title": "[I21] 实现原生 JAX ellipsoid–ellipsoid DCOL",
+  "description": "通过 CollisionSafety.query 实现 ellipsoid DCOL、关节梯度、pair clearance 和求解健康，并完成解析及独立数值验收",
+  "status": "in_progress",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "Lsn",
+  "assignee": "Lsn",
+  "createdAt": "2026-09-26",
+  "completedAt": null,
+  "branch": "main",
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {
+    "issue_url": "https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/107",
+    "implementation_validation": "verified",
+    "risk_scope": "shared_collision_kernel"
+  }
+}
