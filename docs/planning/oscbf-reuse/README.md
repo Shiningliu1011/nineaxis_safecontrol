@@ -42,6 +42,10 @@
 
 [环境点云碰撞处理研究](research/environment-pointcloud-collision.md)：解释逐源处理、占据体素、全臂距离、未知区域和控制适配；PCL＋FCL 及环境 OBB 的优先验证路线已接受，自碰撞保留 OBB 已定，实际替换仍需证据。
 
+[机械臂附近的 LiDAR 局部碰撞场景研究](research/robot-centered-lidar-local-scene-20260927.md)：固定外置 LiDAR 的全臂距离筛选、运动路径范围、射线占据证据和当前实现检查；检测范围与性能仍需现场验证。
+
+[RViz 选区点云裁剪实验](research/lidar-crop-experiment-20260927.md)：点击三维区域中心、调整范围、保留完整点记录，以及录制点云和实时数据的验证结果。
+
 [控制上游研究](research/control-upstream.md)和[感知上游研究](research/perception-upstream.md)已完成资料核验；版本、许可证及源码引用均在研究文件中。研究完成不代表构建、模型等价验证或目标机器验收通过。本轮仅整理文档，没有运行算法迁移或真机实验。
 
 补充研究：[双传感器协作、冲突与自体过滤](research/dual-sensor-cooperation.md)，回应用户的互补合作目标；两项协作推荐已由用户确认。

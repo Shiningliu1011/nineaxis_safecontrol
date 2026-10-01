@@ -1,0 +1,28 @@
+{
+  "id": "t1-lidar-extrinsic-calibration",
+  "name": "t1-lidar-extrinsic-calibration",
+  "title": "[T1] 激光雷达外参标定与独立验收并写入真源",
+  "description": "处理激光雷达真实外参求取、独立验收和部署身份核对，保存现场输入要求及验收证据",
+  "status": "planning",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "Lsn",
+  "assignee": "Lsn",
+  "createdAt": "2026-09-26",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {
+    "issue_url": "https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/95"
+  }
+}
