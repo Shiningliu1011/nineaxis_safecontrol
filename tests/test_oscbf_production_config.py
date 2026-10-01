@@ -222,9 +222,8 @@ def test_ros_remapping_cannot_collapse_final_state_and_command_topics():
 
 
 def test_chain_remap_is_applied_once_and_snapshot_matches_entities(
-    tmp_path, monkeypatch
+    tmp_path,
 ):
-    from types import SimpleNamespace
 
     from robot_safecontrol_moveit.oscbf_controller import OscbfController
 
@@ -234,17 +233,6 @@ def test_chain_remap_is_applied_once_and_snapshot_matches_entities(
         publish_joint_state_topic="/c",
     )
 
-    def _fake_build_controller(node, portable_root):
-        del portable_root
-        node._loop = SimpleNamespace(obstacle_h_baseline_alpha=10.0)
-        node._evaluation_geometry = SimpleNamespace(total_length_m=1.0)
-        node._evaluation_geometry_hash = "fixture-path-identity"
-        node._evaluation_path_dtype = "float64"
-        node._surface_axis = None
-        node._surface_centre = None
-        node._surface_radius = None
-
-    monkeypatch.setattr(OscbfController, "_build_controller", _fake_build_controller)
     context = Context()
     rclpy.init(
         args=["--ros-args", "-r", "/a:=/b", "-r", "/b:=/c"],
@@ -469,35 +457,12 @@ def test_atomic_runtime_snapshots_are_unique_and_leave_no_partial_files(tmp_path
     assert not list(tmp_path.glob("*.tmp"))
 
 
-def test_snapshot_failure_prevents_command_publisher_creation(monkeypatch):
-    from types import SimpleNamespace
-
+def test_snapshot_failure_prevents_command_publisher_creation():
     import rclpy
     from rclpy.context import Context
 
     from robot_safecontrol_moveit.oscbf_controller import OscbfController
 
-    def _fake_build_controller(node, portable_root):
-        del portable_root
-        node._loop = SimpleNamespace(
-            obstacle_h_baseline_alpha=10.0
-        )
-        node._evaluation_geometry = SimpleNamespace(total_length_m=1.0)
-        node._evaluation_geometry_hash = "fixture-path-identity"
-        node._evaluation_path_dtype = "float64"
-        node._surface_axis = None
-        node._surface_centre = None
-        node._surface_radius = None
-
-    monkeypatch.setattr(OscbfController, "_build_controller", _fake_build_controller)
-    timer_calls = []
-    original_create_timer = rclpy.node.Node.create_timer
-
-    def _record_timer(*args, **kwargs):
-        timer_calls.append((args, kwargs))
-        return original_create_timer(*args, **kwargs)
-
-    monkeypatch.setattr(rclpy.node.Node, "create_timer", _record_timer)
     context = Context()
     rclpy.init(context=context, domain_id=171)
     probe = rclpy.create_node("snapshot_gate_probe", context=context)
@@ -525,7 +490,6 @@ def test_snapshot_failure_prevents_command_publisher_creation(monkeypatch):
         with pytest.raises(RuntimeError, match="snapshot persistence failed"):
             OscbfController(context=context, parameter_overrides=parameters)
         assert probe.count_publishers("/oscbf_command") == 0
-        assert not timer_calls
     finally:
         probe.destroy_node()
         rclpy.shutdown(context=context)

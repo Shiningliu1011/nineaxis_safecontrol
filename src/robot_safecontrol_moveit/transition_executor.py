@@ -11,7 +11,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from threading import Lock
 from time import monotonic
+import traceback
 from typing import Any, Callable
 
 from .task_target import (
@@ -60,17 +62,28 @@ VALID_RESULT_MODES = frozenset({
 })
 
 
-def _format_result(
-    error_code: str, trajectory_points: int, planning_time_s: float, extra: str = ""
-) -> str:
-    parts = [
-        f"error_code={error_code}",
-        f"trajectory_points={trajectory_points}",
-        f"planning_time={planning_time_s:.3f}",
-    ]
-    if extra:
-        parts.append(extra)
-    return "|".join(parts)
+@dataclass(frozen=True)
+class TransitionResult:
+    code: str
+    trajectory_points: int = 0
+    planning_time_s: float = 0.0
+    context: tuple[tuple[str, str], ...] = ()
+    handoff_requested: bool = False
+    handoff_code: str | None = None
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.context, tuple) or any(
+            not isinstance(item, tuple) or len(item) != 2
+            or not all(isinstance(value, str) for value in item)
+            for item in self.context
+        ):
+            raise TypeError("context must contain immutable string pairs")
+        if self.handoff_requested != (self.handoff_code is not None):
+            raise ValueError("handoff response must identify a requested handoff")
+
+    @property
+    def success(self) -> bool:
+        return self.code in SUCCESS_CODES
 
 
 def _source_root() -> Path:
@@ -119,17 +132,28 @@ class TransitionPorts:
 
 
 class TransitionExecutor:
-    """Run one transition plan: health check, start state, goal IK, planning.
-
-    Every phase failure returns a pipe-delimited ``error_code=...`` message
-    instead of raising; the node translates the code into the Trigger
-    response.
-    """
+    """管理过渡相位、并发准入和结构化结果。"""
 
     def __init__(self, ports: TransitionPorts) -> None:
         self._ports = ports
+        self._execution_lock = Lock()
 
-    def execute_plan(self) -> str:
+    @property
+    def is_planning(self) -> bool:
+        return self._execution_lock.locked()
+
+    def execute_plan(self) -> TransitionResult:
+        if not self._execution_lock.acquire(blocking=False):
+            return TransitionResult("PLANNING_ALREADY_RUNNING")
+        try:
+            return self._execute_plan()
+        except Exception as exc:
+            self._ports.log.error(f"Planning failed: {exc}\n{traceback.format_exc()}")
+            return TransitionResult("UNEXPECTED_ERROR", context=(("detail", str(exc)),))
+        finally:
+            self._execution_lock.release()
+
+    def _execute_plan(self) -> TransitionResult:
         ports = self._ports
         get = ports.get_parameter
         plan_start = monotonic()
@@ -141,13 +165,13 @@ class TransitionExecutor:
         # 0. MoveIt service health check (fail-fast before any IK call).
         services_ok, service_err = ports.check_moveit_services()
         if not services_ok:
-            return _format_result(service_err, 0, monotonic() - plan_start)
+            return TransitionResult(service_err, 0, monotonic() - plan_start)
 
         # 1. Get current joint state (Issue #3: no nested spin).
         try:
             start_state = ports.wait_for_joint_state(topic, timeout, max_age, allow_fb)
         except RuntimeError as e:
-            return _format_result(str(e), 0, monotonic() - plan_start)
+            return TransitionResult(str(e), 0, monotonic() - plan_start)
 
         ports.log.info("START_STATE_RECEIVED")
 
@@ -161,8 +185,8 @@ class TransitionExecutor:
         try:
             positions, _ = load_first_task_target(traj_file, max_pts, stride)
         except Exception as e:
-            return _format_result(
-                "TRAJECTORY_LOAD_ERROR", 0, monotonic() - plan_start, f"detail={e}"
+            return TransitionResult(
+                "TRAJECTORY_LOAD_ERROR", 0, monotonic() - plan_start, (("detail", str(e)),)
             )
 
         align_surface = bool(get("align_tool_x_to_surface_normal").value)
@@ -194,8 +218,8 @@ class TransitionExecutor:
                 ik_service_timeout_s=float(get("ik_service_timeout_s").value),
             )
         except IKServiceUnavailable as e:
-            return _format_result(
-                "IK_SERVICE_UNAVAILABLE", 0, monotonic() - plan_start, f"detail={e}"
+            return TransitionResult(
+                "IK_SERVICE_UNAVAILABLE", 0, monotonic() - plan_start, (("detail", str(e)),)
             )
         except IKError as e:
             moveit_code = getattr(e, "moveit_error_code", None)
@@ -210,7 +234,7 @@ class TransitionExecutor:
                 orientation=first_quat,
                 seed=start_state,
             )
-            return _format_result(code, 0, monotonic() - plan_start, extra)
+            return TransitionResult(code, 0, monotonic() - plan_start, extra)
 
         ports.log.info("GOAL_IK_SUCCEEDED")
 
@@ -218,37 +242,37 @@ class TransitionExecutor:
         try:
             ports.validate_state(start_state, label="START_STATE")
         except StateValidityError as e:
-            return _format_result(
-                str(e).split(":")[0], 0, monotonic() - plan_start, f"detail={e}"
+            return TransitionResult(
+                str(e).split(":")[0], 0, monotonic() - plan_start, (("detail", str(e)),)
             )
         except PlanningError as e:
-            return _format_result(
+            return TransitionResult(
                 "STATE_VALIDITY_SERVICE_UNAVAILABLE",
                 0,
                 monotonic() - plan_start,
-                f"detail={e}",
+                (("detail", str(e)),),
             )
 
         try:
             ports.validate_state(first_goal, label="GOAL_STATE")
         except StateValidityError as e:
-            return _format_result(
-                str(e).split(":")[0], 0, monotonic() - plan_start, f"detail={e}"
+            return TransitionResult(
+                str(e).split(":")[0], 0, monotonic() - plan_start, (("detail", str(e)),)
             )
         except PlanningError as e:
-            return _format_result(
+            return TransitionResult(
                 "STATE_VALIDITY_SERVICE_UNAVAILABLE",
                 0,
                 monotonic() - plan_start,
-                f"detail={e}",
+                (("detail", str(e)),),
             )
 
         # 4. Plan with MoveIt's configured OMPL pipeline.
         try:
             transition = ports.plan_transition(start_state, first_goal)
         except PlanningError as e:
-            return _format_result(
-                "PLANNER_FAILED", 0, monotonic() - plan_start, f"detail={e}"
+            return TransitionResult(
+                "PLANNER_FAILED", 0, monotonic() - plan_start, (("detail", str(e)),)
             )
 
         elapsed = monotonic() - plan_start
@@ -260,7 +284,7 @@ class TransitionExecutor:
         )
 
         if mode == "plan_only":
-            return _format_result("TRANSITION_PLANNED", len(transition.points), elapsed)
+            return TransitionResult("TRANSITION_PLANNED", len(transition.points), elapsed)
 
         if mode == "joint_state_replay":
             # Switch Viewer to ROS tracking for replay (Issue #7: fail on switch error).
@@ -277,23 +301,28 @@ class TransitionExecutor:
                 )
             except ExecutionError as e:
                 error_code = str(e).split(":", 1)[0]
-                return _format_result(
-                    error_code, len(transition.points), elapsed, f"detail={e}"
+                return TransitionResult(
+                    error_code, len(transition.points), elapsed, (("detail", str(e)),)
                 )
             ports.log.info("TRANSITION_REPLAYED")
-            if bool(get("notify_oscbf_start").value):
+            handoff_requested = bool(get("notify_oscbf_start").value)
+            code = None
+            if handoff_requested:
                 ports.wait_for_plant_settle(transition)
                 code = ports.notify_oscbf_start()
                 ports.log.info(f"OSCBF_START_NOTIFY_RESULT={code}")
-            return _format_result("TRANSITION_REPLAYED", len(transition.points), elapsed)
+            return TransitionResult(
+                "TRANSITION_REPLAYED", len(transition.points), elapsed,
+                handoff_requested=handoff_requested, handoff_code=code,
+            )
 
         if mode == "moveit_execute":
             result = ports.execute(transition)
             if result.succeeded:
-                return _format_result("TRANSITION_EXECUTED", len(transition.points), elapsed)
-            return _format_result("TRANSITION_EXECUTION_FAILED", len(transition.points), elapsed)
+                return TransitionResult("TRANSITION_EXECUTED", len(transition.points), elapsed)
+            return TransitionResult("TRANSITION_EXECUTION_FAILED", len(transition.points), elapsed)
 
-        return _format_result("TRANSITION_PLANNED", len(transition.points), elapsed)
+        return TransitionResult("TRANSITION_PLANNED", len(transition.points), elapsed)
 
     def _ik_failure_context(
         self,
@@ -303,23 +332,21 @@ class TransitionExecutor:
         position: Any,
         orientation: Any,
         seed: Any,
-    ) -> str:
-        """Return machine-readable context for every failed goal IK request."""
+    ) -> tuple[tuple[str, str], ...]:
+        """保留 IK 诊断字段及其显示顺序。"""
         seed_positions = ",".join(f"{float(value):.6f}" for value in seed.position)
-        return "|".join(
-            [
-                f"detail={error}",
-                f"moveit_error_code={moveit_error_code if moveit_error_code is not None else 'NO_RESPONSE'}",
-                "position=" + ",".join(f"{float(value):.6f}" for value in position),
-                "orientation=" + ",".join(f"{float(value):.6f}" for value in orientation),
-                f"planning_group={self._ports.planning_group}",
-                f"base_frame={self._ports.base_frame}",
-                f"tool_link={self._ports.tool_link}",
-                "seed_names=" + ",".join(seed.name),
-                f"seed_positions={seed_positions}",
-                "avoid_collisions=true",
-                f"timeout={float(self._ports.get_parameter('ik_service_timeout_s').value):.3f}",
-            ]
+        return (
+            ("detail", str(error)),
+            ("moveit_error_code", str(moveit_error_code) if moveit_error_code is not None else "NO_RESPONSE"),
+            ("position", ",".join(f"{float(value):.6f}" for value in position)),
+            ("orientation", ",".join(f"{float(value):.6f}" for value in orientation)),
+            ("planning_group", self._ports.planning_group),
+            ("base_frame", self._ports.base_frame),
+            ("tool_link", self._ports.tool_link),
+            ("seed_names", ",".join(seed.name)),
+            ("seed_positions", seed_positions),
+            ("avoid_collisions", "true"),
+            ("timeout", f"{float(self._ports.get_parameter('ik_service_timeout_s').value):.3f}"),
         )
 
 
@@ -340,7 +367,7 @@ class AutoPlanLoop:
         is_planning: Callable[[], bool],
         services_ready: Callable[[], tuple[bool, str]],
         oscbf_ready: Callable[[], bool],
-        plan_once: Callable[[], tuple[bool, str]],
+        plan_once: Callable[[], TransitionResult],
         randomize_plant: Callable[[], str],
         log: Any,
     ) -> None:
@@ -353,6 +380,7 @@ class AutoPlanLoop:
         self._log = log
         self._attempts = 0
         self._done = False
+        self._tick_lock = Lock()
 
     @property
     def done(self) -> bool:
@@ -364,6 +392,14 @@ class AutoPlanLoop:
 
     def tick(self) -> None:
         """One timer tick of the autonomous experiment."""
+        if not self._tick_lock.acquire(blocking=False):
+            return
+        try:
+            self._tick()
+        finally:
+            self._tick_lock.release()
+
+    def _tick(self) -> None:
         if self._done or self._is_planning():
             return
         # Don't burn attempts on startup races: wait until MoveIt is actually
@@ -374,19 +410,22 @@ class AutoPlanLoop:
         if not self._oscbf_ready():
             return
         self._attempts += 1
-        success, message = self._plan_once()
-        if success:
+        result = self._plan_once()
+        if result.code == "PLANNING_ALREADY_RUNNING":
+            self._attempts -= 1
+            return
+        if result.success:
             self._done = True
             self._log.info(f"AUTO_PLAN_SUCCEEDED (attempt {self._attempts})")
             return
         if self._attempts >= self._max_attempts:
             self._done = True
             self._log.error(
-                f"AUTO_PLAN_FAILED after {self._max_attempts} attempts: {message}"
+                f"AUTO_PLAN_FAILED after {self._max_attempts} attempts: {result}"
             )
             return
         plant_code = self._randomize_plant()
         self._log.warn(
             f"AUTO_PLAN_RETRY {self._attempts}/{self._max_attempts}: "
-            f"{message}; plant={plant_code}"
+            f"{result}; plant={plant_code}"
         )

@@ -18,3 +18,7 @@ bash run_all_tests.sh
 最近一次 containment 产品代码完整验收基于 `e4d9a268`，对应证据见[验证归档](../planning/oscbf-reuse/validation/2026-09-11-containment/REPORT.md)。当前 checkout 的测试真值仍以实际运行 `bash scripts/agent_check.sh`（快速反馈）与 `bash run_all_tests.sh`（完整回归）为准；验证记录应注明 commit、日期、环境和退出码。[可复现基线](../planning/oscbf-reuse/handoffs/30-baseline.md)仅保留历史结果，不表示当前仍有同样失败。
 
 最小纯软件 CI 入口：[Pure software checks](../../.github/workflows/pure-checks.yml)。
+
+跟踪状态与过渡结果的公开接口测试、真实 MoveIt 组合验证和时延入口见
+[跟踪执行说明](../tracking_execution.md)。真实 MoveIt 测试创建独立 ROS domain，
+启动本地 AEB 规划器和被控对象，运行结束时清理自身资源。

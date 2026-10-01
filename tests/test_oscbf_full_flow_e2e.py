@@ -216,12 +216,12 @@ def test_zero_transition_then_tracking(closed_loop):
         converged = JointState()
         converged.name = ["J1", "J2", "J3", "J4", "J5", "J6", "J7", "J8", "J9"]
         converged.position = [float(value) for value in plant.state]
-        steps_before = len(controller._step_durations)
+        steps_before = controller.progress_snapshot()["steps"]
         deadline = time.monotonic() + 3.0
         while time.monotonic() < deadline:
             state_pub.publish(converged)
             time.sleep(0.02)
-        assert len(controller._step_durations) > steps_before, (
+        assert controller.progress_snapshot()["steps"] > steps_before, (
             "controller stalled on a converged (exact) plant state"
         )
         client_node.destroy_node()

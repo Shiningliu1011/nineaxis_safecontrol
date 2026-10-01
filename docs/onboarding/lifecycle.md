@@ -3,11 +3,14 @@
 1. `run_demo.sh` 启用被控对象并设置随机起始位姿；`oscbf_plant.py` 持续发布仿真状态。
 2. `transition_planning_server.py` 调用 MoveIt/AEB-RRT* 与 FCL 规划过渡，经 Ruckig
    平滑并回放命令；回放后等待被控对象收敛，再交接给 OSCBF 控制器。
-3. `oscbf_controller.py` 订阅状态，经 `portable_oscbf/work` 的 JAX facade 计算并
-   发布 `/oscbf_command`；被控对象积分后继续发布 `/mujoco_joint_states`。
+3. `oscbf_controller.py` 订阅状态，交由 `tracking_run.py` 管理跟踪周期，经
+   `portable_oscbf/work` 的 JAX facade 计算并发布 `/oscbf_command`；被控对象
+   积分后继续发布 `/mujoco_joint_states`。
 4. `mujoco_viewer_with_cylinder.py` 订阅状态驱动显示；它不拥有控制状态 publisher。
-5. `tracking_evaluator.py` 可订阅状态与命令计算跟踪指标；查看器、过渡服务器和
-   控制器共用 `oscbf_trajectory.py` 的轨迹变换。
+5. `TrackingRun` 将内核控制步交给 `tracking_evaluator.py` 评价，在终止时提交
+   后台报告；查看器、过渡服务器和控制器共用 `oscbf_trajectory.py` 的轨迹变换。
+
+执行状态、结构化过渡结果与报告关闭顺序见[跟踪执行说明](../tracking_execution.md)。
 
 **当前 QoS**：[ros_conventions.py](../../src/robot_safecontrol_moveit/ros_conventions.py)
 分别提供 `state_stream_qos()`（KEEP_LAST / depth 20 / BEST_EFFORT / VOLATILE）和

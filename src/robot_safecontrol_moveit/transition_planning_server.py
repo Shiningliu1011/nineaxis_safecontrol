@@ -42,13 +42,22 @@ from .ros_conventions import JOINT_STATE_TOPIC, state_stream_qos
 from .task_target import solve_first_task_state
 from .trajectory_execution import TrajectoryExecutor
 from .transition_executor import (
-    SUCCESS_CODES,
     VALID_RESULT_MODES,
     AutoPlanLoop,
     TransitionExecutor,
     TransitionPorts,
-    _format_result,
+    TransitionResult,
 )
+
+
+def format_transition_result(result: TransitionResult) -> str:
+    parts = [
+        f"error_code={result.code}",
+        f"trajectory_points={result.trajectory_points}",
+        f"planning_time={result.planning_time_s:.3f}",
+    ]
+    parts.extend(f"{name}={value}" for name, value in result.context)
+    return "|".join(parts)
 
 
 def notify_oscbf_start(
@@ -67,6 +76,7 @@ def notify_oscbf_start(
         while not future.done() and monotonic() < deadline:
             sleep(0.01)
         if not future.done():
+            future.cancel()
             return "START_SERVICE_TIMEOUT"
         result = future.result()
         if result is not None and result.success:
@@ -84,8 +94,9 @@ def notify_oscbf_start(
 class TransitionPlanningServer(Node):
     """Persistent node: one MoveIt session, many /plan_transition_once calls."""
 
-    def __init__(self) -> None:
-        super().__init__("transition_planning_server")
+    def __init__(self, *, node_name="transition_planning_server", context=None, parameter_overrides=None) -> None:
+        super().__init__(node_name, context=context,
+                         parameter_overrides=parameter_overrides)
         self._declare_parameters()
         self._validate_result_mode()
 
@@ -121,7 +132,6 @@ class TransitionPlanningServer(Node):
         self._executor = TrajectoryExecutor(self, self._moveit, joint_names)
 
         # Planning service.
-        self._planning = False
         self._pipeline = TransitionExecutor(self._build_ports())
         self._srv = self.create_service(
             Trigger, "/plan_transition_once", self._plan_callback,
@@ -157,10 +167,10 @@ class TransitionPlanningServer(Node):
         if bool(self.get_parameter("auto_plan_once").value):
             self._auto_plan_loop = AutoPlanLoop(
                 attempts=int(self.get_parameter("auto_plan_attempts").value),
-                is_planning=lambda: self._planning,
+                is_planning=lambda: self.is_planning,
                 services_ready=self._check_moveit_services,
                 oscbf_ready=self._oscbf_start_service_ready,
-                plan_once=self._plan_once,
+                plan_once=self.execute_plan,
                 randomize_plant=self._randomize_plant_start,
                 log=self.get_logger(),
             )
@@ -252,12 +262,18 @@ class TransitionPlanningServer(Node):
             self, str(self.get_parameter("oscbf_start_service").value)
         )
 
-    def _plan_once(self) -> tuple[bool, str]:
-        """Run one plan through the service callback; return (success, message)."""
-        request = Trigger.Request()
-        response = Trigger.Response()
-        self._plan_callback(request, response)
-        return bool(response.success), str(response.message)
+    @property
+    def is_planning(self) -> bool:
+        return self._pipeline.is_planning
+
+    def execute_plan(self) -> TransitionResult:
+        return self._pipeline.execute_plan()
+
+    def auto_plan_snapshot(self) -> dict:
+        loop = self._auto_plan_loop
+        return {"enabled": loop is not None,
+                "done": loop.done if loop is not None else False,
+                "attempts_made": loop.attempts_made if loop is not None else 0}
 
     def _auto_plan_tick(self) -> None:
         """Autonomous experiment tick; the retry policy lives in AutoPlanLoop."""
@@ -407,31 +423,9 @@ class TransitionPlanningServer(Node):
 
     def _plan_callback(self, request, response):
         """Handle one /plan_transition_once request."""
-        if self._planning:
-            response.success = False
-            response.message = _format_result("PLANNING_ALREADY_RUNNING", 0, 0.0)
-            return response
-
-        self._planning = True
-        try:
-            result_msg = self._pipeline.execute_plan()
-            # Parse error_code to determine success (Issue #6).
-            code = result_msg.split("|")[0].split("=", 1)[-1] if "|" in result_msg else ""
-            response.success = code in SUCCESS_CODES
-            response.message = result_msg
-        except Exception as exc:
-            # rclpy's logger does not support the stdlib ``exc_info`` option.
-            # Keep the service alive and return a structured failure instead.
-            import traceback
-            self.get_logger().error(
-                f"Planning failed: {exc}\n{traceback.format_exc()}"
-            )
-            response.success = False
-            response.message = _format_result(
-                f"UNEXPECTED_ERROR", 0, 0.0, f"detail={exc}"
-            )
-        finally:
-            self._planning = False
+        result = self.execute_plan()
+        response.success = result.success
+        response.message = format_transition_result(result)
         return response
 
     # ------------------------------------------------------------------

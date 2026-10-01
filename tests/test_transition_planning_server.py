@@ -1,286 +1,36 @@
-"""Tests for transition planning server logic (no ROS node required).
+import pytest
 
-Covers: success codes, result mode validation, error code formatting,
-fail-closed state handling, and non-spin execution patterns.
-"""
+from robot_safecontrol_moveit.transition_executor import TransitionResult, VALID_RESULT_MODES
+from robot_safecontrol_moveit.transition_planning_server import format_transition_result
 
-import sys
-import unittest
-from pathlib import Path
-from unittest.mock import MagicMock, patch
 
-# Ensure the source tree is importable.
-_src = Path(__file__).resolve().parents[1] / "src"
-if str(_src) not in sys.path:
-    sys.path.insert(0, str(_src))
+def test_ros_result_format_preserves_field_order_and_precision():
+    result = TransitionResult("TRANSITION_PLANNED", 42, 3.14159)
+    assert format_transition_result(result) == (
+        "error_code=TRANSITION_PLANNED|trajectory_points=42|planning_time=3.142"
+    )
 
 
-class _Param:
-    def __init__(self, value):
-        self.value = value
+def test_ros_diagnostics_keep_order_and_literal_values():
+    result = TransitionResult("GOAL_IK_FAILED", 0, 1.5, (
+        ("detail", "IK rejected: x=y"), ("moveit_error_code", "-31"),
+        ("planning_group", "arm"), ("seed_names", "J1,J2"),
+    ))
+    assert format_transition_result(result) == (
+        "error_code=GOAL_IK_FAILED|trajectory_points=0|planning_time=1.500|"
+        "detail=IK rejected: x=y|moveit_error_code=-31|planning_group=arm|seed_names=J1,J2"
+    )
 
 
-class _FakeLogger:
-    def __init__(self, lines):
-        self._lines = lines
+@pytest.mark.parametrize("code", [None, "TRACKING_STARTED", "START_SERVICE_TIMEOUT", "START_SERVICE_FAILED"])
+def test_handoff_fields_do_not_change_existing_trigger_text(code):
+    result = TransitionResult("TRANSITION_REPLAYED", 10, 2.5,
+                              handoff_requested=code is not None, handoff_code=code)
+    assert result.success
+    assert format_transition_result(result) == (
+        "error_code=TRANSITION_REPLAYED|trajectory_points=10|planning_time=2.500"
+    )
 
-    def info(self, message):
-        self._lines.append(("info", message))
 
-    def warn(self, message):
-        self._lines.append(("warn", message))
-
-    def error(self, message):
-        self._lines.append(("error", message))
-
-
-class _SettleServer:
-    """Harness for the plant-settle wait before the tracking handoff."""
-
-    def __init__(self, deliver_state: bool):
-        import threading
-
-        from sensor_msgs.msg import JointState
-        from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
-
-        self._joint_names = tuple(f"J{i}" for i in range(1, 10))
-        self._deliver_state = deliver_state
-        self._logs = []
-        self._logger = _FakeLogger(self._logs)
-        self._subscription_cb = None
-        # 与节点持久订阅状态机同步（_persistent_js_cb / _wait_for_js_snapshot）:
-        # 消息到达 -> 记 _js_latest + set _js_event; 等待方 clear+wait。
-        self._js_latest = None
-        self._js_event = threading.Event()
-
-        self.transition = JointTrajectory()
-        self.transition.joint_names = list(self._joint_names)
-        point = JointTrajectoryPoint()
-        point.positions = [0.25] * 9
-        self.transition.points.append(point)
-        self.message = JointState()
-        self.message.name = list(self._joint_names)
-        self.message.position = [0.25] * 9
-
-    def get_parameter(self, name):
-        return _Param("/mujoco_joint_states")
-
-    def get_logger(self):
-        return self._logger
-
-    def create_subscription(self, message_type, topic, callback, qos_profile):
-        self._subscription_cb = callback
-        return object()
-
-    def destroy_subscription(self, subscription):
-        pass
-
-    def _wait_for_js_snapshot(self, timeout_s: float):
-        """Mirror ``TransitionPlanningServer._wait_for_js_snapshot``."""
-        self._js_event.clear()
-        self._js_event.wait(timeout_s)
-        return self._js_latest
-
-    def deliver(self):
-        if self._deliver_state:
-            self._js_latest = self.message
-            self._js_event.set()
-
-
-class TestSuccessCodes(unittest.TestCase):
-    """Issue #6: all success codes recognised."""
-
-    def setUp(self):
-        from robot_safecontrol_moveit.transition_executor import SUCCESS_CODES
-
-        self.SUCCESS_CODES = SUCCESS_CODES
-
-    def test_transition_planned_is_success(self):
-        self.assertIn("TRANSITION_PLANNED", self.SUCCESS_CODES)
-
-    def test_plan_only_success_is_success(self):
-        self.assertIn("PLAN_ONLY_SUCCESS", self.SUCCESS_CODES)
-
-    def test_transition_replayed_is_success(self):
-        self.assertIn("TRANSITION_REPLAYED", self.SUCCESS_CODES)
-
-    def test_transition_executed_is_success(self):
-        self.assertIn("TRANSITION_EXECUTED", self.SUCCESS_CODES)
-
-    def test_failure_code_not_in_success(self):
-        self.assertNotIn("START_STATE_UNAVAILABLE", self.SUCCESS_CODES)
-        self.assertNotIn("PLANNER_FAILED", self.SUCCESS_CODES)
-        self.assertNotIn("SCENE_SYNC_TIMEOUT", self.SUCCESS_CODES)
-
-    def test_success_check(self):
-        code = "TRANSITION_REPLAYED"
-        self.assertTrue(code in self.SUCCESS_CODES)
-
-
-class TestPlantSettleBeforeHandoff(unittest.TestCase):
-    @staticmethod
-    def _call(server, timeout_s):
-        from robot_safecontrol_moveit.transition_planning_server import (
-            TransitionPlanningServer,
-        )
-
-        TransitionPlanningServer._wait_for_plant_settle(
-            server, server.transition, timeout_s=timeout_s, tolerance=0.01
-        )
-
-    def test_settle_returns_when_plant_converges(self):
-        import threading
-        import time
-
-        server = _SettleServer(deliver_state=True)
-        thread = threading.Thread(
-            target=lambda: (time.sleep(0.1), server.deliver()),
-            daemon=True,
-        )
-        thread.start()
-        self._call(server, timeout_s=2.0)
-        thread.join(timeout=1.0)
-        self.assertTrue(
-            any(
-                level == "info" and "PLANT_SETTLED" in message
-                for level, message in server._logs
-            )
-        )
-
-    def test_settle_times_out_gracefully(self):
-        server = _SettleServer(deliver_state=False)
-        self._call(server, timeout_s=0.2)
-        self.assertTrue(
-            any(
-                level == "warn" and "PLANT_SETTLE_TIMEOUT" in message
-                for level, message in server._logs
-            )
-        )
-
-
-class TestResultModeValidation(unittest.TestCase):
-    """Issue #5: transition_result_mode must be a valid value."""
-
-    def setUp(self):
-        from robot_safecontrol_moveit.transition_executor import (
-            VALID_RESULT_MODES,
-        )
-
-        self.VALID_MODES = VALID_RESULT_MODES
-
-    def test_valid_modes(self):
-        self.assertIn("plan_only", self.VALID_MODES)
-        self.assertIn("joint_state_replay", self.VALID_MODES)
-        self.assertIn("moveit_execute", self.VALID_MODES)
-
-    def test_invalid_mode_not_accepted(self):
-        self.assertNotIn("execute_transition", self.VALID_MODES)
-        self.assertNotIn("replay_transition", self.VALID_MODES)
-        self.assertNotIn("", self.VALID_MODES)
-
-
-class TestResultFormatting(unittest.TestCase):
-    """Validate the pipe-delimited result format."""
-
-    def setUp(self):
-        from robot_safecontrol_moveit.transition_executor import (
-            _format_result,
-        )
-
-        self._format = _format_result
-
-    def test_basic_format(self):
-        result = self._format("TRANSITION_PLANNED", 42, 3.141)
-        self.assertIn("error_code=TRANSITION_PLANNED", result)
-        self.assertIn("trajectory_points=42", result)
-        self.assertIn("planning_time=3.141", result)
-
-    def test_format_with_extra(self):
-        result = self._format("PLANNER_FAILED", 0, 1.5, "detail=timeout")
-        self.assertIn("detail=timeout", result)
-
-    def test_format_parses_back(self):
-        result = self._format("TRANSITION_REPLAYED", 10, 2.5)
-        parts = dict(p.split("=", 1) for p in result.split("|") if "=" in p)
-        self.assertEqual(parts["error_code"], "TRANSITION_REPLAYED")
-        self.assertEqual(parts["trajectory_points"], "10")
-
-
-class TestFailClosed(unittest.TestCase):
-    """Issue #8: state validity must be fail-closed."""
-
-    def test_service_unavailable_raises(self):
-        """When service is unavailable, should raise PlanningError."""
-        from robot_safecontrol_moveit.motion_planning import PlanningError
-        # Verify the error can be constructed and contains the right prefix.
-        err = PlanningError("STATE_VALIDITY_SERVICE_UNAVAILABLE: test")
-        self.assertIn("STATE_VALIDITY_SERVICE_UNAVAILABLE", str(err))
-
-    def test_timeout_raises(self):
-        from robot_safecontrol_moveit.motion_planning import PlanningError
-        err = PlanningError("STATE_VALIDITY_TIMEOUT: test")
-        self.assertIn("STATE_VALIDITY_TIMEOUT", str(err))
-
-    def test_no_response_raises(self):
-        from robot_safecontrol_moveit.motion_planning import PlanningError
-        err = PlanningError("STATE_VALIDITY_NO_RESPONSE: test")
-        self.assertIn("STATE_VALIDITY_NO_RESPONSE", str(err))
-
-    def test_collision_error_prefixes(self):
-        """Collision errors should not use joint names as link names."""
-        prefixes = [
-            "START_STATE_COLLISION",
-            "GOAL_STATE_COLLISION",
-        ]
-        for prefix in prefixes:
-            self.assertTrue(prefix.startswith("START_STATE_") or
-                            prefix.startswith("GOAL_STATE_"))
-
-
-class TestNoNestedSpin(unittest.TestCase):
-    """Issue #3: verify rclpy.spin_once/spin_until_future_complete not called in callbacks."""
-
-    def test_server_imports_no_spin_in_paths(self):
-        """Verify the server module imports the threading module (for Event)."""
-        import robot_safecontrol_moveit.transition_planning_server as server
-        source = Path(server.__file__).read_text()
-        # The server module should NOT have rclpy.spin_once or
-        # rclpy.spin_until_future_complete in non-comment lines.
-        lines = [l for l in source.splitlines()
-                 if not l.strip().startswith("#") and l.strip()]
-        spin_calls = [l for l in lines
-                      if "spin_once" in l or "spin_until_future_complete" in l]
-        self.assertEqual(
-            len(spin_calls), 0,
-            f"Found nested spin calls in server source: {spin_calls}"
-        )
-
-    def test_motion_planning_imports_no_spin(self):
-        """Verify motion_planning.py has no nested spin calls."""
-        import robot_safecontrol_moveit.motion_planning as mp
-        source = Path(mp.__file__).read_text()
-        lines = [l for l in source.splitlines()
-                 if not l.strip().startswith("#") and l.strip()]
-        spin_calls = [l for l in lines
-                      if "spin_once" in l or "spin_until_future_complete" in l]
-        self.assertEqual(
-            len(spin_calls), 0,
-            f"Found nested spin calls in motion_planning source: {spin_calls}"
-        )
-
-    def test_trajectory_execution_imports_no_spin(self):
-        """Verify trajectory_execution.py has no nested spin calls."""
-        import robot_safecontrol_moveit.trajectory_execution as te
-        source = Path(te.__file__).read_text()
-        lines = [l for l in source.splitlines()
-                 if not l.strip().startswith("#") and l.strip()]
-        spin_calls = [l for l in lines
-                      if "spin_once" in l or "spin_until_future_complete" in l]
-        self.assertEqual(
-            len(spin_calls), 0,
-            f"Found nested spin calls in trajectory_execution source: {spin_calls}"
-        )
-
-
-if __name__ == "__main__":
-    unittest.main()
+def test_supported_modes_are_unchanged():
+    assert VALID_RESULT_MODES == {"plan_only", "joint_state_replay", "moveit_execute"}

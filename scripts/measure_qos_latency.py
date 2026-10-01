@@ -36,6 +36,7 @@ SOURCE_FILES = (
     "scripts/measure_qos_latency.py",
     "src/robot_safecontrol_moveit/ros_conventions.py",
     "src/robot_safecontrol_moveit/oscbf_controller.py",
+    "src/robot_safecontrol_moveit/tracking_run.py",
     "src/robot_safecontrol_moveit/oscbf_plant.py",
     "config/oscbf_controller.yaml",
     "portable_oscbf/config/nineaxis.yaml",
@@ -131,7 +132,7 @@ class MeasuredController(OscbfController):
 
     def _record_command(self, message: JointState) -> None:
         state_stamp = self._latest_state_stamp_ns
-        if self._hold_q is not None or state_stamp is None:
+        if self.execution_state == "holding" or state_stamp is None:
             return
         if state_stamp == self._last_traced_state_stamp_ns:
             return

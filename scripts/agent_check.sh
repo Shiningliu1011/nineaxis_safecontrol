@@ -38,6 +38,7 @@ pure_logic_modules=(
     tracking_contract
     tracking_evaluator
     tracking_report_writer
+    tracking_run
     unit_conversion
     transition_executor
 )

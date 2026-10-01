@@ -95,31 +95,35 @@ def test_replay_dual_publishes_state_and_command():
         rclpy.shutdown(context=context)
 
 
-def test_notify_oscbf_start_returns_service_response():
+def test_notify_oscbf_start_returns_service_response(tmp_path):
     from robot_safecontrol_moveit.transition_planning_server import (
         notify_oscbf_start,
     )
+    from robot_safecontrol_moveit.oscbf_controller import OscbfController
+    from rclpy.parameter import Parameter
 
     context = Context()
     rclpy.init(context=context, domain_id=_DOMAIN_ID)
     node = rclpy.create_node("handoff_service_probe", context=context)
 
-    def _handler(request, response):
-        response.success = True
-        response.message = "TRACKING_STARTED"
-        return response
-
-    node.create_service(Trigger, "/test/start_tracking", _handler)
+    controller = OscbfController(context=context, parameter_overrides=[
+        Parameter("production_config_yaml", value=str(REPO_ROOT / "config/oscbf_controller.yaml")),
+        Parameter("perf_report_path", value=str(tmp_path / "perf.md")),
+        Parameter("wait_for_start", value=True),
+    ])
     executor = MultiThreadedExecutor(num_threads=2, context=context)
     executor.add_node(node)
+    executor.add_node(controller)
     thread = threading.Thread(target=executor.spin, daemon=True)
     thread.start()
     try:
         code = notify_oscbf_start(
-            node, "/test/start_tracking", timeout_s=5.0
+            node, "/oscbf_controller/start_tracking", timeout_s=5.0
         )
     finally:
         executor.shutdown()
+        thread.join()
+        controller.destroy_node()
         node.destroy_node()
         rclpy.shutdown(context=context)
     assert code == "TRACKING_STARTED"

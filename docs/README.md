@@ -7,6 +7,7 @@
 - [项目入门与结构](ONBOARDING.md)：源码入口、闭环数据流和开发环境。
 - [运行与测试](PROJECT_GUIDE.md)：仿真、配置、测试及硬件模式。
 - [跟踪评价](tracking_evaluation.md)：指标、证据和报告。
+- [跟踪执行与过渡结果](tracking_execution.md)：公开入口、状态归属、报告生命周期和验证入口。
 - [真机操作手册](real_robot_runbook.md)与[笔记本连接检查](hardware_laptop_quickstart.md)：硬件操作入口。
 
 ## 模块与领域

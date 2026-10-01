@@ -4,6 +4,7 @@
 - `src/robot_safecontrol_moveit/oscbf_plant.py` — jerk 限幅执行器仿真节点
 - `src/robot_safecontrol_moveit/transition_planning_server.py` — 过渡规划服务器（薄 ROS 壳）
 - `src/robot_safecontrol_moveit/transition_executor.py` — 过渡管线相位机（纯逻辑，无 ROS）
+- `src/robot_safecontrol_moveit/tracking_run.py` — 跟踪周期、保持和平滑、终止报告生命周期（无 ROS）
 - `src/robot_safecontrol_moveit/mujoco_viewer_with_cylinder.py` — MuJoCo 查看器/仿真
 - `src/robot_safecontrol_moveit/oscbf_trajectory.py` — 统一轨迹变换（三端共享）
 - `src/robot_safecontrol_moveit/hardware_bridge.py` — containment 入口（sim inert / shadow 记录 / live disabled）

@@ -13,7 +13,6 @@ import json
 import re
 import sys
 import time
-from dataclasses import replace
 from pathlib import Path
 
 # Keep the single-threaded XLA contract of the portable suite before the node
@@ -169,26 +168,10 @@ def test_production_values_reach_actual_consumers_and_provenance(
     assert diagnostics["telemetry_period_s"] == pytest.approx(0.5)
 
 
-def test_tracking_sentinels_reach_the_actual_facade_call(controller_fixture):
-    node = controller_fixture["node"]
-    captured = {}
-    original = node._loop.path_tracking_step
-
-    def _capture_path_tracking_step(**kwargs):
-        captured.update(kwargs)
-        return original(**kwargs)
-
-    node._loop.path_tracking_step = _capture_path_tracking_step
-    try:
-        node.step_once(_START_Q)
-    finally:
-        node._loop.path_tracking_step = original
-
-    assert captured["kp_pos"] == 161.0
-    assert captured["kp_orient"] == 10.0
-    assert captured["kp_joint"] == 0.45
-    assert captured["nullspace_speed_limit"] == 0.18
-    assert captured["damping"] == 0.05
+def test_tracking_parameters_are_observable(controller_fixture):
+    values = controller_fixture["node"].runtime_configuration_diagnostics()["path_tracking_step"]
+    assert values == dict(kp_pos=161.0, kp_orient=10.0, kp_joint=.45,
+                         nullspace_speed_limit=.18, damping=.05)
 
 
 def test_production_config_refactor_preserves_control_outputs_from_8479740(
@@ -406,91 +389,6 @@ def test_runtime_snapshot_matches_consumers_and_records_version_identity(
     }
 
 
-@pytest.mark.parametrize("write_fails", [False, True])
-def test_hold_commands_continue_during_background_report(
-    controller_fixture, tmp_path, monkeypatch, write_fails,
-):
-    from threading import Event
-    from robot_safecontrol_moveit.tracking_report_writer import TrackingReportWriter, write_tracking_bundle
-
-    node, context = controller_fixture["node"], controller_fixture["context"]
-    entered, release = Event(), Event()
-
-    def slow_write(evaluator, path):
-        entered.set()
-        assert release.wait(5.)
-        if write_fails:
-            raise OSError("test report disk failure")
-        return write_tracking_bundle(evaluator, path)
-
-    writer = TrackingReportWriter(write=slow_write)
-    # Restore all shared fixture state after this terminal episode.
-    monkeypatch.setattr(node, "_path_state", node._loop.initial_path_state())
-    monkeypatch.setattr(node, "_last_result", None)
-    step = node.step_once(_START_Q)
-    # The record is immutable, so the fake terminal step is a copy with the
-    # endpoint flag replaced instead of an in-place edit of the return value.
-    step = replace(step, reference_at_endpoint=True)
-    monkeypatch.setattr(node, "step_once", lambda *args, **kwargs: step)
-    monkeypatch.setattr(node, "_report_writer", writer)
-    monkeypatch.setattr(node, "_tracking_report_path", lambda: str(tmp_path / "terminal.md"))
-    monkeypatch.setattr(node, "_reported_writer_state", "idle")
-    monkeypatch.setattr(node, "_evaluator", node._make_tracking_evaluator())
-    monkeypatch.setattr(node, "_tracking_started", True)
-    monkeypatch.setattr(node, "_latest_q", _START_Q.copy())
-    monkeypatch.setattr(node, "_hold_q", None)
-    monkeypatch.setattr(node, "_hold_reported", False)
-    monkeypatch.setattr(node, "_q_cmd_smooth", None)
-    monkeypatch.setattr(node, "_last_pos_err", None)
-    monkeypatch.setattr(node, "_step_durations", [])
-    monkeypatch.setattr(node, "_received_any_state", node._received_any_state)
-    monkeypatch.setattr(node, "_last_state_time", node._last_state_time)
-    monkeypatch.setattr(node, "_stall_since", None)
-    monkeypatch.setattr(node, "_pos_err_hist", node._pos_err_hist.copy())
-    monkeypatch.setattr(node, "_src_hist", node._src_hist.copy())
-
-    probe = rclpy.create_node("off15_report_probe", context=context)
-    received = []
-    probe.create_subscription(JointState, _COMMAND_TOPIC, received.append, qos_profile_sensor_data)
-    plant_pub = probe.create_publisher(JointState, _STATE_TOPIC, qos_profile_sensor_data)
-    executor = SingleThreadedExecutor(context=context)
-    executor.add_node(node)
-    executor.add_node(probe)
-    plant = JointState()
-    plant.name = node._joint_names
-    plant.position = _START_Q.tolist()
-    try:
-        node._control_tick()
-        assert entered.wait(2.)
-        assert node._evaluator.termination == "completed"
-        assert node.progress_snapshot()["report_status"]["state"] == "writing"
-        deadline = time.monotonic() + .7
-        while time.monotonic() < deadline:
-            plant_pub.publish(plant)
-            executor.spin_once(timeout_sec=.01)
-        assert len(received) >= 3, "hold publisher stopped while report writer was blocked"
-        assert all(_in_bounds(node, np.asarray(message.position)) for message in received)
-        assert node._evaluator.step_count == 1  # holding does not append samples
-    finally:
-        release.set()
-        writer.close()
-        executor.remove_node(node)
-        executor.remove_node(probe)
-        executor.shutdown()
-        probe.destroy_node()
-    node._poll_tracking_report()
-    status = node.progress_snapshot()["report_status"]
-    assert status["state"] == ("failed" if write_fails else "saved")
-    if write_fails:
-        assert "test report disk failure" in status["error"]
-    else:
-        import hashlib
-        path = tmp_path / "terminal.json"
-        summary = json.loads(path.read_text())
-        assert summary["sample_data_sha256"] == hashlib.sha256(
-            path.with_suffix(".samples.json").read_bytes()).hexdigest()
-
-
 def test_step_once_returns_valid_safe_state(controller_fixture):
     node = controller_fixture["node"]
     record = node.step_once(_START_Q)
@@ -503,44 +401,6 @@ def test_step_once_returns_valid_safe_state(controller_fixture):
     assert np.all(np.isfinite(record.err_6d))
     assert record.qp_ok
     assert record.min_obs_dist is None  # disabled obstacle sentinel is not a measurement
-
-
-def test_tracking_evaluator_integration(controller_fixture, tmp_path):
-    """评价器在控制器内正确累积跟踪指标。"""
-    node = controller_fixture["node"]
-    # 初始状态：评价器为 None（尚未开始跟踪）
-    assert node.tracking_report() is None
-    # 模拟几步跟踪
-    node._evaluator = node._make_tracking_evaluator()
-    for i in range(5):
-        record = node.step_once(_START_Q)
-        node._evaluator.update(record, wall_time_s=float(i) * 0.01)
-    report = node.tracking_report()
-    assert report is not None
-    assert report.total_steps == 5
-    assert report.qp_success_rate == 1.0
-    assert report.task_verdict != "pass"  # five repeated inputs do not complete a path
-    assert "score=" not in report.summary()
-    assert report.evidence.boundary == "kernel_candidate"
-    assert report.evidence.kind == "model"
-    assert report.metrics["tool_axis_error_rad"].count == 5
-    assert report.metrics["cross_track_m"].count == 5
-    assert report.constraint_metrics["joint_linear.residual"]["unit"] == "m/s"
-    assert report.constraint_metrics["joint_angular.residual"]["unit"] == "rad/s"
-    assert report.constraint_metrics["obstacle.residual"]["inactive_count"] == 5
-    assert report.admission_counts == {"unmeasured": 5}
-    assert report.overlap_counts == {"unmeasured": 5}
-    assert report.deadline_ms == node._runtime_config["latency_budget_ms"]
-    assert str(node.runtime_snapshot_path) in report.evidence.config_id
-    # The writer must bind the summary to the exact persisted sample record.
-    import hashlib
-    path = Path(node.write_tracking_report(str(tmp_path / "tracking.md")))
-    summary = json.loads(path.with_suffix(".json").read_text())
-    samples = path.with_suffix(".samples.json").read_bytes()
-    assert summary["sample_data_sha256"] == hashlib.sha256(samples).hexdigest()
-    assert len(json.loads(samples)["samples"]) == 5
-    assert "NaN" not in path.with_suffix(".json").read_text()
-    node._evaluator = None
 
 
 def test_no_command_before_start_signal(controller_fixture):
@@ -650,11 +510,10 @@ def test_start_signal_unlocks_safe_state(controller_fixture):
 def test_progress_snapshot_reports_tracking_state(controller_fixture):
     node = controller_fixture["node"]
     # Standalone runs must not depend on another test starting the shared node.
-    if not node._tracking_started:
+    if not node.progress_snapshot()["tracking_started"]:
         _call_start_tracking(node, controller_fixture["context"])
-    if not node._step_durations:
-        node._latest_q = _START_Q.copy()
-        node._control_tick()
+    if not node.progress_snapshot()["steps"]:
+        _publish_state_until_step(controller_fixture)
     snapshot = node.progress_snapshot()
     assert snapshot["tracking_started"]
     assert snapshot["ready"]
@@ -662,6 +521,27 @@ def test_progress_snapshot_reports_tracking_state(controller_fixture):
     assert 0.0 <= snapshot["arc_fraction"] <= 1.0
     assert np.isfinite(snapshot["cross_track_error_m"])
     assert np.isfinite(snapshot["latency_p95_ms"])
+
+
+def _publish_state_until_step(fixture):
+    node, context = fixture["node"], fixture["context"]
+    probe = rclpy.create_node("progress_input", context=context)
+    publisher = probe.create_publisher(JointState, _STATE_TOPIC, qos_profile_sensor_data)
+    executor = SingleThreadedExecutor(context=context)
+    executor.add_node(node)
+    executor.add_node(probe)
+    message = JointState()
+    message.name = list(node.get_parameter("joint_names").value)
+    message.position = _START_Q.tolist()
+    try:
+        deadline = time.monotonic() + 5.
+        while not node.progress_snapshot()["steps"] and time.monotonic() < deadline:
+            publisher.publish(message)
+            executor.spin_once(timeout_sec=.01)
+    finally:
+        executor.remove_node(node)
+        executor.shutdown()
+        probe.destroy_node()
 
 
 def _call_start_tracking(node, context) -> None:
@@ -692,34 +572,42 @@ def _call_start_tracking(node, context) -> None:
     client_node.destroy_node()
 
 
-def test_perf_report_p95_within_budget(controller_fixture):
-    node = controller_fixture["node"]
-    context = controller_fixture["context"]
-    budget_ms = float(node.get_parameter("latency_budget_ms").value)
+def test_perf_report_p95_within_budget(tmp_path):
+    import threading
+    from rclpy.executors import MultiThreadedExecutor
+    from robot_safecontrol_moveit.oscbf_controller import OscbfController
+    from robot_safecontrol_moveit.oscbf_plant import OscbfPlant
+    from test_tracking_run import START
 
-    # 该测试必须自给自足：显式启动跟踪，不依赖同模块前序测试的泄漏状态
-    # （见 ticket 02/perf 孤立性）。模块内顺序运行时节点可能已处于跟踪状态,
-    # 服务幂等返回 ALREADY_TRACKING, 重复调用安全。
-    if not node._tracking_started:
-        _call_start_tracking(node, context)
-
-    # 采集真实的 path_tracking_step 延迟样本。不用 ROS 管线泵送: 测试里
-    # spin_once(0.02)+密集 publish 会使订阅回调饿死控制定时器(单线程
-    # executor 每轮只处理一个 waitable), 实测 5s 只得到 2 个样本; 而
-    # _control_tick 计时段就是 start→step_once, 与 step_once 直接循环
-    # 测量的是同一段代码。用 q_next 闭环推进(等价于 plant 跟随命令),
-    # 让跟踪持续移动、大样本确定可复现。
-    if len(node._step_durations) < 20:
-        node._hold_q = None
-        q_follow = _START_Q.copy()
-        for _ in range(200):
-            t0 = time.perf_counter()
-            record = node.step_once(q_follow)
-            node._step_durations.append((time.perf_counter() - t0) * 1000.0)
-            q_follow = np.asarray(record.q_next, dtype=float)
-
-    node.write_perf_report()
-    text = controller_fixture["perf_path"].read_text(encoding="utf-8")
+    context = Context()
+    rclpy.init(context=context, domain_id=120 + os.getpid() % 10)
+    perf = tmp_path / "perf.md"
+    config = rclpy.parameter.Parameter("production_config_yaml", value=str(REPO_ROOT / "config/oscbf_controller.yaml"))
+    node = OscbfController(context=context, parameter_overrides=[
+        config, rclpy.parameter.Parameter("perf_report_path", value=str(perf)),
+    ])
+    plant = OscbfPlant(context=context, parameter_overrides=[
+        config, rclpy.parameter.Parameter("start_position", value=START.tolist()),
+    ])
+    executor = MultiThreadedExecutor(num_threads=4, context=context)
+    executor.add_node(node)
+    executor.add_node(plant)
+    thread = threading.Thread(target=executor.spin, daemon=True)
+    thread.start()
+    try:
+        deadline = time.monotonic() + 15.
+        while node.progress_snapshot()["steps"] < 300 and time.monotonic() < deadline:
+            time.sleep(.05)
+        snapshot = node.progress_snapshot()
+        budget_ms = float(node.get_parameter("latency_budget_ms").value)
+        node.write_perf_report()
+    finally:
+        executor.shutdown()
+        thread.join()
+        plant.destroy_node()
+        node.destroy_node()
+        rclpy.shutdown(context=context)
+    text = perf.read_text(encoding="utf-8")
     # Preserve failed measurements too; a stale passing report must not hide
     # the latest regression. Keep isolated evidence separate from demo output.
     evidence_path = REPO_ROOT / "output" / "oscbf_m10_perf_isolated.md"
@@ -736,6 +624,6 @@ def test_perf_report_p95_within_budget(controller_fixture):
     miss_rate = float(miss_match.group(1)) / 100.0
     assert miss_rate <= 0.01, (
         f"miss rate {miss_rate * 100:.2f}% exceeds the 1% budget")
-    assert len(node._step_durations) >= 20, (
+    assert snapshot["steps"] >= 300, (
         "perf report needs >= 20 step samples to be meaningful, got "
-        f"{len(node._step_durations)}")
+        f"{snapshot['steps']}")

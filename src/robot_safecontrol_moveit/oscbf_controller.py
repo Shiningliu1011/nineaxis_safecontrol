@@ -13,6 +13,7 @@ from __future__ import annotations
 import time
 from dataclasses import replace
 from pathlib import Path
+from threading import Lock
 from typing import List, Optional, Sequence, TYPE_CHECKING
 
 import numpy as np
@@ -49,9 +50,8 @@ from .ros_conventions import (
     command_stream_qos,
     state_stream_qos,
 )
-from .tracking_evaluator import TrackingEvaluator, step_from_result
-from .tracking_contract import EvidenceContext, EvaluationScope
-from .tracking_report_writer import TrackingReportWriter, write_tracking_bundle
+from .tracking_contract import EvidenceContext
+from .tracking_run import TrackingRun
 
 
 def _default_share_dir() -> Path:
@@ -104,32 +104,13 @@ class OscbfController(Node):
         self.add_on_set_parameters_callback(
             self._reject_runtime_configuration_changes
         )
-        self._step_durations: List[float] = []
-        self._qp_fail_count = 0
-        self._latest_q: Optional[np.ndarray] = None
-        self._received_any_state = False
         self._last_state_time: Optional[float] = None
-        self._last_result = None
-        self._last_projection_before_m: Optional[float] = None
         self._trajectory_duration_s = 30.0
         self._completion_logged = False
-        self._hold_q: Optional[np.ndarray] = None
         self._hold_reported = False
-        self._stall_since: Optional[float] = None
-        self._last_pos_err: Optional[float] = None
-        self._q_cmd_smooth: Optional[np.ndarray] = None
-        self._last_state0: Optional[float] = None
-        # (monotonic, pos_err) 滚动 5 s 窗口, 用于卡死增强判据。
-        from collections import deque
-        self._pos_err_hist: deque = deque()
-        self._src_hist: deque = deque()
-        self._tracking_started = not bool(
-            self._runtime_config["wait_for_start"]
-        )
-        self._log_throttle = 0.0
-        self._evaluator: TrackingEvaluator | None = None
-        self._report_writer = TrackingReportWriter()
         self._reported_writer_state = "idle"
+        self._control_lock = Lock()
+        self._closing = False
 
         portable_root = Path(
             str(self._runtime_config["portable_oscbf_root"])
@@ -140,6 +121,23 @@ class OscbfController(Node):
         # This snapshot is a startup gate.  Command-facing ROS entities must
         # not exist unless the exact effective configuration can be persisted.
         self.runtime_snapshot_path = self._write_runtime_snapshot(portable_root)
+        snapshot = str(self.runtime_snapshot_path)
+        self._run = TrackingRun(
+            loop=self._loop, geometry=self._evaluation_geometry,
+            config=self._runtime_config, trajectory_duration_s=self._trajectory_duration_s,
+            evidence=EvidenceContext(
+                run_id=self.runtime_snapshot_path.stem, kind="model", boundary="kernel_candidate",
+                model_id=snapshot + "#software", config_id=snapshot,
+                trajectory_id="sha256:" + self._evaluation_geometry_hash,
+                data_id=snapshot + "#kernel_step_sequence",
+                scenario="configured path; obstacles=" + str(bool(self._runtime_config["enable_perception_obstacles"])),
+                measurement="post-integration model q_next and command reference; QP rows at solve input; before command filter; no execution feedback",
+                time_basis="perf_counter sample start; step_once includes kernel and host diagnostics",
+            ),
+            log=self.get_logger(),
+            surface=(self._surface_axis, self._surface_centre, self._surface_radius)
+            if self._surface_centre is not None else None,
+        )
 
         joint_state_topic = str(self._runtime_config["joint_state_topic"])
         publish_topic = str(self._runtime_config["publish_joint_state_topic"])
@@ -174,7 +172,7 @@ class OscbfController(Node):
                 self._tracks_callback, qos_profile_sensor_data)
             self.get_logger().info(f"perception obstacles enabled: {tracks_topic}")
 
-        if not self._tracking_started:
+        if self.execution_state == "waiting":
             self._start_service = self.create_service(
                 Trigger, "/oscbf_controller/start_tracking",
                 self._start_tracking_callback,
@@ -189,7 +187,7 @@ class OscbfController(Node):
             "publish="
             f"{self._topic_connections['publish_joint_state_topic']['resolved_topic']} @ "
             f"{float(self._runtime_config['publish_frequency_hz']):.1f} Hz, "
-            f"tracking={'auto-start' if self._tracking_started else 'waiting for /oscbf_controller/start_tracking'}"
+            f"tracking={'auto-start' if self.execution_state == 'tracking' else 'waiting for /oscbf_controller/start_tracking'}"
         )
 
     # ------------------------------------------------------------------
@@ -326,6 +324,7 @@ class OscbfController(Node):
                 Path(__file__).with_name("tracking_evaluator.py"),
                 Path(__file__).with_name("tracking_contract.py"),
                 Path(__file__).with_name("tracking_report_writer.py"),
+                Path(__file__).with_name("tracking_run.py"),
                 portable_root / "work",
             ),
         )
@@ -474,7 +473,6 @@ class OscbfController(Node):
             self._surface_centre = np.asarray(trajectory.surface_centre, dtype=float)
             self._surface_radius = float(trajectory.surface_radius)
         self.get_logger().info("JAX control kernel warm-up complete")
-        self._path_state = self._loop.initial_path_state()
         self._joint_names = [
             str(name) for name in self._runtime_config["joint_names"]
         ]
@@ -503,9 +501,11 @@ class OscbfController(Node):
         positions = self._extract_positions(message)
         if positions is None or not np.all(np.isfinite(positions)):
             return
-        self._received_any_state = True
-        self._latest_q = positions
-        self._last_state_time = time.monotonic()
+        with self._control_lock:
+            if self._closing:
+                return
+            self._run.receive_state(positions)
+            self._last_state_time = time.monotonic()
 
     def _tracks_callback(self, message: Float32MultiArray) -> None:
         """解码 /perception/tracks（8×10 float）→ obs_* 数组缓存。"""
@@ -526,72 +526,16 @@ class OscbfController(Node):
 
     def step_once(self, q: np.ndarray, *, obs_kwargs: dict | None = None
                   ) -> "JaxPathTrackingResult":
-        """Advance the control kernel by one step (pure method for tests).
+        """执行控制步；轨迹状态和距离测量语义由 TrackingRun 管理。"""
+        with self._control_lock:
+            return self._run.step_once(q, obs_kwargs=obs_kwargs)
 
-        Returns the kernel's step record unchanged apart from one slot:
-        ``min_obs_dist`` is set to ``None`` whenever the record reports that
-        distance as unmeasured, so no consumer has to re-derive the
-        disabled-obstacle sentinel from its own inputs.  The pre-step
-        projection the evaluator needs is kept on the node instead, because
-        only the node knows the evaluation geometry.
-        """
-        kwargs = dict(
-            q=np.asarray(q, dtype=float),
-            path_state=self._path_state,
-            kp_pos=float(self._runtime_config["kp_pos"]),
-            kp_orient=float(self._runtime_config["kp_orient"]),
-            kp_joint=float(self._runtime_config["kp_joint"]),
-            q_des=np.asarray(q, dtype=float),
-            nullspace_speed_limit=float(
-                self._runtime_config["nullspace_speed_limit"]
-            ),
-            damping=float(self._runtime_config["damping"]),
-        )
-        if obs_kwargs:
-            kwargs.update(obs_kwargs)
-        result = self._loop.path_tracking_step(**kwargs)
-        projection_before, _ = self._evaluation_geometry.project_local(
-            result.ee_pos_before, anchor_segment=int(self._path_state[2]),
-            half_window_segments=self._evaluation_geometry.num_segments,
-        ) if self._evaluator is None or self._evaluator.step_count == 0 else (float(self._path_state[1]), 0)
-        self._path_state = np.asarray(result.path_state, dtype=float)
-        self._last_projection_before_m = projection_before
-        if not result.min_obs_dist_measured:
-            # The kernel substitutes a finite sentinel when the obstacle
-            # geometry is disabled; a sentinel is not a measurement.
-            result = replace(result, min_obs_dist=None)
-        self._last_result = result
-        return result
-
-    def _make_tracking_evaluator(self) -> TrackingEvaluator:
-        snapshot = str(self.runtime_snapshot_path)
-        return TrackingEvaluator(
-            self._trajectory_duration_s,
-            scope=EvaluationScope(self._evaluation_geometry.total_length_m),
-            evidence=EvidenceContext(
-                run_id=self.runtime_snapshot_path.stem, kind="model", boundary="kernel_candidate",
-                model_id=snapshot + "#software", config_id=snapshot,
-                trajectory_id="sha256:" + self._evaluation_geometry_hash,
-                data_id=snapshot + "#kernel_step_sequence",
-                scenario="configured path; obstacles=" + str(self._enable_obs),
-                measurement="post-integration model q_next and command reference; QP rows at solve input; before command filter; no execution feedback",
-                time_basis="perf_counter sample start; step_once includes kernel and host diagnostics",
-            ),
-            deadline_ms=float(self._runtime_config["latency_budget_ms"]),
-        )
-
-    def _finish_tracking_evaluation(self, reason: str) -> None:
-        if self._evaluator is None:
-            return
-        self._evaluator.finish(reason)
-        self._report_writer.submit(self._evaluator, self._tracking_report_path())
-        self._poll_tracking_report()
-
-    def _tracking_report_path(self) -> str:
-        return str(Path(self._runtime_config["perf_report_path"]).parent / "tracking_report.md")
+    @property
+    def execution_state(self) -> str:
+        return self._run.execution_state
 
     def _poll_tracking_report(self) -> None:
-        status = self._report_writer.status()
+        status = self._run.report_status()
         if status["state"] == self._reported_writer_state:
             return
         self._reported_writer_state = status["state"]
@@ -601,231 +545,26 @@ class OscbfController(Node):
             self.get_logger().info(f"tracking report {status['state']}: {status['path']}")
 
     def _control_tick(self) -> None:
-        if not self._tracking_started or self._latest_q is None:
-            return
-
-        # 完成后冻结: 不再运行反馈循环, 只把最终位姿保持发布给执行器。
-        # 路径到达端点后进给前馈消失, 高增益位置反馈 (kp_pos=80) 与 plant
-        # 自身位置环 (kp=80) 串联会自激振荡 (观测: 完成后 pos_err 5mm →
-        # 570mm), 冻结命令是行为上的硬闸门。
-        if self._hold_q is not None:
-            self._publish_positions(self._hold_q)
-            return
-
-        # 首次跟踪步：初始化评价器
-        if self._evaluator is None:
-            self._evaluator = self._make_tracking_evaluator()
-
-        start = time.perf_counter()
-        q_now = np.asarray(self._latest_q, dtype=float)
-        obs_kwargs = dict(self._obs_state) if self._enable_obs and self._obs_state else None
-        record = self.step_once(q_now, obs_kwargs=obs_kwargs)
-        duration_ms = (time.perf_counter() - start) * 1000.0
-        self._step_durations.append(duration_ms)
-        self._latest_q = None
-
-        # 累积跟踪指标。耗时是调用方的测量边界（含内核输出到主机的转换），
-        # 不属于 step_once 的产物，因此单独传入而不是塞进记录。
-        self._evaluator.update_from_step_record(
-            record, wall_time_s=start, step_latency_ms=duration_ms,
-            projection_before_m=self._last_projection_before_m)
-
-        lower, upper = self._limits
-        # 跳变诊断: 误差与上一步相比 >0.25 m 时, 记录一步的完整输入输出,
-        # 用于区分 "参考跳变" 与 "命令跳变" (观测: 4s 处一秒内 7mm→967mm)。
-        pos_err_now = float(np.linalg.norm(record.err_6d[:3]))
-        if (self._last_pos_err is not None
-                and abs(pos_err_now - self._last_pos_err) > 0.25):
-            self.get_logger().warning(
-                f"POS_JUMP d_err={pos_err_now - self._last_pos_err:.3f}m "
-                f"u_safe=[{', '.join(f'{v:.3f}' for v in record.u_safe)}] "
-                f"q_next-qmax={np.max(np.abs(record.q_next - q_now)):.4f} "
-                f"ee=[{', '.join(f'{v:.3f}' for v in record.ee_pos)}] "
-                f"ref=[{', '.join(f'{v:.3f}' for v in record.reference_position_m)}]"
-            )
-        self._last_pos_err = pos_err_now
-        # 进给分项诊断: 每 300 步打印各 cap, 直接观察是谁在压进给。
-        if len(self._step_durations) % 300 == 0:
-            state0 = float(self._path_state[0])
-            state1 = float(self._path_state[1])
-            delta0 = (state0 - self._last_state0
-                      if self._last_state0 is not None else float("nan"))
-            self._last_state0 = state0
-            self.get_logger().info(
-                f"DETAIL steps={len(self._step_durations)} "
-                f"prog={state0:.6f} proj={state1:.6f} "
-                f"lead={state0 - state1:.6f} dprog300={delta0:.6f} "
-                f"feed={record.feedrate_m_s:.5f} "
-                f"nom={record.feedrate_nominal_m_s:.5f} "
-                f"gamma={record.gamma:.3f} lim={record.limiting_reason_code} "
-                f"cap_j={record.feedrate_joint_limit_m_s if record.feedrate_joint_limit_m_s < 1e9 else 9.99:.4f} "
-                f"cap_cbf={record.feedrate_cbf_limit_m_s if record.feedrate_cbf_limit_m_s < 1e9 else 9.99:.4f} "
-                f"cap_rate={record.feedrate_rate_limit_m_s if record.feedrate_rate_limit_m_s < 1e9 else 9.99:.4f} "
-                f"cap_tool={record.feedrate_tool_axis_limit_m_s if record.feedrate_tool_axis_limit_m_s < 1e9 else 9.99:.4f} "
-                f"cap_brake={record.feedrate_endpoint_brake_limit_m_s:.4f} "
-                f"u_max={float(np.max(np.abs(record.u_safe))):.5f} "
-                f"dq_max={float(np.max(np.abs(record.q_next - q_now))):.6f} "
-                f"radial={self._radial_error_m(record.ee_pos)*1e3:.2f}mm "
-                f"ref_radial={self._radial_error_m(record.reference_position_m)*1e3:.2f}mm "
-                f"cap_cbf={record.feedrate_cbf_limit_m_s if record.feedrate_cbf_limit_m_s < 1e9 else 9.99:.4f} "
-                f"src={record.reference_source_time_s:.4f}"
-            )
-        # 卡死检测: 参考进给归零且横断误差持续超限 (再紧的非端点位置)
-        # 时, 反馈拉回与参考停滞会形成长期摆动; 连续超过 1 s 即冻结,
-        # 行为与完成冻结一致 (安全胜过继续挣扎)。
-        if (not bool(record.reference_at_endpoint)
-                and float(record.feedrate_m_s) <= 1e-3
-                and float(record.cross_track_error_m) > 5e-3):
-            if self._stall_since is None:
-                self._stall_since = start
-            elif start - self._stall_since > 1.0:
-                hold = np.clip(q_now, lower, upper)
-                self._hold_q = hold
-                self.get_logger().warn(
-                    "TRACKING_STALLED: reference feedrate=0 with cross-track "
-                    f"={float(record.cross_track_error_m)*1e3:.1f}mm for "
-                    f"{start - self._stall_since:.2f}s; holding current pose"
-                )
-                self._publish_positions(hold)
-                self._finish_tracking_evaluation("held")
+        with self._control_lock:
+            if self._closing:
                 return
-        else:
-            self._stall_since = None
-
-        # 卡死增强判据: 参考源时间 5 s 不变 (参考完全停滞) + 低进给,
-        # 说明系统停在 "参考停走 + 末端无法收回" 的等待态 (如 CBF 曲率段
-        # 封顶), 与横断超限判据互补。误差爬升率在卡死后只有 1-2 mm/s,
-        # 因此不能依赖误差阈值。
-        self._pos_err_hist.append((start, pos_err_now))
-        self._src_hist.append((start, float(record.reference_source_time_s)))
-        while self._pos_err_hist and start - self._pos_err_hist[0][0] > 5.0:
-            self._pos_err_hist.popleft()
-        while self._src_hist and start - self._src_hist[0][0] > 5.0:
-            self._src_hist.popleft()
-        if (self._hold_q is None
-                and len(self._src_hist) >= 2
-                and float(record.feedrate_m_s) < 0.05
-                and float(record.reference_source_time_s)
-                - self._src_hist[0][1] < 0.01
-                and pos_err_now > 0.005):
-            hold = np.clip(q_now, lower, upper)
-            self._hold_q = hold
-            self.get_logger().warn(
-                "TRACKING_STALLED: reference source-time frozen for 5s "
-                f"(feed={float(record.feedrate_m_s):.4f}m/s, "
-                f"pos_err={pos_err_now*1e3:.1f}mm); holding current pose"
-            )
-            self._publish_positions(hold)
-            self._finish_tracking_evaluation("held")
-            return
-
-        if bool(record.reference_at_endpoint) and self._hold_q is None:
-            hold = np.clip(q_now, lower, upper)
-            self._hold_q = hold
-            self.get_logger().info(
-                "END_OF_TRACKING: holding final pose "
-                f"pos_err={float(np.linalg.norm(record.err_6d[:3]))*1e3:.1f}mm"
-            )
-            self._publish_positions(hold)
-            self._evaluator.record_event("reference_endpoint_hold")
-            self._finish_tracking_evaluation("completed")
-            return
-
-        q_next = record.q_next
-        valid = np.all(np.isfinite(q_next)) and np.all(q_next >= lower - 1e-9) \
-            and np.all(q_next <= upper + 1e-9)
-        if not valid:
-            self._evaluator.record_event("command_rejected")
-            self.get_logger().error(
-                f"discarding invalid safe state: {q_next.tolist()}"
-            )
-            return
-        if not record.qp_ok:
-            self._evaluator.record_event("qp_failure")
-            self._qp_fail_count += 1
-            self.get_logger().warn(
-                f"QP failed at step {len(self._step_durations)}; "
-                "holding current state"
-            )
-
-        self._publish_positions(q_next)
+            self._run.tick(self._publish_positions, obs_kwargs=self._obs_state)
+            self._poll_tracking_report()
 
     def _publish_positions(self, positions: np.ndarray) -> None:
-        # 一阶低通 (tau=0.02 s): QP 输出逐 tick 的高频微抖 (20-50 Hz,
-        # 0.1-0.9 rad/s) 直接下发对电机是颤振; 平滑后仅引入约 2-3 tick
-        # 相位滞后, 由位置环与参考前馈吸收, 稳态无偏差。
-        dt = 1.0 / float(self._runtime_config["publish_frequency_hz"])
-        alpha = dt / (dt + 0.02)
-        target = np.asarray(positions, dtype=float)
-        if self._q_cmd_smooth is None:
-            self._q_cmd_smooth = target.copy()
-        else:
-            self._q_cmd_smooth = (
-                self._q_cmd_smooth + alpha * (target - self._q_cmd_smooth))
         message = JointState()
         message.header.stamp = self.get_clock().now().to_msg()
         message.name = list(self._joint_names)
-        message.position = [float(value) for value in self._q_cmd_smooth]
+        message.position = [float(value) for value in positions]
         self._publisher.publish(message)
-
-    def _radial_error_m(self, ee_pos: np.ndarray) -> float:
-        """径向偏差: 末端到圆柱轴线的距离 - 半径 (负=侵入表面内部)。"""
-        if self._surface_centre is None:
-            return float("nan")
-        rel = np.asarray(ee_pos, dtype=float) - self._surface_centre
-        axial = self._surface_axis * float(np.dot(rel, self._surface_axis))
-        radial = rel - axial
-        return float(np.linalg.norm(radial) - self._surface_radius)
 
     def progress_snapshot(self) -> dict:
         """One-shot progress/latency snapshot for logs, tests and tooling."""
-        durations = self._step_durations
-        result = self._last_result
-        if result is None:
-            return {
-                "tracking_started": self._tracking_started,
-                "steps": 0,
-                "ready": False,
-                "qp_fail_count": self._qp_fail_count,
-                "report_status": self._report_writer.status(),
-            }
-        source_time = float(result.reference_source_time_s)
-        measured = step_from_result(result)
-        if durations:
-            p50 = float(np.percentile(durations, 50))
-            p95 = float(np.percentile(durations, 95))
-            maximum = float(np.max(durations))
-        else:
-            p50 = p95 = maximum = float("nan")
-        return {
-            "tracking_started": self._tracking_started,
-            "steps": len(durations),
-            "ready": True,
-            "err_6d": np.asarray(result.err_6d, dtype=float),
-            "pos_error_m": float(np.linalg.norm(result.err_6d[:3])),
-            "path_progress_m": float(np.asarray(result.path_state)[0]),
-            "orient_error_rad": measured.values["tool_axis_error_rad"],
-            "source_time_s": source_time,
-            "trajectory_duration_s": self._trajectory_duration_s,
-            "arc_fraction": min(
-                max(float(result.path_state[1]) / self._evaluation_geometry.total_length_m, 0.0), 1.0
-            ),
-            "cross_track_error_m": measured.values["cross_track_m"],
-            "online_cross_track_error_m": float(result.cross_track_error_m),
-            "measurement_boundary": "kernel_candidate",
-            "feedrate_m_s": float(result.feedrate_m_s),
-            "limiting_reason_code": int(result.limiting_reason_code),
-            "at_endpoint": bool(result.reference_at_endpoint),
-            "qp_ok": bool(result.qp_ok),
-            "delta_slack": float(result.delta_slack),
-            "latency_p50_ms": p50,
-            "latency_p95_ms": p95,
-            "latency_max_ms": maximum,
-            "qp_fail_count": self._qp_fail_count,
-            "report_status": self._report_writer.status(),
-        }
+        return self._run.progress_snapshot()
 
     def _telemetry_tick(self) -> None:
+        if self._closing:
+            return
         # Poll before any hold/stale-state return so persistence failures remain
         # visible even after sampling and feedback have stopped.
         self._poll_tracking_report()
@@ -843,7 +582,7 @@ class OscbfController(Node):
         snapshot = self.progress_snapshot()
         if not snapshot.get("ready"):
             return
-        if self._hold_q is not None:
+        if self.execution_state == "holding":
             if not self._hold_reported:
                 self._hold_reported = True
                 self.get_logger().info(
@@ -880,51 +619,39 @@ class OscbfController(Node):
 
     def tracking_report(self):
         """返回跟踪评价报告（TrackingReport），未开始跟踪时返回 None。"""
-        if self._evaluator is None:
-            return None
-        return self._evaluator.report()
+        return self._run.tracking_report()
 
     def write_tracking_report(self, path: str | None = None) -> str:
         """Synchronous export for explicit callers outside ROS callbacks."""
-        if self._evaluator is None:
-            raise ValueError("tracking has not started; no report to write")
-        if self._report_writer.status()["state"] == "writing":
-            raise RuntimeError("background tracking report is still writing")
-        path = write_tracking_bundle(self._evaluator, path or self._tracking_report_path())
+        path = self._run.write_tracking_report(path)
         self.get_logger().info(f"tracking report written to {path}")
         return path
 
     def destroy_node(self):
         try:
-            if self._evaluator is not None and self._evaluator.termination is None:
-                self._finish_tracking_evaluation("interrupted")
-            self._report_writer.close()
+            self._timer.cancel()
+            self._telemetry_timer.cancel()
+            with self._control_lock:
+                self._closing = True
+                self._run.close()
             self._poll_tracking_report()
         finally:
             destroyed = super().destroy_node()
         return destroyed
 
     def _start_tracking_callback(self, request, response):
-        if not self._tracking_started:
-            self._tracking_started = True
-            self._path_state = self._loop.initial_path_state()
-            self._hold_q = None
-            self._hold_reported = False
-            self._completion_logged = False
-            self._stall_since = None
-            self._q_cmd_smooth = None
-            self._last_state0 = None
-            self._pos_err_hist.clear()
-            self._src_hist.clear()
+        with self._control_lock:
+            if self._closing:
+                response.success = False
+                response.message = "TRACKING_CLOSED"
+                return response
+            response.message = self._run.start()
+        response.success = True
+        if response.message == "TRACKING_STARTED":
             self.get_logger().info(
                 "TRACKING_STARTED: beginning path tracking from the current "
                 "plant state"
             )
-            response.success = True
-            response.message = "TRACKING_STARTED"
-        else:
-            response.success = True
-            response.message = "ALREADY_TRACKING"
         return response
 
     def write_perf_report(self) -> None:
@@ -933,30 +660,21 @@ class OscbfController(Node):
         if not report_path.is_absolute():
             report_path = Path.cwd() / report_path
         report_path.parent.mkdir(parents=True, exist_ok=True)
-        if self._step_durations:
-            p95 = float(np.percentile(self._step_durations, 95))
-            p50 = float(np.percentile(self._step_durations, 50))
-            maximum = float(np.max(self._step_durations))
-            budget = float(self._runtime_config["latency_budget_ms"])
-            miss_count = int(np.count_nonzero(
-                np.asarray(self._step_durations) > budget))
-            miss_rate = miss_count / len(self._step_durations)
-        else:
-            p95 = p50 = maximum = float("nan")
-            budget = float(self._runtime_config["latency_budget_ms"])
-            miss_count = 0
-            miss_rate = 0.0
+        stats = self._run.performance_snapshot()
+        p95, p50 = stats["latency_p95_ms"], stats["latency_p50_ms"]
+        maximum, budget = stats["latency_max_ms"], stats["budget_ms"]
+        miss_count, miss_rate = stats["miss_count"], stats["miss_rate"]
         report_path.write_text(
             "# M10 oscbf_controller 性能证据\n\n"
             f"- 控制频率: {self._runtime_config['publish_frequency_hz']} Hz\n"
-            f"- 步数: {len(self._step_durations)}\n"
+            f"- 步数: {stats['steps']}\n"
             f"- `path_tracking_step` 延迟 p50: {p50:.3f} ms\n"
             f"- `path_tracking_step` 延迟 p95: {p95:.3f} ms（01B 口径: "
             f"50Hz 预算 = {budget:.0f} ms）\n"
             f"- 单步最大: {maximum:.3f} ms\n"
             f"- 超预算(>{budget:.0f}ms)步数: {miss_count} "
             f"(miss rate = {miss_rate * 100:.2f}%, 上限 1%)\n"
-            f"- QP 失败次数: {self._qp_fail_count}\n",
+            f"- QP 失败次数: {stats['qp_fail_count']}\n",
             encoding="utf-8",
         )
         if rclpy.ok():
