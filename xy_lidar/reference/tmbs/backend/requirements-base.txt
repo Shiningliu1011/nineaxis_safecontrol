@@ -1,0 +1,13 @@
+fastapi==0.111.1
+starlette==0.37.2
+sse-starlette==1.8.2
+anyio==4.7.0
+uvicorn[standard]
+SQLAlchemy
+alembic==1.18.5
+pydantic==2.13.4
+portalocker==3.2.0
+rich==15.0.0
+numpy<2
+python-multipart==0.0.32
+scipy>=1.10
