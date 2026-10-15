@@ -1,6 +1,6 @@
 # 跟踪执行与过渡结果
 
-`TrackingRun` 位于 `src/robot_safecontrol_moveit/tracking_run.py`，负责一次跟踪的开始、轨迹推进、停滞判定、保持目标、命令平滑、评价结束和报告提交。它组合真实 `JaxControlLoop`、`TrackingEvaluator` 与 `TrackingReportWriter`，没有 ROS import。`OscbfController` 负责生产配置、消息转换、调度、日志展示及 ROS 资源。
+`TrackingRun` 位于 `src/robot_safecontrol_moveit/tracking_run.py`，负责一次跟踪的开始、轨迹推进、停滞判定、保持目标、命令发布、评价结束和报告提交。它组合真实 `JaxControlLoop`、`TrackingEvaluator` 与 `TrackingReportWriter`，没有 ROS import。`OscbfController` 负责生产配置、消息转换、调度、日志展示及 ROS 资源。
 
 ## 公开入口
 
@@ -24,11 +24,15 @@
 
 等待开始或没有有效状态时，控制周期返回。正常周期消耗一个状态，完成内核计算、评价采样、停滞与端点判定、命令有限性及关节范围检查。QP 失败事件、计数和现有命令处理保持原有规则。
 
-两种停滞规则按现有顺序执行：横向误差超过 5 mm 且进给不超过 1 mm/s 持续超过一秒；随后检查源时间历史、低进给和位置误差。第二种规则保留五秒内的历史，历史达到两个样本即可参与判定。参考端点在两种停滞检查之后处理。
+两种停滞规则按顺序执行：横向误差超过 5 mm 且进给不超过 1 mm/s 持续超过一秒；或者非终点阶段经过完整五秒，参考源时间增长不足 0.01 s。第二种规则与进给大小无关。
 
-保持目标采用当前关节位置并限幅。正常跟踪周期清除已消费的输入；进入保持后，需要收到下一份状态才能继续发布，随后保持周期沿用该输入门控。保持期间继续命令平滑，内核步数与评价样本停止增长。
+参考到达终点后继续闭环收敛。关节反馈对应的末端到终点距离不超过 0.5 mm、当前 `tool_axis_5d` 模式的工具轴夹角不超过 0.5°，并持续满足 0.5 s 后，才报告 `END_OF_TRACKING`。终止状态与报告的严格路径覆盖、全程精度判据分别记录。
 
-平滑时基为 `1 / publish_frequency_hz`，时间常数为 0.02 s。报告描述 `kernel_candidate`，取值在命令平滑之前；未测量的障碍距离表示为 `None`。报告的声明区间、工具轴夹角、阈值和证据身份见[跟踪评价](tracking_evaluation.md)。
+保持目标采用当前关节位置并限幅。正常周期消耗一份状态，直接发布经过 QP 检查的位置命令；保持时直接发布保持目标，内核步数与评价样本停止增长。状态流使用 `KEEP_LAST`、depth 1、`BEST_EFFORT`，使计算周期超过发布周期时仍使用最新反馈。
+
+生产配置的参考领先距离为 2 mm。路径投影的局部搜索距离由 `reference_lead_m + max_projection_speed_m_s * dt_path` 决定，覆盖该弧长范围内全部线段。路径自交处仍受局部弧长范围与单向进度约束。末端超过参考点时，前馈随切向误差减小，并由切向反馈返回参考点。
+
+报告描述 `kernel_candidate`，位置命令来自模型积分；实际执行效果需要另行核对仿真反馈。未测量的障碍距离表示为 `None`。报告的声明区间、工具轴夹角、阈值和证据身份见[跟踪评价](tracking_evaluation.md)。
 
 ## 过渡执行
 
@@ -40,6 +44,8 @@
 
 回放成功使用 `TRANSITION_REPLAYED`。交接成功、不可达、超时或拒绝分别记录在 `handoff_code`，保留回放的成功判定与自动重试规则。未请求交接时 `handoff_requested=False`、`handoff_code=None`。规划用时在回放之前记录。
 
+仿真交接使用新的关节反馈确认过渡终点：各关节与回放目标的差值小于 `1e-6`（J1 为 m，其余为 rad），并持续 0.5 s 后才通知 OSCBF 开始。重复时间戳不计入稳定时间；五秒内未完成收敛则终止本次交接。
+
 ROS adapter 的 `format_transition_result()` 保留 Trigger 的字段顺序和三位小数时间格式，例如：
 
 ```text
@@ -49,7 +55,7 @@ error_code=TRANSITION_REPLAYED|trajectory_points=10|planning_time=2.500
 ## 验证入口
 
 - `tests/test_tracking_run.py`：真实内核、状态门控、两个停滞条件、端点、障碍测量、评价区间、文件系统错误与报告身份。
-- `tests/test_oscbf_controller_smoke.py`：生产配置、固定数值基准、真实 ROS 开始与发布、实际被控对象时延。
+- `tests/test_oscbf_controller_smoke.py`：生产配置与直接配置内核的数值对照、真实 ROS 开始与发布、实际被控对象时延。
 - `tests/test_transition_real_runtime.py`：独立 ROS domain 中启动真实 MoveIt/AEB、生产过渡节点与 `OscbfPlant`，从 ROS 请求运行到终止报告。
 - `tests/test_transition_executor.py` 与 `tests/test_transition_planning_server.py`：不可变结果、合法协议数据和 ROS 文本兼容性。
 - `scripts/measure_qos_latency.py`：独立进程记录真实状态与命令消息，通过 `execution_state` 识别保持阶段；计时说明见[QoS 时延验证](validation/qos-latency-2026-09-23.md)。
@@ -57,3 +63,7 @@ error_code=TRANSITION_REPLAYED|trajectory_points=10|planning_time=2.500
 运行测试时加载 `install/setup.bash`，把 `TMPDIR`、`ROS_LOG_DIR` 和 pytest `--basetemp` 指向项目 `.scratch/` 下的独立目录。真实 MoveIt 测试需要已构建的 AEB 插件；测试仅停止自身启动的进程。控制模式保持仿真，硬件准入限制保持现有规则。
 
 规格验收、数值对照和实际运行结果见[2026-10-01 验证记录](validation/tracking-transition-2026-10-01.md)。
+
+2026-10-14 的完整仿真使用默认生产配置并开启 MuJoCo 查看器。MoveIt 过渡、OSCBF 跟踪、终点保持均已完成；跟踪耗时 73.83 s，3332 个控制步均成功求解 QP。保持阶段的实际关节反馈经过 FK 核对，终点位置误差最大 0.01645 mm，工具轴夹角最大 0.02539°。
+
+该次运行的反馈最近路径距离 RMS 为 0.3781 mm、最大值为 1.3497 mm；全程工具轴夹角 RMS 为 1.5076°。严格全程精度与精确弧长覆盖报告仍未通过。工作区的原始反馈、控制报告与独立验证数据保存在 `output/simulation-fixed-20261014/run-03/`，视频按这些反馈以 1 倍速生成。

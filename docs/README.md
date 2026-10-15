@@ -19,6 +19,7 @@
 
 ## 设计与实施资料
 
+- [九轴曲面作业完整项目](planning/nineaxis-full-project/README.md)：M01–M12、QP/MPC、系统集成、实机实验与个人项目成果的 Wayfinder 入口。
 - [设计决定](adr/)：按编号阅读已记录的决定。
 - [规格](specs/)：各主题的详细要求。
 - [复用研究索引](planning/oscbf-reuse/README.md)：研究、交接和验证证据。

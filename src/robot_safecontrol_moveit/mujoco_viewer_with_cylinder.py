@@ -10,6 +10,7 @@ repository, then writes the received ``/joint_states`` values to MuJoCo's
 from __future__ import annotations
 
 import re
+import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from math import isfinite
 from pathlib import Path
@@ -351,7 +352,7 @@ class MuJoCoJointStateViewer(Node):
 
         world_prefix = f"""
     <geom name=\"floor\" type=\"plane\" size=\"3 3 0.1\" pos=\"0 0 -0.058\"
-          rgba=\"0.22 0.22 0.22 1\" contype=\"0\" conaffinity=\"0\"/>
+          material=\"display_ground\" contype=\"0\" conaffinity=\"0\"/>
     <light pos=\"0 0 4\" dir=\"0 0 -1\" diffuse=\"0.8 0.8 0.8\" specular=\"0.3 0.3 0.3\"/>
     <light pos=\"2 2 3\" dir=\"-2 -2 -3\" diffuse=\"0.45 0.45 0.45\"/>
     <body name=\"display_frame\" euler=\"{Y_UP_TO_Z_UP_EULER}\">
@@ -379,7 +380,26 @@ class MuJoCoJointStateViewer(Node):
                 if body_pos != -1:
                     result = result[:body_pos] + geoms + result[body_pos:]
 
-        return result
+        root = ET.fromstring(result)
+        asset = root.find("asset")
+        if asset is None:
+            asset = ET.SubElement(root, "asset")
+        ET.SubElement(
+            asset, "texture", name="display_sky", type="skybox",
+            builtin="gradient", rgb1="0.3 0.5 0.7", rgb2="0 0 0",
+            width="512", height="3072",
+        )
+        ET.SubElement(
+            asset, "texture", name="display_ground_texture", type="2d",
+            builtin="checker", rgb1="0.2 0.3 0.4", rgb2="0.1 0.2 0.3",
+            width="512", height="512",
+        )
+        ET.SubElement(
+            asset, "material", name="display_ground",
+            texture="display_ground_texture", texrepeat="5 5",
+            texuniform="true", reflectance="0.2",
+        )
+        return ET.tostring(root, encoding="unicode")
 
     @staticmethod
     def _fit_tracking_cylinder(

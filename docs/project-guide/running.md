@@ -14,6 +14,8 @@ source install/setup.bash
 bash run_demo.sh
 ```
 
+MuJoCo 视图采用蓝色渐变天空和蓝灰色棋盘地面，显示机械臂、圆柱曲面及目标轨迹。
+
 `config/oscbf_controller.yaml` 是 OSCBF 控制器的必需生产配置。launch 将其
 作为独立的 `production_config_yaml` 来源加载；文件缺失、字段不全、值非法、
 资源不可读或启动快照无法落盘时，控制器会在建立命令 publisher 前退出。直接

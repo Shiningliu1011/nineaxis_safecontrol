@@ -318,7 +318,7 @@ class TransitionPlanningServer(Node):
         transition,
         *,
         timeout_s: float = 5.0,
-        tolerance: float = 0.01,
+        tolerance: float = 1e-6,
     ) -> None:
         """Wait until the plant converges to the final replayed waypoint.
 
@@ -327,23 +327,39 @@ class TransitionPlanningServer(Node):
         """
         target = np.asarray(transition.points[-1].positions, dtype=float)
         deadline = monotonic() + timeout_s
+        stable_since = None
+        previous_stamp = None
+        last_feedback_at = None
         while monotonic() < deadline:
             msg = self._wait_for_js_snapshot(0.05)
             if msg is not None:
+                stamp = (msg.header.stamp.sec, msg.header.stamp.nanosec)
+                if stamp == previous_stamp:
+                    if monotonic() - last_feedback_at > 0.1:
+                        stable_since = None
+                    sleep(0.005)
+                    continue
+                previous_stamp = stamp
+                last_feedback_at = monotonic()
                 positions = dict(zip(msg.name, msg.position))
                 q = np.asarray(
                     [positions[name] for name in self._joint_names],
                     dtype=float,
                 )
                 if np.max(np.abs(q - target)) < tolerance:
-                    self.get_logger().info(
-                        "PLANT_SETTLED: "
-                        f"max|q-target|={float(np.max(np.abs(q - target))):.4f}"
-                    )
-                    return
-        self.get_logger().warn(
-            "PLANT_SETTLE_TIMEOUT: starting tracking anyway"
-        )
+                    if stable_since is None:
+                        stable_since = monotonic()
+                    if monotonic() - stable_since >= 0.5:
+                        self.get_logger().info(
+                            "PLANT_SETTLED: "
+                            f"max|q-target|={float(np.max(np.abs(q - target))):.8f}"
+                        )
+                        return
+                else:
+                    stable_since = None
+            else:
+                stable_since = None
+        raise RuntimeError("PLANT_SETTLE_TIMEOUT: feedback did not settle at the replay target")
 
     def _declare_parameters(self) -> None:
         self.declare_parameter("joint_names", list(DEFAULT_JOINT_NAMES))

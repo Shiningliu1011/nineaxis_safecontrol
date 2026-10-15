@@ -49,8 +49,8 @@ def _stamp_ns(stamp) -> int:
 
 
 def _benchmark_qos(depth: int) -> QoSProfile:
-    if depth not in (5, 20):
-        raise ValueError(f"QoS 缓存条数必须为 5 或 20：{depth}")
+    if depth not in (1, 5, 20):
+        raise ValueError(f"QoS 缓存条数必须为 1、5 或 20：{depth}")
     return QoSProfile(
         history=HistoryPolicy.KEEP_LAST,
         depth=depth,
@@ -445,8 +445,8 @@ def _run_matrix(args: argparse.Namespace) -> None:
     ]
     if args.reverse:
         cases.reverse()
-    if not cases or any(depth not in (5, 20) for pair in cases for depth in pair):
-        raise ValueError("状态流与指令流缓存条数必须为 5 或 20")
+    if not cases or any(depth not in (1, 5, 20) for pair in cases for depth in pair):
+        raise ValueError("状态流与指令流缓存条数必须为 1、5 或 20")
     base_domain = args.base_domain
     if base_domain is None:
         base_domain = 170 + os.getpid() % 45

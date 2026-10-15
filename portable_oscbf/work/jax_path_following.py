@@ -135,6 +135,7 @@ def sample_path_jax(geometry: JaxPathGeometry, progress_m: jnp.ndarray) -> JaxPa
     n_segments = geometry.positions_m.shape[0] - 1
     total = geometry.arc_length_m[-1]
     progress = jnp.clip(progress_m, 0.0, total)
+    progress = jnp.where(progress >= total - _EPS, total, progress)
     segment = jnp.clip(
         jnp.searchsorted(geometry.arc_length_m, progress, side="right") - 1,
         0,
@@ -145,6 +146,7 @@ def sample_path_jax(geometry: JaxPathGeometry, progress_m: jnp.ndarray) -> JaxPa
     fraction = jnp.clip((progress - start) / jnp.maximum(span, _EPS), 0.0, 1.0)
 
     position = _lerp(geometry.positions_m[segment], geometry.positions_m[segment + 1], fraction)
+    position = jnp.where(progress == total, geometry.positions_m[-1], position)
     tangent = _normalize(
         _lerp(geometry.tangents[segment], geometry.tangents[segment + 1], fraction),
         geometry.tangents[segment],
@@ -174,19 +176,30 @@ def sample_path_jax(geometry: JaxPathGeometry, progress_m: jnp.ndarray) -> JaxPa
 
 def project_local_path_jax(geometry: JaxPathGeometry, position_m: jnp.ndarray,
                            anchor_segment: jnp.ndarray,
-                           half_window_segments: int) -> tuple[jnp.ndarray, jnp.ndarray]:
-    """Project onto a constant-size local segment window without branch jumps."""
+                           half_window_segments: int,
+                           half_window_m: float | None = None) -> tuple[jnp.ndarray, jnp.ndarray]:
+    """在固定形状数组上投影，按线段数量或弧长限制局部搜索范围。"""
     n_segments = geometry.positions_m.shape[0] - 1
     offsets = jnp.arange(-half_window_segments, half_window_segments + 1)
     anchor = jnp.clip(anchor_segment.astype(jnp.int32), 0, n_segments - 1)
     segments = jnp.clip(anchor + offsets, 0, n_segments - 1).astype(jnp.int32)
+    if half_window_m is not None:
+        # 按弧长限制候选区间，使转弯处的采样密度不影响搜索距离。
+        segments = jnp.arange(n_segments)
     starts = geometry.positions_m[segments]
     deltas = geometry.positions_m[segments + 1] - starts
     lengths_sq = jnp.sum(deltas * deltas, axis=1)
     fractions = jnp.sum((position_m[None, :] - starts) * deltas, axis=1)
-    fractions = jnp.clip(fractions / jnp.maximum(lengths_sq, _EPS), 0.0, 1.0)
+    fractions = jnp.clip(
+        fractions / jnp.maximum(lengths_sq, jnp.finfo(lengths_sq.dtype).tiny), 0.0, 1.0)
     closest = starts + fractions[:, None] * deltas
-    best = jnp.argmin(jnp.sum((closest - position_m[None, :]) ** 2, axis=1))
+    distances = jnp.sum((closest - position_m[None, :]) ** 2, axis=1)
+    if half_window_m is not None:
+        centre = geometry.arc_length_m[anchor]
+        valid = ((geometry.arc_length_m[segments] <= centre + half_window_m)
+                 & (geometry.arc_length_m[segments + 1] >= centre - half_window_m))
+        distances = jnp.where(valid, distances, jnp.inf)
+    best = jnp.argmin(distances)
     segment = segments[best]
     progress = geometry.arc_length_m[segment] + fractions[best] * (
         geometry.arc_length_m[segment + 1] - geometry.arc_length_m[segment]
@@ -223,6 +236,7 @@ def advance_path_state_jax(geometry: JaxPathGeometry,
         ee_position_m,
         projection_segment,
         config.projection_half_window_segments,
+        config.reference_lead_m + config.max_projection_speed_m_s * dt_s,
     )
     max_projected = jnp.minimum(
         geometry.arc_length_m[-1],
@@ -337,6 +351,7 @@ def reconcile_path_state_after_motion_jax(
         ee_position_m,
         anchor_before,
         config.projection_half_window_segments,
+        config.reference_lead_m + config.max_projection_speed_m_s * dt_s,
     )
     maximum = jnp.minimum(
         geometry.arc_length_m[-1],

@@ -8,14 +8,15 @@ from time import perf_counter
 from typing import Callable
 
 import numpy as np
+from scipy.spatial.transform import Rotation
 
 from .tracking_contract import EvidenceContext, EvaluationScope
-from .tracking_evaluator import TrackingEvaluator, step_from_result
+from .tracking_evaluator import TrackingEvaluator, step_from_result, tool_axis_angle
 from .tracking_report_writer import TrackingReportWriter, write_tracking_bundle
 
 
 class TrackingRun:
-    """拥有一次跟踪的状态与报告；publish 接收已经平滑的最终命令。
+    """拥有一次跟踪的状态与报告；publish 接收经过 QP 检查的命令。
 
     调用方串行调用状态变更方法，停止调度后调用 close。publish 在命令
     判定之后、终止报告提交之前执行，保持 ROS adapter 的发布顺序。
@@ -40,8 +41,8 @@ class TrackingRun:
         self._last_result = None
         self._projection_before_m = None
         self._hold_q = None
-        self._q_cmd_smooth = None
         self._stall_since = None
+        self._endpoint_since = None
         self._src_hist = deque()
         self._last_pos_err = None
         self._last_state0 = None
@@ -170,12 +171,12 @@ class TrackingRun:
         else:
             self._stall_since = None
         self._src_hist.append((start, float(record.reference_source_time_s)))
-        while self._src_hist and start - self._src_hist[0][0] > 5.0:
+        while len(self._src_hist) > 1 and start - self._src_hist[1][0] >= 5.0:
             self._src_hist.popleft()
         if (len(self._src_hist) >= 2
-                and float(record.feedrate_m_s) < 0.05
-                and float(record.reference_source_time_s) - self._src_hist[0][1] < 0.01
-                and pos_err > 0.005):
+                and not bool(record.reference_at_endpoint)
+                and start - self._src_hist[0][0] >= 5.0
+                and float(record.reference_source_time_s) - self._src_hist[0][1] < 0.01):
             self._log.warning(
                 "TRACKING_STALLED: reference source-time frozen for 5s "
                 f"(feed={float(record.feedrate_m_s):.4f}m/s, "
@@ -183,8 +184,24 @@ class TrackingRun:
             )
             self._hold(q_now, "held", publish)
             return
-        if bool(record.reference_at_endpoint):
-            self._log.info(f"END_OF_TRACKING: holding final pose pos_err={pos_err*1e3:.1f}mm")
+        measured_endpoint_error = float(np.linalg.norm(
+            record.ee_pos_before - self._geometry.positions_m[-1]))
+        endpoint_ready = bool(record.reference_at_endpoint) and bool(record.qp_ok)
+        if endpoint_ready:
+            measured_rotation = np.asarray(self._loop.robot.ee_rotation(q_now))
+            target_rotation = self._geometry.rotations[-1]
+            angle = (tool_axis_angle(measured_rotation, target_rotation)
+                     if self._config["task_mode"] == "tool_axis_5d"
+                     else np.linalg.norm(Rotation.from_matrix(
+                         measured_rotation @ target_rotation.T).as_rotvec()))
+            endpoint_ready = measured_endpoint_error <= 0.0005 and angle <= np.deg2rad(0.5)
+        if not endpoint_ready:
+            self._endpoint_since = None
+        elif self._endpoint_since is None:
+            self._endpoint_since = start
+        if self._endpoint_since is not None and start - self._endpoint_since >= 0.5:
+            self._log.info(
+                f"END_OF_TRACKING: holding final pose pos_err={measured_endpoint_error*1e3:.3f}mm")
             self._hold(q_now, "completed", publish)
             return
         q_next = record.q_next
@@ -200,14 +217,7 @@ class TrackingRun:
         self._publish(q_next, publish)
 
     def _publish(self, positions, publish) -> None:
-        dt = 1.0 / float(self._config["publish_frequency_hz"])
-        alpha = dt / (dt + 0.02)
-        target = np.asarray(positions, dtype=float)
-        if self._q_cmd_smooth is None:
-            self._q_cmd_smooth = target.copy()
-        else:
-            self._q_cmd_smooth = self._q_cmd_smooth + alpha * (target - self._q_cmd_smooth)
-        publish(self._q_cmd_smooth.copy())
+        publish(np.array(positions, dtype=float, copy=True))
 
     def _radial_error_m(self, ee_pos) -> float:
         if self._surface is None:

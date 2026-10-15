@@ -198,6 +198,8 @@ class PathGeometry:
     def sample(self, progress_m: float) -> PathReference:
         """Interpolate one 6-D path reference at a clamped arc length."""
         progress = float(np.clip(progress_m, 0.0, self.total_length_m))
+        if progress >= self.total_length_m - _EPS:
+            progress = self.total_length_m
         segment, fraction = self._segment_fraction(progress)
         p0, p1 = self.positions_m[segment:segment + 2]
         tangent = _normalize(
@@ -241,12 +243,9 @@ class PathGeometry:
         *,
         anchor_segment: int,
         half_window_segments: int,
+        half_window_m: float | None = None,
     ) -> tuple[float, int]:
-        """Project a point onto a fixed local segment window.
-
-        The caller owns the monotonic progress rule.  This method only avoids
-        a global nearest-point jump at a self-intersection.
-        """
+        """按线段数量或弧长限制局部投影；调用方负责单向进度。"""
         point = np.asarray(position_m, dtype=float).reshape(3)
         half_window = int(half_window_segments)
         if half_window < 1:
@@ -254,6 +253,14 @@ class PathGeometry:
         anchor = int(np.clip(anchor_segment, 0, self.num_segments - 1))
         first = max(0, anchor - half_window)
         last = min(self.num_segments, anchor + half_window + 1)
+        if half_window_m is not None:
+            if not np.isfinite(half_window_m) or half_window_m <= 0:
+                raise ValueError("half_window_m must be finite and positive")
+            centre = self.arc_length_m[anchor]
+            first = max(0, int(np.searchsorted(
+                self.arc_length_m, centre - half_window_m, side="left")) - 1)
+            last = min(self.num_segments, int(np.searchsorted(
+                self.arc_length_m, centre + half_window_m, side="right")))
         starts = self.positions_m[first:last]
         deltas = self.positions_m[first + 1:last + 1] - starts
         lengths_sq = np.einsum("ij,ij->i", deltas, deltas)
@@ -384,6 +391,7 @@ def reconcile_path_state_after_motion(
         actual,
         anchor_segment=state.projection_segment,
         half_window_segments=config.projection_half_window_segments,
+        half_window_m=config.reference_lead_m + config.max_projection_speed_m_s * dt,
     )
     maximum = min(
         geometry.total_length_m,
@@ -442,6 +450,7 @@ def advance_path_state(
         actual,
         anchor_segment=state.projection_segment,
         half_window_segments=config.projection_half_window_segments,
+        half_window_m=config.reference_lead_m + config.max_projection_speed_m_s * dt,
     )
     max_projected = min(
         geometry.total_length_m,

@@ -69,7 +69,7 @@ def run_factory(kernel, tmp_path):
                 model_id="portable_oscbf/work", config_id="config/oscbf_controller.yaml",
                 trajectory_id="sha256:" + hashlib.sha256(geometry.positions_m.tobytes() + geometry.rotations.tobytes()).hexdigest(),
                 data_id="test_tracking_run.py:START,DISTANT", scenario="repository path",
-                measurement="kernel candidate before command smoothing", time_basis="perf_counter",
+                measurement="kernel candidate and published position command", time_basis="perf_counter",
             ), log=logging.getLogger("tracking_run_test"), scope=scope,
         )
         runs.append(run)
@@ -124,6 +124,38 @@ def test_direct_steps_have_no_lifecycle_samples_and_own_results(run_factory):
     assert run.report_status()["state"] == "idle"
 
 
+def test_qp_position_command_reaches_publisher_without_additional_filter(run_factory):
+    run = run_factory(wait=False)
+    commands = []
+    q = START.copy()
+    for _ in range(4):
+        run.receive_state(q)
+        run.tick(commands.append)
+        assert run._last_result.qp_ok
+        np.testing.assert_array_equal(commands[-1], run._last_result.q_next)
+        q = commands[-1]
+
+
+def test_recorded_tangent_overshoot_commands_motion_toward_reference(kernel):
+    loop, _, config, _ = kernel
+    # 2026-10-14 末段沿切线超过参考点时的实际关节反馈。
+    q = np.array([0.25993225675347215, -0.5371482741377962,
+                  0.8235447007148486, 0.6214674802637513,
+                  0.34457702750093366, -0.5094945028714395,
+                  -0.2231668921046781, -0.8789163171997676,
+                  -0.2025944661827154])
+    result = loop.path_tracking_step(
+        q=q, q_des=q,
+        path_state=np.array([1.5062819914607943, 1.4962819914607943, 12333., 0., 0.]),
+        **{name: config[name] for name in (
+            "kp_pos", "kp_orient", "kp_joint", "nullspace_speed_limit", "damping")},
+    )
+    assert result.qp_ok
+    assert np.dot(result.ee_pos_before - result.reference_position_m,
+                  result.reference_tangent) > .005
+    assert result.actual_tangent_speed_m_s < 0.0
+
+
 @pytest.mark.parametrize("enabled", [True, False])
 def test_real_obstacle_measurement_and_declared_scope(run_factory, kernel, enabled):
     length = kernel[1].total_length_m
@@ -152,10 +184,7 @@ def test_real_obstacle_measurement_and_declared_scope(run_factory, kernel, enabl
         assert report.constraint_metrics["obstacle.residual"]["inactive_count"] == 1
 
 
-@pytest.mark.parametrize("interval,log_fragment", [
-    (0.0, "source-time frozen"), (1.05, "reference feedrate=0"),
-])
-def test_both_stall_rules_hold_without_further_sampling(run_factory, interval, log_fragment, capsys):
+def test_cross_track_stall_holds_without_further_sampling(run_factory, capsys):
     run = run_factory(wait=False)
     commands = []
     run.receive_state(DISTANT)
@@ -164,11 +193,10 @@ def test_both_stall_rules_hold_without_further_sampling(run_factory, interval, l
     assert before["execution_state"] == "tracking"
     assert before["feedrate_m_s"] <= .001
     assert before["online_cross_track_error_m"] > .005
-    if interval:
-        time.sleep(interval)
+    time.sleep(1.05)
     run.receive_state(DISTANT)
     run.tick(commands.append)
-    assert log_fragment in capsys.readouterr().err
+    assert "reference feedrate=0" in capsys.readouterr().err
     assert run.execution_state == "holding"
     assert run.progress_snapshot()["termination"] == "held"
     count = len(commands)
@@ -184,8 +212,21 @@ def test_both_stall_rules_hold_without_further_sampling(run_factory, interval, l
     run.close()
     assert run.tracking_report().termination == "held"
     assert run.report_status()["state"] == "saved"
-    alpha = .01 / (.01 + .02)
-    np.testing.assert_allclose(commands[1], commands[0] + alpha * (DISTANT - commands[0]))
+    np.testing.assert_array_equal(commands[1], DISTANT)
+
+
+def test_frozen_progress_stops_even_with_positive_feedrate(run_factory, capsys):
+    run = run_factory(wait=False)
+    commands = []
+    deadline = time.monotonic() + 8.0
+    while run.execution_state == "tracking" and time.monotonic() < deadline:
+        run.receive_state(START)
+        run.tick(commands.append)
+        time.sleep(.01)
+    assert run.execution_state == "holding"
+    assert run.progress_snapshot()["feedrate_m_s"] > .05
+    assert "source-time frozen" in capsys.readouterr().err
+    np.testing.assert_array_equal(commands[-1], START)
 
 
 def test_filesystem_failure_preserves_terminal_reason(run_factory, tmp_path):
@@ -254,6 +295,12 @@ def test_real_short_path_endpoint_and_hold_report(run_factory, endpoint_kernel):
     resources, end_q = endpoint_kernel
     run = run_factory(wait=False, resources=resources)
     commands = []
+    for _ in range(100):
+        run.receive_state(START)
+        run.tick(commands.append)
+    assert run.progress_snapshot()["at_endpoint"]
+    assert run.execution_state == "tracking"
+    assert np.linalg.norm(run._last_result.ee_pos_before - resources[1].positions_m[-1]) > .0005
     for _ in range(100):
         run.receive_state(end_q)
         run.tick(commands.append)

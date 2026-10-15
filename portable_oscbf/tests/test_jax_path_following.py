@@ -1,5 +1,7 @@
 """Parity tests for the fixed-shape JAX arc-length path state machine."""
 
+from pathlib import Path
+
 import _path_setup  # noqa: F401
 import jax
 import jax.numpy as jnp
@@ -22,6 +24,7 @@ from work.jax_path_following import (
     feedrate_limit_from_box_jax,
     feedrate_limit_from_inequalities_jax,
     initial_path_state_jax,
+    project_local_path_jax,
     reconcile_path_state_after_motion_jax,
     sample_path_jax,
 )
@@ -210,3 +213,59 @@ def test_jax_endpoint_brake_matches_host_before_the_final_sample():
         atol=2e-6,
     )
     assert np.isclose(float(jax_result.feedrate_m_s), host.feedrate_m_s, atol=2e-6)
+
+
+def test_repository_dense_turn_projection_follows_recorded_feedback():
+    from work.ik_data_loader import load_repository_trajectory
+    from work.nineaxis_kinematics import NineaxisKinematics
+
+    root = Path(__file__).resolve().parents[2]
+    trajectory = load_repository_trajectory(
+        str(root / "data/nurbs/ik_input.mat"),
+        config_yaml_path=str(root / "portable_oscbf/config/nineaxis.yaml"),
+        feedrate_scale=3.5,
+    )
+    geometry = trajectory.path_geometry()
+    # 2026-10-14 实际仿真转弯处的关节反馈与路径状态。
+    q = np.array([0.2444442898502571, -0.5623388198302471,
+                  0.8167248320670897, 0.631109596238602,
+                  0.3437439091361125, -0.49302994538208084,
+                  -0.21349692718176297, -0.8447508369212231,
+                  -0.1967738609849288])
+    position = NineaxisKinematics().ee_position(q)
+    state = PathFollowerState(reference_progress_m=1.5062819914607943,
+                              projected_progress_m=1.4962819914607943,
+                              projection_segment=12333)
+    expected, _ = geometry.project_local(
+        position, anchor_segment=12333, half_window_segments=geometry.num_segments)
+    assert 1.50 < expected < 1.52
+    host = advance_path_state(geometry, PathFollowingConfig(), state, position, dt_s=.01)
+    result = advance_path_state_jax(
+        as_jax_path_geometry(geometry), as_jax_path_config(PathFollowingConfig()),
+        jnp.asarray([state.reference_progress_m, state.projected_progress_m, 12333., 0., 0.]),
+        jnp.asarray(position), dt_s=.01, feedrate_joint_limit_m_s=jnp.asarray(1.),
+        feedrate_cbf_limit_m_s=jnp.asarray(1.), feedrate_rate_limit_m_s=jnp.asarray(1.),
+    )
+    assert host.next_state.projected_progress_m == pytest.approx(expected, abs=2e-6)
+    assert float(result.state[1]) == pytest.approx(expected, abs=2e-6)
+
+
+def test_micrometre_segments_project_to_the_exact_endpoint():
+    geometry = PathGeometry.from_samples(
+        np.array([[0., 0., 0.], [1e-6, 0., 0.], [2e-6, 0., 0.]]),
+        np.repeat(np.eye(3)[None], 3, axis=0), np.full(3, .01),
+        np.array([0., .01, .02]),
+    )
+    progress, _ = project_local_path_jax(
+        as_jax_path_geometry(geometry), jnp.asarray(geometry.positions_m[-1]),
+        jnp.asarray(1), 96,
+    )
+    assert float(progress) == pytest.approx(geometry.total_length_m, abs=1e-12)
+
+
+def test_endpoint_reference_targets_the_last_point_exactly():
+    geometry = _geometry()
+    endpoint = geometry.total_length_m
+    sample = sample_path_jax(as_jax_path_geometry(geometry), jnp.asarray(endpoint - 0.5e-9))
+    assert sample.at_endpoint
+    np.testing.assert_array_equal(sample.position_m, as_jax_path_geometry(geometry).positions_m[-1])

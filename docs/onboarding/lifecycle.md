@@ -13,7 +13,7 @@
 执行状态、结构化过渡结果与报告关闭顺序见[跟踪执行说明](../tracking_execution.md)。
 
 **当前 QoS**：[ros_conventions.py](../../src/robot_safecontrol_moveit/ros_conventions.py)
-分别提供 `state_stream_qos()`（KEEP_LAST / depth 20 / BEST_EFFORT / VOLATILE）和
+分别提供 `state_stream_qos()`（KEEP_LAST / depth 1 / BEST_EFFORT / VOLATILE）和
 `command_stream_qos()`（KEEP_LAST / depth 5 / BEST_EFFORT / VOLATILE）。被控对象与
 过渡回放的状态发布，以及控制器、过渡服务器、查看器和感知桥的关节状态订阅使用
 状态流设置。控制器与过渡回放的指令发布，以及被控对象和 shadow bridge 的指令订阅

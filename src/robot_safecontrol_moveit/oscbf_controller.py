@@ -131,7 +131,7 @@ class OscbfController(Node):
                 trajectory_id="sha256:" + self._evaluation_geometry_hash,
                 data_id=snapshot + "#kernel_step_sequence",
                 scenario="configured path; obstacles=" + str(bool(self._runtime_config["enable_perception_obstacles"])),
-                measurement="post-integration model q_next and command reference; QP rows at solve input; before command filter; no execution feedback",
+                measurement="post-integration model q_next and command reference; QP rows at solve input; published position command; no execution feedback",
                 time_basis="perf_counter sample start; step_once includes kernel and host diagnostics",
             ),
             log=self.get_logger(),

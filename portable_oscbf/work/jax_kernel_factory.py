@@ -506,7 +506,9 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
                 sample.tangent, cap_pos_err)
             transverse_pos_err = cap_pos_err - tangent_error
             position_feedback_error = jnp.where(
-                sample.at_endpoint, cap_pos_err, transverse_pos_err)
+                sample.at_endpoint, cap_pos_err,
+                transverse_pos_err + sample.tangent * jnp.maximum(
+                    jnp.dot(sample.tangent, cap_pos_err), 0.0))
             # Saturate the position correction at a small arc-length radius:
             # beyond it the pull-back speed stays bounded (kp * sat) instead
             # of growing with the error, so a transient that exceeds the
@@ -531,20 +533,13 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
                 / (kp_pos * jnp.minimum(fb_norm, _POSITION_FB_SATURATION_M)),
                 jnp.asarray(1.0),
             )
-            endpoint_orient_scale = jnp.where(sample.at_endpoint, 0.1, 1.0)
-            # Endpoint hold mode must not re-open the full 3-D position
-            # feedback at full gain: with the plant's own position loop
-            # (kp=80) the two cascade into a self-oscillating loop the
-            # moment the feedforward drops to zero at the endpoint.  Scale
-            # the position correction like the orientation one.
-            endpoint_pos_scale = jnp.where(sample.at_endpoint, 0.1, 1.0)
             twist_bias = jnp.concatenate([
-                -endpoint_pos_scale * kp_pos
-                * fb_scale * position_feedback_error,
-                -endpoint_orient_scale * kp_orient * cap_orientation_err,
+                -kp_pos * fb_scale * position_feedback_error,
+                -kp_orient * cap_orientation_err,
             ])
             twist_per_m = task_velocity_from_world(
                 sample.tangent, sample.omega_per_m, sample.rotation)
+            twist_per_m = twist_per_m * _path_feed_scale(cap_pos_err, sample)
             u_bias = (cap_jacobian_hash @ twist_bias
                       + cap_null_projector @ cap_qdot_null)
             u_per_m = cap_jacobian_hash @ twist_per_m
@@ -586,6 +581,16 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
                 feedrate_rate_limit_m_s=rate_cap,
             )
 
+        def _path_feed_scale(pos_err, sample):
+            along = jnp.dot(sample.tangent, pos_err)
+            transverse = pos_err - sample.tangent * along
+            lateral_scale = jnp.clip(
+                1.0 - (jnp.linalg.norm(transverse) - 0.003) / 0.007, 0.0, 1.0)
+            # 末端超过参考点时减小前馈，切向反馈同时负责返回参考点。
+            phase_scale = jnp.clip(
+                1.0 - jnp.maximum(along, 0.0) / path_config.reference_lead_m, 0.0, 1.0)
+            return lateral_scale * phase_scale
+
         @jax.jit
         def _path_control_nominal(ee_pos, ee_rot, full_jacobian, sample, q,
                                   kp_pos, kp_orient, kp_joint,
@@ -599,7 +604,9 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
             tangent_error = sample.tangent * jnp.dot(sample.tangent, pos_err)
             transverse_pos_err = pos_err - tangent_error
             position_feedback_error = jnp.where(
-                sample.at_endpoint, pos_err, transverse_pos_err)
+                sample.at_endpoint, pos_err,
+                transverse_pos_err + sample.tangent * jnp.maximum(
+                    jnp.dot(sample.tangent, pos_err), 0.0))
             fb_norm = jnp.linalg.norm(position_feedback_error)
             fb_scale = jnp.where(
                 fb_norm > _POSITION_FB_SATURATION_M,
@@ -618,24 +625,9 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
                 / (kp_pos * jnp.minimum(fb_norm, _POSITION_FB_SATURATION_M)),
                 jnp.asarray(1.0),
             )
-            endpoint_orient_scale = jnp.where(sample.at_endpoint, 0.1, 1.0)
-            # Endpoint hold mode: same low-gain position correction as in
-            # _path_cap_nominal (see note there on cascaded loop stability).
-            endpoint_pos_scale = jnp.where(sample.at_endpoint, 0.1, 1.0)
-            # Conditional velocity feedforward: inject the reference tangential
-            # velocity only when the end-effector is close to the path
-            # (cross_track < 3mm).  This eliminates the steady-state
-            # tangential phase lag (~10mm) caused by damped pseudo-inverse
-            # attenuation, while preventing the overshoot seen with
-            # unconditional feedforward (end-effector far from path has
-            # wrong tangent direction).
-            ct = jnp.linalg.norm(transverse_pos_err)
-            ff_scale = jnp.where(ct < 0.003, jnp.asarray(1.0),
-                                 jnp.clip(1.0 - (ct - 0.003) / 0.007, 0.0, 1.0))
             control_twist_bias = jnp.concatenate([
-                -endpoint_pos_scale * kp_pos
-                * fb_scale * position_feedback_error,
-                -endpoint_orient_scale * kp_orient * orientation_err,
+                -kp_pos * fb_scale * position_feedback_error,
+                -kp_orient * orientation_err,
             ])
             control_twist_per_m = task_velocity_from_world(
                 sample.tangent, sample.omega_per_m, sample.rotation)
@@ -660,7 +652,8 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
                 control_jacobian_hash @ control_twist_bias
                 + control_null_projector @ control_qdot_null)
             control_u_per_m = control_jacobian_hash @ control_twist_per_m
-            u_nom = control_u_bias + control_u_per_m * feedrate_m_s
+            u_nom = (control_u_bias + control_u_per_m * feedrate_m_s
+                     * _path_feed_scale(pos_err, sample))
             u_nom = jnp.clip(
                 u_nom, -robot.joint_max_velocities,
                 robot.joint_max_velocities)

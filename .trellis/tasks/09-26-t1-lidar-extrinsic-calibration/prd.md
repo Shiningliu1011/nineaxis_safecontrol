@@ -1,9 +1,9 @@
-# [T1] 激光雷达外参标定与独立验收并写入真源
+# [03] 激光雷达外参标定与独立验收并写入真源
 
 ## 目标与来源
 
 完成 [本票](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/95) 的真实 LiDAR 外参标定、独立验收、记录写入及部署身份核对。
-范围由 [速度级 OSCBF 架构规格](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/79) 的标定流程第 1 至第 6 步规定；执行边界见 [统一执行地图](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/133)。
+范围由 [速度级 OSCBF 架构规格](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/79) 的标定流程第 1 至第 6 步规定；当前归属为[九轴曲面作业完整项目：建模、QP/MPC、系统集成与实机实验](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/147)。
 
 ## 已确认条件
 

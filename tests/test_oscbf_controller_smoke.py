@@ -107,7 +107,7 @@ def test_state_and_command_stream_qos(controller_fixture):
 
     state_qos = state_stream_qos()
     command_qos = command_stream_qos()
-    assert state_qos.depth == 20
+    assert state_qos.depth == 1
     assert command_qos.depth == 5
     for qos in (state_qos, command_qos):
         assert qos.history == rclpy.qos.HistoryPolicy.KEEP_LAST
@@ -174,60 +174,11 @@ def test_tracking_parameters_are_observable(controller_fixture):
                          nullspace_speed_limit=.18, damping=.05)
 
 
-def test_production_config_refactor_preserves_control_outputs_from_8479740(
+def test_production_config_matches_direct_kernel_outputs(
     tmp_path,
 ):
-    """The production adapter preserves the fixed pre-refactor control trace."""
+    """ROS 参数装配与直接配置内核产生相同的控制结果。"""
     from robot_safecontrol_moveit.oscbf_controller import OscbfController
-
-    # Independent oracle captured from commit 8479740 with the same production
-    # values, butterfly-start state and four-step closed-loop input sequence.
-    expected_error = np.array([
-        [
-            4.457766750095031e-07,
-            1.5039047116647275e-03,
-            6.220079452390337e-06,
-            1.5193879973138107e-05,
-            -6.21704712916953e-04,
-            0.0,
-        ],
-        [
-            1.7418858300584795e-05,
-            2.055429349486715e-03,
-            -2.565122984909962e-06,
-            2.0407244408316567e-06,
-            -7.585493913718724e-04,
-            0.0,
-        ],
-        [
-            -2.184359590800129e-05,
-            2.728103432054152e-03,
-            5.392183351826674e-06,
-            -1.7768585092381408e-05,
-            -9.392779293722351e-04,
-            0.0,
-        ],
-        [
-            -4.4287010849552286e-05,
-            3.5164888272071204e-03,
-            -8.463069507413934e-07,
-            -4.0770336378216545e-05,
-            -1.1456759773757876e-03,
-            0.0,
-        ],
-    ])
-    expected_feedrate = np.array([
-        0.19041816565166111,
-        0.06851274130661066,
-        0.08232689411665096,
-        0.09632983216366355,
-    ])
-    expected_progress = np.array([
-        0.0024754361534715945,
-        0.003366101790457533,
-        0.0044363514139739955,
-        0.0056886392321016215,
-    ])
 
     context = Context()
     rclpy.init(context=context, domain_id=_DOMAIN_ID + 1)
@@ -274,33 +225,58 @@ def test_production_config_refactor_preserves_control_outputs_from_8479740(
         0.22248106729961423,
         -0.12343186955927415,
     ])
-    observed = []
+    from work.ik_data_loader import load_repository_trajectory
+    from work.jax_control_facade import JaxControlLoop
+    from work.path_following import PathFollowingConfig
+
+    trajectory = load_repository_trajectory(
+        str(REPO_ROOT / "data/nurbs/ik_input.mat"),
+        config_yaml_path=str(REPO_ROOT / "portable_oscbf/config/nineaxis.yaml"),
+        feedrate_scale=3.5,
+    )
+    trajectory.set_surface_normal_orientation([0., 1., 0.])
+    direct = JaxControlLoop(
+        dt=.012, dt_path=.013, w_pos=41., w_orient=10., w_joint=.1,
+        temporal_lambda=.2, enable_x64=True, solver_tol=.001, task_mode="tool_axis_5d",
+    )
+    direct.configure_path(trajectory.path_geometry(), PathFollowingConfig(
+        reference_lead_m=.002, maximum_tool_axis_speed_rad_s=2.,
+    ))
+    direct.init_cbf()
+    path_state = direct.initial_path_state()
+    expected_q = q.copy()
+    observed, expected = [], []
     try:
         for _ in range(4):
             record = node.step_once(q)
             observed.append(record)
             q = record.q_next
+            reference = direct.path_tracking_step(
+                q=expected_q, path_state=path_state, q_des=expected_q,
+                kp_pos=161., kp_orient=10., kp_joint=.45,
+                nullspace_speed_limit=.18, damping=.05,
+            )
+            expected.append(reference)
+            expected_q, path_state = reference.q_next, reference.path_state
     finally:
         node.destroy_node()
         rclpy.shutdown(context=context)
 
     np.testing.assert_allclose(
         np.stack([record.err_6d for record in observed]),
-        expected_error,
+        np.stack([record.err_6d for record in expected]),
         rtol=1e-5,
         atol=1e-7,
     )
     np.testing.assert_allclose(
         [record.feedrate_m_s for record in observed],
-        expected_feedrate,
+        [record.feedrate_m_s for record in expected],
         rtol=1e-5,
         atol=1e-7,
     )
     np.testing.assert_allclose(
-        # The record has no separate path_progress_m slot: the projection is
-        # path_state[0], exactly what the node's dict used to copy.
         [record.path_state[0] for record in observed],
-        expected_progress,
+        [record.path_state[0] for record in expected],
         rtol=1e-5,
         atol=1e-7,
     )
@@ -310,6 +286,10 @@ def test_production_config_refactor_preserves_control_outputs_from_8479740(
         atol=1e-12,
     )
     assert all(record.qp_ok for record in observed)
+    np.testing.assert_allclose(
+        np.stack([record.q_next for record in observed]),
+        np.stack([record.q_next for record in expected]), rtol=1e-5, atol=1e-7,
+    )
 
 
 def test_runtime_single_managed_parameter_change_is_rejected(controller_fixture):
