@@ -198,10 +198,13 @@ def evaluate_execution(directory: Path, manifest: dict, feedback: list, commands
                 "recovery_delay_s": resumed_s - min(candidates) if candidates else None,
                 "delay_status": "measured" if candidates else "insufficient_evidence",
             })
-    limiting = {"status": "insufficient_evidence"}
-    if last_candidate is not None and "initial" in last_candidate and "geometry" in last_candidate:
+    limiting = {
+        "status": "insufficient_evidence",
+        "reason": "缺少执行器限制快照" if limits is None else "缺少末次候选几何记录",
+    }
+    if (limits is not None and last_candidate is not None
+            and "initial" in last_candidate and "geometry" in last_candidate):
         position = np.asarray(last_candidate["initial"]["position"])
-        limits = manifest["execution_limits"]
         limiting = {
             "status": "measured",
             "reference_progress_m": last_candidate["reference_progress_m"],
