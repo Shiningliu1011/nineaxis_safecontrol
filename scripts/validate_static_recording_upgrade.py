@@ -30,7 +30,7 @@ from validate_static_storage import (
 )
 
 
-def interrupt_writer(source, destination):
+def interrupt_writer(source, destination, *, count=1200):
     recorder = RunRecorder(destination)
     digest = hashlib.sha256()
     for index, row in enumerate(iter_records(source), start=1):
@@ -39,17 +39,18 @@ def interrupt_writer(source, destination):
             simulation_s=row["simulation_s"], ros_time_ns=row["ros_time_ns"], values=row["values"],
         )
         digest.update(msgpack.packb(row, use_bin_type=True, use_single_float=False))
-        if index == 1200:
+        if index == count:
             print(json.dumps({"count": index, "sha256": digest.hexdigest()}), flush=True)
             sys.stdin.read(1)
             raise RuntimeError("恢复验证等待 SIGKILL")
-    raise ValueError("真实来源记录少于 1200 条")
+    raise ValueError(f"真实来源记录少于 {count} 条")
 
 
-def verify_interruption(source, destination):
+def verify_interruption(source, destination, *, count=1200):
     process = subprocess.Popen(
         [sys.executable, str(Path(__file__).resolve()), "--interrupt-source", str(source),
-         "--output", str(destination)], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True,
+         "--output", str(destination), "--interrupt-count", str(count)],
+        stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True,
     )
     try:
         expected = json.loads(process.stdout.readline())
@@ -165,9 +166,12 @@ def main():
     parser.add_argument("--resource-root", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--interrupt-source", type=Path)
+    parser.add_argument("--interrupt-count", type=int, default=1200)
     args = parser.parse_args()
+    if args.interrupt_count < 300:
+        parser.error("--interrupt-count 必须至少为 300")
     if args.interrupt_source is not None:
-        interrupt_writer(args.interrupt_source, args.output)
+        interrupt_writer(args.interrupt_source, args.output, count=args.interrupt_count)
     else:
         validate(args.source_root.resolve(strict=True), args.resource_root.resolve(strict=True),
                  args.output.resolve())
