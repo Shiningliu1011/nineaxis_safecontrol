@@ -88,3 +88,39 @@ python scripts/validate_static_storage.py \
 
 容量和耗时结论以[接手记录](static_obstacle_experiments_handoff.md)所指向的
 本机测量为准。S4/S5、共同周期和其他正式实验前置条件仍需分别验收。
+
+## 正式矩阵容量准入
+
+`static_experiment_capacity.py` 分别计算全部计划运行、保留的失败重试、
+单次运行的 WAL 工作空间、串行派生处理、来源归档和系统保留空间。
+各项使用字节数；固定矩阵已经包含每个组合的三次重复。
+额外重试预算通过 `--retry-runs` 显式提供，增加重试需要重新核算。
+恢复批量运行时，已有目录继续保留，只为尚未运行的组合预留新记录空间。
+每个新运行启动前检查当前文件系统可用空间，已有运行超过记录容量上限时停止批量执行。
+
+正式目录需要 `capacity_plan.json`，其身份绑定 `formal_manifest.json`、
+代码来源和原始验证证据。只有经过验证的完整容量上界才能用于准入；
+样本外推即使小于可用空间，也会保持证据不足。
+容量文件保存 `CapacityBudget` 的各项数值、
+`is_validated_capacity_upper_bound`、`evidence_sha256`、
+`formal_manifest_sha256` 和 `source_sha256`。
+证据文件或清单身份变化时，需要重新验证容量。
+
+已有真实记录的审计入口：
+
+```bash
+source .scratch/host-recovery/env.sh
+python scripts/validate_static_capacity.py \
+  --catalog output/static-experiments/development-scenes-05/catalog.json \
+  --validation output/static-storage-validation-05/validation.json \
+  --output output/static-capacity-check --resource-root "$PWD" \
+  --retry-runs 0 --reserve-bytes 10000000000
+```
+
+该命令逐项核查原始记录身份、各流数量、最大 MessagePack payload、
+实际压缩大小及完整流 zlib6 无损往返结果，生成固定 1,080 项的时长和容量明细。
+时长留量包含 controller 启动期间 plant 的记录、运行 timeout、
+settle 和进程退出等待。候选被拒绝后的重新计算频率也需要单独约束。
+结果清楚标注样本覆盖范围、未证明项和当前挂载文件系统。
+退出码 2 表示容量尚未通过；报告和原始数据仍会保留。
+完整流压缩测量只提供编码潜力证据，当前逐条事务语义和记录格式保持有效。
