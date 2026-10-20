@@ -1,0 +1,3 @@
+{"file":".trellis/spec/backend/index.md","reason":"实验控制与数据模块规范"}
+{"file":".trellis/spec/backend/safety-guidelines.md","reason":"反馈来源、连续检查和失效处理"}
+{"file":"docs/specs/static-obstacle-experiments.md","reason":"正式组合、配对统计与复现要求"}

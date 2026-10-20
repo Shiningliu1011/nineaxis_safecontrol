@@ -1,0 +1,3 @@
+{"file":".trellis/spec/backend/index.md","reason":"公共执行模块规范"}
+{"file":".trellis/spec/backend/safety-guidelines.md","reason":"连续运动、停止和准入规则"}
+{"file":".trellis/tasks/10-20-static-self-collision/research/continuous-motion.md","reason":"Ruckig 连续极值证据"}

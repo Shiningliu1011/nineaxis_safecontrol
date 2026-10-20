@@ -128,7 +128,7 @@ class TrajectoryExecutor:
                 # 在折点间按 rate_hz 线性重采样 (相邻点之间不再有台阶)。
                 n = len(trajectory.points)
                 total = max(n * period * scale, float(min_duration_s))
-                virtual = [total * i / max(n - 1, 1) for i in range(n)]
+                virtual = [total] if n == 1 else [total * i / (n - 1) for i in range(n)]
                 self._node.get_logger().info(
                     f"  no time_from_start: uniform-resampled replay "
                     f"{n} pts over {total:.2f}s at ~{rate_hz:.0f} Hz"
@@ -179,15 +179,18 @@ class TrajectoryExecutor:
         start = monotonic()
         for frame in range(1, step_count + 1):
             target_t = times[-1] * frame / step_count
-            index = bisect_right(times, target_t) - 1
-            index = max(0, min(int(index), len(points) - 2))
-            t0, t1 = times[index], times[index + 1]
-            span = max(t1 - t0, 1e-9)
-            ratio = min(max((target_t - t0) / span, 0.0), 1.0)
-            pos = [
-                a + (b - a) * ratio
-                for a, b in zip(positions[index], positions[index + 1])
-            ]
+            if len(points) == 1:
+                pos = positions[0]
+            else:
+                index = bisect_right(times, target_t) - 1
+                index = max(0, min(int(index), len(points) - 2))
+                t0, t1 = times[index], times[index + 1]
+                span = max(t1 - t0, 1e-9)
+                ratio = min(max((target_t - t0) / span, 0.0), 1.0)
+                pos = [
+                    a + (b - a) * ratio
+                    for a, b in zip(positions[index], positions[index + 1])
+                ]
             self._publish_replay_point(
                 pub, command_pub, trajectory.joint_names, pos
             )

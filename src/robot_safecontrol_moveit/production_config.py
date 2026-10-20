@@ -58,6 +58,8 @@ REQUIRED_PARAMETERS = frozenset(
 
 OPTIONAL_DEFAULTS: Mapping[str, Any] = {
     "cylinder_center": [],
+    "path_radius_m": 0.0,
+    "shared_path_reference": False,
     "telemetry_period_s": 1.0,
     "perf_report_path": "output/oscbf_m10_perf.md",
     "latency_budget_ms": 20.0,
@@ -216,9 +218,12 @@ def validate_parameter_values(values: Mapping[str, Any], *, source: str) -> None
         "use_nullspace_policy",
         "wait_for_start",
         "enable_perception_obstacles",
+        "shared_path_reference",
     ):
         if type(values[name]) is not bool:
             raise ValueError(f"{source}: {name} must be a boolean")
+    if values["shared_path_reference"] and values["task_mode"] != "tool_axis_5d":
+        raise ValueError(f"{source}: shared_path_reference requires task_mode=tool_axis_5d")
 
     numeric = {
         name: _number(name, values[name], source=source)
@@ -352,6 +357,11 @@ def validate_parameter_values(values: Mapping[str, Any], *, source: str) -> None
     _number_vector(
         "cylinder_center", values["cylinder_center"], lengths={0, 3}, source=source
     )
+    radius = _number_vector("path_radius_m", [values["path_radius_m"]], lengths={1}, source=source)[0]
+    if radius < 0.0:
+        raise ValueError(f"{source}: path_radius_m must be non-negative")
+    if radius > 0.0 and values["orientation_mode"] != "surface_normal":
+        raise ValueError(f"{source}: path_radius_m requires surface_normal")
 
 
 def _absolute_path(value: str) -> Path:

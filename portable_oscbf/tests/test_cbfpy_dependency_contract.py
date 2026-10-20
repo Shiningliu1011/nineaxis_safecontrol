@@ -17,6 +17,7 @@ PINNED_DEPENDENCIES = {
     "qpax": "0.1.4",
     "jsonschema": "4.23.0",
     "ruckig": "0.12.2",
+    "trimesh": "5.1.0",
 }
 CBFPY_MEMBERS = (
     "m",

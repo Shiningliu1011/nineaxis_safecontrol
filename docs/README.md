@@ -22,6 +22,7 @@
 ## 设计与实施资料
 
 - [静态障碍物仿真实验](static_obstacle_experiments.md)：规格、S0–S5 场景、A/B/C/D/E 对照及实施任务。
+- [静态实验接手记录](static_obstacle_experiments_handoff.md)：当前验证、数据容量、保存位置和剩余工作。
 - [九轴曲面作业完整项目](planning/nineaxis-full-project/README.md)：M01–M12、QP/MPC、系统集成、实机实验与个人项目成果的 Wayfinder 入口。
 - [设计决定](adr/)：按编号阅读已记录的决定。
 - [规格](specs/)：各主题的详细要求。

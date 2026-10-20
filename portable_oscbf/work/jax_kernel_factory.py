@@ -38,6 +38,7 @@ from work.jax_posture_reference import (
     sample_path_posture_reference_jax,
 )
 from work.qp_solver_health import terminal_qp_health
+from work.moving_reference_task import moving_reference_terms_jax
 from work.safety_snapshot import sample_distance_field_jax
 from work.tool_axis_task import (
     TASK_MODE_POSE_6D,
@@ -89,6 +90,7 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
                               path_posture_reference: JaxPathPostureReference | None = None,
                               task_mode: str = TASK_MODE_POSE_6D,
                               nullspace_policy=None,
+                              shared_path_reference: bool = False,
                               ) -> JaxControlKernels:
     """Build static-shape QP and tracking kernels without changing CBF semantics.
 
@@ -481,6 +483,8 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
             return sample_path_jax(path_geometry, progress_m)
 
         def _path_orientation_sample(ee_pos, path_state):
+            if shared_path_reference:
+                return _path_sample(path_state[0])
             progress, _ = project_local_path_jax(
                 path_geometry, ee_pos, path_state[2],
                 path_config.projection_half_window_segments,
@@ -489,6 +493,10 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
             return _path_sample(progress)
 
         def _path_task_terms(ee_pos, ee_rot, full_jacobian, sample, orientation):
+            if shared_path_reference:
+                terms = moving_reference_terms_jax(
+                    ee_pos, ee_rot, full_jacobian, path_geometry, sample.progress_m)
+                return terms.error, task_error_report_6d_jax(terms.error), terms.jacobian
             if task_mode == TASK_MODE_TOOL_AXIS_5D:
                 error = task_error_5d_jax(
                     ee_pos, sample.position_m, ee_rot, orientation.rotation)
@@ -504,7 +512,11 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
             return task_geometry_terms(
                 ee_pos, ee_rot, full_jacobian, sample.position_m, sample.rotation)
 
-        def _path_twist_per_m(sample):
+        def _path_twist_per_m(ee_pos, ee_rot, full_jacobian, sample):
+            if shared_path_reference:
+                return moving_reference_terms_jax(
+                    ee_pos, ee_rot, full_jacobian, path_geometry,
+                    sample.progress_m).reference_rate
             if task_mode == TASK_MODE_TOOL_AXIS_5D:
                 return jnp.concatenate([sample.tangent, jnp.zeros(2)])
             return task_velocity_from_world(
@@ -549,6 +561,8 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
                 sample.at_endpoint, cap_pos_err,
                 transverse_pos_err + sample.tangent * jnp.maximum(
                     jnp.dot(sample.tangent, cap_pos_err), 0.0))
+            if shared_path_reference:
+                position_feedback_error = cap_pos_err
             # Saturate the position correction at a small arc-length radius:
             # beyond it the pull-back speed stays bounded (kp * sat) instead
             # of growing with the error, so a transient that exceeds the
@@ -577,7 +591,7 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
                 -kp_pos * fb_scale * position_feedback_error + _endpoint_velocity(ee_pos, sample),
                 -kp_orient * cap_orientation_err,
             ])
-            twist_per_m = _path_twist_per_m(sample)
+            twist_per_m = _path_twist_per_m(ee_pos, ee_rot, full_jacobian, sample)
             twist_per_m = twist_per_m * _path_feed_scale(cap_pos_err, sample)
             u_bias = (cap_jacobian_hash @ twist_bias
                       + cap_null_projector @ cap_qdot_null)
@@ -621,6 +635,8 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
             )
 
         def _path_feed_scale(pos_err, sample):
+            if shared_path_reference:
+                return jnp.asarray(1.0)
             along = jnp.dot(sample.tangent, pos_err)
             transverse = pos_err - sample.tangent * along
             lateral_scale = jnp.clip(
@@ -645,6 +661,8 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
                 sample.at_endpoint, pos_err,
                 transverse_pos_err + sample.tangent * jnp.maximum(
                     jnp.dot(sample.tangent, pos_err), 0.0))
+            if shared_path_reference:
+                position_feedback_error = pos_err
             fb_norm = jnp.linalg.norm(position_feedback_error)
             fb_scale = jnp.where(
                 fb_norm > _POSITION_FB_SATURATION_M,
@@ -667,7 +685,7 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
                 -kp_pos * fb_scale * position_feedback_error + _endpoint_velocity(ee_pos, sample),
                 -kp_orient * orientation_err,
             ])
-            control_twist_per_m = _path_twist_per_m(sample)
+            control_twist_per_m = _path_twist_per_m(ee_pos, ee_rot, full_jacobian, sample)
             control_jacobian_hash = control_jacobian.T @ jnp.linalg.inv(
                 control_jacobian @ control_jacobian.T
                 + damping * jnp.eye(control_jacobian.shape[0]))
@@ -718,7 +736,7 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
                 dt_s=dt_path,
             )
             _pos_err_next = ee_pos_next - sample.position_m
-            if task_mode == TASK_MODE_TOOL_AXIS_5D:
+            if task_mode == TASK_MODE_TOOL_AXIS_5D and not shared_path_reference:
                 orientation_next = _path_orientation_sample(ee_pos_next, next_path_state)
                 sample = sample._replace(
                     rotation=orientation_next.rotation,
@@ -763,6 +781,9 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
                 u_bias, u_per_m, G, h_qp, u_safe_prev)
             path = _path_advance(
                 path_state, ee_pos, joint_cap, cbf_cap, rate_cap)
+            if shared_path_reference:
+                path = path._replace(feedrate_m_s=(
+                    path.sample.progress_m - path_state[0]) / dt_path)
             sample = path.sample
             u_nom, control_task_p, control_q_des = _path_control_nominal(
                 ee_pos, ee_rot, full_jacobian, sample, orientation, q,
@@ -781,6 +802,16 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
              delta_slack) = _path_solve(
                 q, u_nom, control_h_args, G, h_qp, h_vals, cbf_grad,
                 min_obs_dist, min_esdf_dist)
+            if shared_path_reference:
+                task_valid = moving_reference_terms_jax(
+                    ee_pos, ee_rot, full_jacobian, path_geometry, sample.progress_m).valid
+                qp_ok = qp_ok & task_valid
+                q_next, u_safe = apply_qp_health_gate(
+                    q, u_candidate, qp_ok, dt=dt, q_min=q_min, q_max=q_max)
+                sample = _path_sample(jnp.where(qp_ok, sample.progress_m, path_state[0]))
+                path = path._replace(
+                    state=jnp.where(qp_ok, path.state, path_state), sample=sample,
+                    feedrate_m_s=jnp.where(qp_ok, path.feedrate_m_s, 0.0))
             (next_path_state, err_report_next, actual_tangent_speed,
              ee_pos_next, ee_rot_next, reference_rotation, reference_omega) = _path_finalize(
                 q_next, ee_pos, ee_rot, full_jacobian, sample, u_safe,

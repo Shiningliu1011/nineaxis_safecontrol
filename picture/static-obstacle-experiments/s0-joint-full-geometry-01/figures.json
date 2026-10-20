@@ -1,0 +1,61 @@
+{
+  "files": [
+    {
+      "height": 1223,
+      "path": "/home/lsn/robot/robot_safecontrol/picture/static-obstacle-experiments/s0-joint-full-geometry-01/tracking-errors.png",
+      "sha256": "5df29b5d4b928572b9159ebf2e01c23127b385ddab7b21eb51f4c87bd01bcfeb",
+      "width": 1823
+    },
+    {
+      "height": 1223,
+      "path": "/home/lsn/robot/robot_safecontrol/picture/static-obstacle-experiments/s0-joint-full-geometry-01/feed-and-phase.png",
+      "sha256": "30680f77c713413ecbbc94756bd0bf2abb902d7ea842c6c2ee9e5933ef9fa89e",
+      "width": 1823
+    },
+    {
+      "height": 1223,
+      "path": "/home/lsn/robot/robot_safecontrol/picture/static-obstacle-experiments/s0-joint-full-geometry-01/clearances.png",
+      "sha256": "31e96bb2daa5aaf81844948114ebd94ae1507bf39f73f365fc80dfb681368d87",
+      "width": 1823
+    },
+    {
+      "height": 923,
+      "path": "/home/lsn/robot/robot_safecontrol/picture/static-obstacle-experiments/s0-joint-full-geometry-01/joint-margins.png",
+      "sha256": "3315258c0e1ff524154171b4dc46214e291be1d1880e7428e5d5af7941f3c8e5",
+      "width": 1823
+    },
+    {
+      "height": 923,
+      "path": "/home/lsn/robot/robot_safecontrol/picture/static-obstacle-experiments/s0-joint-full-geometry-01/cycle-duration.png",
+      "sha256": "56a521e2105209489f90d2446a57b95af579570cc4642b3deed1c48bfce7e7a2",
+      "width": 1423
+    },
+    {
+      "height": 1033,
+      "path": "/home/lsn/robot/robot_safecontrol/picture/static-obstacle-experiments/s0-joint-full-geometry-01/representative-configurations.png",
+      "sha256": "7ee9c7e1b5f2a75569d523d71f2dfac63949de81e5b217b4bcc3db9ea93130c7",
+      "width": 2992
+    }
+  ],
+  "fonts": {
+    "SimSun": {
+      "family": "SimSun",
+      "path": "/home/lsn/.local/share/fonts/robot_figures/simsun.ttc",
+      "sha256": "2e3cc9dbd787c827f73496f01633bba430e15c5db4d4f6ed9938386ea01f0171"
+    },
+    "Times New Roman": {
+      "family": "Times New Roman",
+      "path": "/home/lsn/.local/share/fonts/robot_figures/Times.TTF",
+      "sha256": "4e98adeff8ccc8ef4e3ece8d4547e288ff85fdc9c7ca711a4599c234874bbe86"
+    }
+  },
+  "report_sha256": "0cba7626cae5c0527d6e20377bd5c51d99813ae6c63a2a22d710ff1d80e6d8a4",
+  "run": "/home/lsn/robot/robot_safecontrol/output/static-experiments/s0-joint-full-geometry-01",
+  "versions": {
+    "Pillow": "11.3.0",
+    "matplotlib": "3.10.9",
+    "numpy": "1.26.4",
+    "scipy": "1.15.3",
+    "trimesh": "5.1.0"
+  }
+}

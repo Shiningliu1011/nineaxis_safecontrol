@@ -244,6 +244,7 @@ class PathGeometry:
         anchor_segment: int,
         half_window_segments: int,
         half_window_m: float | None = None,
+        anchor_progress_m: float | None = None,
     ) -> tuple[float, int]:
         """按线段数量或弧长限制局部投影；调用方负责单向进度。"""
         point = np.asarray(position_m, dtype=float).reshape(3)
@@ -256,7 +257,9 @@ class PathGeometry:
         if half_window_m is not None:
             if not np.isfinite(half_window_m) or half_window_m <= 0:
                 raise ValueError("half_window_m must be finite and positive")
-            centre = self.arc_length_m[anchor]
+            centre = self.arc_length_m[anchor] if anchor_progress_m is None else float(anchor_progress_m)
+            if not np.isfinite(centre) or not 0 <= centre <= self.total_length_m:
+                raise ValueError("anchor_progress_m must be within the path")
             first = max(0, int(np.searchsorted(
                 self.arc_length_m, centre - half_window_m, side="left")) - 1)
             last = min(self.num_segments, int(np.searchsorted(
@@ -266,6 +269,11 @@ class PathGeometry:
         lengths_sq = np.einsum("ij,ij->i", deltas, deltas)
         fractions = np.einsum("ij,ij->i", point - starts, deltas) / lengths_sq
         fractions = np.clip(fractions, 0.0, 1.0)
+        if half_window_m is not None and anchor_progress_m is not None:
+            spans = np.diff(self.arc_length_m[first:last + 1])
+            lower = np.clip((centre - half_window_m - self.arc_length_m[first:last]) / spans, 0, 1)
+            upper = np.clip((centre + half_window_m - self.arc_length_m[first:last]) / spans, 0, 1)
+            fractions = np.clip(fractions, lower, upper)
         closest = starts + fractions[:, None] * deltas
         local = int(np.argmin(np.einsum("ij,ij->i", closest - point, closest - point)))
         segment = first + local

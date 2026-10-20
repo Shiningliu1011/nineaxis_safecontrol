@@ -134,7 +134,8 @@ def sample_path_jax(geometry: JaxPathGeometry, progress_m: jnp.ndarray) -> JaxPa
     """Interpolate a 6-D path reference at clamped arc-length progress."""
     n_segments = geometry.positions_m.shape[0] - 1
     total = geometry.arc_length_m[-1]
-    progress = jnp.clip(progress_m, 0.0, total)
+    progress = jnp.where(progress_m < 0.0, 0.0, progress_m)
+    progress = jnp.where(progress > total, total, progress)
     progress = jnp.where(progress >= total - _EPS, total, progress)
     segment = jnp.clip(
         jnp.searchsorted(geometry.arc_length_m, progress, side="right") - 1,
@@ -143,7 +144,8 @@ def sample_path_jax(geometry: JaxPathGeometry, progress_m: jnp.ndarray) -> JaxPa
     ).astype(jnp.int32)
     start = geometry.arc_length_m[segment]
     span = geometry.arc_length_m[segment + 1] - start
-    fraction = jnp.clip((progress - start) / jnp.maximum(span, _EPS), 0.0, 1.0)
+    # progress 已在路径内；连接处采用右侧线段的完整导数。
+    fraction = (progress - start) / jnp.maximum(span, _EPS)
 
     position = _lerp(geometry.positions_m[segment], geometry.positions_m[segment + 1], fraction)
     position = jnp.where(progress == total, geometry.positions_m[-1], position)

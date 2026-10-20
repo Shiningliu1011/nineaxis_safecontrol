@@ -1,7 +1,7 @@
 from glob import glob
 from pathlib import Path
 
-from setuptools import find_packages, setup
+from setuptools import Extension, find_packages, setup
 
 
 package_name = "robot_safecontrol_moveit"
@@ -13,6 +13,7 @@ PORTABLE_OSCBF_RUNTIME_REQUIREMENTS = [
     "qpax==0.1.4",
     "jsonschema==4.23.0",
     "ruckig==0.12.2",
+    "trimesh==5.1.0",
 ]
 
 
@@ -26,14 +27,29 @@ setup(
     version="0.1.0",
     packages=find_packages("src"),
     package_dir={"": "src"},
+    ext_modules=[Extension(
+        "robot_static_fcl",
+        ["portable_oscbf/native/static_fcl.cpp"],
+        include_dirs=["/usr/include/eigen3"],
+        libraries=["fcl"],
+        extra_compile_args=["-std=c++17", "-O2", "-g0"],
+        language="c++",
+    )],
     data_files=[
         ("share/ament_index/resource_index/packages", [f"resource/{package_name}"]),
-        (f"share/{package_name}", ["package.xml"]),
+        (f"share/{package_name}", ["package.xml", "setup.py", "setup.cfg", "requirements-static-report.txt"]),
+        (f"share/{package_name}/scripts", ["scripts/static_obstacle_experiment.py"]),
+        (f"share/{package_name}/docs", [
+            "docs/static_obstacle_experiments.md",
+            "docs/static_obstacle_experiments_handoff.md",
+        ]),
+        (f"share/{package_name}/docs/specs", ["docs/specs/static-obstacle-experiments.md"]),
         (f"share/{package_name}/config", glob("config/*.yaml")),
         (f"share/{package_name}/config", ["config/lidar_crop_experiment.rviz"]),
         (f"share/{package_name}/data/nurbs", ["data/nurbs/ik_input.mat"]),
         (f"share/{package_name}/launch", glob("launch/*.launch.py")),
         (f"share/{package_name}/tests", glob("tests/*.py")),
+        (f"share/{package_name}/tests/data", glob("tests/data/*.npz")),
         # Model files: URDF, meshes, and MoveIt configuration.
         (
             f"share/{package_name}/models/ninezzhou/urdf",
@@ -62,6 +78,14 @@ setup(
             glob("portable_oscbf/config/*.yaml") + glob("portable_oscbf/config/*.json"),
         ),
         (
+            f"share/{package_name}/portable_oscbf/scripts",
+            ["portable_oscbf/scripts/generate_closed_collision_meshes.py"],
+        ),
+        (
+            f"share/{package_name}/portable_oscbf/native",
+            glob("portable_oscbf/native/*.cpp"),
+        ),
+        (
             f"share/{package_name}/portable_oscbf/data",
             ["portable_oscbf/data/ik_input.mat"],
         ),
@@ -77,7 +101,7 @@ setup(
     install_requires=["setuptools", *PORTABLE_OSCBF_RUNTIME_REQUIREMENTS],
     extras_require={"hardware": ["python-can==4.6.1", "PyYAML>=5.4.1,<7"]},
     tests_require=["pytest"],
-    zip_safe=True,
+    zip_safe=False,
     maintainer="robot_safecontrol maintainers",
     maintainer_email="maintainer@example.com",
     description="MoveIt 2 / ROS 2 continuous IK, planning, and execution pipeline.",
@@ -92,6 +116,7 @@ setup(
             "lidar_crop_experiment = robot_safecontrol_moveit.lidar_crop_experiment:main",
             "oscbf_controller = robot_safecontrol_moveit.oscbf_controller:main",
             "oscbf_plant = robot_safecontrol_moveit.oscbf_plant:main",
+            "static_obstacle_experiment = robot_safecontrol_moveit.static_experiment:main",
             "hardware_bridge = robot_safecontrol_moveit.hardware_bridge:main",
             "livox_mid360_node = robot_safecontrol_moveit.livox_mid360.ros_node:main",
             "livox_mid360_tool = robot_safecontrol_moveit.livox_mid360.cli:main",

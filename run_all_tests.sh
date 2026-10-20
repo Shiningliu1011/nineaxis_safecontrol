@@ -28,7 +28,16 @@ python3 -m pytest tests/ -q || main_status=$?
 
 echo "==> portable_oscbf/tests/"
 kernel_status=0
-python3 -m pytest portable_oscbf/tests -q || kernel_status=$?
+# 独立进程释放每个文件的 JAX 编译缓存，完整执行全部控制内核用例。
+shopt -s globstar nullglob
+kernel_files=(portable_oscbf/tests/**/test_*.py)
+if (( ${#kernel_files[@]} == 0 )); then
+  kernel_status=5
+fi
+for test_file in "${kernel_files[@]}"; do
+  echo "==> $test_file"
+  python3 -m pytest "$test_file" -q || kernel_status=$?
+done
 
 echo "==> AEB-RRT* 插件 ctest"
 plugin_status=0

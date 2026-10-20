@@ -415,6 +415,7 @@ class OscbfController(Node):
             trajectory.set_surface_normal_orientation(
                 self._runtime_config["cylinder_axis_direction"],
                 axis_point=axis_point,
+                radius_m=float(self._runtime_config["path_radius_m"]) or None,
             )
         elif orientation_mode != "fixed":
             raise ValueError(
@@ -438,6 +439,7 @@ class OscbfController(Node):
             enable_x64=bool(self._runtime_config["enable_x64"]),
             solver_tol=float(self._runtime_config["solver_tol"]),
             task_mode=str(self._runtime_config["task_mode"]),
+            shared_path_reference=bool(self._runtime_config["shared_path_reference"]),
             nullspace_policy=policy,
         )
         self._loop.configure_path(

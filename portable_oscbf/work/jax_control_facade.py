@@ -30,7 +30,7 @@ from work.jax_posture_reference import as_jax_path_posture_reference
 from work.nineaxis_manipulator_jax import NineaxisManipulatorJAX
 from work.path_following import PathFollowingConfig, PathGeometry
 from work.path_posture_reference import PathPostureReference
-from work.tool_axis_task import SUPPORTED_TASK_MODES, TASK_MODE_POSE_6D
+from work.tool_axis_task import SUPPORTED_TASK_MODES, TASK_MODE_POSE_6D, TASK_MODE_TOOL_AXIS_5D
 
 
 @dataclass
@@ -122,7 +122,8 @@ class JaxControlLoop:
                  joint_limit_lower: np.ndarray | None = None,
                  joint_limit_upper: np.ndarray | None = None,
                  joint_limit_cbf_margin: float | None = None,
-                 nullspace_policy=None):
+                 nullspace_policy=None,
+                 shared_path_reference: bool = False):
         self.dt = float(dt)
         # 参考路径推进步长默认与 QP 积分步一致; 控制周期 0.01s 时传 dt_path=0.01
         self.dt_path = self.dt if dt_path is None else float(dt_path)
@@ -144,6 +145,9 @@ class JaxControlLoop:
         jax.config.update('jax_enable_x64', self.enable_x64)
         self.solver_tol = float(solver_tol)
         self.task_mode = str(task_mode)
+        self.shared_path_reference = bool(shared_path_reference)
+        if self.shared_path_reference and self.task_mode != TASK_MODE_TOOL_AXIS_5D:
+            raise ValueError("shared_path_reference requires tool_axis_5d")
         self.nullspace_policy = nullspace_policy
         if self.task_mode not in SUPPORTED_TASK_MODES:
             raise ValueError(
@@ -366,6 +370,7 @@ class JaxControlLoop:
             path_config=self._path_config,
             path_posture_reference=self._path_posture_reference,
             task_mode=self.task_mode,
+            shared_path_reference=self.shared_path_reference,
             nullspace_policy=self.nullspace_policy)
         self._step_fn = kernels.step
         self._tracking_fn = kernels.tracking

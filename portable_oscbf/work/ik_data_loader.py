@@ -407,6 +407,8 @@ class IKTrajectoryData:
     def set_surface_normal_orientation(
         self, axis_direction: Sequence[float],
         axis_point: Optional[Sequence[float]] = None,
+        *,
+        radius_m: Optional[float] = None,
     ) -> None:
         """Point the tool X-axis at the cylinder centre along the whole path.
 
@@ -436,6 +438,11 @@ class IKTrajectoryData:
             if centre.shape != (3,):
                 raise ValueError("axis_point must be a 3-vector")
             radius = self._fit_surface_with_radius(axis)[1]
+
+        if radius_m is not None:
+            if not np.isfinite(radius_m) or radius_m <= 0.0:
+                raise ValueError("radius_m must be finite and positive")
+            radius = float(radius_m)
 
         # 吸附到拟合圆柱表面 (镜像 cylinder_geometry.snap_path_to_cylindrical_surface):
         # 生成的原始轨迹相对拟合圆柱有毫米级径向起伏, 直接把每个点的径向分量

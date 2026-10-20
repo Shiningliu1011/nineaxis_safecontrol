@@ -70,6 +70,15 @@ class MuJoCoJointStateViewer(Node):
             parameter_overrides=parameter_overrides,
         )
         self._declare_parameters()
+        experiment = None
+        experiment_path = str(self.get_parameter("static_experiment_config").value)
+        if experiment_path:
+            from .static_experiment_config import ExperimentConfig
+
+            experiment = ExperimentConfig.load(
+                Path(experiment_path),
+                resource_root=Path(str(self.get_parameter("static_experiment_resource_root").value)),
+            )
 
         joint_names = tuple(str(name) for name in self.get_parameter("joint_names").value)
         if not joint_names:
@@ -80,10 +89,19 @@ class MuJoCoJointStateViewer(Node):
         mesh_directory = self._directory_parameter(
             "mesh_directory", self._default_mesh_directory()
         )
+        if experiment is not None:
+            urdf_path = experiment.resource("urdf")
+            mesh_directory = experiment.resource("mesh_directory")
         show_target_path = bool(self.get_parameter("show_target_path").value)
         target_path: list[tuple[float, float, float]] = []
         full_path: list[tuple[float, float, float]] = []
-        if show_target_path:
+        if experiment is not None:
+            geometry, _ = experiment.load_path()
+            full_path = [tuple(point) for point in geometry.positions_m]
+            target_path = self._sample_display_path(
+                full_path, int(self.get_parameter("path_max_points").value)
+            )
+        elif show_target_path:
             trajectory_mat = self._file_parameter(
                 "trajectory_mat", self._default_trajectory_mat()
             )
@@ -106,6 +124,7 @@ class MuJoCoJointStateViewer(Node):
         tracking_cylinder: TrackingCylinderSpec | None = None
         if (
             full_path
+            and experiment is None
             and bool(self.get_parameter("show_tracking_cylinder").value)
         ):
             tracking_cylinder = self._fit_tracking_cylinder(
@@ -137,6 +156,8 @@ class MuJoCoJointStateViewer(Node):
             raw_mjcf, target_path, tracking_cylinder,
             joint_names=self._joint_names,
         )
+        if experiment is not None:
+            scene_mjcf = self._inject_experiment_scene(scene_mjcf, experiment.scene())
         show_obb = bool(self.get_parameter("show_obb").value)
         show_obb_sample_spheres = bool(
             self.get_parameter("show_obb_sample_spheres").value)
@@ -154,6 +175,10 @@ class MuJoCoJointStateViewer(Node):
         self._model.opt.gravity[:] = 0.0
         self._data = mujoco.MjData(self._model)
         self._qpos_addresses = self._joint_qpos_addresses(joint_names)
+        if experiment is not None:
+            for name, value in zip(joint_names, experiment.initial_position):
+                self._data.qpos[self._qpos_addresses[name]] = value
+            mujoco.mj_forward(self._model, self._data)
         self._joint_limits = self._read_joint_limits(joint_names)
         self._latest_positions: dict[str, float] = {}
         self._received_joint_state = False
@@ -196,6 +221,8 @@ class MuJoCoJointStateViewer(Node):
         return True
 
     def _declare_parameters(self) -> None:
+        self.declare_parameter("static_experiment_config", "")
+        self.declare_parameter("static_experiment_resource_root", str(default_portable_root().parent))
         self.declare_parameter("joint_names", list(DEFAULT_JOINT_NAMES))
         self.declare_parameter("joint_state_topic", JOINT_STATE_TOPIC)
         self.declare_parameter("viewer_rate_hz", 60.0)
@@ -329,6 +356,41 @@ class MuJoCoJointStateViewer(Node):
             model = mujoco.MjModel.from_xml_path(str(temporary_urdf))
             mujoco.mj_saveLastXML(str(temporary_mjcf), model)
             return temporary_mjcf.read_text(encoding="utf-8")
+
+    @staticmethod
+    def _inject_experiment_scene(mjcf_xml: str, scene: dict) -> str:
+        root = ET.fromstring(mjcf_xml)
+        frame = root.find(".//body[@name='display_frame']")
+        if frame is None:
+            raise ValueError("实验显示需要 display_frame")
+        workpiece, table = scene["workpiece"], scene["table"]
+        ET.SubElement(
+            frame, "geom", name="experiment_workpiece", type="cylinder",
+            pos=" ".join(map(str, workpiece["center_m"])),
+            size=f"{workpiece['radius_m']} {workpiece['height_m'] / 2}",
+            quat="0.7071067811865476 -0.7071067811865476 0 0",
+            rgba="0.4 0.55 0.65 0.45", contype="0", conaffinity="0",
+        )
+        ET.SubElement(
+            frame, "geom", name="experiment_table", type="box",
+            pos=" ".join(map(str, table["center_m"])),
+            size=" ".join(map(str, table["half_extents_m"])),
+            rgba="0.45 0.4 0.35 1", contype="0", conaffinity="0",
+        )
+        for obstacle in scene["obstacles"]:
+            position = " ".join(map(str, obstacle["center_m"]))
+            radius = str(obstacle["radius_m"])
+            ET.SubElement(
+                frame, "geom", name=f"experiment_{obstacle['name']}", type="sphere",
+                pos=position, size=radius, rgba="0.85 0.25 0.15 1",
+                contype="0", conaffinity="0",
+            )
+            ET.SubElement(
+                frame, "geom", name=f"experiment_{obstacle['name']}_obb", type="box",
+                pos=position, size=" ".join([radius] * 3), rgba="0.85 0.25 0.15 0.12",
+                contype="0", conaffinity="0",
+            )
+        return ET.tostring(root, encoding="unicode")
 
     @staticmethod
     def _inject_display_scene(

@@ -47,6 +47,8 @@
     reference_lead_m: 0.002
     orientation_mode: surface_normal
     cylinder_axis_direction: [0.0, 1.0, 0.0]
+    # 0 表示使用路径拟合半径；静态实验通过统一配置指定路径圆柱半径。
+    path_radius_m: 0.0
     # One point on the cylinder axis.  Omitted here = fit from the trajectory
     # itself (same convention as the transition planner and MuJoCo viewer).
     # To pin an explicit axis point, set e.g. cylinder_center: [-0.0001, 0.0, 1.637]
