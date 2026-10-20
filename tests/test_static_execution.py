@@ -45,3 +45,34 @@ def test_reference_settlement_requires_accepted_active_motion():
     assert schedule.advance()["reference_progress_m"] == .02 * .006
     wrong = ScheduledMotion(3, 100, .5, .01, "RUNNING", motion)
     assert schedule.queue(wrong, certificate) == "reference_mismatch"
+
+
+def test_control_start_advances_without_repeating_rejected_execution_step():
+    config = ExperimentConfig.load(ROOT / "config/static_experiment_s0.yaml", resource_root=ROOT)
+    profile, kin = load_actuator_limit_profile(), NineaxisKinematics()
+    planner = MotionPlanner(
+        kin.joint_limits.q_min, kin.joint_limits.q_max, profile.velocity_limits,
+        profile.acceleration_limits, jerk_time=.08, minimum_duration_s=.08,
+    )
+    schedule = ExecutionSchedule(
+        ActuatorState(config.initial_position, np.zeros(9), np.zeros(9)), planner, .1,
+    )
+    motion = schedule.active
+    assert motion.next_control_step(1, previous_start_step=None) == 50
+    assert motion.next_control_step(2, previous_start_step=50) is None
+    assert motion.next_control_step(5, previous_start_step=50) is None
+    assert motion.next_control_step(6, previous_start_step=50) == 100
+    assert motion.next_control_step(50, previous_start_step=100) is None
+    assert motion.next_control_step(51, previous_start_step=100) == 150
+    assert motion.next_control_step(202, previous_start_step=150) == 300
+    previous = None
+    starts = []
+    for step in range(1, 501):
+        start = motion.next_control_step(step, previous_start_step=previous)
+        if start is not None:
+            starts.append(start)
+            previous = start
+    assert starts == list(range(50, 551, 50))
+    assert all(start > step for step, start in (
+        (1, 50), (6, 100), (51, 150), (202, 300),
+    ))

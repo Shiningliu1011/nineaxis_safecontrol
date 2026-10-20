@@ -3,6 +3,7 @@ from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict
 import json
+import sys
 import time
 
 import jax
@@ -14,6 +15,7 @@ from std_msgs.msg import String
 from .oscbf_trajectory import bootstrap_portable
 from .robot_spec import DEFAULT_JOINT_NAMES
 from .ros_conventions import JOINT_STATE_TOPIC, command_stream_qos, state_stream_qos
+from .static_experiment_capacity import RecordingBudget, RecordingLimits
 
 
 STATE_TOPIC = "/static_experiment/state"
@@ -43,6 +45,10 @@ class StaticExperimentPlant(Node):
         from work.static_motion import ActuatorState, certify_motion
 
         self.config, self.recorder = config, recorder
+        self.recording_budget = RecordingBudget(RecordingLimits(
+            config.values["timeout_s"], config.values["settle_s"], config.values["control"]["period_s"],
+        ))
+        self._recording_finished = False
         self.path, self.geometry, self.planner = _resources(config)
         self.schedule = ExecutionSchedule(
             ActuatorState(config.initial_position, np.zeros(9), np.zeros(9)),
@@ -76,6 +82,7 @@ class StaticExperimentPlant(Node):
         from work.static_execution import ScheduledMotion
         from work.static_motion import certify_motion
 
+        self.recording_budget.begin("received_command")
         received_s = time.monotonic()
         request = json.loads(message.data)
         if request["config_sha256"] != self.config.identity:
@@ -95,6 +102,7 @@ class StaticExperimentPlant(Node):
         self._pending_check = command, future, received_s
 
     def _tick(self):
+        self.recording_budget.check()
         if self._pending_check is not None:
             command, future, received_s = self._pending_check
             if future.done():
@@ -102,6 +110,7 @@ class StaticExperimentPlant(Node):
                 reason = self.schedule.queue(command, certificate)
                 self._admission(command.command_id, reason, received_s, certificate)
                 self._pending_check = None
+        self.recording_budget.begin("feedback")
         snapshot = self.schedule.advance()
         message = JointState()
         message.header.stamp = self.get_clock().now().to_msg()
@@ -135,8 +144,26 @@ class StaticExperimentPlant(Node):
                 and np.max(np.abs(state["velocity"])) <= 1e-10
                 and np.max(np.abs(state["acceleration"])) <= 1e-10)
 
-    def destroy_node(self):
+    def finish_recording(self, reason=None):
+        if self._recording_finished:
+            return
+        self._recording_finished = True
         self._executor.shutdown(wait=True)
+        if self._pending_check is not None:
+            command, future, received_s = self._pending_check
+            self._pending_check = None
+            try:
+                certificate = future.result()
+            except BaseException:
+                self._admission(command.command_id, "admission_failure", received_s)
+                raise
+            self._admission(
+                command.command_id, reason or "terminated_before_admission",
+                received_s, certificate,
+            )
+
+    def destroy_node(self):
+        self.finish_recording()
         return super().destroy_node()
 
 
@@ -148,6 +175,10 @@ class StaticExperimentController(Node):
         from work.static_recovery import RecoveryRules, RecoveryState
 
         self.config, self.recorder = config, recorder
+        self.recording_budget = RecordingBudget(RecordingLimits(
+            config.values["timeout_s"], config.values["settle_s"], config.values["control"]["period_s"],
+        ))
+        self._recording_finished = False
         self.path, geometry, self.planner = _resources(config)
         self.settings = config.values["control"]
         self.control = StaticControl(self.path, geometry, self.planner, self.settings)
@@ -160,6 +191,7 @@ class StaticExperimentController(Node):
         self._calculation = None
         self.latest = None
         self._waiting_id = None
+        self._last_calculation_start_step = None
         self._sequence = 0
         self._cycle_started = {}
         self._event_count = 0
@@ -178,6 +210,7 @@ class StaticExperimentController(Node):
             raise ValueError("plant 反馈的场景身份不一致")
         if self.latest is not None and value["step"] <= self.latest["step"]:
             raise ValueError("plant 反馈积分步没有递增")
+        self.recording_budget.start(value["published_monotonic_s"])
         self.latest = value
 
     def _on_admission(self, message):
@@ -222,6 +255,7 @@ class StaticExperimentController(Node):
     def _tick(self):
         from work.static_execution import ScheduledMotion
 
+        self.recording_budget.check()
         if any(time.monotonic() - started > 1. for started in self._cycle_started.values()):
             raise RuntimeError("plant 运动准入回复超过 1 s")
         if self.latest is None or self._execution_state != "tracking":
@@ -244,24 +278,28 @@ class StaticExperimentController(Node):
             return
         active = ScheduledMotion.from_record(snapshot["active_motion"], self.planner)
         ticks = round(self.settings["period_s"] / .002)
-        if snapshot["step"] <= active.start_step + max(1, ticks // 10):
-            start_step = active.start_step + ticks
-        else:
-            start_step = ((snapshot["step"] + ticks - 1) // ticks + 1) * ticks
+        start_step = active.next_control_step(
+            snapshot["step"], previous_start_step=self._last_calculation_start_step,
+        )
+        if start_step is None:
+            return
         initial = active.state_at_step(start_step)
         progress = active.reference_at_step(start_step)
         executed_feed = active.feed_m_s if start_step == active.start_step + ticks else 0.
+        self.recording_budget.begin("calculation")
         started = time.monotonic()
         future = self._executor.submit(
             self.control.propose, initial, progress,
             time_s=start_step * .002, executed_feed=executed_feed,
         )
+        self._last_calculation_start_step = start_step
         self._calculation = future, {
             "snapshot": snapshot, "initial": initial, "start_step": start_step,
             "progress": progress, "started": started,
         }
 
-    def _finish_calculation(self, future, *, snapshot, initial, start_step, progress, started):
+    def _finish_calculation(
+            self, future, *, snapshot, initial, start_step, progress, started, stop_reason=None):
         from work.static_execution import ScheduledMotion
         from work.static_velocity_solver import SolverFailure
 
@@ -287,6 +325,12 @@ class StaticExperimentController(Node):
         }
         self.recorder.append("candidate", monotonic_s=time.monotonic(), values=record)
         self._record_transitions()
+        if stop_reason is not None:
+            self.recorder.append("rejection", monotonic_s=time.monotonic(), values={
+                "reason": stop_reason, "start_step": start_step,
+            })
+            self._record_cycle(started, None, False, stop_reason)
+            return
         if self.control.recovery.phase == "FAULT":
             self._record_cycle(started, None, False, self.control.recovery.reason)
             self._execution_state, self._termination = "holding", self.control.recovery.reason
@@ -337,13 +381,26 @@ class StaticExperimentController(Node):
             )
             self._last_telemetry = time.monotonic()
 
-    def destroy_node(self):
+    def finish_recording(self, reason=None):
+        if self._recording_finished:
+            return
+        self._recording_finished = True
         self._executor.shutdown(wait=True)
-        if self._calculation is not None:
-            _, context = self._calculation
-            self._record_cycle(context["started"], None, False, "terminated_during_calculation")
-            self._calculation = None
-        for command_id, started in self._cycle_started.items():
-            self._record_cycle(started, command_id, False, "terminated_before_admission")
-        self._cycle_started.clear()
+        try:
+            if self._calculation is not None:
+                future, context = self._calculation
+                self._calculation = None
+                self._finish_calculation(
+                    future, **context, stop_reason=reason or "terminated_during_calculation",
+                )
+        finally:
+            for command_id, started in self._cycle_started.items():
+                self._record_cycle(started, command_id, False, reason or "terminated_before_admission")
+            self._cycle_started.clear()
+            fault = reason or ("fault" if sys.exc_info()[1] is not None else None)
+            if fault is not None:
+                self.record_fault(fault)
+
+    def destroy_node(self):
+        self.finish_recording()
         return super().destroy_node()

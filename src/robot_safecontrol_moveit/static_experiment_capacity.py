@@ -2,10 +2,119 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass, replace
 import json
+import math
 from pathlib import Path
 import shutil
+import time
 
 from .static_experiment_config import content_hash
+
+
+WORKER_STARTUP_TIMEOUT_S = 180.
+WORKER_STOP_TIMEOUT_S = 20.
+WORKER_INTERRUPT_TIMEOUT_S = 5.
+SUPERVISOR_POLL_S = .1
+
+
+@dataclass(frozen=True)
+class RecordingLimits:
+    timeout_s: float
+    settle_s: float
+    period_s: float
+
+    def __post_init__(self):
+        if (not math.isfinite(self.timeout_s) or self.timeout_s <= 0
+                or not math.isfinite(self.settle_s) or self.settle_s < 0
+                or self.period_s not in (.02, .04, .05, .1)):
+            raise ValueError("记录生命周期参数无效")
+
+    def manifest(self) -> dict:
+        maximum_s = self.timeout_s + self.settle_s + 2 * (
+            WORKER_STOP_TIMEOUT_S + WORKER_INTERRUPT_TIMEOUT_S
+        ) + 1.
+        feedback = math.ceil(maximum_s / .002)
+        ticks = round(self.period_s / .002)
+        calculations = math.ceil(feedback / ticks) + 2
+        return {
+            **asdict(self), "startup_order": ["controller", "plant"],
+            "worker_startup_timeout_s": WORKER_STARTUP_TIMEOUT_S,
+            "worker_stop_timeout_s": WORKER_STOP_TIMEOUT_S,
+            "worker_interrupt_timeout_s": WORKER_INTERRUPT_TIMEOUT_S,
+            "supervisor_poll_s": SUPERVISOR_POLL_S, "polling_allowance_s": 1.,
+            "maximum_recording_s": maximum_s, "maximum_feedback_records": feedback,
+            "maximum_candidate_records": calculations,
+            "maximum_trials_per_candidate": 9,
+            "stream_record_limits": {
+                "plant": {
+                    "feedback": feedback, "recording_delay": feedback,
+                    "received_command": calculations, "admission": calculations, "event": 1,
+                },
+                "controller": {
+                    "candidate": calculations, "cycle": calculations,
+                    "command": calculations, "admission": calculations, "rejection": calculations,
+                    "transition": 3 * calculations + 1,
+                    "qp_failure": 1, "sns_failure": 1, "event": 1,
+                },
+            },
+        }
+
+
+class RecordingBudgetExhausted(RuntimeError):
+    pass
+
+
+class RecordingBudget:
+    def __init__(self, limits: RecordingLimits):
+        self.limits = limits.manifest()
+        self.started_monotonic_s = None
+        self.started_tasks: dict[str, int] = {}
+        self.last_started_monotonic_s: dict[str, float] = {}
+
+    def start(self, monotonic_s: float) -> None:
+        if not math.isfinite(monotonic_s):
+            raise ValueError("记录开始时间必须有限")
+        if self.started_monotonic_s is None:
+            self.started_monotonic_s = monotonic_s
+
+    def check(self) -> None:
+        if (self.started_monotonic_s is not None
+                and time.monotonic() >= self.started_monotonic_s + self.limits["maximum_recording_s"]):
+            raise RecordingBudgetExhausted("budget_exhausted: deadline")
+
+    def begin(self, task: str) -> None:
+        maximum = {
+            "feedback": self.limits["maximum_feedback_records"],
+            "calculation": self.limits["maximum_candidate_records"],
+            "received_command": self.limits["maximum_candidate_records"],
+        }[task]
+        now = time.monotonic()
+        self.start(now)
+        self.check()
+        count = self.started_tasks.get(task, 0)
+        if count >= maximum:
+            raise RecordingBudgetExhausted(f"budget_exhausted: {task}")
+        self.started_tasks[task] = count + 1
+        self.last_started_monotonic_s[task] = now
+
+    def snapshot(self) -> dict:
+        return {
+            "started_monotonic_s": self.started_monotonic_s,
+            "deadline_monotonic_s": (
+                None if self.started_monotonic_s is None else
+                self.started_monotonic_s + self.limits["maximum_recording_s"]
+            ),
+            "started_tasks": dict(self.started_tasks),
+            "last_started_monotonic_s": dict(self.last_started_monotonic_s),
+        }
+
+
+def lifecycle_outcome_valid(result: dict, *, expected_termination: str) -> bool:
+    if expected_termination not in ("completed", "pause_timeout", "timeout"):
+        raise ValueError("生命周期预期终止原因无效")
+    return (
+        result.get("termination") == expected_termination
+        and result.get("worker_exit_codes") == [0, 0]
+    )
 
 
 @dataclass(frozen=True)
@@ -84,6 +193,9 @@ def require_formal_capacity(directory: Path, manifest: dict) -> dict:
     existing = [directory / "runs" / row["id"] for row in manifest["runs"]
                 if (directory / "runs" / row["id"]).exists()]
     for run in existing:
+        result_path = run / "result.json"
+        if result_path.is_file() and json.loads(result_path.read_text())["termination"] == "budget_exhausted":
+            raise ValueError(f"已有运行耗尽记录预算，正式批次停止：{run}")
         allocated = sum(path.stat().st_blocks * 512 for path in run.rglob("*") if path.is_file())
         if allocated > budget.retained_run_bytes:
             raise ValueError(f"已有运行超过容量上界，需要重新验证：{run}")

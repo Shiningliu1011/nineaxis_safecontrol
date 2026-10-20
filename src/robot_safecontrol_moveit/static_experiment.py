@@ -20,6 +20,55 @@ from .static_experiment_config import ExperimentConfig, content_hash, METHODS
 from .static_experiment_evaluation import evaluate_run
 from .static_experiment_recording import FORMAT_VERSION, RunRecorder, finalize_recording, write_json
 from .static_experiment_provenance import source_identity
+from .static_experiment_capacity import (
+    RecordingBudgetExhausted, RecordingLimits, SUPERVISOR_POLL_S, WORKER_STARTUP_TIMEOUT_S,
+    WORKER_STOP_TIMEOUT_S, WORKER_INTERRUPT_TIMEOUT_S,
+)
+
+
+def finish_worker_recording(node, recorder, directory: Path, *, role: str,
+                            stop_reason: str | None, terminal: dict) -> None:
+    original = sys.exc_info()[1]
+    errors = []
+    if node is not None:
+        try:
+            node.finish_recording(stop_reason)
+        except BaseException as error:
+            errors.append(error)
+        try:
+            node.destroy_node()
+        except BaseException as error:
+            errors.append(error)
+    if rclpy.ok():
+        try:
+            rclpy.shutdown()
+        except BaseException as error:
+            errors.append(error)
+    if errors:
+        terminal = {
+            "reason": "fault", "phase": "FAULT",
+            "error": repr(original or errors[0]),
+            "cleanup_errors": [repr(error) for error in errors],
+        }
+    recorder.append("event", monotonic_s=time.monotonic(), values=terminal)
+    wal = Path(str(recorder.path) + "-wal")
+    write_json(directory / f"{role}.recording.json", {
+        "completed_monotonic_s": time.monotonic(),
+        "wal_bytes_before_checkpoint": wal.stat().st_size,
+        "wal_allocated_bytes_before_checkpoint": wal.stat().st_blocks * 512,
+        "budget": None if node is None else node.recording_budget.snapshot(),
+        "stream_counts": dict(recorder.connection.execute(
+            "SELECT stream,count(*) FROM samples GROUP BY stream",
+        )),
+    })
+    if errors:
+        raise original or errors[0]
+
+
+def _publish_worker_result(path: Path, result: dict) -> None:
+    pending = path.with_suffix(".json.pending")
+    write_json(pending, result)
+    pending.rename(path)
 
 
 def _worker(args, config: ExperimentConfig) -> None:
@@ -29,37 +78,51 @@ def _worker(args, config: ExperimentConfig) -> None:
     directory = args.output.resolve()
     rclpy.init(args=[])
     node = None
+    stop_reason = None
+    terminal = {"reason": "worker_stopped"}
     with RunRecorder(directory / f"{args.role}.sqlite3") as recorder:
         try:
             if args.role == "plant":
                 node = StaticExperimentPlant(config, recorder)
             else:
                 node = StaticExperimentController(config, recorder)
-            (directory / f"{args.role}.ready").touch()
+            ready = directory / f"{args.role}.ready"
+            pending_ready = ready.with_suffix(".ready.pending")
+            write_json(pending_ready, {
+                "role": args.role, "monotonic_s": time.monotonic(),
+                "manifest_sha256": content_hash(directory / "manifest.json"),
+                "source_sha256": _sources(config),
+            })
+            pending_ready.rename(ready)
             while rclpy.ok():
+                node.recording_budget.check()
                 if (directory / "stop").exists() and (args.role != "plant" or node.stopped):
                     break
                 rclpy.spin_once(node, timeout_sec=0.05)
                 if args.role == "controller" and node.execution_state == "holding":
                     snapshot = node.progress_snapshot()
-                    write_json(directory / "controller_result.json", {
+                    _publish_worker_result(directory / "controller_result.json", {
                         "termination": snapshot["termination"], "steps": snapshot["steps"],
                         "monotonic_s": time.monotonic(),
                     })
                     break
+        except RecordingBudgetExhausted as error:
+            stop_reason = "budget_exhausted"
+            terminal = {"reason": stop_reason, "phase": "FAULT", "error": str(error)}
+            _publish_worker_result(directory / f"{args.role}_result.json", {
+                "termination": stop_reason, "reason": str(error), "monotonic_s": time.monotonic(),
+            })
         except (KeyboardInterrupt, ExternalShutdownException):
-            recorder.append("event", monotonic_s=time.monotonic(), values={"reason": "interrupted"})
+            stop_reason = "interrupted"
+            terminal = {"reason": stop_reason}
         except BaseException as error:
-            if args.role == "controller" and node is not None:
-                node.record_fault(repr(error))
-            recorder.append("event", monotonic_s=time.monotonic(),
-                            values={"reason": "fault", "phase": "FAULT", "error": repr(error)})
+            stop_reason = "fault"
+            terminal = {"reason": stop_reason, "phase": "FAULT", "error": repr(error)}
             raise
         finally:
-            if node is not None:
-                node.destroy_node()
-            if rclpy.ok():
-                rclpy.shutdown()
+            finish_worker_recording(
+                node, recorder, directory, role=args.role, stop_reason=stop_reason, terminal=terminal,
+            )
 
 
 def _sources(config: ExperimentConfig) -> dict:
@@ -70,11 +133,11 @@ def _stop_processes(processes: list, directory: Path) -> None:
     (directory / "stop").touch()
     for process in processes:
         try:
-            process.wait(timeout=20)
+            process.wait(timeout=WORKER_STOP_TIMEOUT_S)
         except subprocess.TimeoutExpired:
             process.send_signal(signal.SIGINT)
             try:
-                process.wait(timeout=5)
+                process.wait(timeout=WORKER_INTERRUPT_TIMEOUT_S)
             except subprocess.TimeoutExpired:
                 process.kill()
                 process.wait()
@@ -96,6 +159,10 @@ def run_experiment(args, config: ExperimentConfig) -> dict:
         **config.manifest(), "source_sha256": _sources(config),
         "path_sha256": content_hash(directory / "path.npz"),
         "recording_format": FORMAT_VERSION,
+        "recording_limits": RecordingLimits(
+            config.values["timeout_s"], config.values["settle_s"],
+            config.values["control"]["period_s"],
+        ).manifest(),
         "python": sys.version, "command": sys.argv,
         "geometry_runtime": {
             "fcl_version": robot_static_fcl.fcl_version,
@@ -121,15 +188,16 @@ def run_experiment(args, config: ExperimentConfig) -> dict:
         TMPDIR=str(directory / "tmp"), ROS_LOG_DIR=str(directory / "ros-log"),
         PYTHONPATH=str(Path(__file__).resolve().parents[1]) + os.pathsep + os.environ.get("PYTHONPATH", ""),
     )
-    processes, streams = [], []
+    processes, streams = {}, []
     overrides = [
         value for name, setting in config.overrides.items()
         for value in (f"--{name.replace('_', '-')}", str(setting))
     ]
     failure = None
     outcome = {"termination": "interrupted", "reason": "supervisor_interrupted"}
+    lifecycle = {"startup_order": ["controller", "plant"]}
     try:
-        for role in ("plant", "controller"):
+        for role in ("controller", "plant"):
             stream = (directory / f"{role}.log").open("w", encoding="utf-8")
             streams.append(stream)
             process = subprocess.Popen(
@@ -138,22 +206,32 @@ def run_experiment(args, config: ExperimentConfig) -> dict:
                  "--resource-root", str(config.resource_root), "--output", str(directory), *overrides],
                 env=environment, stdout=stream, stderr=subprocess.STDOUT,
             )
-            processes.append(process)
-            deadline = time.monotonic() + 180
+            processes[role] = process
+            deadline = time.monotonic() + WORKER_STARTUP_TIMEOUT_S
             while not (directory / f"{role}.ready").exists():
                 if process.poll() is not None or time.monotonic() > deadline:
                     raise RuntimeError(f"{role} 启动失败，检查 {role}.log")
-                time.sleep(0.1)
+                time.sleep(SUPERVISOR_POLL_S)
         deadline = time.monotonic() + config.values["timeout_s"]
-        while processes[1].poll() is None:
-            if processes[0].poll() is not None:
+        lifecycle.update(run_started_monotonic_s=time.monotonic(), deadline_monotonic_s=deadline)
+        while processes["controller"].poll() is None:
+            budget_results = [
+                json.loads(path.read_text()) for role in ("controller", "plant")
+                if (path := directory / f"{role}_result.json").exists()
+            ]
+            exhausted = next((row for row in budget_results
+                              if row["termination"] == "budget_exhausted"), None)
+            if exhausted is not None:
+                outcome = exhausted
+                break
+            if processes["plant"].poll() is not None:
                 raise RuntimeError("plant 在控制器结束前退出")
             if time.monotonic() >= deadline:
                 outcome = {"termination": "timeout", "reason": "run_timeout"}
                 break
-            time.sleep(0.1)
+            time.sleep(SUPERVISOR_POLL_S)
         else:
-            if processes[1].returncode != 0:
+            if processes["controller"].returncode != 0:
                 raise RuntimeError("controller 异常退出")
             outcome = json.loads((directory / "controller_result.json").read_text())
             time.sleep(config.values["settle_s"])
@@ -161,10 +239,31 @@ def run_experiment(args, config: ExperimentConfig) -> dict:
         outcome = {"termination": "fault", "reason": repr(error)}
         failure = error
     finally:
-        _stop_processes(processes, directory)
+        lifecycle["stop_requested_monotonic_s"] = time.monotonic()
+        _stop_processes(list(processes.values()), directory)
+        lifecycle["workers_exited_monotonic_s"] = time.monotonic()
         for stream in streams:
             stream.close()
-        outcome["worker_exit_codes"] = [process.returncode for process in processes]
+        outcome["worker_exit_codes"] = [
+            processes[role].returncode for role in ("plant", "controller") if role in processes
+        ]
+        outcome["lifecycle"] = lifecycle
+        budget_results = [
+            json.loads(path.read_text()) for role in ("controller", "plant")
+            if (path := directory / f"{role}_result.json").exists()
+        ]
+        exhausted = next((row for row in budget_results
+                          if row["termination"] == "budget_exhausted"), None)
+        if exhausted is not None:
+            outcome.update(termination="budget_exhausted", reason=exhausted["reason"])
+        outcome["ready_sha256"] = {
+            role: content_hash(directory / f"{role}.ready")
+            for role in ("plant", "controller") if (directory / f"{role}.ready").exists()
+        }
+        outcome["recording_statistics_sha256"] = {
+            role: content_hash(directory / f"{role}.recording.json")
+            for role in ("plant", "controller") if (directory / f"{role}.recording.json").exists()
+        }
         write_json(directory / "result.json", outcome)
         for role in ("plant", "controller"):
             database = directory / f"{role}.sqlite3"

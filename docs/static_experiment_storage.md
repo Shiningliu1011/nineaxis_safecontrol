@@ -106,6 +106,31 @@ python scripts/validate_static_recording_upgrade.py \
 
 ## 正式矩阵容量准入
 
+controller 完成初始化和 JIT 预热后启动 plant。首次 plant 反馈开始后，
+supervisor 使用配置中的完整 timeout，退出继续使用每个 worker 的
+20 秒正常等待和 5 秒 SIGINT 等待。manifest 中的 `recording_limits`
+统一保存这些生命周期参数，以及记录时长、反馈数量和候选数量预算。
+420 秒 timeout、2 秒 settle 对应 473 秒记录留量，其中包含两组退出等待
+和 1 秒轮询留量。
+
+controller 对同一未来 `start_step` 只发起一次计算，新执行步继续计算
+实际误差和恢复条件。全部实际反馈仍逐条保存。
+在 100 ms 控制周期下，473 秒记录留量对应最多 236,500 条反馈和
+4,732 条候选；每条候选保留至多九次 trial 的全部字段。
+plant 在新反馈积分与命令处理前检查本地 `RecordingBudget`，
+controller 在新计算前执行相同检查。各 worker 自身执行次数和 monotonic
+截止检查。截止时停止开始新任务，已经开始的计算继续保存完整候选、
+拒绝、周期和收尾事件，因此最后写入的完成时间可以晚于截止时间。
+manifest 的 `stream_record_limits` 逐流记录上限包含固定收尾额度。
+预算耗尽时保存 `budget_exhausted` 结果，正式批次停止后续运行，
+已有原始记录继续保留。
+每个 worker 退出时保存 `*.recording.json`，记录 checkpoint 前的 WAL
+字节、分配字节、任务计数和开始时间。ready 文件包含 monotonic 时间、
+manifest 与源码身份，result 绑定 ready 和统计文件的 SHA-256。
+收尾中的计算或准入 future 发生异常时，继续保存已有周期、故障事件
+和统计，关闭 ROS 后传播原异常。worker 结果使用同目录临时文件
+写完后重命名发布，supervisor 只读取完整 JSON。
+
 `static_experiment_capacity.py` 分别计算全部计划运行、保留的失败重试、
 单次运行的 WAL 工作空间、串行派生处理、来源归档和系统保留空间。
 各项使用字节数；固定矩阵已经包含每个组合的三次重复。
@@ -134,8 +159,18 @@ python scripts/validate_static_capacity.py \
 
 该命令逐项核查原始记录身份、各流数量、最大 MessagePack payload、
 实际压缩大小及完整流 zlib6 无损往返结果，生成固定 1,080 项的时长和容量明细。
-时长留量包含 controller 启动期间 plant 的记录、运行 timeout、
-settle 和进程退出等待。候选被拒绝后的重新计算频率也需要单独约束。
+该审计输出保留样本预算及其假设；完整准入证据还包含实际生命周期、
+逐流记录上限、全部方法与场景的字段结构、完整最长写入和退出过程。
 结果清楚标注样本覆盖范围、未证明项和当前挂载文件系统。
 退出码 2 表示容量尚未通过；报告和原始数据仍会保留。
 完整流压缩测量只提供编码潜力证据，当前逐条事务语义和记录格式保持有效。
+
+`scripts/validate_static_lifecycle.py` 在指定 CPU 和 ROS domain 中执行完整
+sim，监测进程在自己的 CPU affinity 中每 100 ms 汇总 RSS，
+并在运行结束后核查启动顺序、严格递增的候选执行步、任务截止及记录数量。
+检查同时要求两个 worker 正常退出、符合场景的预期终止原因，
+以及完整的源码、ready 和统计身份；fault、interrupted、
+budget_exhausted 均无法通过生命周期验收。
+原始日志、数据库、报告、WAL 统计和命令均保留。
+`--expect-timeout` 用于最长写入压力验证，要求实际触发配置 timeout
+且反馈记录覆盖整个时限。压力配置与正式三档进给分别记录。

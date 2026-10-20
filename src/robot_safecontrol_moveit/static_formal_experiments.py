@@ -233,11 +233,18 @@ def run_formal(directory: Path, *, resource_root: Path, domain: int, limit: int 
         })
         executed += 1
         recorded_count += int(run.exists())
+        run_result = run / "result.json"
+        termination = (
+            json.loads(run_result.read_text())["termination"] if run_result.is_file() else None
+        )
         write_json(directory / "batch_progress.json", {
             "recorded_runs": recorded_count, "planned_runs": 1080,
             "last_run": row["id"], "last_returncode": process.returncode,
+            "stop_reason": "budget_exhausted" if termination == "budget_exhausted" else None,
         })
         print(f"正式运行 {row['id']}；已有记录 {recorded_count}/1080", flush=True)
+        if termination == "budget_exhausted":
+            break
         if limit is not None and executed >= limit:
             break
     return paired_report(directory, manifest=manifest)
