@@ -6,6 +6,7 @@ import math
 from pathlib import Path
 import shutil
 import time
+from collections.abc import Callable
 
 from .static_experiment_config import content_hash
 
@@ -64,8 +65,9 @@ class RecordingBudgetExhausted(RuntimeError):
 
 
 class RecordingBudget:
-    def __init__(self, limits: RecordingLimits):
+    def __init__(self, limits: RecordingLimits, *, capacity_check: Callable[[], None] | None = None):
         self.limits = limits.manifest()
+        self.capacity_check = capacity_check
         self.started_monotonic_s = None
         self.started_tasks: dict[str, int] = {}
         self.last_started_monotonic_s: dict[str, float] = {}
@@ -77,6 +79,8 @@ class RecordingBudget:
             self.started_monotonic_s = monotonic_s
 
     def check(self) -> None:
+        if self.capacity_check is not None:
+            self.capacity_check()
         if (self.started_monotonic_s is not None
                 and time.monotonic() >= self.started_monotonic_s + self.limits["maximum_recording_s"]):
             raise RecordingBudgetExhausted("budget_exhausted: deadline")

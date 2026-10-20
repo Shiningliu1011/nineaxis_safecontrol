@@ -125,9 +125,18 @@ def inspect_run(directory: Path, *, expect_timeout: bool = False) -> dict:
     full_timeout = not expect_timeout or (
         feedback["last_monotonic_s"] - feedback["first_monotonic_s"] >= limits["timeout_s"]
     )
+    storage = manifest.get("storage_budget")
+    within_storage = None if storage is None else all(
+        item.get("storage_budget") is not None
+        and item["storage_budget"]["limits"] == storage["writers"][role]
+        and item["storage_budget"]["reason"] is None
+        and item["storage_budget"]["completion_within_reserve"]
+        for role, item in recording.items()
+    )
     return {
         "status": "pass" if unique_steps and increasing and startup_order and within_limits
-        and len(starts) <= cycle_bound and outcome_valid and bound_identities and full_timeout else "fail",
+        and len(starts) <= cycle_bound and outcome_valid and bound_identities and full_timeout
+        and within_storage is not False else "fail",
         "directory": str(directory), "identities_sha256": identities,
         "streams": streams, "recording": recording,
         "ready": ready, "controller_ready_before_plant": startup_order,
@@ -139,6 +148,7 @@ def inspect_run(directory: Path, *, expect_timeout: bool = False) -> dict:
             "maximum_count_from_feedback": cycle_bound, "period_ticks": ticks,
         },
         "recording_limits": limits, "within_recording_limits": within_limits,
+        "within_storage_limits": within_storage,
         "result": result,
         "timing": report["execution"]["timing"], "verdict": report["verdict"],
         "directory_bytes": sum(path.stat().st_size for path in directory.rglob("*") if path.is_file()),
@@ -171,6 +181,7 @@ def main() -> int:
     parser.add_argument("--config", type=Path)
     parser.add_argument("--resource-root", type=Path)
     parser.add_argument("--scene-evidence", type=Path)
+    parser.add_argument("--storage-budget", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--method", default="D")
     parser.add_argument("--feed-factor", type=float, default=1.)
@@ -193,6 +204,8 @@ def main() -> int:
         ]
         if args.scene_evidence is not None:
             command.extend(["--scene-evidence", str(args.scene_evidence.resolve(strict=True))])
+        if args.storage_budget is not None:
+            command.extend(["--storage-budget", str(args.storage_budget.resolve(strict=True))])
         report["process"] = measure(command, output)
     else:
         run = args.source.resolve(strict=True)

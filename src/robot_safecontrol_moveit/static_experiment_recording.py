@@ -11,6 +11,8 @@ from pathlib import Path
 import msgpack
 import zstandard
 
+from .static_recording_capacity import RecordingStorageGuard, RecordingStorageLimits
+
 
 FORMAT_VERSION = 3
 KEYFRAME_INTERVAL = 128
@@ -42,7 +44,8 @@ def _version(connection) -> int:
 
 
 class RunRecorder:
-    def __init__(self, path: Path):
+    def __init__(self, path: Path, *, storage_limits: dict | None = None):
+        limits = None if storage_limits is None else RecordingStorageLimits(**storage_limits)
         self.path = Path(path)
         if self.path.exists():
             raise FileExistsError(self.path)
@@ -61,6 +64,21 @@ class RunRecorder:
         self._last_times: dict[str, float] = {}
         self._previous: dict[str, tuple[int, int, bytes]] = {}
         self._sequence = 0
+        self._storage_guard = None if limits is None else RecordingStorageGuard(
+            self.path, self.connection, limits,
+        )
+
+    def check_capacity(self, *, pending_cycles: int = 0) -> None:
+        if self._storage_guard is not None:
+            self._storage_guard.check(pending_cycles=pending_cycles)
+
+    def capacity_snapshot(self) -> dict | None:
+        return None if self._storage_guard is None else self._storage_guard.snapshot()
+
+    def check_terminal_capacity(self, terminal: dict) -> None:
+        if self._storage_guard is not None:
+            raw = msgpack.packb(terminal, use_bin_type=True, use_single_float=False)
+            self._storage_guard.check(pending_record=("event", len(raw)))
 
     def append(self, stream: str, *, monotonic_s: float, values: dict,
                simulation_s: float | None = None, ros_time_ns: int | None = None,
@@ -99,6 +117,8 @@ class RunRecorder:
         self._sequence = sequence
         self._previous[stream] = (count + 1, keyframe, raw[-DICTIONARY_BYTES:])
         self._last_times[stream] = monotonic_s
+        if self._storage_guard is not None:
+            self._storage_guard.record_written(stream, len(raw))
         return time.monotonic() - started
 
     def close(self) -> None:
