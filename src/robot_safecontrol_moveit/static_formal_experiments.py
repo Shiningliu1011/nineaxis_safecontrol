@@ -13,6 +13,7 @@ import yaml
 
 from .static_experiment_config import ExperimentConfig, METHODS, content_hash
 from .static_experiment_capacity import require_formal_capacity
+from .static_experiment_volumes import capacity_run_directory
 from .static_experiment_provenance import (
     environment_identity, relocate_manifest, snapshot_sources, validate_run_report, verify_snapshot,
 )
@@ -207,18 +208,24 @@ def run_formal(directory: Path, *, resource_root: Path, domain: int, limit: int 
         raise ValueError("运行数量必须为正整数")
     (directory / "runs").mkdir(exist_ok=True)
     (directory / "logs").mkdir(exist_ok=True)
+    capacity = require_formal_capacity(directory, manifest)
     executed = 0
-    recorded_count = sum((directory / "runs" / row["id"]).exists() for row in manifest["runs"])
+    recorded_count = sum(
+        capacity_run_directory(directory, capacity, row["id"]).exists() for row in manifest["runs"]
+    )
     for row in manifest["runs"]:
         config = ExperimentConfig.load(
             directory / row["configuration"], resource_root=resource_root, method=row["method"],
         )
         if config.identity != row["config_sha256"] or _sources(config) != manifest["source_sha256"]:
             raise ValueError("正式运行的代码或配置身份变化")
-        run = directory / "runs" / row["id"]
+        run = capacity_run_directory(directory, capacity, row["id"])
         if run.exists():
             continue
-        require_formal_capacity(directory, manifest)
+        capacity = require_formal_capacity(directory, manifest)
+        anchor = directory / "runs" / row["id"]
+        if anchor != run and not anchor.is_symlink():
+            anchor.symlink_to(run, target_is_directory=True)
         command = [
             sys.executable, "-m", "robot_safecontrol_moveit.static_experiment", "run",
             "--config", str(config.source), "--method", row["method"], "--output", str(run),
@@ -245,6 +252,7 @@ def run_formal(directory: Path, *, resource_root: Path, domain: int, limit: int 
         print(f"正式运行 {row['id']}；已有记录 {recorded_count}/1080", flush=True)
         if termination == "budget_exhausted":
             break
+        require_formal_capacity(directory, manifest)
         if limit is not None and executed >= limit:
             break
     return paired_report(directory, manifest=manifest)

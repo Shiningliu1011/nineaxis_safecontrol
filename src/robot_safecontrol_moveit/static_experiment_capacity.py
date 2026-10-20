@@ -126,20 +126,31 @@ class CapacityBudget:
     derived_workspace_bytes: int
     provenance_bytes: int
     reserve_bytes: int
+    planned_retained_bytes: int | None = None
 
     def __post_init__(self):
         for name, value in asdict(self).items():
+            if name == "planned_retained_bytes" and value is None:
+                continue
             if type(value) is not int or value < 0:
                 raise ValueError(f"{name} 必须为非负整数")
         if self.retained_run_bytes == 0:
             raise ValueError("单次记录容量必须为正整数")
+        if (self.planned_retained_bytes is not None
+                and self.planned_retained_bytes > self.planned_runs * self.retained_run_bytes):
+            raise ValueError("分组记录总量超过单次最大额度之和")
 
 
 def assess_capacity(budget: CapacityBudget, *, available_bytes: int,
-                    upper_bound_validated: bool = False) -> dict:
+                    upper_bound_validated: bool = False, engineering_validated: bool = False) -> dict:
     if type(available_bytes) is not int or available_bytes < 0:
         raise ValueError("available_bytes 必须为非负整数")
-    retained = (budget.planned_runs + budget.retry_runs) * budget.retained_run_bytes
+    if upper_bound_validated and engineering_validated:
+        raise ValueError("容量证据类型必须明确")
+    retained = (
+        budget.planned_runs * budget.retained_run_bytes
+        if budget.planned_retained_bytes is None else budget.planned_retained_bytes
+    ) + budget.retry_runs * budget.retained_run_bytes
     required = (
         retained + budget.transient_run_bytes + budget.derived_workspace_bytes
         + budget.provenance_bytes + budget.reserve_bytes
@@ -153,7 +164,12 @@ def assess_capacity(budget: CapacityBudget, *, available_bytes: int,
         "available_bytes": available_bytes,
         "shortfall_bytes": shortfall,
         "is_validated_capacity_upper_bound": upper_bound_validated,
-        "status": ("insufficient_evidence" if not upper_bound_validated
+        "is_validated_engineering_budget": engineering_validated,
+        "capacity_basis": (
+            "unconditional_upper_bound" if upper_bound_validated else
+            "validated_engineering_envelope" if engineering_validated else "unvalidated_projection"
+        ),
+        "status": ("insufficient_evidence" if not (upper_bound_validated or engineering_validated)
                    else "fail" if shortfall else "pass"),
     }
 
@@ -163,6 +179,7 @@ def require_capacity(report: dict) -> None:
     assessed = assess_capacity(
         budget, available_bytes=report["available_bytes"],
         upper_bound_validated=report["is_validated_capacity_upper_bound"] is True,
+        engineering_validated=report.get("is_validated_engineering_budget") is True,
     )
     if any(report.get(key) != assessed[key] for key in (
             "required_free_bytes", "shortfall_bytes", "retained_bytes", "status")):
@@ -188,8 +205,18 @@ def require_formal_capacity(directory: Path, manifest: dict) -> dict:
     for filename, expected in evidence.items():
         if content_hash(Path(filename)) != expected:
             raise ValueError(f"容量证据身份变化：{filename}")
+    if report.get("is_validated_engineering_budget") is True:
+        if not report.get("engineering_evidence"):
+            raise ValueError("工程容量缺少可复算证据")
+        from .static_experiment_engineering_capacity import require_engineering_evidence
+        require_engineering_evidence(report, manifest, directory)
     require_capacity(report)
+    if "volumes" in report:
+        from .static_experiment_volumes import require_volume_capacity
+        return require_volume_capacity(directory, manifest, report)
     budget = CapacityBudget(**report["budget"])
+    if budget.planned_retained_bytes is not None:
+        raise ValueError("分组容量计划必须使用明确输出卷分配")
     existing = [directory / "runs" / row["id"] for row in manifest["runs"]
                 if (directory / "runs" / row["id"]).exists()]
     for run in existing:
@@ -202,7 +229,8 @@ def require_formal_capacity(directory: Path, manifest: dict) -> dict:
     current = assess_capacity(
         replace(budget, planned_runs=budget.planned_runs - len(existing)),
         available_bytes=shutil.disk_usage(directory).free,
-        upper_bound_validated=True,
+        upper_bound_validated=report["is_validated_capacity_upper_bound"] is True,
+        engineering_validated=report.get("is_validated_engineering_budget") is True,
     )
     require_capacity(current)
     return current

@@ -139,12 +139,43 @@ manifest 与源码身份，result 绑定 ready 和统计文件的 SHA-256。
 每个新运行启动前检查当前文件系统可用空间，已有运行超过记录容量上限时停止批量执行。
 
 正式目录需要 `capacity_plan.json`，其身份绑定 `formal_manifest.json`、
-代码来源和原始验证证据。只有经过验证的完整容量上界才能用于准入；
-样本外推即使小于可用空间，也会保持证据不足。
+代码来源和原始验证证据。准入接受经过验证的完整容量上界，或者具有完整验证
+范围、逐流次数限制和逐次空间检查的工程预算。
+单纯样本外推即使小于可用空间，也会保持证据不足。
 容量文件保存 `CapacityBudget` 的各项数值、
-`is_validated_capacity_upper_bound`、`evidence_sha256`、
+`is_validated_capacity_upper_bound`、`is_validated_engineering_budget`、`evidence_sha256`、
 `formal_manifest_sha256` 和 `source_sha256`。
 证据文件或清单身份变化时，需要重新验证容量。
+
+`scripts/audit_static_record_envelopes.py` 审计全部实际字段、trial 数量、几何组合、
+矩阵 shape、keyframe/delta 编码大小及 SQLite 页空间。旧格式在独立输出目录
+转换并核查完整记录身份，原件继续保留。`scripts/validate_static_filesystem.py`
+在实际目标文件系统逐条重写真实记录，验证 float64 位模式、随机读取、
+SIGKILL 恢复和 JSON 原子发布。
+
+`scripts/plan_static_engineering_capacity.py` 接收多份 `--audit`、`--lifecycle`、
+`--filesystem`，以及 `--runtime-archive`、`--config`、`--resource-root`、
+多个已存在的 `--volume` 和新的 `--output`。工程模型按实际几何组合数量和
+SNS 记录结构分组，每个固定运行编号保存自己的完整额度。编码包络保留 5%
+空间裕量，SQLite 根据实测页空间与每条记录开销计算，最终按已验证文件系统的
+4096 字节分配单位取整。两个卷各自保留完整单次 WAL 和系统空间；派生处理
+与来源归档在主项目文件系统预留。
+
+工程证据要求 A–E、全部场景及三档 S3 记录覆盖，当前执行源码和公共参数下
+的 S4/S5、完整 420 秒写入、各目标文件系统完整 sim 与事务恢复验证。
+批量准入文件的变化单独测试；运行源码全部核对 SHA-256，
+`RecordingLimits`、`RecordingBudget` 及其前置依赖核对归档 AST。
+运行代码或公共参数变化需要更新对应运行证据。
+
+在正式清单冻结后提供 `--formal <正式目录>`，生成器复核配置、来源和逐卷
+预算。将生成的 `capacity_plan.json` 放入该正式目录；未提供 `--formal` 的
+结果标记 `formal_bound=false`，只用于规划。每个新运行通过全部准入检查后，
+写入被分配的卷，正式目录的 `runs/<id>` 链接到该运行。完成后再次检查额度，
+超过工程包络时保留整个运行并停止后续批次。
+
+当前工程包络与空间检查覆盖启动前和运行完成后；worker 已执行记录次数和
+monotonic 截止限制。运行期间的逐 writer 字节额度、可用空间检查及其收尾
+余量仍待实现和真实 SQLite 验证，正式容量准入保持未通过。
 
 已有真实记录的审计入口：
 
