@@ -144,7 +144,7 @@ def test_recorded_joint_qp_recomputes_motion_at_feed_boundary():
     # 数据来自 S4 完整仿真 controller.sqlite3 的 sequence=5906。
     with np.load(ROOT / "tests/data/static_qp_feed_boundary.npz") as recorded:
         problem = {key: recorded[key] for key in recorded.files}
-    solution, health, _ = _solve_problem(problem, joint=True)
+    solution, health, _, _, _ = _solve_problem(problem, joint=True)
     solution = np.asarray(solution)
     assert bool(health.accepted)
     assert 0. <= solution[9] <= 1.

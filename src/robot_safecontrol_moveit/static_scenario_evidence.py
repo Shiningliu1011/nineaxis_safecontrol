@@ -9,6 +9,7 @@ from scipy.spatial.transform import Rotation
 from .oscbf_trajectory import bootstrap_portable
 from .static_experiment_config import content_hash
 from .static_experiment_recording import read_record
+from .static_experiment_provenance import relocate_manifest
 from .static_experiment_nodes import _resources
 from .static_reconfiguration_evidence import _position_motion, certify_fixed_pose, independent_forward_candidate
 
@@ -21,7 +22,8 @@ def verify_reconfiguration(config, directory: Path) -> dict:
     if content_hash(directory / "states.npz") != report["states_sha256"]:
         raise ValueError("构型见证状态身份不一致")
     path, geometry, planner = _resources(config)
-    scene, original = config.scene(), dict(report["manifest"]["scene"])
+    original_manifest = relocate_manifest(report["manifest"], config.resource_root)
+    scene, original = config.scene(), dict(original_manifest["scene"])
     scene.pop("config_sha256")
     original.pop("config_sha256")
     if scene != original or config.execution_limits() != report["manifest"]["execution_limits"]:
