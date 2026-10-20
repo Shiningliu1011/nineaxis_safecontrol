@@ -11,7 +11,8 @@ GitHub 原生依赖为 `#177 → #178 → #179/#180`、`#180 → #181`。
 分支为 `codex/static-method-evidence`，建立于集成 `5d52885`，旧分支保留。
 环境使用 `/home/lsn/robot/robot_safecontrol/.scratch/host-recovery/env.sh`，
 `PYTHONPATH` 明确使用本 worktree 的 `src` 与 `portable_oscbf`。
-本轮只运行 CPU 16–25 的离线数值和控制验证；没有启动 ROS 闭环。
+数值验证使用 CPU 16–25。当前参数 A/S0 已在 CPU 0–15、domain 199
+完成完整 ROS 仿真；来源与结果见下文。其余完整运行等待主会话安排窗口。
 
 大型原始记录继续保存在主仓库 `output/`。
 本轮命令、上游原件、数值输入输出、清单与日志位于
@@ -33,6 +34,47 @@ E/S0 历史报告的路径距离 RMS 为 0.059183 mm，工具轴 RMS 为 0.00835
 控制周期 100 ms，P99.9 46.353000 ms，最大 50.047918 ms。
 该配置使用 `posture_speed_limit=0.1`，当前开发配置采用 0.02；
 当前开发配置的 E/S0 完整验证仍需运行。历史最小 task_scale=1 仅证明基础跟随。
+
+## 当前共同参数 A/S0
+
+运行目录：
+`/home/lsn/robot/robot_safecontrol/output/static-method-evidence-20261020/a-s0-current-01`。
+代码来源为 `659bf7c1a14beffd2a435b23768adc615d896156`，
+配置为 `development-scenes-05/s0.yaml`，SHA-256
+`32c81c2f22c3ade49453ff52e2f9ba624973ee345b071d75110d4c8915b3c01b`。
+`commands/a-s0-current-01.log` 保存实际 Python、模块路径、CPU affinity、
+domain、来源提交与完整入口输出；执行脚本为 `commands/run_s0.sh`。
+
+方法配置为 A＝separated/basic，保持共同 gains、构型辅助、100 ms 周期、
+0.1 mm 控制间距余量及完整九轴执行限制。运行期间源码身份保持相同。
+CPU 16–27 同时存在场景离线筛查和容量验证负载，本次耗时用于开发记录；
+最终共同周期另在独占测量窗口选择。
+
+| 验收对象 | 实际结果 |
+|---|---|
+| 完成与来源 | `completed=true`；functional/runtime/verdict 均为 pass；worker exit codes `[0, 0]` |
+| 反馈与覆盖 | 90,622 个有效反馈，全部数值有效；参考及反馈有序完整覆盖通过 |
+| 路径距离 RMS/P95/最大值 | 0.054778 / 0.119293 / 0.183777 mm |
+| 真实工具轴角度 RMS/P95/最大值 | 0.008080 / 0.017736 / 0.079091° |
+| 外部间距 | 全部 20 个组合通过，最小 35.598525 mm，unsafe_samples=0 |
+| 自碰撞间距 | 全部 36 个组合通过，最小 15.800911 mm，unsafe_samples=0 |
+| 终点 | 保持 3.570 s；位置误差 0.001874 mm，工具轴角度 0.000077° |
+| QP 与执行 | 1,797 次 QP 全部成功，限制超差 0，最大 KKT 残差 `1.2619742389077326e-09` |
+| 九轴与参考 | 位置、速度、加速度限制通过；参考结算缺失、不一致、未经准入样本均为 0 |
+| 完整周期 | 1,790 次；P99.9 64.693851 ms，最大 71.483849 ms；超期、拒绝周期与准入拒绝均为 0 |
+| 存储格式 | controller/plant 均为 3，SQLite integrity_check=ok；数据库合计 44,662,784 bytes |
+
+原始 plant 数据库含 94,275 个 feedback 样本，评价区间采用其中 90,622 个，
+覆盖开始运行至完成后的静止区间。初始参考暂停 0.092 s 后进入 RUNNING；
+S0 没有障碍引起的暂停恢复事件，该运行完成基础跟随验收。
+所有命令、候选、准入和 cycle 各为 1,790 条，transition 为 2 条。
+
+`commands/audit_run.py` 调用共同 `validate_run_report`，核对 manifest、报告、
+两份数据库、path、result 和原始配置的身份，检查数据库格式与完整性，
+并验证 manifest 中全部 source_sha256。核查前后八份原件的 SHA-256 相同。
+结果为 `commands/a-s0-current-01-audit.json`，SHA-256
+`0299c8ab43ef9d5b65798b2141c10f151e56ab56b338d57eb4c1751507db8b3c`。
+完整运行退出后已确认 supervisor 和两个 worker 均不存在，并释放 CPU 0–15/domain 199。
 
 ## 独立数值与公共控制验证
 
@@ -104,13 +146,13 @@ Link1/obstacle_1 的 `h=-0.00025650841840563167`。
 |---|---|---|
 | 五个状态及转换原因 | `RecoveryState`、真实状态测试、transition 记录 | A/S4、A/S5 完整运行 |
 | 暂停参考保持且允许关节调整 | 公共控制入口在零进给仍计算误差与构型辅助 | A/S4 反馈测得固定参考、关节变化及恢复 |
-| 障碍间距与归一化行程构型辅助 | `common_posture_velocity`、真实 Jacobian 零空间及边界测试 | 当前配置完整 A 运行 |
+| 障碍间距与归一化行程构型辅助 | `common_posture_velocity`、真实 Jacobian 零空间及边界测试，当前 A/S0 完整通过 | A/S4 实际暂停期间构型调整 |
 | 基础恢复、几何/求解故障处理 | 公共状态/控制检查、实际无解 QP 拒绝 | 场景中基础恢复过程 |
 | 共同进给渐增 | RecoveryState 测试、manifest 保存 0.03 m/s² | A/S4 实际进给与准入 |
 | 固定障碍 S4 暂停调整恢复 | 等待 #177 当前可行性见证 | A/S4 完整反馈证据 |
 | S5 持续暂停超过 30 s 终止 | timeout 纯逻辑验证 | A/S5 停止、范围、对象与原因 |
-| 终点精度、0.5 s 保持与完整覆盖 | 公共终点测试、历史 A/S0 任务通过 | 当前 A/S0 完整几何与执行通过 |
-| 入口选择与共同接口 | A–E 真实短控制验证、配置测试 | 完整 A 开发运行 |
+| 终点精度、0.5 s 保持与完整覆盖 | 当前 A/S0 完整通过、保持 3.570 s、全部 20+36 几何组合与执行通过 | 在受限开发场景继续核查 |
+| 入口选择与共同接口 | A–E 真实短控制验证、配置测试、当前 A/S0 完整通过 | 受限 A 开发运行 |
 | 行为说明 | `docs/static_obstacle_experiments.md` | 随闭环结果补充验收证据 |
 
 ## #179：B 组
@@ -152,6 +194,20 @@ Link1/obstacle_1 的 `h=-0.00025650841840563167`。
 | QP N/A 与真实 SNS 有效性 | 历史 E/S0 QP=not_applicable，1709 次 SNS | 当前受限运行的残差及饱和对象核查 |
 | 安装、来源与运行说明 | 固定依赖环境、共同入口、移植说明 | 闭环结果写入验收记录 |
 
+## #182：完整方法矩阵与共同周期
+
+2026-10-20 再次读取 #182，状态为 OPEN、无评论，依赖 #179 与 #181。
+方法映射、共同控制参数与入口选择已有真实测试证据。A/S0 当前参数完整通过；
+D/S0、D/S1、D/S2 既有完整证据见父任务与本任务实施记录。
+#177 的固定障碍恢复见证仍由 scene agent 完成，B/C/E 当前完整运行尚未执行。
+
+周期验收需要在目标机器、固定软件与参数、预热后测量全部 A–E，
+候选为 20、40、50、100 ms；完整周期须包含几何、恢复判断、求解、
+执行检查和同步记录。选择全部方法 P99.9 不超过周期 80% 的最短候选，
+同时记录最大耗时与超期次数。没有候选满足条件时保留失败记录。
+当前有并行计算的单次开发运行不能确定最终共同周期。
+正式清单须在场景、容量及全部前置验证通过后生成。
+
 ## 需要补充的开发运行
 
 以下配置根目录为
@@ -160,12 +216,20 @@ Link1/obstacle_1 的 `h=-0.00025650841840563167`。
 
 | 组合 | 配置 | 验收重点 |
 |---|---|---|
-| A/B/C/E × S0 | `s0.yaml` | 当前共同参数完整跟随、终点、全部几何与执行限制 |
+| B/C/E × S0 | `s0.yaml` | 当前共同参数完整跟随、终点、全部几何与执行限制；A/S0 已通过 |
 | A/B × S1；E × S1 | `s1.yaml` | 真实外部限制、A/B 配对；E 缩放与全部广义限制 |
 | A/B × S2 | `s2.yaml` | 同时限制不同连杆，完整任务和误差 |
 | A/B × S3 三档 | `s3-travel-100.yaml`、`70.yaml`、`40.yaml` | 生效行程比例及真实受限结果 |
 | A/B/C/E × S4 | #177 最终通过的 S4 配置和见证 | 固定参考期间构型变化、恢复时刻、A/C 恢复差异 |
 | A/C/E × S5 | #177 最终通过的 S5 配置和阻塞证据 | 持续暂停终止、实际停止、范围与限制对象 |
+
+当前调度由主会话管理：容量生命周期窗口结束后，scene agent 优先执行
+同物理场景 C/S4 和独立见证；配置候选为
+`output/static-scene-validation-20261020/screen-2-xm015/config.yaml`。
+该候选还未完成 #177 验收。其后安排 B→C→E 的 S0 开发运行，
+输出分别为本轮数据目录中的 `b-s0-current-01`、`c-s0-current-01`、
+`e-s0-current-01`，目录已存在时使用新编号。
+每次运行边界向主会话交还 sim 窗口；容量验证和 S4/S5 前置验证优先。
 
 S0–S3 的当前文件 SHA-256：
 
@@ -178,7 +242,7 @@ S0–S3 的当前文件 SHA-256：
 | `s3-travel-70.yaml` | `9e946a10499b87621af929f028d6ea2632ff65bebeb3144214b74773fe175c62` |
 | `s3-travel-40.yaml` | `bf5ed6e1b835368ac19bb520b93fc1eda13e9e4ef41c46a46c075b46d05f09fa` |
 
-获得独占 sim 窗口后，单个组合的完整命令如下。每次更换 `method`、`config`、
+获得主会话分配的 sim 窗口后，单个组合的完整命令如下。每次更换 `method`、`config`、
 `output`；输出目录必须尚不存在。
 
 ```bash
@@ -187,8 +251,8 @@ cd /home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-evidence
 export PYTHONPATH="$PWD/src:$PWD/portable_oscbf:$PYTHONPATH"
 taskset -c 0-15 python scripts/static_obstacle_experiment.py run \
   --config /home/lsn/robot/robot_safecontrol/output/static-experiments/development-scenes-05/s0.yaml \
-  --method A --resource-root "$PWD" --domain 199 \
-  --output /home/lsn/robot/robot_safecontrol/output/static-method-evidence-20261020/a-s0-current-01
+  --method B --resource-root "$PWD" --domain 199 \
+  --output /home/lsn/robot/robot_safecontrol/output/static-method-evidence-20261020/b-s0-current-01
 ```
 
 S4 必须另加 `--scene-evidence <已通过的见证目录>`；
@@ -205,6 +269,13 @@ S5 必须另加 `--scene-evidence <已通过的s5_blockage.json>`。
 | `inventory.json` | `23873960cc88bee32d49be3e473654dcbb302b32ed48a48a4b82c86dc86db292` |
 | `sns-numerical.json` | `5a5246c4edde876cf60257d9c02b717d85a2e6d431d7550af3f6068cd798d266` |
 | `sns-reserve-verification.json` | `76194efd05f52498c37d4267560db528e1f8fd6fd7991a455469128a9c6b594b` |
+| 当前 A/S0 `manifest.json` | `659644f40259547c9372f18b22d5765c772054cbb839c95326472c47ae84ca6f` |
+| 当前 A/S0 `feedback_report.json` | `bee20a3b2bce1127044a4da87085c12efc75ddee3630554279cc83d469dbba90` |
+| 当前 A/S0 `controller.sqlite3` | `26d91bdc1393dd86b587c4a5d0954aa317e1efb4aeceaa03f737c00490f9f16e` |
+| 当前 A/S0 `plant.sqlite3` | `bf0de3db1b29aed617e40736982e9b0c4c47be37e2c09d61ad27e089e9620ddb` |
+| 当前 A/S0 `result.json` | `1bfbf10242046eaa084e8adb39c1428f31a403dd7182cf6aa40c2b49285412f8` |
+| 当前 A/S0 `path.npz` | `ed50f33cb09929285233bc4f87703112e8cfe7007cc958ea6e67b70631492705` |
+| 当前 A/S0 `commands/a-s0-current-01-audit.json` | `0299c8ab43ef9d5b65798b2141c10f151e56ab56b338d57eb4c1751507db8b3c` |
 | 历史 E/S0 `manifest.json` | `c346e4ba4da40161b9ee6777c26eb109ac0f2bb542579093c1787e41d143e3ef` |
 | 历史 E/S0 `controller.sqlite3` | `7316555aef9c06fdb3364716d91a29ebba6e1e3f1d3efc7b5d3ec079ad53b6c3` |
 | 历史 E/S0 `plant.sqlite3` | `703d732d3f9256946cdb91f12cb369d86dad7d2b5ae6a0f746d990df39130e3e` |
