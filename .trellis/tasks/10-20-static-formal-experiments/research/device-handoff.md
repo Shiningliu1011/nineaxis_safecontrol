@@ -3,7 +3,8 @@
 用户要求实验室笔记本与课题室工位台式机通过 GitHub 交替开发。
 已授权本次项目资料整理与远程同步，当前继续停止新增实验采集。
 
-远程地址：`https://github.com/Shiningliu1011/nineaxis_safecontrol.git`  
+远程地址：`https://github.com/Shiningliu1011/nineaxis_safecontrol.git`
+
 工作分支：`codex/static-obstacle-experiments`
 
 迁移资料位于原机器

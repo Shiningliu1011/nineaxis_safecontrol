@@ -1,6 +1,7 @@
 # 项目迁移到 Linux 主机
 
-远程仓库：`https://github.com/Shiningliu1011/nineaxis_safecontrol.git`  
+远程仓库：`https://github.com/Shiningliu1011/nineaxis_safecontrol.git`
+
 当前工作分支：`codex/static-obstacle-experiments`
 
 在主机 Codex 中打开迁移资料文件夹，发送
