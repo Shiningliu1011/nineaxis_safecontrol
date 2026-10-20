@@ -14,7 +14,7 @@ import yaml
 from .static_experiment_config import ExperimentConfig, METHODS, content_hash
 from .static_experiment_capacity import require_formal_capacity
 from .static_experiment_provenance import (
-    environment_identity, snapshot_sources, validate_run_report, verify_snapshot,
+    environment_identity, relocate_manifest, snapshot_sources, validate_run_report, verify_snapshot,
 )
 from .static_experiment_recording import write_json
 
@@ -36,9 +36,19 @@ def experiment_rows() -> list[dict]:
     ]
 
 
-def _physical_identity(manifest):
+def _physical_identity(manifest, resource_root: Path):
+    root = Path(resource_root).resolve(strict=True)
+    manifest = relocate_manifest(manifest, root)
     scene = deepcopy(manifest["scene"])
     del scene["config_sha256"]
+    collision = scene["self_collision"]
+    for record in [collision["manifest"], *collision["auxiliary"], *collision["meshes"]]:
+        if content_hash(Path(record["path"])) != record["sha256"]:
+            raise ValueError(f"可行性碰撞资源身份变化：{record['path']}")
+    for name in ("trajectory_mat", "kinematics_config"):
+        path = root / manifest["config"][name]
+        if content_hash(path) != manifest["resources"][name]["sha256"]:
+            raise ValueError(f"可行性资源身份变化：{path}")
     return {
         "scene": scene, "initial_position": manifest["config"]["initial_position"],
         "execution_limits": manifest["execution_limits"],
@@ -56,6 +66,7 @@ def freeze_formal(catalog_path: Path, period_directory: Path, evidence_index: Pa
     period = json.loads((period_directory / "period_report.json").read_text())
     study = json.loads((period_directory / "study.json").read_text())
     evidence = json.loads(evidence_index.read_text())
+    root = resource_root.resolve(strict=True)
     if (catalog["kind"] != "development" or len(catalog["initial_positions"]) != 3
             or catalog["feed_factors"] != [.5, 1., 1.5]
             or {row["id"] for row in catalog["scenarios"]} != set(SCENARIOS)):
@@ -88,11 +99,10 @@ def freeze_formal(catalog_path: Path, period_directory: Path, evidence_index: Pa
             if content_hash(run / f"{role}.sqlite3") != expected:
                 raise ValueError(f"可行性来源原始记录变化：{run}")
         feasible.append({
-            "physical_identity": _physical_identity(manifest), "run": str(run),
+            "physical_identity": _physical_identity(manifest, root), "run": str(run),
             "report_sha256": content_hash(run / "feedback_report.json"),
             "records_sha256": report["records_sha256"],
         })
-    root = resource_root.resolve(strict=True)
     environment = environment_identity()
     first_config = ExperimentConfig.load(
         catalog_path.parent / catalog["scenarios"][0]["config"], resource_root=root,
@@ -129,9 +139,10 @@ def freeze_formal(catalog_path: Path, period_directory: Path, evidence_index: Pa
             measured = StaticGeometry(manifest["scene"]).query(config.initial_position)
             if not all(item.distance.valid and item.distance.distance_m >= item.required_m for item in measured):
                 raise ValueError(f"正式初态未满足全部几何要求：{filename}")
-            matches = [item for item in feasible if item["physical_identity"] == _physical_identity(manifest)]
+            physical = _physical_identity(manifest, root)
+            matches = [item for item in feasible if item["physical_identity"] == physical]
             configurations[filename] = {
-                "sha256": content_hash(target), "physical_identity": _physical_identity(manifest),
+                "sha256": content_hash(target), "physical_identity": physical,
                 "feasibility": "proven" if matches else "insufficient_evidence",
                 "feasibility_runs": matches,
             }
