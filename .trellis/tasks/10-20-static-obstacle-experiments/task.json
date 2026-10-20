@@ -3,7 +3,7 @@
   "name": "static-obstacle-experiments",
   "title": "实现 #171 静态障碍物仿真实验",
   "description": "按 #171 与 #172–#183 的依赖完成静态场景、五维任务、碰撞检查、五组算法、闭环评价与正式实验",
-  "status": "planning",
+  "status": "in_progress",
   "dev_type": null,
   "scope": null,
   "package": null,
@@ -30,6 +30,6 @@
   ],
   "parent": null,
   "relatedFiles": [],
-  "notes": "用户授权同步当前开发分支供主机接手。本机停止新增实验采集，#171 尚未完成验收。接手入口与剩余工作见 docs/static_obstacle_experiments_handoff.md。",
+  "notes": "从 35a1a61 接续整个 #171，origin 已获取且初始工作区干净。implement-spec 负责全部子任务、独立 worktree、集成和最终审查；Trellis 保存状态和证据。容量、S4/S5、可行性及共同周期全部通过前，正式采集保持停止。用户授权本地实现、sim 验证、commit 和 push。",
   "meta": {}
 }
