@@ -35,6 +35,7 @@ class SnsSolution:
 
 def _feasible_scale(direction, bias, lower, upper, available):
     low, high, critical = 0., 1., None
+    minimum_critical = None
     for index in np.flatnonzero(available):
         slope, offset = direction[index], bias[index]
         if abs(slope) <= 1e-12:
@@ -42,11 +43,12 @@ def _feasible_scale(direction, bias, lower, upper, available):
                 return 0., index
             continue
         first, last = sorted(((lower[index] - offset) / slope, (upper[index] - offset) / slope))
-        low = max(low, first)
+        if first > low:
+            low, minimum_critical = first, index
         if last < high:
             high, critical = last, index
     if low > high or high < 0:
-        return 0., critical
+        return 0., critical if critical is not None else minimum_critical
     return float(high), critical
 
 

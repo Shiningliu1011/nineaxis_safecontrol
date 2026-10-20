@@ -236,6 +236,9 @@ Link1/obstacle_1 的 `h=-0.00025650841840563167`。
 
 证据为 `sns-reserve-verification.json`、`commands/verify_sns_reserve.py` 和运行日志。
 这些结果是 D 状态上的 E 数值验证；E 的完整闭环仍须按下列清单执行。
+实际 E/S5 的 sequence 155 非零恢复速度输入及修复验证见
+[sns-s5-recovery.md](sns-s5-recovery.md)：原始限制下独立任务缩放为 1，
+14 项定向检查通过；完整 E/S5 闭环复验仍待执行。
 
 ## #178：A 组
 
