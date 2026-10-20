@@ -92,7 +92,7 @@ S2 使用候选 15、31，S4 使用候选 0、2。S4 当前配置尚未执行完
 
 本机另有完整数据包
 `.scratch/static-experiments/handoff-data.tar.zst`，校验文件为
-`.scratch/static-experiments/handoff-data.sha256`。压缩后约 1.3 GiB，
+`.scratch/static-experiments/handoff-data.sha256`。压缩后为 1,292,058,284 字节，约 1.29 GB，
 已使用 tar 逐项比较包内内容与来源文件。数据包还包含场景选择、
 S4 见证请求、容量测量和接手检查日志。将数据包复制到目标机器的相同仓库相对路径，
 在仓库根目录核对 SHA-256，再解压到尚无同名记录的工作区。
