@@ -2,15 +2,31 @@
 
 ## 当前状态
 
-工作分支为 `codex/static-obstacle-experiments`，本次恢复与存储改动基准为 `6afe1d34`。
-#171 尚未完成验收，#172–#183 保持开放。项目已在当前主机恢复到
+工作分支为 `codex/static-obstacle-experiments`，本次接续起点为 `35a1a61`，
+当前已集成的前置验收证据为 `5d52885`。#172–#176 已发布逐项证据并关闭；
+#171、#177–#183 尚未完成验收。项目已在当前主机恢复到
 `/home/lsn/robot/robot_safecontrol`。紧凑存储已完成四组完整真实记录验证，
 原始数据保留；正式 1,080 次采集继续停止，验证限定 sim。
 
-接手入口是 `.trellis/tasks/10-20-static-formal-experiments/`；
+`implement-spec` 负责整个 #171 的执行、子任务、集成与最终审查。
+Trellis 接手入口是 `.trellis/tasks/10-20-static-obstacle-experiments/`，
+正式实验资料位于 `.trellis/tasks/10-20-static-formal-experiments/`；
 总任务及子任务对应关系见
 `.trellis/tasks/10-20-static-obstacle-experiments/prd.md`。
 实现、参数和已有验证记录随本分支保存。
+
+本次完成的 S0–S1、共享参考、全部非相邻 mesh、自碰撞及 Ruckig 准入
+逐项证据见
+[`research/ticket-acceptance.md`](../.trellis/tasks/10-20-static-obstacle-experiments/research/ticket-acceptance.md)。
+当前 S1 原始数据为 `output/static-ticket-evidence-20261020/s1-current-01/`，
+运行源码基于 `b6000e8`，87,255 条有效反馈及 1,721 个命令通过评价，
+完整周期 P99.9 为 58.207 ms。原始文件 SHA-256 和来源资源路径已随证据保存。
+
+容量上界仍未通过。容量检查和正式运行前的空间检查已集成，
+完整计算见
+[`research/capacity-validation.md`](../.trellis/tasks/10-20-static-formal-experiments/research/capacity-validation.md)。
+S4/S5 与存储编码改进在独立 worktree 验证；当前开发结果继续保留，
+正式采集等待全部前置条件通过。
 
 ## 实验需要回答的问题
 
