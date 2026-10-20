@@ -305,6 +305,10 @@ python3 scripts/static_obstacle_experiment.py benchmark \
 证据索引为 JSON，字段包含 `parameter_rationale`（开发参数选择说明文件）、
 `feasibility_runs`（完整跟随的实际运行目录列表）、`s4_witness`
 和 `s5_blockage`。参数说明记录搜索范围、选择依据及最终参数。
+可行性记录来自其他 worktree 时，依据来源 `resource_root` 重定位到本次资源目录，
+并逐项核查碰撞来源文件、全部 mesh、轨迹和运动学配置的 SHA-256。
+场景参数、初态、执行器限制和全部自碰撞组合继续参与物理身份比较；
+来源 manifest 与原始记录保持原内容。
 
 ```bash
 python3 scripts/static_obstacle_experiment.py freeze \
