@@ -3,7 +3,8 @@
 ## 当前状态
 
 工作分支为 `codex/static-obstacle-experiments`，本次接续起点为 `35a1a61`，
-当前已集成的前置验收证据为 `5d52885`。#172–#176 已发布逐项证据并关闭；
+当前代码集成为 `371e063`，前置验收证据为 `5d52885`。
+#172–#176 已发布逐项证据并关闭；
 #171、#177–#183 尚未完成验收。项目已在当前主机恢复到
 `/home/lsn/robot/robot_safecontrol`。紧凑存储已完成四组完整真实记录验证，
 原始数据保留；正式 1,080 次采集继续停止，验证限定 sim。
@@ -25,7 +26,9 @@ Trellis 接手入口是 `.trellis/tasks/10-20-static-obstacle-experiments/`，
 容量上界仍未通过。容量检查和正式运行前的空间检查已集成，
 完整计算见
 [`research/capacity-validation.md`](../.trellis/tasks/10-20-static-formal-experiments/research/capacity-validation.md)。
-S4/S5 与存储编码改进在独立 worktree 验证；当前开发结果继续保留，
+格式 3、S5 计算复用和 Generalized-SNS 广义区间支持已经集成，
+58 项组合测试通过，原始记录身份与跨段读取检查通过。
+S4 独立见证、记录生命周期与完整容量验证继续在独立 worktree 推进，
 正式采集等待全部前置条件通过。
 
 ## 实验需要回答的问题
@@ -40,13 +43,15 @@ S4/S5 与存储编码改进在独立 worktree 验证；当前开发结果继续�
 
 ## 存储验证与容量
 
-新格式使用 SQLite 逐条事务、MessagePack float64 和 zlib 字典压缩；
+格式 3 使用 SQLite 逐条事务和 MessagePack float64；
+逐条比较 zlib level 6 与 zstandard level 3 的无损结果并保存较短项。
+zlib 使用 32 KiB 字典，zstandard 使用 128 KiB 字典；
 每个 stream 每 128 条独立开始。原始字段、事件和数值精度完整保留，
-旧 JSON 数据库继续可读。汇总评价完整计算，逐反馈派生数组按需生成。
+格式 0/2 数据库继续可读。汇总评价完整计算，逐反馈派生数组按需生成。
 转换只写入新目录，报告同时核对来源说明和转换后的数据库身份。
 使用方法见[静态实验紧凑存储](static_experiment_storage.md)。
 
-| 完整来源目录 | 原始 MB | 紧凑 MB | 存储验证 | 实验结论 |
+| 完整来源目录 | 原始 MB | 格式 2 MB | 存储验证 | 实验结论 |
 |---|---:|---:|---|---|
 | `s0-joint-full-geometry-01` | 187.03 | 43.26 | pass | pass |
 | `s2-joint-development-01` | 218.38 | 49.32 | pass | pass |
@@ -58,7 +63,7 @@ S4/S5 与存储编码改进在独立 worktree 验证；当前开发结果继续�
 检查恢复全部已确认提交的记录。源目录前后 SHA-256 一致。
 图表按需生成、六类图表导出及来源身份检查通过。
 
-新记录格式另有本机完整 S0 sim 通过：`output/static-storage-control-01`，
+格式 2 另有本机完整 S0 sim 通过：`output/static-storage-control-01`，
 有效反馈 87,116 条；1,719 个完整周期的 P99.9 为 68.333 ms，
 最大 70.513 ms，100 ms 周期内没有超时。
 该目录最终为 43.36 MB，包含 WAL 的运行容量观测峰值为 998.50 MB。
@@ -77,6 +82,16 @@ S4/S5 与存储编码改进在独立 worktree 验证；当前开发结果继续�
 测量文件为 `output/static-storage-validation-05/validation.json`，
 SHA-256：`740eafa49b709b5b70d2d744b854f1cbe1af45d1fc4612181011af78a9005209`。
 
+格式 3 的同四组完整升级共 138,312,784 字节；331,573 条记录、
+全部重算指标及三类派生数组位模式一致，八个数据库各 1,200 条
+已提交记录的 SIGKILL 恢复通过。数据目录为
+`output/static-capacity-20261020/format3-validation-01/`，
+`validation.json` SHA-256 为
+`5a9dae049d72c8afdcdbc3a93482d83e9b32b04721e4e41e313f9412abb3906c`。
+全部编码、重放、随机读取及恢复证据见
+[逐条编码验证](../.trellis/tasks/10-20-static-formal-experiments/research/codec-validation.md)。
+完整 sim 写入、最新控制字段、WAL 和记录生命周期仍需验证。
+
 ## 已有运行与未完成项
 
 | 运行目录（位于 `output/static-experiments/`） | 当前证据 |
@@ -85,12 +100,24 @@ SHA-256：`740eafa49b709b5b70d2d744b854f1cbe1af45d1fc4612181011af78a9005209`。
 | `s0-sns-full-geometry-01` | E/S0 完整跟随通过；路径 RMS 0.059183 mm |
 | `s2-joint-development-01` | 当前参数下 D/S2 综合通过；87,294 条反馈；路径 RMS/P95/最大值为 0.060204/0.123024/0.244570 mm；完整周期 P99.9 为 53.162420 ms |
 | `s4-joint-development-10` | 当前保存结果为失败；没有所要求的实际暂停恢复事件 |
-| `s5-joint-development-01` | 持续暂停后终止及几何检查通过，完整周期检查失败；当前参数尚未重跑 |
+| `s5-joint-development-01` | 持续暂停后终止及几何检查通过，完整周期检查失败；原始失败保留 |
 | `s4-witness-01` | 已有独立连续构型调整见证；需要结合当前场景和实际运行重新验证 |
 
 `development-scenes-05` 已生成 8 个配置及三组初态。S1 使用候选 0，
-S2 使用候选 15、31，S4 使用候选 0、2。S4 当前配置尚未执行完整验证。
+S2 使用候选 15、31，S4 使用候选 0、2。当前 S4 完整 sim 在
+约 66.9% 进度处持续暂停后终止；正在验证带有来源记录的新候选。
 候选编号对应该目录的 `obstacle_candidates.json`，其来源身份保存在选择记录中。
+
+本次 D/S5 完整 sim `output/static-scene-validation-20261020/s5-current-03/`
+通过安全终止、几何和运行时间检查。949 个完整周期的 P99.9 为
+65.689 ms，最大 66.090 ms，超期次数为零；8,235 次 QP 检查全部通过。
+该结果对应当次固定源码；节点调度与全部方法集成后的共同周期另行验证。
+来源身份和原始数据库校验值见
+[本机场景验证](../.trellis/tasks/10-20-static-scene-witnesses/research/host-scene-validation.md)。
+
+Generalized-SNS 的广义区间与 142 个真实 S1 状态实例通过独立 HiGHS
+核查。A/B/C/E 的完整开发运行仍需补充，具体组合与来源见
+[方法验收证据](../.trellis/tasks/10-20-static-method-matrix/research/method-acceptance.md)。
 
 共同构型辅助速度上限为 0.02，开发控制间距余量为 0.1 mm；
 其余共同参数与测量范围见
@@ -107,6 +134,13 @@ S2 使用候选 15、31，S4 使用候选 0、2。S4 当前配置尚未执行完
 
 ## 验证状态
 
+- 集成 `371e063` 的格式 0/2/3、迁移、恢复、控制、KKT、SNS、
+  场景见证及执行评价共 58 项通过。日志为
+  `.scratch/integration-frontier/pytest-format3-scene-sns.log`，
+  SHA-256 为 `12d9d66fea71757fd5d7cdd207646f0d59c81e4a981ae6fe8f6d48fe5d324472`。
+- 本次四组存储源文件 SHA-256 保持一致，193 次跨段随机读取一致。
+  独立核查记录为 `.scratch/integration-frontier/format3-evidence-verification.json`，
+  SHA-256 为 `c712efeae280d8f05dac6b81eeb4909dab622baa1800d380f8ee9f6f4e5ef585`。
 - 本机 `bash scripts/agent_check.sh` 通过：Python 编译、纯模块导入、
   shell 语法、Git diff 检查及 69 项纯逻辑测试通过。
 - 本机 `robot_safecontrol_moveit`、`aeb_rrtstar_ompl`、`pymoveit2` 构建通过，
