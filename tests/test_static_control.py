@@ -214,6 +214,26 @@ def test_s5_repeated_velocity_trials_keep_independent_qp_and_motion_evidence():
         independent = certify_motion(motion, geometry, planner)
         assert trial["certificate"] == asdict(independent)
         assert not independent.accepted
+    original_trials = control.last_trials
+    assert control.propose(state, .0037895319972561063, time_s=.1, executed_feed=0.) is None
+    assert len(control.last_trials) == len(original_trials)
+    for index, trial in enumerate(control.last_trials):
+        assert trial["iterations"] == 0
+        assert trial["qp_reused_from_proposal"] == {
+            "proposal_sequence": original_trials[index]["proposal_sequence"],
+            "proposal_time_s": 0., "trial": index,
+        }
+        assert trial["motion_reused_from_proposal"]["proposal_time_s"] == 0.
+        for key in ("problem", "solution", "dual", "velocity", "certificate", "kkt_residual"):
+            assert trial[key] == original_trials[index][key]
+    control.propose(state, .0037995319972561063, time_s=.2, executed_feed=0.)
+    assert all(trial["qp_reused_from_proposal"] is None for trial in control.last_trials)
+    accelerated = ActuatorState(state.position, state.velocity, np.full(9, 1e-8))
+    control.propose(accelerated, .0037995319972561063, time_s=.3, executed_feed=0.)
+    assert all(trial["motion_reused_from_proposal"] is None for trial in control.last_trials)
+    assert control.propose(state, .0037895319972561063, time_s=30.1, executed_feed=0.) is None
+    assert control.recovery.phase == "FAULT"
+    assert control.recovery.reason == "pause_timeout"
     settings = config.values["control"]
     constraints = build_constraints(
         state.position, control.limits, control.last_measurements, period_s=.1,

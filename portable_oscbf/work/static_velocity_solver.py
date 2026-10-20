@@ -58,6 +58,7 @@ class VelocitySolution:
     saturated: tuple[int, ...] = ()
     dual: np.ndarray | None = None
     reused_zero_feed: bool = False
+    reused_problem: bool = False
 
 
 def build_constraints(
@@ -217,16 +218,26 @@ def _zero_feed_candidate(problem, previous, *, joint):
     return solution, dual
 
 
-def _solve_problem(problem, *, joint, previous_zero_feed=None):
-    candidate = _zero_feed_candidate(problem, previous_zero_feed, joint=joint)
+def _same_problem_candidate(problem, previous):
+    if (previous is None or previous.solver != "qp" or previous.dual is None
+            or set(problem) != set(previous.problem)
+            or not all(np.array_equal(value, previous.problem[key]) for key, value in problem.items())):
+        return None
+    return previous.solution.copy(), previous.dual.copy()
+
+
+def _solve_problem(problem, *, joint, previous_zero_feed=None, previous_problem=None):
+    exact = _same_problem_candidate(problem, previous_problem)
+    candidate = exact if exact is not None else _zero_feed_candidate(problem, previous_zero_feed, joint=joint)
     solution, dual = (
         (np.zeros(len(problem["c"])), np.zeros(len(problem["h"])))
         if candidate is None else candidate
     )
-    return _solve_or_reuse(
+    result = _solve_or_reuse(
         *[jnp.asarray(problem[key]) for key in ("P", "c", "G", "h")],
         jnp.asarray(solution), jnp.asarray(dual), jnp.asarray(candidate is not None),
     )
+    return (*result, exact is not None)
 
 
 def _separated_feed(jacobian, reference_rate, correction, posture, constraints, nominal):
@@ -254,7 +265,8 @@ def solve_velocity(
         task_weights=(1e4, 1e4, 1e4, 1e3, 1e3),
         posture_weight: float = .01, smooth_weight: float = .02,
         feed_weight: float = 100., max_velocity=None, fixed_feed: bool = False,
-        previous_zero_feed: VelocitySolution | None = None) -> VelocitySolution:
+        previous_zero_feed: VelocitySolution | None = None,
+        previous_problem: VelocitySolution | None = None) -> VelocitySolution:
     if mode not in ("separated", "joint", "sns"):
         raise ValueError("solver_mode 必须为 separated、joint 或 sns")
     if not np.isfinite(nominal_feed) or nominal_feed < 0:
@@ -335,8 +347,9 @@ def solve_velocity(
         "P": P, "c": c, "G": G, "h": h,
         "variable_scale": np.r_[np.ones(9), nominal_feed] if joint else np.ones(9),
     }
-    solution, health, iterations, dual, reused = _solve_problem(
+    solution, health, iterations, dual, reused, exact = _solve_problem(
         problem, joint=joint, previous_zero_feed=previous_zero_feed,
+        previous_problem=previous_problem,
     )
     solution = np.asarray(solution)
     residual = float(health.kkt_residual)
@@ -349,5 +362,6 @@ def solve_velocity(
             raise SolverFailure(f"QP 进给超出允许范围：{feed}", problem)
     return VelocitySolution(
         solution[:9].copy(), feed, solution, problem, residual, violation, int(iterations),
-        dual=np.asarray(dual).copy(), reused_zero_feed=bool(reused),
+        dual=np.asarray(dual).copy(), reused_zero_feed=bool(reused) and not exact,
+        reused_problem=bool(reused) and exact,
     )

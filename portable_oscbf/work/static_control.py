@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import asdict, dataclass
 
 import jax.numpy as jnp
@@ -34,6 +35,22 @@ class StaticControl:
         self.last_trials: list[dict] = []
         self.last_measurements = ()
         self.last_terms = None
+        self._proposal_sequence = 0
+        self._previous_solutions = []
+        self._previous_motions = []
+        self._previous_motion_inputs = None
+
+    def _motion_inputs(self, state):
+        return {
+            "initial": state.to_record(), "period_s": self.period_s,
+            "geometry": id(self.geometry), "scene": self.geometry.scene,
+            "clearances": [self.geometry.external_clearance_m, self.geometry.self_clearance_m],
+            "planner": id(self.planner),
+            "limits": {name: getattr(self.planner, name).tolist() for name in (
+                "lower", "upper", "max_velocity", "max_acceleration", "max_jerk",
+            )},
+            "minimum_duration_s": self.planner.minimum_duration_s,
+        }
 
     def propose(
             self, state: ActuatorState, progress_m: float, *,
@@ -76,6 +93,14 @@ class StaticControl:
         )
         endpoint = progress_m >= self.path.total_length_m
         self.last_trials = []
+        self._proposal_sequence += 1
+        previous_solutions, self._previous_solutions = self._previous_solutions, []
+        motion_inputs = self._motion_inputs(state)
+        previous_motions = (
+            self._previous_motions if motion_inputs == self._previous_motion_inputs else []
+        )
+        self._previous_motions = []
+        self._previous_motion_inputs = deepcopy(motion_inputs)
         verified_motions = []
         zero_feed_solution = None
         zero_feed_trial = None
@@ -83,6 +108,12 @@ class StaticControl:
         def candidate(feed_cap):
             nonlocal zero_feed_solution, zero_feed_trial
             terminal_interval = bool(feed_cap == remaining_feed)
+            trial_index = len(self.last_trials)
+            origin = {
+                "proposal_sequence": self._proposal_sequence,
+                "proposal_time_s": time_s, "trial": trial_index,
+            }
+            previous = previous_solutions[trial_index] if trial_index < len(previous_solutions) else None
             solution = solve_velocity(
                 terms, constraints, nominal_feed=feed_cap,
                 previous_velocity=state.velocity, posture_velocity=posture,
@@ -94,15 +125,24 @@ class StaticControl:
                 max_velocity=self.planner.max_velocity,
                 fixed_feed=terminal_interval,
                 previous_zero_feed=zero_feed_solution,
+                previous_problem=previous[0] if previous is not None else None,
             )
-            for velocity, motion, certificate in verified_motions:
+            qp_origin = previous[1] if solution.reused_problem else None
+            self._previous_solutions.append((solution, qp_origin or origin))
+            motion_origin = None
+            for velocity, motion, certificate, source in (*verified_motions, *previous_motions):
                 if np.array_equal(solution.velocity, velocity):
+                    if source["proposal_sequence"] != self._proposal_sequence:
+                        motion_origin = source
                     break
             else:
                 motion = self.planner.propose(state, solution.velocity, period_s=self.period_s)
                 certificate = certify_motion(motion, self.geometry, self.planner)
-                verified_motions.append((solution.velocity.copy(), motion, certificate))
+                source = origin
+            verified_motions.append((solution.velocity.copy(), motion, certificate, source))
+            self._previous_motions.append(verified_motions[-1])
             self.last_trials.append({
+                "proposal_sequence": self._proposal_sequence, "proposal_time_s": time_s,
                 "feed_cap_m_s": feed_cap, "feed_m_s": solution.feed_m_s,
                 "terminal_interval": terminal_interval,
                 "velocity": solution.velocity.tolist(), "certificate": asdict(certificate),
@@ -113,6 +153,8 @@ class StaticControl:
                 "task_residual": solution.task_residual, "saturated": list(solution.saturated),
                 "dual": None if solution.dual is None else solution.dual.tolist(),
                 "qp_reused_from_trial": zero_feed_trial if solution.reused_zero_feed else None,
+                "qp_reused_from_proposal": qp_origin,
+                "motion_reused_from_proposal": motion_origin,
             })
             if solution.solver == "qp" and solution.feed_m_s == 0.:
                 zero_feed_solution, zero_feed_trial = solution, len(self.last_trials) - 1
