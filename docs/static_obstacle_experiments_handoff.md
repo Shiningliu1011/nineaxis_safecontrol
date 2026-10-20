@@ -3,8 +3,9 @@
 ## 当前状态
 
 工作分支为 `codex/static-obstacle-experiments`，本次接续起点为 `35a1a61`，
-当前代码集成为 `7b643c4`，方法证据集成为 `57c601e`，
-S4 见证及开发证据集成为 `78b5626`，前置验收证据为 `5d52885`。
+当前代码集成为 `2036cac`，包含独立预热、SNS 最小缩放限制处理及多卷工程预算。
+方法证据集成为 `57c601e`，S4 见证及开发证据集成为 `78b5626`，
+前置验收证据为 `5d52885`。
 #172–#176 已发布逐项证据并关闭；
 #171、#177–#183 尚未完成验收。项目已在当前主机恢复到
 `/home/lsn/robot/robot_safecontrol`。紧凑存储已完成四组完整真实记录验证，
@@ -24,13 +25,25 @@ Trellis 接手入口是 `.trellis/tasks/10-20-static-obstacle-experiments/`，
 运行源码基于 `b6000e8`，87,255 条有效反馈及 1,721 个命令通过评价，
 完整周期 P99.9 为 58.207 ms。原始文件 SHA-256 和来源资源路径已随证据保存。
 
-容量上界仍未通过。容量检查和正式运行前的空间检查已集成，
-完整计算见
+正式容量准入仍未通过。多卷工程预算、运行前后空间检查已集成；
+19 组真实记录的编码审计及目标文件系统验证已保存。
+运行中的字节额度、空间检查及收尾余量正在实现和验证。
+最新规划 `engineering-plan-04` 生成时需求为 209,215,401,984 字节，
+可用 208,859,725,824 字节；开发验证仍在使用临时空间，正式启动前重新核查。
+工程预算保持 `formal_bound=false`。计算依据见
+[`research/engineering-capacity-validation.md`](../.trellis/tasks/10-20-static-formal-experiments/research/engineering-capacity-validation.md)
+及
 [`research/capacity-validation.md`](../.trellis/tasks/10-20-static-formal-experiments/research/capacity-validation.md)。
 格式 3、S5 计算复用和 Generalized-SNS 广义区间支持已经集成，
 58 项组合测试通过，原始记录身份与跨段读取检查通过。
-记录生命周期预算及异常收尾已经集成，S4 独立见证与完整容量验证继续推进，
-正式采集等待全部前置条件通过。
+记录生命周期预算及异常收尾已经集成。S4 独立见证与九组数值预核通过；
+完整 ROS 矩阵继续验证。正式采集等待全部前置条件通过。
+
+S0 initial 2、3 的完整 D 组记录及生命周期验证均通过，来源和 SHA-256 见
+[`research/s0-initial-configurations.md`](../.trellis/tasks/10-20-static-formal-experiments/research/s0-initial-configurations.md)。
+同场景 A/C 的 S4 配对记录分别取得九次、六次恢复，随后均因暂停超时终止；
+完整失败记录和配对身份见
+[`research/s4-ac-development-pair.md`](../.trellis/tasks/10-20-static-formal-experiments/research/s4-ac-development-pair.md)。
 
 ## 实验需要回答的问题
 
@@ -139,7 +152,7 @@ ready、记录统计、manifest 和源码身份相互绑定。32 项异常收尾
 验证结束时该文件系统可用 133,453,279,232 字节。
 完整 sim 写入耗时、最长生命周期与两卷容量准入继续验证。
 
-最新集成 `7b643c4` 在该卷的 `lifecycle-s5-02/` 完整通过：
+集成 `7b643c4` 在该卷的 `lifecycle-s5-02/` 完整通过：
 18,362 条反馈、346 个唯一控制目标，完整周期 P99.9 为 73.627538 ms，
 最大 75.175110 ms，超期及命令准入拒绝均为零。持续阻塞安全终止，
 worker 退出码为 `[0, 0]`，逐流额度及 ready、统计来源绑定检查通过。
@@ -164,9 +177,21 @@ SHA-256 为 `97c57d5a3b12c7a6788088adb6da7d7fcb1b3db866778a0bcc22897759980046`�
 P99.9 为 51.141/58.287 ms，无超期，按持续暂停超时正常终止。
 E 保存为失败：第 155 条 controller 记录中的 `sns_failure` 保存完整问题，
 零进给候选的 Generalized-SNS 广义限制检查失败，worker 退出码为 `[0, 1]`。
-诊断须区分实现问题与原算法任务缩放条件下的不可行性，全部原件保留。
+该真实输入的独立 HiGHS 与饱和算法检查保存于方法任务的
+`research/sns-s5-recovery.md`，全部原件保留。
 汇总为 `output/static-capacity-20261020/ntfs-s5-methods-01.json`，
 SHA-256 为 `cfa4ee54dd16503b88eda6e7dd742851fa0a33de2585841288b60777ac3aab5f`。
+
+源码 `e6fe012` 的 E/S5 完整复验位于同一卷的 `lifecycle-s5-E-02/`，
+生命周期、功能及耗时检查均通过。347 个唯一递增候选的周期 P99.9 为
+55.320026 ms、最大 58.329657 ms，没有超期或准入拒绝，按暂停超时安全终止。
+`lifecycle-validation.json` SHA-256 为
+`95723b80bbc7027c8207bfadc5787e9fc8d8e7ac55eb13fedad9796e4e0e2e88`。
+汇总为 `output/static-capacity-20261020/ntfs-s5-E-02.json`，
+SHA-256 为 `ed5970639054c56c6749d5070beaa7471f1dcaebd0a003d808dc1c8f30b3db62`。
+源码归档为该目录下 `ntfs-s5-E-02-source/sources.zip`，
+SHA-256 为 `d9965035536bb13a8561f1fa7e9ad6fdbe0ab5d178cc9250df702e175fda9c28`。
+本次使用 CPU 8–15，与其他开发验证并行；共同周期仍待最终测量。
 
 ## 已有运行与未完成项
 
@@ -228,8 +253,8 @@ B/C/E 及各方法的其他场景继续验证，具体组合与来源见
 
 后续尚需完成：
 
-1. 根据共同周期、完整场景和进给测量确认正式容量上界及失败重试余量。
-2. 当前参数下 S4 的独立见证及实际暂停、构型调整、恢复全过程，S5 终止和耗时复核。
+1. 完成运行中的容量停止及收尾检查，按最终源码、共同周期和现场空间确认工程容量准入。
+2. 补齐 S4 完整 ROS 矩阵及 A/B/C/D/E 剩余开发场景验证，复核失败原因。
 3. S0–S4 对应初态与行程范围的可行性证据。
 4. 五种方法、四种候选周期的 20 次完整测量。开发配置的 100 ms 尚未被选为正式周期。
 5. 固定正式清单，执行 1,080 次实验，完成配对统计与六类图表。
