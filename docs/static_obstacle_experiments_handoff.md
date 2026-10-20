@@ -3,7 +3,7 @@
 ## 当前状态
 
 工作分支为 `codex/static-obstacle-experiments`，本次接续起点为 `35a1a61`，
-当前代码集成为 `371e063`，前置验收证据为 `5d52885`。
+当前代码集成为 `659bf7c`，方法证据集成为 `062cd52`，前置验收证据为 `5d52885`。
 #172–#176 已发布逐项证据并关闭；
 #171、#177–#183 尚未完成验收。项目已在当前主机恢复到
 `/home/lsn/robot/robot_safecontrol`。紧凑存储已完成四组完整真实记录验证，
@@ -90,7 +90,31 @@ SHA-256：`740eafa49b709b5b70d2d744b854f1cbe1af45d1fc4612181011af78a9005209`。
 `5a9dae049d72c8afdcdbc3a93482d83e9b32b04721e4e41e313f9412abb3906c`。
 全部编码、重放、随机读取及恢复证据见
 [逐条编码验证](../.trellis/tasks/10-20-static-formal-experiments/research/codec-validation.md)。
-完整 sim 写入、最新控制字段、WAL 和记录生命周期仍需验证。
+完整 sim 写入、最新控制字段、WAL 和记录生命周期已完成三项测量；
+可执行记录额度、异常退出判定和完整矩阵容量继续验证。
+
+三项测量使用 `.scratch/worktrees/static-capacity` 的固定源码，
+每项 `run/manifest.json` 保存完整 `source_sha256`，数据均在
+`output/static-capacity-20261020/`。controller 完成预热后启动 plant，
+每个未来执行步最多计算一次，候选目标均严格递增。
+
+| 测量目录 | 反馈 / 候选数量 | 实际分配字节 | WAL 字节合计 | 结果 |
+|---|---:|---:|---:|---|
+| `lifecycle-s0-01` | 87,209 / 1,721 | 41,381,888 | 965,410,824 | 完整运行通过；P99.9 71.289 ms |
+| `lifecycle-s5-01` | 18,384 / 346 | 5,103,616 | 175,977,624 | 按暂停超时终止；P99.9 82.480 ms，周期检查未通过 |
+| `lifecycle-timeout-01` | 209,340 / 4,185 | 99,287,040 | 2,327,833,024 | 420 秒压力记录完成，按 timeout 退出 |
+
+三个运行的 worker 退出码均为 `[0, 0]`。压力项采用 0.01 倍进给，
+用于验证最长记录过程；其功能结果保留为失败。压力项记录时长为
+420.432 秒，进程 RSS 观测峰值为 1,319,043,072 字节。
+WAL 数字取两个数据库关闭 checkpoint 前的各自最大值之和。
+三项生命周期检查通过，仅证明本次记录过程符合当次检查项，
+完整容量准入仍需记录额度执行保证及全部方法、场景的预算证据。
+
+汇总文件为 `output/static-capacity-20261020/lifecycle-series-01-summary.json`，
+SHA-256 为 `8b4d32da29a397b5d0eb46b7af77dac008f48800c22098468f282608747f83c6`。
+该文件包含每项 validation、manifest、result、两个数据库及反馈报告的
+SHA-256、完整命令和资源测量。原始运行与失败结果均保留。
 
 ## 已有运行与未完成项
 
@@ -116,7 +140,12 @@ S2 使用候选 15、31，S4 使用候选 0、2。当前 S4 完整 sim 在
 [本机场景验证](../.trellis/tasks/10-20-static-scene-witnesses/research/host-scene-validation.md)。
 
 Generalized-SNS 的广义区间与 142 个真实 S1 状态实例通过独立 HiGHS
-核查。A/B/C/E 的完整开发运行仍需补充，具体组合与来源见
+核查。A/S0 的当前完整运行
+`output/static-method-evidence-20261020/a-s0-current-01/` 已通过：
+90,622 个有效反馈、1,790 个完整周期、20 个外部对象组合与 36 个自碰撞组合，
+P99.9 为 64.694 ms，最大 71.484 ms，超期次数为零。
+来源 `659bf7c` 与全部原始文件身份已经核对。
+B/C/E 及各方法的其他场景继续验证，具体组合与来源见
 [方法验收证据](../.trellis/tasks/10-20-static-method-matrix/research/method-acceptance.md)。
 
 共同构型辅助速度上限为 0.02，开发控制间距余量为 0.1 mm；
