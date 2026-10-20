@@ -9,7 +9,7 @@ import zipfile
 
 import pytest
 
-from robot_safecontrol_moveit.static_experiment_config import content_hash
+from robot_safecontrol_moveit.static_experiment_config import ExperimentConfig, content_hash
 from robot_safecontrol_moveit.static_experiment_provenance import (
     environment_identity, relocate_manifest, snapshot_sources, verify_snapshot,
     recording_hashes,
@@ -102,6 +102,27 @@ def test_relocation_preserves_resource_identity_and_original_manifest(tmp_path):
     assert manifest["outside_root"] == original["outside_root"]
     assert original["resources"]["config"]["path"] == str(source)
     assert relocate_manifest({"legacy": True}, tmp_path) == {"legacy": True}
+
+
+def test_legacy_scene_relocation_keeps_geometry_roles_and_hashes(tmp_path):
+    config = ExperimentConfig.load(ROOT / "config/static_experiment_s0.yaml", resource_root=ROOT)
+    original = config.manifest()
+    original.pop("resource_root")
+    relocated = relocate_manifest(original, tmp_path)
+    for first, second in zip(
+        original["scene"]["self_collision"]["meshes"],
+        relocated["scene"]["self_collision"]["meshes"],
+    ):
+        assert second == {
+            **first, "path": str(tmp_path / Path(first["path"]).relative_to(ROOT)),
+        }
+    assert relocated["scene"]["obstacles"] == original["scene"]["obstacles"]
+    assert relocated["execution_limits"] == original["execution_limits"]
+    assert "resource_root" not in original
+    changed = deepcopy(original)
+    changed["config"]["collision_mesh_manifest"] = "different/collision_geometry_sources.json"
+    with pytest.raises(ValueError, match="资源根目录"):
+        relocate_manifest(changed, tmp_path)
 
 
 def test_device_identity_is_repeatable_on_the_actual_environment():

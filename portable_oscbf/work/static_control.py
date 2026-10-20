@@ -76,8 +76,12 @@ class StaticControl:
         )
         endpoint = progress_m >= self.path.total_length_m
         self.last_trials = []
+        verified_motions = []
+        zero_feed_solution = None
+        zero_feed_trial = None
 
         def candidate(feed_cap):
+            nonlocal zero_feed_solution, zero_feed_trial
             terminal_interval = bool(feed_cap == remaining_feed)
             solution = solve_velocity(
                 terms, constraints, nominal_feed=feed_cap,
@@ -89,9 +93,15 @@ class StaticControl:
                 feed_weight=self.settings["feed_weight"],
                 max_velocity=self.planner.max_velocity,
                 fixed_feed=terminal_interval,
+                previous_zero_feed=zero_feed_solution,
             )
-            motion = self.planner.propose(state, solution.velocity, period_s=self.period_s)
-            certificate = certify_motion(motion, self.geometry, self.planner)
+            for velocity, motion, certificate in verified_motions:
+                if np.array_equal(solution.velocity, velocity):
+                    break
+            else:
+                motion = self.planner.propose(state, solution.velocity, period_s=self.period_s)
+                certificate = certify_motion(motion, self.geometry, self.planner)
+                verified_motions.append((solution.velocity.copy(), motion, certificate))
             self.last_trials.append({
                 "feed_cap_m_s": feed_cap, "feed_m_s": solution.feed_m_s,
                 "terminal_interval": terminal_interval,
@@ -101,7 +111,11 @@ class StaticControl:
                 "hard_violation": solution.hard_violation, "iterations": solution.iterations,
                 "solver": solution.solver, "task_scale": solution.task_scale,
                 "task_residual": solution.task_residual, "saturated": list(solution.saturated),
+                "dual": None if solution.dual is None else solution.dual.tolist(),
+                "qp_reused_from_trial": zero_feed_trial if solution.reused_zero_feed else None,
             })
+            if solution.solver == "qp" and solution.feed_m_s == 0.:
+                zero_feed_solution, zero_feed_trial = solution, len(self.last_trials) - 1
             return ControlCandidate(motion, solution, certificate, "")
 
         proposed = None

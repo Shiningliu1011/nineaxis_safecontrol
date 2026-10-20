@@ -154,9 +154,17 @@ def verify_snapshot(directory: Path) -> dict:
 
 
 def relocate_manifest(manifest: dict, resource_root: Path) -> dict:
-    if "resource_root" not in manifest:
+    original_root = manifest.get("resource_root")
+    if original_root is None and "collision_mesh_manifest" in manifest.get("config", {}):
+        relative = Path(manifest["config"]["collision_mesh_manifest"])
+        source = Path(manifest["resources"]["collision_mesh_manifest"]["path"])
+        if (relative.is_absolute() or ".." in relative.parts or not relative.parts
+                or not source.is_absolute() or source.parts[-len(relative.parts):] != relative.parts):
+            raise ValueError("历史场景的资源根目录无法由 collision manifest 确定")
+        original_root = source.parents[len(relative.parts) - 1]
+    if original_root is None:
         return manifest
-    original = Path(manifest["resource_root"])
+    original = Path(original_root)
     destination = Path(resource_root).resolve(strict=True)
 
     def relocate(value):

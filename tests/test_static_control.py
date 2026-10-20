@@ -1,8 +1,10 @@
+from dataclasses import asdict
 from pathlib import Path
 
 import jax
 import numpy as np
 import pytest
+from scipy.optimize import LinearConstraint, minimize
 
 from robot_safecontrol_moveit.oscbf_trajectory import bootstrap_portable
 from robot_safecontrol_moveit.static_experiment_config import ExperimentConfig
@@ -15,8 +17,8 @@ from work.actuator_limits import load_actuator_limit_profile
 from work.nineaxis_kinematics import NineaxisKinematics
 from work.static_collision import StaticGeometry
 from work.static_control import StaticControl
-from work.static_motion import ActuatorState, MotionPlanner
-from work.static_velocity_solver import build_constraints
+from work.static_motion import ActuatorState, MotionPlanner, certify_motion
+from work.static_velocity_solver import build_constraints, common_posture_velocity, solve_velocity
 
 
 @pytest.mark.parametrize("method", ["A", "B", "C", "D", "E"])
@@ -157,6 +159,92 @@ def test_s4_recovers_control_clearance_reserve_from_recorded_boundary_position()
     assert constraints.G[index] @ candidate.solution.velocity <= constraints.h[index] + 1e-9
     after = geometry.query(candidate.motion.at_time(.1).position)
     assert next(row.distance.distance_m for row in after if row.pair == pair) > before
+
+
+def test_s5_repeated_velocity_trials_keep_independent_qp_and_motion_evidence():
+    config = ExperimentConfig.load(
+        ROOT / "config/static_experiment_s0.yaml", resource_root=ROOT,
+        method="D", clearance_reserve_m=.0001,
+    )
+    scene = config.scene()
+    scene["obstacles"] = [{
+        "name": "path_block", "radius_m": .06,
+        "center_m": [.0002744757528524406, .27357448955295105, 1.3404106022559328],
+    }]
+    profile, kin = load_actuator_limit_profile(), NineaxisKinematics()
+    planner = MotionPlanner(
+        kin.joint_limits.q_min, kin.joint_limits.q_max, profile.velocity_limits,
+        profile.acceleration_limits, jerk_time=.08, minimum_duration_s=.08,
+    )
+    geometry = StaticGeometry(scene)
+    control = StaticControl(config.load_path()[0], geometry, planner, config.values["control"])
+    # 来自本机 s5-current-01 的最终实际候选，已停止且正向运动受阻。
+    state = ActuatorState(np.array([
+        .4546786057344995, -1.285951296455923, .4853365101649853,
+        1.3546770709178174, 1.075906905721642, .4645223562096255,
+        .8542537781206053, -1.4448177304276972, -.9157218150096683,
+    ]), np.zeros(9), np.zeros(9))
+    result = control.propose(state, .0037895319972561063, time_s=0., executed_feed=0.)
+    assert result is None
+    assert len(control.last_trials) == 9
+    velocities = [row["velocity"] for row in control.last_trials]
+    assert any(np.array_equal(first, second) for index, first in enumerate(velocities)
+               for second in velocities[index + 1:])
+    for trial in control.last_trials:
+        problem, solution = trial["problem"], np.asarray(trial["solution"])
+        matrix, vector = np.asarray(problem["P"]), np.asarray(problem["c"])
+        constraints, bounds = np.asarray(problem["G"]), np.asarray(problem["h"])
+        assert np.max(constraints @ solution - bounds) <= 1e-9
+        dual = np.asarray(trial["dual"])
+        assert np.min(dual) >= -1e-8
+        assert np.max(abs(matrix @ solution + vector + constraints.T @ dual)) <= 1e-8
+        assert np.max(abs((bounds - constraints @ solution) * dual)) <= 1e-8
+        independent_qp = minimize(
+            lambda value: (.5 * value @ matrix @ value + vector @ value,
+                           matrix @ value + vector),
+            solution, jac=True, method="SLSQP",
+            constraints=[LinearConstraint(constraints, -np.inf, bounds)],
+            options={"ftol": 1e-13, "maxiter": 1000},
+        )
+        assert independent_qp.success
+        assert np.max(constraints @ independent_qp.x - bounds) <= 1e-9
+        cost = .5 * solution @ matrix @ solution + vector @ solution
+        assert cost == pytest.approx(independent_qp.fun, abs=1e-8)
+        motion = planner.propose(state, trial["velocity"], period_s=.1)
+        independent = certify_motion(motion, geometry, planner)
+        assert trial["certificate"] == asdict(independent)
+        assert not independent.accepted
+    settings = config.values["control"]
+    constraints = build_constraints(
+        state.position, control.limits, control.last_measurements, period_s=.1,
+        alpha=settings["cbf_alpha"], clearance_reserve_m=.0001,
+    )
+    posture = common_posture_velocity(
+        state.position, control.limits, control.last_terms.jacobian, control.last_measurements,
+        speed_limit=settings["posture_speed_limit"], influence_m=settings["posture_influence_m"],
+        joint_margin_fraction=settings["posture_joint_margin_fraction"],
+    )
+    arguments = {
+        "previous_velocity": state.velocity, "posture_velocity": posture, "mode": "joint",
+        "gains": settings["task_gains"], "task_weights": settings["task_weights"],
+        "posture_weight": settings["posture_weight"], "smooth_weight": settings["smooth_weight"],
+        "feed_weight": settings["feed_weight"], "max_velocity": planner.max_velocity,
+    }
+    boundary = solve_velocity(control.last_terms, constraints, nominal_feed=.0001875, **arguments)
+    assert boundary.feed_m_s == 0.
+    for nominal in (.00009375, .003):
+        reused = solve_velocity(
+            control.last_terms, constraints, nominal_feed=nominal,
+            previous_zero_feed=boundary, **arguments,
+        )
+        independent = solve_velocity(control.last_terms, constraints, nominal_feed=nominal, **arguments)
+        matrix, vector = reused.problem["P"], reused.problem["c"]
+        actual_cost = .5 * reused.solution @ matrix @ reused.solution + vector @ reused.solution
+        expected_cost = .5 * independent.solution @ matrix @ independent.solution + vector @ independent.solution
+        assert actual_cost == pytest.approx(expected_cost, abs=1e-8)
+        if nominal == .003:
+            assert reused.feed_m_s > 1e-8
+            assert not reused.reused_zero_feed
 
 
 @pytest.mark.parametrize("method", ["A", "B", "C", "D", "E"])
