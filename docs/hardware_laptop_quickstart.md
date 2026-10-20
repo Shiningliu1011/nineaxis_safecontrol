@@ -48,23 +48,24 @@ sudo ip link set vcan0 up
 测试仅向确认类型为 vcan 的接口发帧。Python `virtual` 是进程内双端测试，
 与 Linux vcan、USB 适配器、电机验收分别记录。
 
-## 回来后先补齐这些事实
+## 现场设备与待确认项目
 
-| 项目 | 当前事实 / 待确认内容 | 落点 |
+| 项目 | 当前事实 / 待确认内容 | 相关入口 |
 |---|---|---|
 | 笔记本 | 默认当前 Ubuntu 22.04 笔记本 | 换机器时重做环境检查 |
-| USB-CAN | 型号、固件、序列号和驱动未知；不能假定 candleLight 或 SLCAN | 先确认系统呈现的接口，再填 `can.interface` |
-| CAN 波特率 | 1 Mbps 是候选，须与设备核对 | `can.bitrate` |
+| USB-CAN | DR-Tech DR-USB_CAN，序列号 `87949380174B`，厂家标准串口模式 | [现场通信记录](drempower_communication_20261016.md)；`can0` 尚未作为本次连接入口验证 |
+| CAN 波特率 | 九个电机和转换器均为 500 kbps，已保存并在重新通电后回读 | `can.bitrate = 500000` |
 | 电机 | 精确型号/固件、是否适用本地厂家 v1.0 协议未知 | 记录设备清单与协议对照 |
-| 节点身份 | J1–J9 = 1–9 是推荐分配，尚未实读 | `node_ids`，逐台确认，不自动改设备 ID |
+| 节点身份 | 三路已读到 ID 1–9；J1–J9 的实际安装对应关系仍待确认 | `node_ids`，逐台核对，不自动改设备 ID |
 | 零位、方向 | YAML 中 +1/0 是占位，未获得标定证据 | `config/hardware_joint_zero.yaml` |
 | J1 | 已记录导程 5 mm/rev，传动比、方向/行程/回零待确认 | 实测后交传动配置接入；不假定传动比为 1 |
 | 执行保护 | 独立断流看门狗、承重轴停车/制动未验收 | 最终命令与执行保护、受控低速实机验收票 |
 
-USB 适配器接入方式必须据实确定：原生 SocketCAN 和串口 SLCAN 的准备不同，
-因此此时不刷固件、不写自动联网规则、不假定设备序列号。
-确认是原生 SocketCAN、实际接口确为 can0、实际波特率确为 1 Mbps 后，
-现场可用 `sudo ip link set can0 up type can bitrate 1000000` 配置接口。
+本次 DR-USB_CAN 使用厂家标准串口模式，查询入口和记录见
+[三路九个电机通信验证](drempower_communication_20261016.md)。下方 `hardware_check.sh probe`
+需要 SocketCAN，尚未验证通过当前串口转换器通信。
+使用原生 SocketCAN 设备、实际接口确为 can0、设备均为 500 kbps 时，
+现场可用 `sudo ip link set can0 up type can bitrate 500000` 配置接口。
 驱动和检查器均不执行这条管理命令；已连接的接口不会被脚本 down/up 或自动重启。
 
 ## 现场不发运动命令的读取

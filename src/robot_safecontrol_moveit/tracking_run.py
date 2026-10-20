@@ -187,6 +187,7 @@ class TrackingRun:
         measured_endpoint_error = float(np.linalg.norm(
             record.ee_pos_before - self._geometry.positions_m[-1]))
         endpoint_ready = bool(record.reference_at_endpoint) and bool(record.qp_ok)
+        endpoint_observed = False
         if endpoint_ready:
             measured_rotation = np.asarray(self._loop.robot.ee_rotation(q_now))
             target_rotation = self._geometry.rotations[-1]
@@ -194,12 +195,25 @@ class TrackingRun:
                      if self._config["task_mode"] == "tool_axis_5d"
                      else np.linalg.norm(Rotation.from_matrix(
                          measured_rotation @ target_rotation.T).as_rotvec()))
-            endpoint_ready = measured_endpoint_error <= 0.0005 and angle <= np.deg2rad(0.5)
+            measured_progress, _ = self._geometry.project_local(
+                record.ee_pos_before,
+                anchor_segment=self._geometry.num_segments - 1,
+                half_window_segments=1,
+            )
+            endpoint_ready = (
+                measured_endpoint_error <= 0.0005
+                and angle <= np.deg2rad(0.5)
+            )
+            endpoint_observed = (
+                measured_progress + self._scope.roundoff_m
+                >= self._geometry.total_length_m
+            )
         if not endpoint_ready:
             self._endpoint_since = None
         elif self._endpoint_since is None:
             self._endpoint_since = start
-        if self._endpoint_since is not None and start - self._endpoint_since >= 0.5:
+        if (self._endpoint_since is not None and start - self._endpoint_since >= 0.5
+                and endpoint_observed):
             self._log.info(
                 f"END_OF_TRACKING: holding final pose pos_err={measured_endpoint_error*1e3:.3f}mm")
             self._hold(q_now, "completed", publish)

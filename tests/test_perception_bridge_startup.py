@@ -352,9 +352,9 @@ def test_legacy_extrinsics_parameter_refuses_startup() -> None:
         assert "CALIB_LEGACY_PARAM_PRESENT" in combined, f"{label}: 缺少错误码\n{combined}"
 
 
-def test_missing_record_refuses_startup() -> None:
+def test_missing_record_refuses_startup(tmp_path: Path) -> None:
     result = _run_to_exit(_profile("perception_runtime.yaml"),
-                          ("-p", "calibration_record_path:=/tmp/off01-no-such-file.yaml"))
+                          ("-p", f"calibration_record_path:={tmp_path / 'missing-record.yaml'}"))
     combined = result.stdout + result.stderr
     assert result.returncode == _REFUSAL_EXIT_CODE
     assert "CALIB_RECORD_MISSING" in combined

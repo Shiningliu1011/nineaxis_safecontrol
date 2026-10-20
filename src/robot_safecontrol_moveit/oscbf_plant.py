@@ -1,12 +1,3 @@
-"""Jerk-limited actuator stand-in for the OSCBF closed-loop demo.
-
-Replaces the throwaway "echo bridge": this node is a proper first-order
-position loop with acceleration/jerk limits (``SCurveDriverSimulator``), and
-it publishes its state continuously whether or not a command arrived — the
-same way real encoders do.  A dropped BEST_EFFORT command therefore cannot
-stall the loop.
-"""
-
 from __future__ import annotations
 
 from pathlib import Path
@@ -67,8 +58,10 @@ class OscbfPlant(Node):
         self._driver = SCurveDriverSimulator(
             dq_max=self._dq_max,
             ddq_max=np.asarray(profile.acceleration_limits, dtype=float),
+            q_min=self._q_min,
+            q_max=self._q_max,
             jerk_time=float(self.get_parameter("jerk_time").value),
-            kp=float(self.get_parameter("position_gain").value),
+            minimum_duration_s=float(self.get_parameter("minimum_duration_s").value),
             dt=dt_plant,
         )
         self._joint_names = [
@@ -89,6 +82,7 @@ class OscbfPlant(Node):
                 np.asarray(start, dtype=float), self._q_min, self._q_max
             )
         self._target: Optional[np.ndarray] = None
+        self._driver.reset(self._q)
         self._commands_received = 0
         self._last_command_time = None
 
@@ -130,7 +124,7 @@ class OscbfPlant(Node):
     def _randomize_callback(self, request, response):
         self._q = self._sample_start_pose()
         self._target = None
-        self._driver.reset()
+        self._driver.reset(self._q)
         response.success = True
         response.message = "RANDOMIZED: " + ",".join(
             f"{float(value):.4f}" for value in self._q
@@ -154,9 +148,9 @@ class OscbfPlant(Node):
             "command_topic": OSCBF_COMMAND_TOPIC,
             "state_topic": JOINT_STATE_TOPIC,
             "joint_names": list(DEFAULT_JOINT_NAMES),
-            "publish_frequency_hz": 100.0,
+            "publish_frequency_hz": 500.0,
             "jerk_time": 0.08,
-            "position_gain": 80.0,
+            "minimum_duration_s": 0.08,
             "portable_oscbf_root": str(share_dir / "portable_oscbf"),
             "start_position": [0.0] * 9,
             "randomize_start": False,
@@ -169,8 +163,6 @@ class OscbfPlant(Node):
             raise ValueError("publish_frequency_hz must be in [1, 1000]")
         if float(self.get_parameter("jerk_time").value) <= 0.0:
             raise ValueError("jerk_time must be positive")
-        if float(self.get_parameter("position_gain").value) <= 0.0:
-            raise ValueError("position_gain must be positive")
         if float(self.get_parameter("start_margin").value) < 0.0:
             raise ValueError("start_margin must be non-negative")
         return share_dir
@@ -191,35 +183,14 @@ class OscbfPlant(Node):
         if positions is None or not np.all(np.isfinite(positions)):
             return
         clipped = np.clip(positions, self._q_min, self._q_max)
-        large_jump = (
-            self._target is None
-            or float(np.max(np.abs(clipped - self._target))) > 0.01
-        )
         self._target = clipped
         self._commands_received += 1
         self._last_command_time = self.get_clock().now().nanoseconds * 1e-9
-        if large_jump:
-            # Phase-switch smoothing only: large jumps (transition start) ramp
-            # through the S-curve, while small tracking commands pass through
-            # the stable first-order position loop.
-            self._driver.begin_transition()
 
     def step_plant(self) -> np.ndarray:
         """Advance the simulated actuator one control period (pure method)."""
-        if self._target is None:
-            v_target = np.zeros(9)
-        else:
-            v_target = np.clip(
-                float(self.get_parameter("position_gain").value)
-                * (self._target - self._q),
-                -self._dq_max,
-                self._dq_max,
-            )
-        v = self._driver.step(v_target)
-        dt_plant = 1.0 / self._frequency_hz
-        self._q = np.clip(
-            self._q + v * dt_plant, self._q_min, self._q_max
-        )
+        target = self._q if self._target is None else self._target
+        self._q = self._driver.step(target)
         return self._q.copy()
 
     def _tick(self) -> None:
@@ -228,6 +199,7 @@ class OscbfPlant(Node):
         message.header.stamp = self.get_clock().now().to_msg()
         message.name = list(self._joint_names)
         message.position = [float(value) for value in q]
+        message.velocity = self._driver.velocity.tolist()
         self._state_pub.publish(message)
 
     @property

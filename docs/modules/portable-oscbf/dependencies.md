@@ -14,11 +14,16 @@
 | `urdfdom_py` (`urdf-parser-py`) | 解析 URDF 并生成运动学常量 | ✅ 生成与一致性测试 |
 | `tetgen` | 对经过检查的 closed collision mesh 执行离线四面体化 | ✅ 几何资产生成 |
 | `jsonschema` | 检查版本化 CollisionParameterArtifact 与参数来源记录 | ✅ 参数加载 |
+| `ruckig` | 仿真执行器的连续位置轨迹与速度、加速度、jerk 限制 | ✅ 仿真执行器 |
 
 控制热路径固定使用 `cbfpy==0.0.1`、`jax==0.6.2`、`jaxlib==0.6.2`
 和 `qpax==0.1.4`。版本清单见 `requirements.txt`，安装配置见仓库根目录
 `setup.py`。
 
 参数加载依赖 `jsonschema==4.23.0`，同样记录在运行依赖清单与 `setup.py` 中。加载完成后，JSON Schema 校验不进入控制周期。
+
+仿真执行器使用 `ruckig==0.12.2`，版本同时记录在运行依赖清单与 `setup.py`。
+每次位置目标更新保留当前速度和加速度，并使用本地 state-to-state 计算。
+接口说明见 [Ruckig 对应版本文档](https://github.com/pantor/ruckig/blob/v0.12.2/README.md)。
 
 离线几何资产生成依赖的固定版本见 `portable_oscbf/requirements-geometry.txt`。该文件用于生成与验证，不进入控制线程。

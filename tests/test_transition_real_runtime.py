@@ -127,7 +127,8 @@ def test_ros_request_through_moveit_replay_tracking_and_terminal_report(runtime,
         assert "error_code=TRANSITION_REPLAYED|" in future.result().message
         assert controller.progress_snapshot()["tracking_started"]
         wait_for(lambda: controller.progress_snapshot()["steps"] >= 200, 15.)
-        deadline = time.monotonic() + 180.
+        # 完整路径运动与报告保存共享 300 秒运行预算。
+        deadline = time.monotonic() + 300.
         while time.monotonic() < deadline:
             snapshot = controller.progress_snapshot()
             observations.append((time.monotonic(), snapshot["execution_state"], snapshot["report_status"]["state"], len(commands)))

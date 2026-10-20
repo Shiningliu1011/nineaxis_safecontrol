@@ -32,6 +32,25 @@ ros2 run robot_safecontrol_moveit oscbf_controller --ros-args \
 
 跟踪评价输出逐项结论、真实工具轴夹角、弧长覆盖与证据来源，并保存 Markdown、JSON 和样本记录。离线子区间须在采样前声明；当前节点报告的边界为控制内核模型输出。指标定义、阈值来源及使用示例见[跟踪评价说明](../tracking_evaluation.md)。
 
+控制器采用 50 Hz 调度与 20 ms 路径推进步长，QP 积分步长为 10 ms。
+仿真执行器以 500 Hz 推进 Ruckig 位置轨迹，整个跟踪与最终保持过程持续限制
+速度、加速度和 jerk。速度和加速度上限来自 `actuator_modules.yaml`；
+`config/oscbf_plant.yaml` 的 `jerk_time` 决定 jerk 上限（加速度上限除以该时间）。
+`minimum_duration_s` 为每次运动规划规定最短持续时间，当前为 80 ms。
+目标更新保留执行器当前速度与加速度。`JointState.velocity` 发布仿真执行器速度，
+绘图时应优先使用该记录；位置差分得到的速度与加速度需要标注为估计值。
+这些运动学限制属于仿真参数，实机准入仍按[硬件模式](hardware-modes.md)执行。
+
+完整路径的平顺性验证使用两个独立 ROS 进程，记录位置、速度、加速度、命令、
+仿真时间和接收时间；输出目录必须尚不存在：
+
+```bash
+python3 scripts/validate_tracking_smoothness.py --output output/tracking-smoothness
+```
+
+该验证从路径起点开始，检查跟踪与最终保持，不执行 MoveIt 过渡规划。
+周期试验、指标定义及图片说明见[跟踪平顺性](../tracking_smoothness.md)。
+
 依赖包含 ROS 2 Humble、MoveIt2、pymoveit2、MuJoCo，以及 JAX/CBFpy/qpax 等控制内核依赖。环境与构建说明见 [项目入门](../ONBOARDING.md)和 [控制内核说明](../modules/portable_oscbf.md)。
 
 最终闭环默认使用 `AEBRRTstarFaithfulConfigDefault`。AEB-RRT* 由 MoveIt

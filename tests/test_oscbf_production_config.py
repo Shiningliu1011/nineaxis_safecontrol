@@ -382,7 +382,7 @@ def test_effective_configuration_records_yaml_and_override_chain(tmp_path):
     assert effective.values["kp_pos"] == 161.0
     assert effective.sources["kp_pos"] == "explicit_override"
     assert effective.override_chains["kp_pos"] == [
-        {"source": "production_yaml", "value": 160.0},
+        {"source": "production_yaml", "value": 240.0},
         {"source": "explicit_override", "value": 161.0},
     ]
     assert effective.sources["cylinder_center"] == "optional_default"

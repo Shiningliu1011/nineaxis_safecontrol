@@ -85,7 +85,7 @@ def test_plant_converges_and_respects_limits(plant_fixture):
     dt_plant = 1.0 / node._frequency_hz
     previous = node.state.copy()
     max_step = 0.0
-    for _ in range(300):
+    for _ in range(round(3.0 / dt_plant)):
         q = node.step_plant()
         max_step = max(max_step, float(np.max(np.abs(q - previous))))
         previous = q
@@ -123,6 +123,8 @@ def test_plant_publishes_continuously_without_command(plant_fixture):
     assert len(received) > 50, (
         f"plant did not publish continuously: {len(received)} messages in 2s"
     )
+    assert all(len(message.velocity) == 9 for message in received)
+    assert all(np.all(np.isfinite(message.velocity)) for message in received)
 
 
 def test_randomized_start_and_resample_stay_within_limits(plant_fixture):

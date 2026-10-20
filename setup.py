@@ -12,6 +12,7 @@ PORTABLE_OSCBF_RUNTIME_REQUIREMENTS = [
     "jaxlib==0.6.2",
     "qpax==0.1.4",
     "jsonschema==4.23.0",
+    "ruckig==0.12.2",
 ]
 
 

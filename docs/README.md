@@ -7,8 +7,10 @@
 - [项目入门与结构](ONBOARDING.md)：源码入口、闭环数据流和开发环境。
 - [运行与测试](PROJECT_GUIDE.md)：仿真、配置、测试及硬件模式。
 - [跟踪评价](tracking_evaluation.md)：指标、证据和报告。
+- [跟踪平顺性](tracking_smoothness.md)：控制周期、执行器运动参数和全过程图片。
 - [跟踪执行与过渡结果](tracking_execution.md)：公开入口、状态归属、报告生命周期和验证入口。
 - [真机操作手册](real_robot_runbook.md)与[笔记本连接检查](hardware_laptop_quickstart.md)：硬件操作入口。
+- [三路九个电机通信记录](drempower_communication_20261016.md)：500 kbps 设置、实际验证与参数恢复方法。
 
 ## 模块与领域
 
@@ -19,6 +21,7 @@
 
 ## 设计与实施资料
 
+- [静态障碍物仿真实验](static_obstacle_experiments.md)：规格、S0–S5 场景、A/B/C/D/E 对照及实施任务。
 - [九轴曲面作业完整项目](planning/nineaxis-full-project/README.md)：M01–M12、QP/MPC、系统集成、实机实验与个人项目成果的 Wayfinder 入口。
 - [设计决定](adr/)：按编号阅读已记录的决定。
 - [规格](specs/)：各主题的详细要求。

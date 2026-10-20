@@ -167,3 +167,34 @@ def test_tool_axis_path_kernel_ignores_roll_only_reference_at_path_start(
         next_position, result.reference_position_m,
         next_rotation, result.reference_rotation))
     np.testing.assert_allclose(result.err_6d, expected_report, rtol=0, atol=1e-12)
+
+
+def test_path_axis_reference_follows_geometric_projection(x64_before_construction):
+    loop = JaxControlLoop(dt=.01, task_mode='tool_axis_5d')
+    q = np.array([.25, .16, -.98, .53, -2.64, -.85, -.16, -.97, 1.18])
+    kinematics = NineaxisKinematics()
+    position, rotation = kinematics.ee_pose(q)
+    end_rotation = Rotation.from_rotvec([0., .1, 0.]).as_matrix() @ rotation
+    geometry = PathGeometry.from_samples(
+        np.array([position, position + [.02, 0., 0.]]),
+        np.array([rotation, end_rotation]), np.full(2, .03), np.array([0., 1.]),
+    )
+    loop.configure_path(geometry, PathFollowingConfig(reference_lead_m=.002))
+    loop.init_cbf()
+    state = loop.initial_path_state()
+    for _ in range(25):
+        result = loop.path_tracking_step(
+            q=q, path_state=state, kp_pos=160., kp_orient=40., kp_joint=.45,
+            q_des=q, nullspace_speed_limit=.18, damping=.05,
+        )
+        assert result.qp_ok
+        q, state = result.q_next, result.path_state
+        position, rotation = kinematics.ee_pose(q)
+        progress, _ = geometry.project_local(
+            position, anchor_segment=0, half_window_segments=1)
+        target = geometry.sample(progress).rotation
+        np.testing.assert_allclose(result.reference_rotation, target, atol=1e-10)
+        axis_angle = np.arctan2(np.linalg.norm(np.cross(rotation[:, 0], target[:, 0])),
+                               np.dot(rotation[:, 0], target[:, 0]))
+        assert np.degrees(axis_angle) < .05
+    assert progress > .0001

@@ -242,6 +242,21 @@ def task_jacobian_5d_jax(full_jacobian: jnp.ndarray, current_rotation: jnp.ndarr
     return jnp.concatenate([jacobian[:3], axis_rows], axis=0)
 
 
+def path_tool_axis_jacobian_5d_jax(
+        full_jacobian: jnp.ndarray, current_rotation: jnp.ndarray,
+        desired_rotation: jnp.ndarray, omega_per_m: jnp.ndarray,
+        projection_gradient: jnp.ndarray) -> jnp.ndarray:
+    """计算工具轴相对路径投影点方向的误差导数。"""
+    jacobian = jnp.asarray(full_jacobian)
+    # 参考方向随投影弧长变化；转动量由同一关节速度产生的路径推进决定。
+    progress_jacobian = projection_gradient @ jacobian[:3]
+    relative_angular_jacobian = jacobian[3:] - jnp.outer(
+        omega_per_m, progress_jacobian)
+    axis_rows = tool_axis_jacobian_2d_jax(
+        current_rotation, desired_rotation, relative_angular_jacobian)
+    return jnp.concatenate([jacobian[:3], axis_rows], axis=0)
+
+
 def tool_axis_angular_velocity_2d_jax(desired_rotation: jnp.ndarray,
                                       desired_omega: jnp.ndarray,
                                       tool_axis_index: int = TOOL_AXIS_INDEX) -> jnp.ndarray:

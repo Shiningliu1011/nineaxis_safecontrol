@@ -3,7 +3,8 @@
 项目负责人：刘世宁。目标是完成建模、控制、工程集成、实验与复现，覆盖 M01–M12 和原分工中双方的全部任务。项目经历以实际实现、实验与问题定位证据为依据。
 
 - [完整项目 Wayfinder 地图](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/147)：目标、任务归属、依赖与完成记录的正式入口。
-- [任务编号与阻塞关系](dependencies.md)：01–59 连续编号、主要依赖图及每项任务的直接前置；[GitHub 阅读入口](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/147#issuecomment-6013282122)保存在同一张地图中。
+- [任务编号与阻塞关系](dependencies.md)：01–72 连续编号、主要依赖图及每项任务的直接前置；[项目地图](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/147)提供原生子任务与前置关系。
+- [静态障碍物实验](../../static_obstacle_experiments.md)：60 号规格与 61–72 号实施、场景和验证任务。
 - [技术路线](../../../九轴技术路线/九轴机械臂曲面作业_技术路线.md)：技术范围及阶段依据。
 - [模块职责](../../../九轴技术路线/九轴机械臂曲面作业_系统模块划分.md)、[接口草案](../../../九轴技术路线/九轴机械臂曲面作业_上下层接口约定.md)、[Runtime 说明](../../../九轴技术路线/九轴机械臂曲面作业_运行管理器运行逻辑.md)：对应问题的输入资料。
 - [上层实施方案](../../../九轴技术路线/九轴机械臂曲面作业_上层实施方案.md)、[下层进度协调](../../../九轴技术路线/九轴机械臂曲面作业_下层进度协调框架.md)：控制问题与实现依据。
@@ -13,7 +14,7 @@
 
 开放任务从地图的子 issue 查询，任务标题按依赖顺序采用连续编号，前置任务的编号小于被阻塞任务。原生 blocking 表示执行顺序；开放、没有开放前置且未指派的任务可以领取。决定、实现、验收与现场任务使用不同类型标签。具体答案保存在对应任务的确认评论，完成后地图仅增加索引。
 
-新任务从[01 核验完整项目基线与 M01–M12 资产](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/148)开始；[02 取得完整工件、路径与 MATLAB 程序资产](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/135)可独立推进。已经领取的标定与基础文档任务保留原状态及证据。
+完整项目从[01 核验完整项目基线与 M01–M12 资产](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/148)开始；[02 取得完整工件、路径与 MATLAB 程序资产](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/135)可独立推进。静态实验从[61 可重复的 S0 仿真与反馈评价](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/172)开始。已经领取的标定与基础文档任务保留原状态及证据。
 
 本次建图覆盖完整项目实施过程。后续按对应决定形成可验收实现，使用本项目 Trellis 管理具体工程任务；全项目顺序以 GitHub 为准。
 

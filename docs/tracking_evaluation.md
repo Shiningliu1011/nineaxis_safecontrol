@@ -19,6 +19,12 @@ OFF-15 的评价器是纯 Python / NumPy 模块，不发布控制命令。主入
 
 每个 `update()` 对应一个测量边界的样本，调用方提供同一状态/参考时刻的量。需要多个边界时，各自建立评价器，通过相同 `run_id` 关联；显式标有不同 `measurement_boundary` 或 `evidence_kind` 的样本不能混入同一评价器。
 
+`tool_axis_5d` 路径跟踪以当前末端在路径上的局部投影点方向作为工具轴参考。
+控制器通过投影弧长对关节位置的导数计算参考方向随运动的变化，方向误差使用
+工具转动相对于该参考转动的导数。报告中的 `reference_rotation` 和
+`reference_omega_per_m` 对应积分后 `ee_pos` 的投影点；位置参考仍来自有界的
+路径提前量。执行器反馈分析使用每个反馈位置的投影点方向，全部样本参与统计。
+
 控制节点走的是类型化的那个入口：`update_from_step_record(record, ...)`。它在记录的固定槽位清单（`STEP_RECORD_SLOTS`）里按名字取值，缺哪个槽就保持未测，不再靠 `getattr` 去猜对象形状；老的字典型入口 `update(dict)` 原样保留，服务历史脚本与「扔字典进去」的调用方。`step_latency_ms`（调用方实测的一步耗时，含记录转换为宿主数组的时间）和 `projection_before_m`（执行前一步时的实际投影）不是内核输出，由调用方通过 `update()` / `update_from_step_record()` 的参数单独提供；两者为 `None` 时沿用样本里已有的同名值。
 
 | 指标 | 输入与定义 | 用途 |

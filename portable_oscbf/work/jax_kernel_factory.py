@@ -29,6 +29,7 @@ from work.jax_path_following import (
     advance_path_state_jax,
     feedrate_limit_from_box_jax,
     feedrate_limit_from_inequalities_jax,
+    project_local_path_jax,
     reconcile_path_state_after_motion_jax,
     sample_path_jax,
 )
@@ -42,6 +43,7 @@ from work.tool_axis_task import (
     TASK_MODE_POSE_6D,
     TASK_MODE_TOOL_AXIS_5D,
     rotation_error_rotvec_jax,
+    path_tool_axis_jacobian_5d_jax,
     task_error_5d_jax,
     task_error_report_6d_jax,
     task_jacobian_5d_jax,
@@ -58,6 +60,7 @@ _POSITION_FB_SATURATION_M = 0.005
 _POSITION_FEEDBACK_SPEED_LIMIT_M_S = 0.25
 _POSITION_FEEDBACK_SPEED_LIMIT_SLOPE_M_S_PER_M = 11.0
 _POSITION_FEEDBACK_SPEED_LIMIT_MAX_M_S = 0.8
+_ENDPOINT_CROSSING_SPEED_M_S = 1e-4
 _EPS = 1e-12
 
 
@@ -477,13 +480,50 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
         def _path_sample(progress_m):
             return sample_path_jax(path_geometry, progress_m)
 
+        def _path_orientation_sample(ee_pos, path_state):
+            progress, _ = project_local_path_jax(
+                path_geometry, ee_pos, path_state[2],
+                path_config.projection_half_window_segments,
+                path_config.reference_lead_m
+                + path_config.max_projection_speed_m_s * dt_path)
+            return _path_sample(progress)
+
+        def _path_task_terms(ee_pos, ee_rot, full_jacobian, sample, orientation):
+            if task_mode == TASK_MODE_TOOL_AXIS_5D:
+                error = task_error_5d_jax(
+                    ee_pos, sample.position_m, ee_rot, orientation.rotation)
+                segment = orientation.segment_index
+                delta = (path_geometry.positions_m[segment + 1]
+                         - path_geometry.positions_m[segment])
+                gradient = delta / jnp.linalg.norm(delta)
+                gradient = jnp.where(orientation.at_endpoint, 0.0, gradient)
+                jacobian = path_tool_axis_jacobian_5d_jax(
+                    full_jacobian, ee_rot, orientation.rotation,
+                    orientation.omega_per_m, gradient)
+                return error, task_error_report_6d_jax(error), jacobian
+            return task_geometry_terms(
+                ee_pos, ee_rot, full_jacobian, sample.position_m, sample.rotation)
+
+        def _path_twist_per_m(sample):
+            if task_mode == TASK_MODE_TOOL_AXIS_5D:
+                return jnp.concatenate([sample.tangent, jnp.zeros(2)])
+            return task_velocity_from_world(
+                sample.tangent, sample.omega_per_m, sample.rotation)
+
+        def _endpoint_velocity(ee_pos, sample):
+            tangent = path_geometry.positions_m[-1] - path_geometry.positions_m[-2]
+            tangent = tangent / jnp.linalg.norm(tangent)
+            before_end = jnp.dot(ee_pos - path_geometry.positions_m[-1], tangent) < 0.0
+            # 反馈到达终点截面前保留微小切向驱动，后续 QP 与执行器限制继续适用。
+            return jnp.where(sample.at_endpoint & before_end,
+                             _ENDPOINT_CROSSING_SPEED_M_S * tangent, jnp.zeros(3))
+
         @jax.jit
-        def _path_cap_nominal(ee_pos, ee_rot, full_jacobian, sample, q,
+        def _path_cap_nominal(ee_pos, ee_rot, full_jacobian, sample, orientation, q,
                               kp_pos, kp_orient, kp_joint,
                               nullspace_speed_limit, damping, q_des):
-            cap_task_error, _cap_err_report, cap_jacobian = task_geometry_terms(
-                ee_pos, ee_rot, full_jacobian,
-                sample.position_m, sample.rotation)
+            cap_task_error, _cap_err_report, cap_jacobian = _path_task_terms(
+                ee_pos, ee_rot, full_jacobian, sample, orientation)
             cap_pos_err = cap_task_error[:3]
             cap_orientation_err = cap_task_error[3:]
             cap_jacobian_hash = cap_jacobian.T @ jnp.linalg.inv(
@@ -534,11 +574,10 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
                 jnp.asarray(1.0),
             )
             twist_bias = jnp.concatenate([
-                -kp_pos * fb_scale * position_feedback_error,
+                -kp_pos * fb_scale * position_feedback_error + _endpoint_velocity(ee_pos, sample),
                 -kp_orient * cap_orientation_err,
             ])
-            twist_per_m = task_velocity_from_world(
-                sample.tangent, sample.omega_per_m, sample.rotation)
+            twist_per_m = _path_twist_per_m(sample)
             twist_per_m = twist_per_m * _path_feed_scale(cap_pos_err, sample)
             u_bias = (cap_jacobian_hash @ twist_bias
                       + cap_null_projector @ cap_qdot_null)
@@ -592,13 +631,12 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
             return lateral_scale * phase_scale
 
         @jax.jit
-        def _path_control_nominal(ee_pos, ee_rot, full_jacobian, sample, q,
+        def _path_control_nominal(ee_pos, ee_rot, full_jacobian, sample, orientation, q,
                                   kp_pos, kp_orient, kp_joint,
                                   nullspace_speed_limit, damping, q_des,
                                   feedrate_m_s):
-            task_error, _err_report, control_jacobian = task_geometry_terms(
-                ee_pos, ee_rot, full_jacobian,
-                sample.position_m, sample.rotation)
+            task_error, _err_report, control_jacobian = _path_task_terms(
+                ee_pos, ee_rot, full_jacobian, sample, orientation)
             pos_err = task_error[:3]
             orientation_err = task_error[3:]
             tangent_error = sample.tangent * jnp.dot(sample.tangent, pos_err)
@@ -626,11 +664,10 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
                 jnp.asarray(1.0),
             )
             control_twist_bias = jnp.concatenate([
-                -kp_pos * fb_scale * position_feedback_error,
+                -kp_pos * fb_scale * position_feedback_error + _endpoint_velocity(ee_pos, sample),
                 -kp_orient * orientation_err,
             ])
-            control_twist_per_m = task_velocity_from_world(
-                sample.tangent, sample.omega_per_m, sample.rotation)
+            control_twist_per_m = _path_twist_per_m(sample)
             control_jacobian_hash = control_jacobian.T @ jnp.linalg.inv(
                 control_jacobian @ control_jacobian.T
                 + damping * jnp.eye(control_jacobian.shape[0]))
@@ -681,13 +718,18 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
                 dt_s=dt_path,
             )
             _pos_err_next = ee_pos_next - sample.position_m
+            if task_mode == TASK_MODE_TOOL_AXIS_5D:
+                orientation_next = _path_orientation_sample(ee_pos_next, next_path_state)
+                sample = sample._replace(
+                    rotation=orientation_next.rotation,
+                    omega_per_m=orientation_next.omega_per_m)
             _next_task_error, err_report_next, _next_jacobian = task_geometry_terms(
                 ee_pos_next, ee_rot_next, full_jacobian,
                 sample.position_m, sample.rotation)
             actual_tangent_speed = jnp.dot(
                 full_jacobian[:3, :] @ u_safe, sample.tangent)
             return (next_path_state, err_report_next, actual_tangent_speed,
-                    ee_pos_next, ee_rot_next)
+                    ee_pos_next, ee_rot_next, sample.rotation, sample.omega_per_m)
 
         path_modules = (
             _path_kinematics, _path_sample, _path_cap_nominal,
@@ -705,8 +747,9 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
             """Compose the path modules into one compiled control step."""
             ee_pos, ee_rot, full_jacobian = _path_kinematics(q)
             cap_sample = _path_sample(path_state[0])
+            orientation = _path_orientation_sample(ee_pos, path_state)
             u_bias, u_per_m = _path_cap_nominal(
-                ee_pos, ee_rot, full_jacobian, cap_sample, q,
+                ee_pos, ee_rot, full_jacobian, cap_sample, orientation, q,
                 kp_pos, kp_orient, kp_joint, nullspace_speed_limit,
                 damping, q_des)
             h_args = make_h_args(
@@ -722,7 +765,7 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
                 path_state, ee_pos, joint_cap, cbf_cap, rate_cap)
             sample = path.sample
             u_nom, control_task_p, control_q_des = _path_control_nominal(
-                ee_pos, ee_rot, full_jacobian, sample, q,
+                ee_pos, ee_rot, full_jacobian, sample, orientation, q,
                 kp_pos, kp_orient, kp_joint, nullspace_speed_limit,
                 damping, q_des, path.feedrate_m_s)
             control_h_args = make_h_args(
@@ -739,7 +782,7 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
                 q, u_nom, control_h_args, G, h_qp, h_vals, cbf_grad,
                 min_obs_dist, min_esdf_dist)
             (next_path_state, err_report_next, actual_tangent_speed,
-             ee_pos_next, ee_rot_next) = _path_finalize(
+             ee_pos_next, ee_rot_next, reference_rotation, reference_omega) = _path_finalize(
                 q_next, ee_pos, ee_rot, full_jacobian, sample, u_safe,
                 path.state)
             return ControlStepRecord(
@@ -762,9 +805,9 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
                 dual_max=dual_max, qp_iterations=qp_iterations,
                 delta_slack=delta_slack, path_state=next_path_state,
                 reference_position_m=sample.position_m,
-                reference_rotation=sample.rotation,
+                reference_rotation=reference_rotation,
                 reference_tangent=sample.tangent,
-                reference_omega_per_m=sample.omega_per_m,
+                reference_omega_per_m=reference_omega,
                 reference_source_time_s=sample.source_time_s,
                 cross_track_error_m=path.cross_track_error_m,
                 gamma=path.gamma,

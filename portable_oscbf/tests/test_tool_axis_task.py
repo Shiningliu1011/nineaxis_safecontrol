@@ -13,6 +13,7 @@ from work.tool_axis_task import (
     TOOL_AXIS_INDEX,
     task_jacobian_5d,
     task_jacobian_5d_jax,
+    path_tool_axis_jacobian_5d_jax,
     tool_axis_error_2d,
 )
 
@@ -75,3 +76,31 @@ def test_jax_and_numpy_5d_jacobians_agree():
     # explicitly enables x64 before compiling.  This assertion checks the
     # algebraic mirror rather than imposing an unrelated global dtype policy.
     np.testing.assert_allclose(actual, expected, atol=2.0e-7, rtol=2.0e-7)
+
+
+def test_path_axis_jacobian_includes_motion_of_reference_direction():
+    kin = NineaxisKinematics()
+    q = np.array([0.22, 0.14, -0.95, 0.49, -2.61, -0.82, -0.14, -0.93, 1.13])
+    position, rotation = kin.ee_pose(q)
+    desired = Rotation.from_rotvec([.02, -.03, .01]).as_matrix() @ rotation
+    tangent = np.array([.6, 0., .8])
+    omega_per_m = np.array([.4, 2., -.5])
+    jacobian = np.asarray(path_tool_axis_jacobian_5d_jax(
+        kin.compute_full_jacobian(q), rotation, desired, omega_per_m, tangent))
+
+    def error(joints):
+        point, orientation = kin.ee_pose(joints)
+        progress = tangent @ (point - position)
+        reference = Rotation.from_rotvec(omega_per_m * progress).as_matrix() @ desired
+        return tool_axis_error_2d(orientation, reference)
+
+    epsilon = 1e-6
+    derivative = np.empty((2, 9))
+    for joint in range(9):
+        delta = np.eye(9)[joint] * epsilon
+        derivative[:, joint] = (error(q + delta) - error(q - delta)) / (2 * epsilon)
+    np.testing.assert_allclose(jacobian[3:], derivative, atol=3e-6, rtol=3e-6)
+    stationary = np.asarray(path_tool_axis_jacobian_5d_jax(
+        kin.compute_full_jacobian(q), rotation, desired, omega_per_m, np.zeros(3)))
+    np.testing.assert_allclose(stationary, task_jacobian_5d(
+        kin.compute_full_jacobian(q), rotation, desired), atol=3e-7, rtol=3e-7)

@@ -1,152 +1,95 @@
-"""S-curve driver simulator — jerk-limited velocity transition smoother.
-
-Smooths velocity commands **only during state transitions** (phase switches).
-During steady-state tracking, QP output passes through unfiltered to preserve
-precision.
-
-Usage::
-
-    driver = SCurveDriverSimulator(dq_max, ddq_max)
-
-    # Steady-state: pass through
-    v_out = driver.step(u_safe)           # u_safe unchanged
-
-    # State transition: smooth ramp
-    driver.begin_transition()              # mark transition start
-    for _ in range(N):
-        v_out = driver.step(u_target)      # S-curve filtered
-
-Algorithm (per-joint, per-step, during transition only)::
-
-    Δv = v_target - v_current
-    a_cmd = clip(kp * Δv, -a_max, a_max)
-    da = clip(a_cmd - a, -j_max * dt, j_max * dt)
-    a = clip(a + da, -a_max, a_max)
-    v = clip(v + a * dt, -v_max, v_max)
-"""
-
 from __future__ import annotations
 
 import numpy as np
+from ruckig import InputParameter, OutputParameter, Result, Ruckig
 
 
 class SCurveDriverSimulator:
-    """Per-joint S-curve velocity transition smoother.
-
-    Parameters
-    ----------
-    dq_max : array-like (9,)
-        Joint velocity limits (m/s for J1, rad/s for J2-J9).
-    ddq_max : array-like (9,)
-        Joint acceleration limits.
-    jerk_time : float
-        Time constant for jerk limit: j_max = ddq_max / jerk_time.
-    kp : float
-        Velocity-loop proportional gain during transitions.
-    dt : float
-        Control period (s).
-    transition_steps : int
-        Number of steps to smooth a transition.  Default 25 (50ms @500Hz).
-    """
+    """使用连续的速度、加速度和 jerk 限制跟随位置目标。"""
 
     def __init__(
         self,
         dq_max: np.ndarray,
         ddq_max: np.ndarray,
+        *,
+        q_min: np.ndarray,
+        q_max: np.ndarray,
         jerk_time: float = 0.08,
-        kp: float = 80.0,
-        dt: float = 0.002,
-        transition_steps: int = 25,
+        minimum_duration_s: float = 0.08,
+        dt: float = 0.01,
     ) -> None:
-        self._v_max = np.asarray(dq_max, dtype=float).ravel()
-        self._a_max = np.asarray(ddq_max, dtype=float).ravel()
-        self._j_max = self._a_max / max(float(jerk_time), 1e-4)
-        self._kp = float(kp)
-        self._dt = float(dt)
-        self._n = len(self._v_max)
-        self._transition_steps = int(transition_steps)
+        self._v_max = np.asarray(dq_max, dtype=float).copy()
+        self._a_max = np.asarray(ddq_max, dtype=float).copy()
+        self._q_min = np.asarray(q_min, dtype=float).copy()
+        self._q_max = np.asarray(q_max, dtype=float).copy()
+        if self._v_max.ndim != 1 or self._v_max.size == 0:
+            raise ValueError("dq_max must be a nonempty vector")
+        for name, value in (
+            ("dq_max", self._v_max), ("ddq_max", self._a_max),
+            ("q_min", self._q_min), ("q_max", self._q_max),
+        ):
+            if value.shape != self._v_max.shape or not np.all(np.isfinite(value)):
+                raise ValueError(f"{name} must be a finite vector matching dq_max")
+        if np.any(self._v_max <= 0) or np.any(self._a_max <= 0):
+            raise ValueError("velocity and acceleration limits must be positive")
+        if np.any(self._q_min >= self._q_max):
+            raise ValueError("q_min must be less than q_max")
+        if not np.isfinite(jerk_time) or jerk_time <= 0:
+            raise ValueError("jerk_time must be finite and positive")
+        if not np.isfinite(dt) or dt <= 0:
+            raise ValueError("dt must be finite and positive")
+        if not np.isfinite(minimum_duration_s) or minimum_duration_s <= 0:
+            raise ValueError("minimum_duration_s must be finite and positive")
+        self._j_max = self._a_max / jerk_time
+        self._otg = Ruckig(self._v_max.size, dt)
+        self._input = InputParameter(self._v_max.size)
+        self._output = OutputParameter(self._v_max.size)
+        self._input.max_velocity = self._v_max.tolist()
+        self._input.max_acceleration = self._a_max.tolist()
+        self._input.max_jerk = self._j_max.tolist()
+        # 连续位置指令共享足够的运动时间，减少每次更新引起的加减速。
+        self._input.minimum_duration = minimum_duration_s
+        self._initialized = False
 
-        # State
-        self._v = np.zeros(self._n)
-        self._a = np.zeros(self._n)
-        self._in_transition = False
-        self._transition_counter = 0
+    def _positions(self, value: np.ndarray) -> np.ndarray:
+        positions = np.asarray(value, dtype=float)
+        if positions.shape != self._q_min.shape or not np.all(np.isfinite(positions)):
+            raise ValueError("positions must be a finite vector matching joint limits")
+        if np.any(positions < self._q_min) or np.any(positions > self._q_max):
+            raise ValueError("positions exceed joint limits")
+        return positions
 
-    # ------------------------------------------------------------------
-    # Public API
-    # ------------------------------------------------------------------
+    def reset(self, q0: np.ndarray) -> None:
+        positions = self._positions(q0)
+        self._input.current_position = positions.tolist()
+        self._input.current_velocity = np.zeros_like(positions).tolist()
+        self._input.current_acceleration = np.zeros_like(positions).tolist()
+        self._input.target_position = positions.tolist()
+        self._input.target_velocity = np.zeros_like(positions).tolist()
+        self._input.target_acceleration = np.zeros_like(positions).tolist()
+        self._otg.reset()
+        self._initialized = True
 
-    def begin_transition(self) -> None:
-        """Mark the start of a velocity transition (e.g. state switch).
-
-        After calling this, the next ``transition_steps`` calls to ``step()``
-        will apply S-curve filtering.  After that, passthrough resumes.
-        """
-        self._in_transition = True
-        self._transition_counter = 0
-
-    def step(self, v_target: np.ndarray) -> np.ndarray:
-        """Advance one control step.
-
-        During transition: returns S-curve smoothed velocity.
-        During steady-state: returns v_target unchanged (passthrough).
-
-        Parameters
-        ----------
-        v_target : np.ndarray (n,)
-            Target velocity from QP.
-
-        Returns
-        -------
-        v_out : np.ndarray (n,)
-            Output velocity (smoothed during transition, passthrough otherwise).
-        """
-        target = np.asarray(v_target, dtype=float).ravel()
-
-        if not self._in_transition:
-            # Steady-state: passthrough, but track velocity for next transition
-            self._v = target.copy()
-            self._a[:] = 0.0
-            return target
-
-        # Transition: S-curve filtering
-        dt = self._dt
-        kp = self._kp
-
-        dv = target - self._v
-        a_cmd = np.clip(kp * dv, -self._a_max, self._a_max)
-
-        da = np.clip(a_cmd - self._a, -self._j_max * dt, self._j_max * dt)
-        self._a = np.clip(self._a + da, -self._a_max, self._a_max)
-        self._v = np.clip(self._v + self._a * dt, -self._v_max, self._v_max)
-
-        self._transition_counter += 1
-        if self._transition_counter >= self._transition_steps:
-            self._in_transition = False
-
-        return self._v.copy()
-
-    def reset(self, v0: np.ndarray | None = None) -> None:
-        """Reset driver state."""
-        if v0 is not None:
-            self._v = np.asarray(v0, dtype=float).ravel().copy()
-        else:
-            self._v = np.zeros(self._n)
-        self._a = np.zeros(self._n)
-        self._in_transition = False
-        self._transition_counter = 0
-
-    @property
-    def in_transition(self) -> bool:
-        """True if currently in a transition."""
-        return self._in_transition
+    def step(self, target_position: np.ndarray) -> np.ndarray:
+        if not self._initialized:
+            raise RuntimeError("reset(q0) is required before stepping the driver")
+        self._input.target_position = self._positions(target_position).tolist()
+        result = self._otg.update(self._input, self._output)
+        if result not in (Result.Working, Result.Finished):
+            raise RuntimeError(f"actuator trajectory generation failed: {result}")
+        positions = np.asarray(self._output.new_position)
+        if (not np.all(np.isfinite(positions))
+                or np.any(positions < self._q_min - 1e-10)
+                or np.any(positions > self._q_max + 1e-10)):
+            raise RuntimeError("actuator trajectory exceeds joint position limits")
+        # 目标更新时沿用当前速度和加速度，跟踪及保持阶段采用相同限制。
+        self._output.pass_to_input(self._input)
+        return positions.copy()
 
     @property
     def velocity(self) -> np.ndarray:
-        """Current smoothed velocity."""
-        return self._v.copy()
+        return np.asarray(self._input.current_velocity).copy()
 
     @property
     def acceleration(self) -> np.ndarray:
-        """Current acceleration."""
-        return self._a.copy()
+        return np.asarray(self._input.current_acceleration).copy()

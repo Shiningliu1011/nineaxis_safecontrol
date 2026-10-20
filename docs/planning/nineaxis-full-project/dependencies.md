@@ -1,6 +1,6 @@
 # 任务编号与阻塞关系
 
-[完整项目地图](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/147)统一管理全部任务。标题采用 **01–59 连续编号**，按前置关系排序；GitHub 自身编号仅用于保持原链接与评论。
+[完整项目地图](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/147)统一管理全部任务。标题采用 **01–72 连续编号**，按前置关系排序；GitHub 自身编号仅用于保持原链接与评论。
 
 读取方法：某项任务的全部前置完成后，才能领取该任务。编号较小的任务可以仍在另一条分支进行；连续编号不要求所有任务逐项串行。下表列出直接前置，完整关系以 GitHub 原生 blocking 为准。已完成的历史证据保留在原任务中。
 
@@ -109,4 +109,25 @@ flowchart TD
 | [58 完成正式对照、消融与统计实验](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/169) | 15 实验方案；16 完整规格；57 协同实机 |
 | [59 验收完整项目复现与个人成果展示](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/170) | 16 完整规格；55 通用模块证据；58 正式实验 |
 
-当前可新领取的起始工作是“核验完整项目基线与 M01–M12 资产”和“取得完整工件、路径与 MATLAB 程序资产”。外参标定已由现有 Trellis 任务承接。新增任务或改变依赖后重新核对顺序，必要时重排标题编号，并同步本表与地图中的阅读说明；GitHub 原链接始终保留。
+## 静态障碍物仿真实验
+
+[60 静态障碍物仿真实验规格说明书](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/171)为已经确认的规格，提供以下 12 项任务的共同要求；[本地正文](../../specs/static-obstacle-experiments.md)及[实验入口说明](../../static_obstacle_experiments.md)保存在仓库中。
+
+| 任务 | 直接前置 |
+|---|---|
+| [61 可重复的 S0 仿真与反馈评价](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/172) | 无 |
+| [62 共享路径参考的五维跟随](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/173) | 61 仿真与反馈 |
+| [63 单个静态障碍物的臂身避让](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/174) | 61 仿真与反馈 |
+| [64 全部非相邻连杆的 mesh 自碰撞约束](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/175) | 63 外部避障 |
+| [65 Ruckig 处理后的命令检查与进度结算](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/176) | 62 共享参考；64 自碰撞 |
+| [66 S2–S5 场景及可行性见证](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/177) | 65 执行检查 |
+| [67 构型调整与基础暂停恢复，形成 A 组](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/178) | 66 场景见证 |
+| [68 进给与关节速度联合求解，形成 B 组](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/179) | 67 A 组 |
+| [69 持续确认与渐增进给恢复，形成 C 组](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/180) | 67 A 组 |
+| [70 Generalized-SNS 外部参考，形成 E 组](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/181) | 69 改进恢复 |
+| [71 五组方法组合验证与统一周期测量](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/182) | 68 联合求解；70 外部参考 |
+| [72 正式配对实验、论文图表与复现交付](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/183) | 71 方法与周期 |
+
+62 与 63 可以分别推进，68 与 69 可以分别推进。规格作为各任务的定义来源，不增加未完成前置。
+
+当前可新领取的起始工作是“核验完整项目基线与 M01–M12 资产”“取得完整工件、路径与 MATLAB 程序资产”和“可重复的 S0 仿真与反馈评价”。外参标定已由现有 Trellis 任务承接。新增任务或改变依赖后重新核对顺序，并同步本表；GitHub 原链接始终保留。

@@ -7,9 +7,9 @@
   ros__parameters:
     can:
       interface: can0              # SocketCAN 接口名（适配器驱动/接口名待确认）
-      bitrate: 1000000             # 1 Mbps（厂商默认）
+      bitrate: 500000              # 三路九个节点现场通信速率，记录见 docs/drempower_communication_20261016.md
 
-    node_ids:                      # 推荐分配，待前置 P5 实读确认
+    node_ids:                      # 已读到 ID 1–9；与实际关节的对应关系仍待确认
       J1: 1
       J2: 2
       J3: 3

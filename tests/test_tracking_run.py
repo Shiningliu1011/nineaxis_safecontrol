@@ -301,6 +301,15 @@ def test_real_short_path_endpoint_and_hold_report(run_factory, endpoint_kernel):
     assert run.progress_snapshot()["at_endpoint"]
     assert run.execution_state == "tracking"
     assert np.linalg.norm(run._last_result.ee_pos_before - resources[1].positions_m[-1]) > .0005
+    # 反馈仍位于终点前 8 μm 时，保持完整的区间覆盖要求。
+    near_q = end_q.copy()
+    near_q[0] -= 8e-6
+    deadline = time.monotonic() + .65
+    while time.monotonic() < deadline:
+        run.receive_state(near_q)
+        run.tick(commands.append)
+    assert run.execution_state == "tracking"
+    assert run.tracking_report().termination is None
     for _ in range(100):
         run.receive_state(end_q)
         run.tick(commands.append)
@@ -316,3 +325,24 @@ def test_real_short_path_endpoint_and_hold_report(run_factory, endpoint_kernel):
     run.close()
     assert run.report_status()["state"] == "saved"
     assert run.tracking_report().termination == "completed"
+    assert run.tracking_report().completed
+    assert run.tracking_report().full_path_covered
+
+
+def test_endpoint_command_crosses_terminal_plane_before_hold(endpoint_kernel):
+    resources, end_q = endpoint_kernel
+    loop, geometry, config, _ = resources
+    q = end_q.copy()
+    q[0] -= 36e-9
+    result = loop.path_tracking_step(
+        q=q, q_des=q,
+        path_state=np.array([geometry.total_length_m, geometry.total_length_m,
+                             geometry.num_segments - 1, 0., 1.]),
+        **{name: config[name] for name in (
+            "kp_pos", "kp_orient", "kp_joint", "nullspace_speed_limit", "damping")},
+    )
+    tangent = geometry.positions_m[-1] - geometry.positions_m[-2]
+    tangent /= np.linalg.norm(tangent)
+    assert result.qp_ok
+    assert np.dot(result.ee_pos_before - geometry.positions_m[-1], tangent) < 0.
+    assert np.dot(result.ee_pos - geometry.positions_m[-1], tangent) > 0.

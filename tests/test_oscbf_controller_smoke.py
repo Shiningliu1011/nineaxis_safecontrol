@@ -149,7 +149,7 @@ def test_production_values_reach_actual_consumers_and_provenance(
     assert effective["values"]["kp_pos"] == 161.0
     assert effective["sources"]["kp_pos"] == "explicit_override"
     assert effective["override_chains"]["kp_pos"] == [
-        {"source": "production_yaml", "value": 160.0},
+        {"source": "production_yaml", "value": 240.0},
         {"source": "explicit_override", "value": 161.0},
     ]
     assert diagnostics["facade"] == {
@@ -170,7 +170,7 @@ def test_production_values_reach_actual_consumers_and_provenance(
 
 def test_tracking_parameters_are_observable(controller_fixture):
     values = controller_fixture["node"].runtime_configuration_diagnostics()["path_tracking_step"]
-    assert values == dict(kp_pos=161.0, kp_orient=10.0, kp_joint=.45,
+    assert values == dict(kp_pos=161.0, kp_orient=40.0, kp_joint=.45,
                          nullspace_speed_limit=.18, damping=.05)
 
 
@@ -253,7 +253,7 @@ def test_production_config_matches_direct_kernel_outputs(
             q = record.q_next
             reference = direct.path_tracking_step(
                 q=expected_q, path_state=path_state, q_des=expected_q,
-                kp_pos=161., kp_orient=10., kp_joint=.45,
+                kp_pos=161., kp_orient=40., kp_joint=.45,
                 nullspace_speed_limit=.18, damping=.05,
             )
             expected.append(reference)
@@ -342,7 +342,7 @@ def test_runtime_snapshot_matches_consumers_and_records_version_identity(
     assert snapshot["final_values"]["dt_path"] == diagnostics["facade"]["dt_path"]
     assert snapshot["final_values"]["publish_frequency_hz"] == 80.0
     assert snapshot["parameter_sources"]["kp_pos"] == "explicit_override"
-    assert snapshot["override_chains"]["kp_pos"][0]["value"] == 160.0
+    assert snapshot["override_chains"]["kp_pos"][0]["value"] == 240.0
     assert snapshot["resources"]["trajectory_mat"]["resolved_path"] == str(
         REPO_ROOT / "data" / "nurbs" / "ik_input.mat"
     )
