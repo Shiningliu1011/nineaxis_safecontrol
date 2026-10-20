@@ -265,7 +265,12 @@ B/C/E 及各方法的其他场景继续验证，具体组合与来源见
 最新方法运行与独立 SNS 核查见
 [E 方法 S1/S4 开发运行](../.trellis/tasks/10-20-static-method-matrix/research/current-sns-s1-s4.md)。
 其中包含实际数据库、报告及来源归档的完整 SHA-256。
-两组开发 systemd 队列均已结束，当前正式实验仍为 `0/1080`。
+两组开发 systemd 队列均已结束。启用容量保护的
+`static-guarded-preflight-01.service` 按固定计划执行；
+D/E/B S5 和 D/S4 initial1/feed1.5 已通过。运行来源、数据位置、
+校验值及接续入口见
+[容量保护完整仿真](../.trellis/tasks/10-20-static-formal-experiments/research/guarded-preflight.md)。
+当前正式实验仍为 `0/1080`。
 子任务 #172–#176 已关闭，#177–#183 保持开放。
 
 ## 验证状态
