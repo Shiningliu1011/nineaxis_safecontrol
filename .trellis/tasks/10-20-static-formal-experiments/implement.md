@@ -7,7 +7,7 @@ Trellis 沿用本任务和父任务保存规划、验证及接手状态。
 集成目录为 `/home/lsn/robot/robot_safecontrol`，本次起点 `35a1a61`，
 origin 已获取且本地与远程相同。环境入口为 `.scratch/host-recovery/env.sh`。
 
-当前并行核查容量、S4/S5 与已有任务验收证据。容量检查使用完整矩阵、
+当前并行核查容量、S4 与方法验收证据。容量检查使用完整矩阵、
 运行时限、记录内容、WAL、派生处理和失败重试要求；场景与控制修复继续
 遵守原始精度、间距、进度、暂停恢复和完整周期验收条件。
 正式采集等待所有前置验证通过。
@@ -20,6 +20,16 @@ origin 已获取且本地与远程相同。环境入口为 `.scratch/host-recove
 6. 串行运行受影响回归、构建和规范检查，按项目 code-review 完成两方面独立审查。
 
 当前共同周期和完整开发场景验证仍在进行；正式运行尚未开始。
+
+当前集成 `7b643c4` 的 D/S5 在目标 ntfs3 文件系统完成独占 sim：
+346 个周期 P99.9 为 73.628 ms，最大 75.175 ms，超期零次，
+安全终止、逐流记录额度和来源绑定检查均通过。
+结果目录为
+`/media/lsn/宇宙小机器人/robot_safecontrol_static_experiments_20261020/lifecycle-s5-02/`。
+相同源码的 420 秒记录过程正在验证。S4 新独立见证通过，
+当前 D 组完整运行与九个初态、进给组合的状态继续验证。
+第二文件系统的 459,371 条逐值校验与八次 SIGKILL 恢复已经通过，
+正式矩阵使用的两卷工程容量证据仍未通过全部准入检查。
 
 ## 本次检查
 
@@ -55,8 +65,10 @@ origin 已获取且本地与远程相同。环境入口为 `.scratch/host-recove
 可以容纳现有样本的外推。正式容量上界仍需结合全部场景和失败重试确定。
 完整测量见 `research/storage-validation.md`。
 
-`development-scenes-05` 已生成。当前 D/S2 完整运行通过，S4、S5 当前参数验证、
-共同周期测量和正式矩阵均未完成。
+`development-scenes-05` 已生成，S4 新候选及来源保存于
+`output/static-scene-validation-20261020/development-scenes-06/`。
+当前 D/S2 和最新 D/S5 完整运行通过；S4 当前参数的完整组合验证、
+共同周期测量和正式矩阵继续进行。
 状态、原始数据位置和继续工作顺序见 `docs/static_obstacle_experiments_handoff.md`。
 
 本次同步获得用户明确授权。没有完成任务归档或 spec promotion；

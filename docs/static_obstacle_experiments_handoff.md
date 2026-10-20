@@ -3,7 +3,7 @@
 ## 当前状态
 
 工作分支为 `codex/static-obstacle-experiments`，本次接续起点为 `35a1a61`，
-当前代码集成为 `659bf7c`，方法证据集成为 `062cd52`，前置验收证据为 `5d52885`。
+当前代码集成为 `7b643c4`，方法证据集成为 `062cd52`，前置验收证据为 `5d52885`。
 #172–#176 已发布逐项证据并关闭；
 #171、#177–#183 尚未完成验收。项目已在当前主机恢复到
 `/home/lsn/robot/robot_safecontrol`。紧凑存储已完成四组完整真实记录验证，
@@ -28,7 +28,7 @@ Trellis 接手入口是 `.trellis/tasks/10-20-static-obstacle-experiments/`，
 [`research/capacity-validation.md`](../.trellis/tasks/10-20-static-formal-experiments/research/capacity-validation.md)。
 格式 3、S5 计算复用和 Generalized-SNS 广义区间支持已经集成，
 58 项组合测试通过，原始记录身份与跨段读取检查通过。
-S4 独立见证、记录生命周期与完整容量验证继续在独立 worktree 推进，
+记录生命周期预算及异常收尾已经集成，S4 独立见证与完整容量验证继续推进，
 正式采集等待全部前置条件通过。
 
 ## 实验需要回答的问题
@@ -91,7 +91,7 @@ SHA-256：`740eafa49b709b5b70d2d744b854f1cbe1af45d1fc4612181011af78a9005209`。
 全部编码、重放、随机读取及恢复证据见
 [逐条编码验证](../.trellis/tasks/10-20-static-formal-experiments/research/codec-validation.md)。
 完整 sim 写入、最新控制字段、WAL 和记录生命周期已完成三项测量；
-可执行记录额度、异常退出判定和完整矩阵容量继续验证。
+可执行记录额度和异常退出判定已经集成，完整矩阵容量继续验证。
 
 三项测量使用 `.scratch/worktrees/static-capacity` 的固定源码，
 每项 `run/manifest.json` 保存完整 `source_sha256`，数据均在
@@ -116,6 +116,39 @@ SHA-256 为 `8b4d32da29a397b5d0eb46b7af77dac008f48800c22098468f282608747f83c6`�
 该文件包含每项 validation、manifest、result、两个数据库及反馈报告的
 SHA-256、完整命令和资源测量。原始运行与失败结果均保留。
 
+`fa18bea` 集成 worker 记录预算：100 ms 配置下允许开始新记录工作的
+最长时段为 473 秒，最多 236,500 条反馈和 4,732 个候选。
+运行在额度耗尽时保存 `budget_exhausted` 并停止正式批次；
+已经开始的计算完成候选、拒绝、周期和终止记录。实际操作系统调度或正在进行的
+写入可能在该时段后结束，该时段约束新工作的开始时间。
+ready、记录统计、manifest 和源码身份相互绑定。32 项异常收尾及记录检查通过，
+合并检查另有 15 项通过，证据见
+[生命周期验证](../.trellis/tasks/10-20-static-formal-experiments/research/lifecycle-capacity-validation.md)。
+上述三项完整测量对应各自 manifest 中保存的源码；最新集成源码的完整测量另行保存。
+
+第二个文件系统已验证为可写的 ntfs3，UUID 为 `083CBB753CBB5BFE`，
+挂载点为 `/media/lsn/宇宙小机器人`。本任务仅在新目录
+`/media/lsn/宇宙小机器人/robot_safecontrol_static_experiments_20261020/`
+保存新数据。`filesystem-validation-02/` 的四组八个数据库共 459,371 条
+记录逐字段及 float64 位模式一致；199 次随机读取、八次 SIGKILL 后的
+9,493 条已提交记录恢复和 JSON 原子替换均通过。
+`validation.json` SHA-256 为
+`bbf65a6cba5ea22f466c3759e4a2f6e1eb1f2555d271f87e7d622e93ec10e072`。
+本机摘要为 `output/static-capacity-20261020/ntfs-validation-02-summary.json`，
+验证结束时该文件系统可用 133,453,279,232 字节。
+完整 sim 写入耗时、最长生命周期与两卷容量准入继续验证。
+
+最新集成 `7b643c4` 在该卷的 `lifecycle-s5-02/` 完整通过：
+18,362 条反馈、346 个唯一控制目标，完整周期 P99.9 为 73.627538 ms，
+最大 75.175110 ms，超期及命令准入拒绝均为零。持续阻塞安全终止，
+worker 退出码为 `[0, 0]`，逐流额度及 ready、统计来源绑定检查通过。
+实际分配为 5,193,728 字节，两个数据库 WAL 峰值之和为 175,977,624 字节。
+`lifecycle-validation.json` SHA-256 为
+`5ef9e26bb342bc44a413e8d92dd98b9c65750ad2473a2eaf976b475ee82bb621`。
+源码归档为 `output/static-capacity-20261020/ntfs-lifecycle-source-02-source/sources.zip`，
+SHA-256 为 `25f3f268ba1858a554a33e5277e2f1375776a5c92a641e7b008166db87115148`。
+相同源码的 `lifecycle-timeout-02/` 正在验证 420 秒最长记录过程。
+
 ## 已有运行与未完成项
 
 | 运行目录（位于 `output/static-experiments/`） | 当前证据 |
@@ -131,6 +164,19 @@ SHA-256、完整命令和资源测量。原始运行与失败结果均保留。
 S2 使用候选 15、31，S4 使用候选 0、2。当前 S4 完整 sim 在
 约 66.9% 进度处持续暂停后终止；正在验证带有来源记录的新候选。
 候选编号对应该目录的 `obstacle_candidates.json`，其来源身份保存在选择记录中。
+
+S4 位移组合及来源现保存于
+`output/static-scene-validation-20261020/development-scenes-06/`。
+`s4-paired-independent-witness-01/witness/` 在该固定几何下重新生成并通过
+现有独立核查入口：两段连续调整共 0.32 秒，位置变化上界最大 48.0255 μm、
+工具轴变化上界最大 65.6837 μrad，全部关节限制与 76 个碰撞组合通过，
+终态正向进给为 0.008879531 m/s。来源是历史真实候选的 q/v/a，
+旧数据库、旧场景、旧见证和新重核分别保留身份；当前 D 组实际暂停恢复单独验收。
+新 `witness.json` SHA-256 为
+`53b77f141b84b4fa889a545d3595da5e9678e56108c2fae35bd4807a360db9ce`，
+`verification.json` SHA-256 为
+`fd0c98cfe9f948b48487bb351008cae303b347188b9fadc3aa5c403647b52998`。
+当前源码的 D/S4 完整 sim 和三个初态、三档进给组合继续验证。
 
 本次 D/S5 完整 sim `output/static-scene-validation-20261020/s5-current-03/`
 通过安全终止、几何和运行时间检查。949 个完整周期的 P99.9 为
