@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import fields
+import json
 import os
 from pathlib import Path
 import signal
@@ -50,6 +51,16 @@ def finish_worker_recording(node, recorder, directory: Path, *, role: str,
             "error": repr(original or errors[0]),
             "cleanup_errors": [repr(error) for error in errors],
         }
+    try:
+        recorder.check_terminal_capacity(terminal)
+    except RecordingBudgetExhausted as error:
+        terminal = {**terminal, "reason": "budget_exhausted", "phase": "FAULT",
+                    "capacity_reason": str(error)}
+        if role == "controller" and node is not None:
+            node.record_fault("budget_exhausted")
+        _publish_worker_result(directory / f"{role}_result.json", {
+            "termination": "budget_exhausted", "reason": str(error), "monotonic_s": time.monotonic(),
+        })
     recorder.append("event", monotonic_s=time.monotonic(), values=terminal)
     wal = Path(str(recorder.path) + "-wal")
     write_json(directory / f"{role}.recording.json", {
@@ -57,6 +68,7 @@ def finish_worker_recording(node, recorder, directory: Path, *, role: str,
         "wal_bytes_before_checkpoint": wal.stat().st_size,
         "wal_allocated_bytes_before_checkpoint": wal.stat().st_blocks * 512,
         "budget": None if node is None else node.recording_budget.snapshot(),
+        "storage_budget": recorder.capacity_snapshot(),
         "stream_counts": dict(recorder.connection.execute(
             "SELECT stream,count(*) FROM samples GROUP BY stream",
         )),
@@ -76,12 +88,16 @@ def _worker(args, config: ExperimentConfig) -> None:
     from .static_experiment_nodes import StaticExperimentController, StaticExperimentPlant
 
     directory = args.output.resolve()
+    manifest = json.loads((directory / "manifest.json").read_text())
+    storage = manifest.get("storage_budget")
+    storage_limits = None if storage is None else storage["writers"][args.role]
     rclpy.init(args=[])
     node = None
     stop_reason = None
     terminal = {"reason": "worker_stopped"}
-    with RunRecorder(directory / f"{args.role}.sqlite3") as recorder:
+    with RunRecorder(directory / f"{args.role}.sqlite3", storage_limits=storage_limits) as recorder:
         try:
+            recorder.check_capacity()
             if args.role == "plant":
                 node = StaticExperimentPlant(config, recorder)
             else:
@@ -99,6 +115,7 @@ def _worker(args, config: ExperimentConfig) -> None:
                 if (directory / "stop").exists() and (args.role != "plant" or node.stopped):
                     break
                 rclpy.spin_once(node, timeout_sec=0.05)
+                recorder.check_capacity()
                 if args.role == "controller" and node.execution_state == "holding":
                     snapshot = node.progress_snapshot()
                     _publish_worker_result(directory / "controller_result.json", {
@@ -144,9 +161,20 @@ def _stop_processes(processes: list, directory: Path) -> None:
 
 
 def run_experiment(args, config: ExperimentConfig) -> dict:
-    import json
-
     directory = args.output.resolve()
+    storage = None
+    if getattr(args, "storage_budget", None) is not None:
+        from .static_experiment_volumes import filesystem_identity
+        from .static_recording_capacity import RecordingStorageLimits
+
+        storage = json.loads(args.storage_budget.read_text())
+        if (storage["config_sha256"] != config.identity
+                or storage["source_sha256"] != _sources(config)
+                or storage["filesystem_uuid"] != filesystem_identity(directory.parent)["filesystem_uuid"]
+                or set(storage["writers"]) != {"plant", "controller"}):
+            raise ValueError("运行空间预算的配置、源码或输出卷身份不一致")
+        for limits in storage["writers"].values():
+            RecordingStorageLimits(**limits)
     directory.mkdir(parents=True, exist_ok=False)
     (directory / "tmp").mkdir()
     source_configuration = directory / "source_configuration.yaml"
@@ -159,6 +187,7 @@ def run_experiment(args, config: ExperimentConfig) -> dict:
         **config.manifest(), "source_sha256": _sources(config),
         "path_sha256": content_hash(directory / "path.npz"),
         "recording_format": FORMAT_VERSION,
+        "storage_budget": storage,
         "recording_limits": RecordingLimits(
             config.values["timeout_s"], config.values["settle_s"],
             config.values["control"]["period_s"],
@@ -304,6 +333,8 @@ def main(argv=None) -> int:
     parser.add_argument("--scene-selection", type=Path)
     parser.add_argument("--witness-request", type=Path)
     parser.add_argument("--scene-evidence", type=Path)
+    parser.add_argument("--storage-budget", type=Path)
+    parser.add_argument("--storage-budget-index", type=Path)
     parser.add_argument("--catalog", type=Path)
     parser.add_argument("--period-study", type=Path)
     parser.add_argument("--evidence-index", type=Path)
@@ -383,7 +414,9 @@ def main(argv=None) -> int:
         parser.error("run 和 worker 需要 --output")
     if args.mode == "benchmark":
         from .static_period_measurement import run_period_study
-        report = run_period_study(config, args.output, args.domain)
+        report = run_period_study(
+            config, args.output, args.domain, storage_budget_index=args.storage_budget_index,
+        )
         print(f"周期测量：{report['status']}；共同周期：{report['selected_period_s']}", flush=True)
         return 0 if report["status"] == "pass" else 1
     if args.mode == "witness-replay":

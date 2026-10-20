@@ -62,6 +62,7 @@ def freeze_formal(catalog_path: Path, period_directory: Path, evidence_index: Pa
                   directory: Path, resource_root: Path) -> dict:
     from .static_experiment import _sources
     from .static_scenario_evidence import verify_blockage, verify_reconfiguration
+    from .static_period_measurement import validate_period_storage
 
     catalog = json.loads(catalog_path.read_text())
     period = json.loads((period_directory / "period_report.json").read_text())
@@ -80,6 +81,8 @@ def freeze_formal(catalog_path: Path, period_directory: Path, evidence_index: Pa
         for row in group["methods"]:
             run = period_directory / row["run"]
             validate_run_report(run)
+            if validate_period_storage(run) != row.get("storage_statistics_sha256"):
+                raise ValueError("共同周期缺少匹配的容量守卫统计身份")
             if content_hash(run / "feedback_report.json") != row["report_sha256"]:
                 raise ValueError("周期测量报告身份不一致")
             for role, expected in row["records_sha256"].items():
@@ -231,6 +234,24 @@ def run_formal(directory: Path, *, resource_root: Path, domain: int, limit: int 
             "--config", str(config.source), "--method", row["method"], "--output", str(run),
             "--resource-root", str(resource_root), "--domain", str(domain),
         ]
+        from .static_experiment_engineering_capacity import run_capacity_group
+        from .static_recording_capacity import runtime_storage_configuration
+
+        if capacity.get("is_validated_engineering_budget") is not True:
+            raise ValueError("正式运行需要逐 writer 空间预算证据")
+        engineering = json.loads(Path(capacity["engineering_evidence"]).read_text())
+        volume = next(item for item in capacity["volumes"] if row["id"] in item["run_ids"])
+        storage = runtime_storage_configuration(
+            engineering["models"][run_capacity_group(row, engineering)],
+            engineering["wal_bytes_per_record"], volume["budget"],
+        )
+        storage.update(
+            config_sha256=config.identity, source_sha256=manifest["source_sha256"],
+            filesystem_uuid=volume["filesystem_uuid"], run_id=row["id"],
+        )
+        storage_path = directory / "logs" / f"{row['id']}.storage.json"
+        write_json(storage_path, storage)
+        command.extend(["--storage-budget", str(storage_path)])
         if row["scene"] in manifest["scene_evidence"]:
             command.extend(["--scene-evidence", manifest["scene_evidence"][row["scene"]]["source"]])
         with (directory / "logs" / f"{row['id']}.log").open("x", encoding="utf-8") as log:

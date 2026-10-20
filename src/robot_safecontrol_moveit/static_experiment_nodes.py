@@ -47,7 +47,7 @@ class StaticExperimentPlant(Node):
         self.config, self.recorder = config, recorder
         self.recording_budget = RecordingBudget(RecordingLimits(
             config.values["timeout_s"], config.values["settle_s"], config.values["control"]["period_s"],
-        ))
+        ), capacity_check=recorder.check_capacity)
         self._recording_finished = False
         self.path, self.geometry, self.planner = _resources(config)
         self.schedule = ExecutionSchedule(
@@ -176,7 +176,7 @@ class StaticExperimentController(Node):
         self.config, self.recorder = config, recorder
         self.recording_budget = RecordingBudget(RecordingLimits(
             config.values["timeout_s"], config.values["settle_s"], config.values["control"]["period_s"],
-        ))
+        ), capacity_check=self._check_recording_capacity)
         self._recording_finished = False
         self.path, geometry, self.planner = _resources(config)
         self.settings = config.values["control"]
@@ -198,6 +198,9 @@ class StaticExperimentController(Node):
         self.create_subscription(String, STATE_TOPIC, self._on_state, state_stream_qos())
         self.create_subscription(String, ADMISSION_TOPIC, self._on_admission, command_stream_qos())
         self.create_timer(.002, self._tick)
+
+    def _check_recording_capacity(self):
+        self.recorder.check_capacity(pending_cycles=len(self._cycle_started))
 
     def _on_state(self, message):
         value = json.loads(message.data)
@@ -248,6 +251,7 @@ class StaticExperimentController(Node):
         return {"termination": self._termination, "steps": self._sequence}
 
     def _tick(self):
+        callback_started = time.monotonic()
         from work.static_execution import ScheduledMotion
 
         self.recording_budget.check()
@@ -282,7 +286,7 @@ class StaticExperimentController(Node):
         progress = active.reference_at_step(start_step)
         executed_feed = active.feed_m_s if start_step == active.start_step + ticks else 0.
         self.recording_budget.begin("calculation")
-        started = time.monotonic()
+        started = callback_started
         future = self._executor.submit(
             self.control.propose, initial, progress,
             time_s=start_step * .002, executed_feed=executed_feed,

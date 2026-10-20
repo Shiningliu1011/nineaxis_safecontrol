@@ -13,6 +13,7 @@ from .static_experiment_capacity import RecordingLimits
 from .static_experiment_config import METHODS, content_hash
 from .static_experiment_recording import KEYFRAME_INTERVAL
 from .static_experiment_volumes import filesystem_identity
+from .static_recording_capacity import MAXIMUM_RECORD_NAME_BYTES, runtime_storage_configuration
 
 
 BATCH_SOURCES = {
@@ -159,7 +160,9 @@ def engineering_model(audits: list[dict], limits: RecordingLimits, *, sns: bool 
         databases[role] = {
             "payload_bytes": payload, "maximum_records": records,
             "sqlite_payload_factor": factors[role],
-            "database_budget_bytes": math.ceil(payload * factors[role]) + records * row_allowance + 16384,
+            "database_budget_bytes": math.ceil(
+                (math.ceil(payload * factors[role]) + records * row_allowance + 16384) / 4096,
+            ) * 4096,
         }
     retained = sum(row["database_budget_bytes"] for row in databases.values()) + math.ceil(other * 1.25)
     return {
@@ -179,7 +182,18 @@ def build_engineering_evidence(*, audits: dict[str, dict], lifecycles: dict[str,
                                filesystems: dict[str, dict], sources: dict, archive: Path,
                                limits: RecordingLimits, common_control: dict,
                                output_volumes: list[dict]) -> dict:
+    from .oscbf_trajectory import bootstrap_portable
+
+    source_path = next(path for path in sources if path.endswith("/" + CAPACITY_SOURCE))
+    bootstrap_portable(Path(source_path).parents[2] / "portable_oscbf")
+    from work.obb_collision_model import OBB_LINK_NAMES
+
     runs = [run for audit in audits.values() for run in audit["runs"]]
+    geometry_names = sorted({
+        "workpiece", "table", *OBB_LINK_NAMES,
+        *(obstacle["name"] for run in runs for obstacle in run["config"]["obstacles"]),
+    })
+    maximum_name_bytes = max(len(name.encode("utf-8")) for name in geometry_names)
     for run in runs:
         manifest_path = Path(run["path"]) / "manifest.json"
         if content_hash(manifest_path) != run["manifest_sha256"]:
@@ -235,6 +249,7 @@ def build_engineering_evidence(*, audits: dict[str, dict], lifecycles: dict[str,
         valid = (
             report["status"] == "pass" and inspection["status"] == "pass"
             and inspection["bound_source_ready_statistics"] and inspection["within_recording_limits"]
+            and inspection.get("within_storage_limits") is True
             and inspection["recording_limits"] == limits.manifest()
             and proof["status"] == "pass" and control == expected_control
         )
@@ -275,6 +290,7 @@ def build_engineering_evidence(*, audits: dict[str, dict], lifecycles: dict[str,
         "exact_values_random_reads_sigkill_on_output_filesystems": requested_volumes <= verified_volumes,
         "all_lifecycle_sources_compatible": all(row["valid"] for row in lifecycle_rows),
         "filesystem_allocation_units": all(row["allocation_unit_bytes"] == 4096 for row in output_volumes),
+        "geometry_names_fit_recording_schema": maximum_name_bytes <= MAXIMUM_RECORD_NAME_BYTES,
     }
     wal_per_record = {"plant": 0., "controller": 0.}
     for row in lifecycle_rows:
@@ -295,7 +311,6 @@ def build_engineering_evidence(*, audits: dict[str, dict], lifecycles: dict[str,
         "reserve_bytes": max(1073741824, *(model["raw_msgpack_at_sample_dimensions_bytes"]
                                          for model in models.values())),
     }
-    source_path = next(path for path in sources if path.endswith("/" + CAPACITY_SOURCE))
     workspace_uuid = filesystem_identity(Path(source_path).parent)["filesystem_uuid"]
     if workspace_uuid not in requested_volumes:
         raise ValueError("容量计划必须包含来源归档与派生处理所在文件系统")
@@ -309,16 +324,24 @@ def build_engineering_evidence(*, audits: dict[str, dict], lifecycles: dict[str,
         } for row in output_volumes
     }
     paths = [*audits, *lifecycles, *filesystems, str(archive)]
+    runtime_storage = {
+        uuid: {
+            name: runtime_storage_configuration(model, wal_per_record, workspace)
+            for name, model in models.items()
+        } for uuid, workspace in workspaces.items()
+    }
     return {
         "schema_version": 1, "status": "pass" if all(checks.values()) else "insufficient_evidence",
         "checks": checks, "source_sha256": sources, "common_control": common_control,
         "limits": {"timeout_s": limits.timeout_s, "settle_s": limits.settle_s, "period_s": limits.period_s},
         "models": models, "scene_pairs": scene_pairs,
+        "geometry_names": geometry_names, "maximum_name_utf8_bytes": maximum_name_bytes,
         "per_volume_budget": per_volume, "volume_workspaces": workspaces,
         "workspace_filesystem_uuid": workspace_uuid, "wal_bytes_per_record": wal_per_record,
         "audit_sha256": {path: content_hash(Path(path)) for path in audits},
         "lifecycle_paths": list(lifecycles), "filesystem_paths": list(filesystems),
         "runtime_archive": str(archive), "source_compatibility": proofs,
+        "runtime_storage": runtime_storage,
         "output_volumes": output_volumes,
         "evidence_sha256": {path: content_hash(Path(path)) for path in paths},
         "scope": {
@@ -361,6 +384,9 @@ def require_engineering_evidence(report: dict, manifest: dict, directory: Path) 
         config = yaml.safe_load((directory / row["configuration"]).read_text())
         if 36 + 10 * (2 + len(config["obstacles"])) != evidence["scene_pairs"][row["scene"]]:
             raise ValueError("工程容量几何对象数量与正式场景不一致")
+        if any(len(obstacle["name"].encode("utf-8")) > MAXIMUM_RECORD_NAME_BYTES
+               for obstacle in config["obstacles"]):
+            raise ValueError("正式场景名称超出已验证记录 schema")
     audits = {}
     for filename, expected in evidence["audit_sha256"].items():
         if report["evidence_sha256"].get(filename) != expected or content_hash(Path(filename)) != expected:
