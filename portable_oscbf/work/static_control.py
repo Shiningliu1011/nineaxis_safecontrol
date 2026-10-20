@@ -52,12 +52,15 @@ class StaticControl:
             "minimum_duration_s": self.planner.minimum_duration_s,
         }
 
-    def propose(
-            self, state: ActuatorState, progress_m: float, *,
-            time_s: float, executed_feed: float) -> ControlCandidate | None:
-        if not np.isfinite(progress_m) or not 0 <= progress_m <= self.path.total_length_m + 1e-12:
-            raise ValueError("参考进度超出完整路径")
-        progress_m = min(progress_m, self.path.total_length_m)
+    def warmup(self, state: ActuatorState) -> None:
+        preparation = StaticControl(self.path, self.geometry, self.planner, self.settings)
+        preparation.propose(state, 0., time_s=0., executed_feed=0.)
+        terms, constraints, posture = preparation._problem_inputs(state, 0.)
+        preparation._solve_velocity(
+            state, terms, constraints, posture, feed_cap=0., terminal_interval=True,
+        )
+
+    def _problem_inputs(self, state, progress_m):
         transforms, spatial = self.geometry.kinematics.forward_kinematics_and_jacobian(state.position)
         end = transforms["ee_link"]
         jacobian = np.concatenate([
@@ -83,6 +86,32 @@ class StaticControl:
             influence_m=self.settings["posture_influence_m"],
             joint_margin_fraction=self.settings["posture_joint_margin_fraction"],
         )
+        return terms, constraints, posture
+
+    def _solve_velocity(
+            self, state, terms, constraints, posture, *, feed_cap, terminal_interval,
+            previous_zero_feed=None, previous_problem=None):
+        return solve_velocity(
+            terms, constraints, nominal_feed=feed_cap,
+            previous_velocity=state.velocity, posture_velocity=posture,
+            mode=self.settings["solver_mode"], gains=self.settings["task_gains"],
+            task_weights=self.settings["task_weights"],
+            posture_weight=self.settings["posture_weight"],
+            smooth_weight=self.settings["smooth_weight"],
+            feed_weight=self.settings["feed_weight"],
+            max_velocity=self.planner.max_velocity,
+            fixed_feed=terminal_interval,
+            previous_zero_feed=previous_zero_feed,
+            previous_problem=previous_problem,
+        )
+
+    def propose(
+            self, state: ActuatorState, progress_m: float, *,
+            time_s: float, executed_feed: float) -> ControlCandidate | None:
+        if not np.isfinite(progress_m) or not 0 <= progress_m <= self.path.total_length_m + 1e-12:
+            raise ValueError("参考进度超出完整路径")
+        progress_m = min(progress_m, self.path.total_length_m)
+        terms, constraints, posture = self._problem_inputs(state, progress_m)
         sample = self.path.sample(progress_m)
         profile_feed = max(sample.feedrate_m_s, self.path.feedrate_m_s[sample.segment_index + 1])
         remaining_feed = (self.path.total_length_m - progress_m) / self.period_s
@@ -114,16 +143,9 @@ class StaticControl:
                 "proposal_time_s": time_s, "trial": trial_index,
             }
             previous = previous_solutions[trial_index] if trial_index < len(previous_solutions) else None
-            solution = solve_velocity(
-                terms, constraints, nominal_feed=feed_cap,
-                previous_velocity=state.velocity, posture_velocity=posture,
-                mode=self.settings["solver_mode"], gains=self.settings["task_gains"],
-                task_weights=self.settings["task_weights"],
-                posture_weight=self.settings["posture_weight"],
-                smooth_weight=self.settings["smooth_weight"],
-                feed_weight=self.settings["feed_weight"],
-                max_velocity=self.planner.max_velocity,
-                fixed_feed=terminal_interval,
+            solution = self._solve_velocity(
+                state, terms, constraints, posture,
+                feed_cap=feed_cap, terminal_interval=terminal_interval,
                 previous_zero_feed=zero_feed_solution,
                 previous_problem=previous[0] if previous is not None else None,
             )
