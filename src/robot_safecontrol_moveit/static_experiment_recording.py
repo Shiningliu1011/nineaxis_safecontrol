@@ -9,11 +9,13 @@ from contextlib import closing
 from pathlib import Path
 
 import msgpack
+import zstandard
 
 
-FORMAT_VERSION = 2
+FORMAT_VERSION = 3
 KEYFRAME_INTERVAL = 128
-DICTIONARY_BYTES = 32768
+DICTIONARY_BYTES = 131072
+ZLIB_DICTIONARY_BYTES = 32768
 
 
 def _validate_values(value) -> None:
@@ -34,7 +36,7 @@ def _validate_values(value) -> None:
 
 def _version(connection) -> int:
     version = connection.execute("PRAGMA user_version").fetchone()[0]
-    if version not in (0, FORMAT_VERSION):
+    if version not in (0, 2, FORMAT_VERSION):
         raise ValueError(f"不支持的记录格式：{version}")
     return version
 
@@ -51,7 +53,8 @@ class RunRecorder:
         self.connection.execute(
             "CREATE TABLE samples (sequence INTEGER PRIMARY KEY, stream TEXT NOT NULL, "
             "monotonic_s REAL NOT NULL, simulation_s REAL, ros_time_ns INTEGER, "
-            "payload BLOB NOT NULL, keyframe INTEGER NOT NULL)"
+            "payload BLOB NOT NULL, keyframe INTEGER NOT NULL, "
+            "codec INTEGER NOT NULL CHECK(codec IN (0, 1)))"
         )
         self.connection.execute("CREATE INDEX stream_sequence ON samples (stream, sequence)")
         self.connection.execute(f"PRAGMA user_version={FORMAT_VERSION}")
@@ -81,12 +84,17 @@ class RunRecorder:
         count, keyframe, dictionary = self._previous.get(stream, (0, sequence, b""))
         if count % KEYFRAME_INTERVAL == 0:
             keyframe, dictionary = sequence, b""
-        compressor = zlib.compressobj(level=1, zdict=dictionary)
-        payload = compressor.compress(raw) + compressor.flush()
+        compressor = zlib.compressobj(level=6, zdict=dictionary[-ZLIB_DICTIONARY_BYTES:])
+        zlib_payload = compressor.compress(raw) + compressor.flush()
+        prefix = zstandard.ZstdCompressionDict(dictionary, dict_type=zstandard.DICT_TYPE_RAWCONTENT)
+        zstd_payload = zstandard.ZstdCompressor(
+            level=3, dict_data=prefix, write_checksum=True,
+        ).compress(raw)
+        codec, payload = (0, zlib_payload) if len(zlib_payload) <= len(zstd_payload) else (1, zstd_payload)
         self.connection.execute(
-            "INSERT INTO samples (sequence, stream, monotonic_s, simulation_s, ros_time_ns, payload, keyframe) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (sequence, stream, monotonic_s, simulation_s, ros_time_ns, payload, keyframe),
+            "INSERT INTO samples (sequence, stream, monotonic_s, simulation_s, ros_time_ns, payload, keyframe, codec) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (sequence, stream, monotonic_s, simulation_s, ros_time_ns, payload, keyframe, codec),
         )
         self._sequence = sequence
         self._previous[stream] = (count + 1, keyframe, raw[-DICTIONARY_BYTES:])
@@ -125,11 +133,12 @@ def iter_records(path: Path, stream: str | None = None, *, sequence: int | None 
         where = " WHERE " + " AND ".join(conditions) if conditions else ""
         rows = connection.execute(
             "SELECT sequence, stream, monotonic_s, simulation_s, ros_time_ns, payload, " +
-            ("keyframe" if version else "sequence") + " FROM samples" + where + " ORDER BY sequence",
+            ("keyframe" if version else "sequence") + ", " + ("codec" if version == 3 else "0") +
+            " FROM samples" + where + " ORDER BY sequence",
             parameters,
         )
         previous = {}
-        for number, name, monotonic_s, simulation_s, ros_time_ns, payload, keyframe in rows:
+        for number, name, monotonic_s, simulation_s, ros_time_ns, payload, keyframe, codec in rows:
             if version:
                 if keyframe == number:
                     dictionary = b""
@@ -137,11 +146,22 @@ def iter_records(path: Path, stream: str | None = None, *, sequence: int | None 
                     if name not in previous or previous[name][0] != keyframe:
                         raise ValueError(f"记录缺少压缩字典：{path}:{number}")
                     dictionary = previous[name][1]
-                decoder = zlib.decompressobj(zdict=dictionary)
-                raw = decoder.decompress(payload) + decoder.flush()
-                if not decoder.eof or decoder.unused_data:
-                    raise ValueError(f"压缩记录不完整：{path}:{number}")
-                previous[name] = (keyframe, raw[-DICTIONARY_BYTES:])
+                if codec == 0:
+                    decoder = zlib.decompressobj(zdict=dictionary[-ZLIB_DICTIONARY_BYTES:])
+                    raw = decoder.decompress(payload) + decoder.flush()
+                    if not decoder.eof or decoder.unused_data:
+                        raise ValueError(f"压缩记录不完整：{path}:{number}")
+                elif codec == 1:
+                    prefix = zstandard.ZstdCompressionDict(
+                        dictionary, dict_type=zstandard.DICT_TYPE_RAWCONTENT,
+                    )
+                    raw = zstandard.ZstdDecompressor(dict_data=prefix).decompress(
+                        payload, allow_extra_data=False,
+                    )
+                else:
+                    raise ValueError(f"不支持的记录编码：{path}:{number}:{codec}")
+                dictionary_bytes = DICTIONARY_BYTES if version == 3 else ZLIB_DICTIONARY_BYTES
+                previous[name] = (keyframe, raw[-dictionary_bytes:])
                 values = msgpack.unpackb(raw, raw=False)
             else:
                 values = json.loads(payload)

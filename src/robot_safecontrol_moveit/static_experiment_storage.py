@@ -13,7 +13,7 @@ import msgpack
 import numpy as np
 
 from .static_experiment_config import content_hash
-from .static_experiment_provenance import recording_hashes
+from .static_experiment_provenance import recording_hashes, validate_run_report
 from .static_experiment_recording import FORMAT_VERSION, RunRecorder, iter_records, write_json
 
 
@@ -31,8 +31,9 @@ def record_identity(path: Path) -> dict:
 def compact_database(source: Path, destination: Path) -> dict:
     source = source.resolve(strict=True)
     with closing(sqlite3.connect(source.as_uri() + "?mode=ro", uri=True)) as connection:
-        if connection.execute("PRAGMA user_version").fetchone()[0] != 0:
-            raise ValueError("转换入口要求旧 JSON 数据库")
+        source_version = connection.execute("PRAGMA user_version").fetchone()[0]
+        if source_version not in (0, 2):
+            raise ValueError("转换入口要求版本 0 或 2 数据库")
     wal = Path(str(source) + "-wal")
     if wal.exists() and wal.stat().st_size:
         raise ValueError("转换前必须完成原始数据库 checkpoint")
@@ -56,6 +57,7 @@ def compact_database(source: Path, destination: Path) -> dict:
     if content_hash(source) != original_hash:
         raise ValueError("转换期间原始记录发生变化")
     return {
+        "source_recording_format": source_version, "recording_format": FORMAT_VERSION,
         "source_sha256": original_hash, "database_sha256": content_hash(destination),
         "records": actual, "source_bytes": source.stat().st_size,
         "compact_bytes": destination.stat().st_size,
@@ -71,6 +73,8 @@ def compact_run(source: Path, destination: Path) -> dict:
     source, destination = source.resolve(strict=True), destination.resolve()
     if destination.is_relative_to(source):
         raise ValueError("转换目录必须位于原始运行目录之外")
+    if (source / "storage_migration.json").exists():
+        validate_run_report(source)
     source_report = json.loads((source / "feedback_report.json").read_text())
     manifest = json.loads((source / "manifest.json").read_text())
     identities = {
@@ -98,11 +102,16 @@ def compact_run(source: Path, destination: Path) -> dict:
                "controller.sqlite3-wal", "controller.sqlite3-shm")
     shutil.copytree(source, destination, ignore=shutil.ignore_patterns(*omitted))
     reports = destination / "source_reports"
-    reports.mkdir()
+    if reports.exists():
+        reports = reports / "format-2"
+    reports.mkdir(parents=True)
     for filename in ("feedback_report.json", "feedback_report.md", "clearance_report.json"):
         path = destination / filename
         if path.exists():
             path.rename(reports / filename)
+    prior_migration = destination / "storage_migration.json"
+    if prior_migration.exists():
+        prior_migration.rename(reports / prior_migration.name)
     records = {}
     for role in ("plant", "controller"):
         database = source / f"{role}.sqlite3"

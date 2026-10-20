@@ -188,7 +188,7 @@ def recording_hashes(directory: Path) -> dict:
 def validate_storage_migration(directory: Path, identities: dict) -> str:
     path = directory / "storage_migration.json"
     migration = json.loads(path.read_text())
-    if migration["schema_version"] != 1 or migration["recording_format"] != FORMAT_VERSION:
+    if migration["schema_version"] != 1 or migration["recording_format"] not in (2, FORMAT_VERSION):
         raise ValueError(f"不支持的转换说明版本：{path}")
     records = identities["records_sha256"]
     databases = migration["databases"]
