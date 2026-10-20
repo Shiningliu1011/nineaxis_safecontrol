@@ -12,6 +12,7 @@ import numpy as np
 import yaml
 
 from .static_experiment_config import ExperimentConfig, METHODS, content_hash
+from .static_experiment_capacity import require_formal_capacity
 from .static_experiment_provenance import (
     environment_identity, snapshot_sources, validate_run_report, verify_snapshot,
 )
@@ -206,6 +207,7 @@ def run_formal(directory: Path, *, resource_root: Path, domain: int, limit: int 
         run = directory / "runs" / row["id"]
         if run.exists():
             continue
+        require_formal_capacity(directory, manifest)
         command = [
             sys.executable, "-m", "robot_safecontrol_moveit.static_experiment", "run",
             "--config", str(config.source), "--method", row["method"], "--output", str(run),
