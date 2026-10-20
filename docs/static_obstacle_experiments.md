@@ -299,14 +299,35 @@ S5 的阻塞证明允许 2 mm 位置误差和 0.5° 工具轴误差，验收要�
 
 ## 共同周期
 
+使用工程容量审计生成二十项运行预算。`--engineering-evidence` 指向
+`plan_static_engineering_capacity.py` 生成的 `engineering_evidence.json`；
+`--volume` 指向实际运行输出所在的已存在文件系统目录。以下示例的 S4
+包含 66 个几何对象组合，其他配置的 `--maximum-pairs` 使用其实际数量。
+预算输出目录需已创建，预算文件与索引需尚不存在。
+
 ```bash
+mkdir -p output/static-experiments/period-budgets
+python3 scripts/prepare_static_storage_budget.py \
+  --engineering-evidence output/static-capacity/engineering_evidence.json \
+  --resource-root "$PWD" \
+  --config output/static-experiments/development-scenes/s4.yaml \
+  --volume output/static-experiments --maximum-pairs 66 --study-index \
+  --output output/static-experiments/period-budgets/index.json
 python3 scripts/static_obstacle_experiment.py benchmark \
   --config output/static-experiments/development-scenes/s4.yaml \
+  --storage-budget-index output/static-experiments/period-budgets/index.json \
   --output output/static-experiments/period-study
 ```
 
+预算生成器核对审计文件身份，并重新绑定配置、当前源码与文件系统 UUID。
+省略 `--study-index` 时，`--method`、`--period-s` 和 `--feed-factor` 生成单次
+开发验证预算，运行入口通过 `--storage-budget` 使用。`--force-wal` 仅用于
+隔离的预算耗尽验证。这些预算不替代正式矩阵的完整容量准入。
+
 入口串行运行四个候选周期与 A–E 方法的 20 个完整 ROS 仿真，保存每次原始记录、
 退出状态及反馈评价。重复调用会检查已有配置、代码和设备环境身份，并继续尚未开始的组合。
+每次运行启用容量守卫；报告绑定预算与两个 worker 的统计身份，正式清单
+拒绝缺少守卫或发生预算终止的共同周期记录。
 `period_report.json` 记录每组 P99.9、最大耗时和超期次数，只有全部方法均
 不超过周期 80% 的候选可用；测量缺失和全部候选超时分别报告。
 周期通过与功能通过分别保存。
