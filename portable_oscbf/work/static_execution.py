@@ -35,6 +35,16 @@ class ScheduledMotion:
         effective_s = min(max(0, step - self.start_step) * .002, self.motion.period_s)
         return self.reference_start_m + self.feed_m_s * effective_s
 
+    def next_control_step(self, feedback_step: int, *, previous_start_step: int | None):
+        ticks = round(self.motion.period_s / .002)
+        if feedback_step <= self.start_step + max(1, ticks // 10):
+            start_step = self.start_step + ticks
+        else:
+            start_step = ((feedback_step + ticks - 1) // ticks + 1) * ticks
+        if previous_start_step is not None and start_step <= previous_start_step:
+            return None
+        return start_step
+
     def to_record(self):
         return {
             "command_id": self.command_id, "start_step": self.start_step,
