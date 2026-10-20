@@ -58,7 +58,40 @@ python -m pytest tests/test_static_sns.py \
 TDD 失败日志为 `commands/sns-s5-red.log`，通过日志为
 `commands/sns-s5-regression.log`。重放脚本保存为
 `commands/diagnose_sns_failure.py`；输出目录参数必须尚不存在。
-完整 E/S5 闭环复验和最终集成全量检查仍待执行。
+完整 E/S5 闭环复验及其全部实际 SNS 数值核查通过，详见下一节；
+最终集成全量检查由主会话统一执行。
+
+## 完整 E/S5 闭环
+
+主会话使用修复来源 `e6fe012ea3eb77ad1adaae5865a4d0d365e522af`
+完成完整运行，原件位于
+`/media/lsn/宇宙小机器人/robot_safecontrol_static_experiments_20261020/lifecycle-s5-E-02/run`。
+CPU 8–15、ROS domain200、周期100 ms、共同构型辅助上限0.02，
+同期存在其他开发验证。
+
+controller/plant 退出码为 `[0,0]`，生命周期、功能、运行时间及总体验收通过，
+按 S5 的持续阻塞要求以 `pause_timeout` 安全终止。
+347个周期的 P99.9 为55.320026 ms，最大58.329657 ms；
+没有超期或准入拒绝。来源和原件八项SHA核查通过。
+
+独立核对全部2,826个实际SNS结果，其中2,745个含负上界、2,787个发生饱和。
+最大限制超差为 `6.106226635438361e-16`，
+最大完整任务残差为 `2.316538233458993e-5`，
+最小任务缩放为1。6个代表问题的独立 HiGHS 最大缩放均为1；
+独立 null-space 基底和阻尼正规方程与实际任务的最大差为
+`1.5954692804723914e-15`。全部原始限制和作者DLS参数保持相同。
+
+核查结果位于主仓库
+`output/static-method-evidence-20261020/commands/`。
+`e-s5-current-02-audit.json` SHA为
+`b21247183ba66cf84ee4bfd694102bc059ffd453cfd92874ac8d9183924d6775`，
+`e-s5-current-02-solver-dls.json` SHA为
+`4142b7068b236a2366dce13574bbbf420cada9ae73319f9dbcf8392a5678bfb7`。
+原始controller数据库SHA为
+`93b0e99e433f928fac2d6cd84c06e9bc065d216bce3e0ffed3368af44a469a87`，
+反馈报告SHA为
+`f6bd5d181b27df3520fbe1b2167a52df0d0c068e2867a2e3ddc7a7b75cde98ee`。
+核查前后原件保持相同；原 `lifecycle-s5-E-01` 失败记录继续保留。
 
 ## 身份
 
