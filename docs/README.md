@@ -5,6 +5,8 @@
 ## 项目与运行
 
 - [项目入门与结构](ONBOARDING.md)：源码入口、闭环数据流和开发环境。
+- [Linux 主机迁移](project_migration.md)：完整资料包、skills、环境恢复与接手提示词。
+- [双设备工作流程](two_machine_workflow.md)：笔记本与台式机通过 GitHub 交替开发、同步进度和传输数据。
 - [运行与测试](PROJECT_GUIDE.md)：仿真、配置、测试及硬件模式。
 - [跟踪评价](tracking_evaluation.md)：指标、证据和报告。
 - [跟踪平顺性](tracking_smoothness.md)：控制周期、执行器运动参数和全过程图片。

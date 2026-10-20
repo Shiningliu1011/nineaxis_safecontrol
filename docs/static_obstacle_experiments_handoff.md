@@ -90,13 +90,16 @@ S2 使用候选 15、31，S4 使用候选 0、2。S4 当前配置尚未执行完
 `/home/lsn/robot/robot_safecontrol/output/static-experiments/`，约 3.5 GiB，
 由 `.gitignore` 排除，Git 拉取不会传输这些记录。
 
-本机另有完整数据包
-`.scratch/static-experiments/handoff-data.tar.zst`，校验文件为
-`.scratch/static-experiments/handoff-data.sha256`。压缩后为 1,292,058,284 字节，约 1.29 GB，
-已使用 tar 逐项比较包内内容与来源文件。数据包还包含场景选择、
-S4 见证请求、容量测量和接手检查日志。将数据包复制到目标机器的相同仓库相对路径，
-在仓库根目录核对 SHA-256，再解压到尚无同名记录的工作区。
+完整项目迁移资料已整理到
+`/home/lsn/robot/robot_safecontrol/output/robot-safecontrol-transfer/`。
+资料包含项目和 Git 历史、上述实验记录、场景选择、S4 见证请求、
+容量测量、接手检查日志，以及相关项目目录、标定数据和个人 skills。
+文件范围、实际容量、校验及恢复方法见[Linux 主机迁移](project_migration.md)。
+使用包内 `SHA256SUMS` 校验文件，恢复到尚无同名项目的 Linux 工作目录。
 既有记录中的原始绝对路径和来源身份必须保留；涉及目录移动的评价使用项目的资源重定位接口。
+
+笔记本和台式机通过[双设备工作流程](two_machine_workflow.md)同步当前分支、
+Trellis 进度和接手记录；大型原始数据按需要另行传输并验证校验值。
 
 当前运行环境为 Ubuntu 22.04、ROS 2 Humble、Python 3.10，原生几何模块依赖
 FCL 与 pybind11。Python 控制依赖见 `portable_oscbf/requirements.txt`；
