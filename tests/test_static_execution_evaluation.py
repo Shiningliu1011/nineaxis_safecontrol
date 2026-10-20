@@ -39,7 +39,11 @@ def test_actual_processed_motion_and_rejected_admission_have_reconstructable_pro
     assert candidate is not None and candidate.certificate.accepted
     command = ScheduledMotion(1, 50, 0., candidate.solution.feed_m_s, candidate.phase, candidate.motion)
     with RunRecorder(tmp_path / "controller.sqlite3") as controller, RunRecorder(tmp_path / "plant.sqlite3") as plant:
-        controller.append("candidate", monotonic_s=time.monotonic(), values={"trials": control.last_trials})
+        controller.append("candidate", monotonic_s=time.monotonic(), values={
+            "trials": control.last_trials, "initial": state.to_record(),
+            "reference_progress_m": 0.,
+            "geometry": [row.to_record() for row in control.last_measurements],
+        })
         for command_id in (1, 2):
             request = ScheduledMotion(
                 command_id, 50, 0., candidate.solution.feed_m_s, candidate.phase, candidate.motion,
@@ -83,6 +87,11 @@ def test_actual_processed_motion_and_rejected_admission_have_reconstructable_pro
     assert report["timing"]["samples"] == 2
     assert not report["recovery"]["pauses"][-1]["resumed"]
     json.dumps(report, allow_nan=False)
+    incomplete_manifest = deepcopy(manifest)
+    del incomplete_manifest["execution_limits"]
+    incomplete = evaluate_execution(tmp_path, incomplete_manifest, feedback, commands)
+    assert incomplete["joint_limits"]["status"] == "insufficient_evidence"
+    assert incomplete["terminal_constraints"]["status"] == "insufficient_evidence"
     assert feedback[-1]["values"]["reference_progress_m"] == command.feed_m_s * .1
     changed = deepcopy(feedback)
     changed[-1]["values"]["reference_progress_m"] += .001
