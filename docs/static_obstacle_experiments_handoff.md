@@ -3,7 +3,8 @@
 ## 当前状态
 
 工作分支为 `codex/static-obstacle-experiments`，本次接续起点为 `35a1a61`，
-当前代码集成为 `7b643c4`，方法证据集成为 `062cd52`，前置验收证据为 `5d52885`。
+当前代码集成为 `7b643c4`，方法证据集成为 `57c601e`，
+S4 见证及开发证据集成为 `78b5626`，前置验收证据为 `5d52885`。
 #172–#176 已发布逐项证据并关闭；
 #171、#177–#183 尚未完成验收。项目已在当前主机恢复到
 `/home/lsn/robot/robot_safecontrol`。紧凑存储已完成四组完整真实记录验证，
@@ -147,7 +148,25 @@ worker 退出码为 `[0, 0]`，逐流额度及 ready、统计来源绑定检查�
 `5ef9e26bb342bc44a413e8d92dd98b9c65750ad2473a2eaf976b475ee82bb621`。
 源码归档为 `output/static-capacity-20261020/ntfs-lifecycle-source-02-source/sources.zip`，
 SHA-256 为 `25f3f268ba1858a554a33e5277e2f1375776a5c92a641e7b008166db87115148`。
-相同源码的 `lifecycle-timeout-02/` 正在验证 420 秒最长记录过程。
+相同源码的 `lifecycle-timeout-02/` 已通过 420 秒最长记录检查：
+209,690 条反馈覆盖 420.406598 秒，4,192 个控制目标均唯一且递增，
+两个 worker 正常退出，记录额度及来源绑定通过。按预期 timeout 结束，
+功能结果保留为失败。实际分配 99,647,488 字节，两个数据库 WAL 峰值之和
+为 2,331,438,024 字节，进程 RSS 观测峰值为 1,285,644,288 字节。
+本次 CPU 8–15 与其他开发计算并行，耗时数据只作为本次观测。
+`lifecycle-validation.json` SHA-256 为
+`6280ccea9a3a8e59a2d043ba1a2950c86bd51f54a5222d9fe2eebec027cdc80b`。
+两个 NTFS 运行的汇总为 `output/static-capacity-20261020/ntfs-lifecycle-series-02.json`，
+SHA-256 为 `97c57d5a3b12c7a6788088adb6da7d7fcb1b3db866778a0bcc22897759980046`。
+
+同一运行源码的 A/C/E S5 原始记录位于第二卷的
+`lifecycle-s5-{A,C,E}-01/`。A/C 完整通过，分别取得 327/331 个周期，
+P99.9 为 51.141/58.287 ms，无超期，按持续暂停超时正常终止。
+E 保存为失败：第 155 条 controller 记录中的 `sns_failure` 保存完整问题，
+零进给候选的 Generalized-SNS 广义限制检查失败，worker 退出码为 `[0, 1]`。
+诊断须区分实现问题与原算法任务缩放条件下的不可行性，全部原件保留。
+汇总为 `output/static-capacity-20261020/ntfs-s5-methods-01.json`，
+SHA-256 为 `cfa4ee54dd16503b88eda6e7dd742851fa0a33de2585841288b60777ac3aab5f`。
 
 ## 已有运行与未完成项
 
@@ -176,7 +195,16 @@ S4 位移组合及来源现保存于
 `53b77f141b84b4fa889a545d3595da5e9678e56108c2fae35bd4807a360db9ce`，
 `verification.json` SHA-256 为
 `fd0c98cfe9f948b48487bb351008cae303b347188b9fadc3aa5c403647b52998`。
-当前源码的 D/S4 完整 sim 和三个初态、三档进给组合继续验证。
+当前源码的 `s4-d-paired-witness-01/` 完整 sim 已通过，覆盖完整路径与终点，
+实际出现三次暂停恢复。三个区间的参考进度范围均为零，最大构型变化均超过
+0.0011 rad；1,821 次 QP 检查全部通过。报告 SHA-256 为
+`284692060ca10b3e60e2c6eb0cfdfda865faf0407051f1909935654bde1714ae`。
+九个初态、进给组合的数值预核全部到达终点并具有途中暂停恢复；
+`development-scenes-06/s4-screen-summary.json` SHA-256 为
+`80065e82c57c0baf1b0a9ef0ce92b87d7bbbc17a3dfed8186bad43fa67fab579`。
+完整 ROS 验证目前覆盖 initial 1/feed 1，其余八组继续运行。
+initial 2、3 的 S0 反事实基线同步验证，输出为本数据根目录的
+`s0-initial-2-01/run/` 和 `s0-initial-3-01/run/`。
 
 本次 D/S5 完整 sim `output/static-scene-validation-20261020/s5-current-03/`
 通过安全终止、几何和运行时间检查。949 个完整周期的 P99.9 为
