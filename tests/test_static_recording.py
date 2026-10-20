@@ -8,8 +8,10 @@ import struct
 import time
 import zlib
 
+import msgpack
 import numpy as np
 import pytest
+import zstandard
 
 from robot_safecontrol_moveit.static_experiment_recording import (
     RunRecorder, finalize_recording, iter_records, read_record, read_stream,
@@ -92,6 +94,37 @@ def test_legacy_conversion_preserves_source_bytes_and_all_columns(tmp_path):
         compact_database(original, destination)
 
 
+def test_version_two_upgrade_preserves_float64_and_random_access(tmp_path):
+    source, destination = tmp_path / "version-two.sqlite3", tmp_path / "upgraded.sqlite3"
+    values = {"problem": _recorded_problem(), "signed_zero": -0.0}
+    with sqlite3.connect(source) as connection:
+        connection.execute(
+            "CREATE TABLE samples (sequence INTEGER PRIMARY KEY, stream TEXT, monotonic_s REAL, "
+            "simulation_s REAL, ros_time_ns INTEGER, payload BLOB, keyframe INTEGER)"
+        )
+        connection.execute("PRAGMA user_version=2")
+        previous = b""
+        for number in range(1, 260):
+            raw = msgpack.packb(values, use_bin_type=True, use_single_float=False)
+            if (number - 1) % 128 == 0:
+                previous, keyframe = b"", number
+            compressor = zlib.compressobj(level=1, zdict=previous)
+            payload = compressor.compress(raw) + compressor.flush()
+            connection.execute("INSERT INTO samples VALUES (?, ?, ?, ?, ?, ?, ?)", (
+                number, "candidate", float(number), number * .002, 1234567890123456789 + number,
+                payload, keyframe,
+            ))
+            previous = raw[-32768:]
+    before = source.read_bytes()
+    result = compact_database(source, destination)
+    assert result["recording_format"] == 3
+    assert result["source_recording_format"] == 2
+    assert source.read_bytes() == before
+    for number in (1, 127, 128, 129, 256, 259):
+        _assert_exact(read_record(destination, number, stream="candidate"),
+                      read_record(source, number, stream="candidate"))
+
+
 def _write_then_wait(path, pipe):
     recorder = RunRecorder(path)
     for number in range(300):
@@ -132,7 +165,7 @@ def test_unknown_format_and_corruption_are_rejected(tmp_path):
     with pytest.raises(ValueError, match="格式"):
         read_stream(path, "feedback")
     with sqlite3.connect(path) as connection:
-        connection.execute("PRAGMA user_version=2")
+        connection.execute("PRAGMA user_version=3")
         connection.execute("UPDATE samples SET payload=?", (b"corrupted",))
-    with pytest.raises(zlib.error):
+    with pytest.raises((zlib.error, zstandard.ZstdError)):
         read_stream(path, "feedback")

@@ -1,6 +1,6 @@
 # 静态实验紧凑存储
 
-新运行使用 SQLite 格式 2；旧 JSON 数据库保持可读。安装记录依赖：
+新运行使用 SQLite 格式 3；旧 JSON 和格式 2 数据库保持可读。安装记录依赖：
 
 ```bash
 python -m pip install -r requirements-static-recording.txt
@@ -10,8 +10,11 @@ python -m pip install -r requirements-static-recording.txt
 
 `static_experiment_recording.py` 统一管理写入、流读取和按 sequence 读取。
 `samples` 保留 sequence、stream、monotonic_s、simulation_s 和 ros_time_ns。
-payload 使用 MessagePack 双精度数值和 zlib 无损压缩；没有数值取整或采样删除。
-同一 stream 的前一条完整内容提供最多 32 KiB 压缩字典，每 128 条独立开始。
+payload 使用 MessagePack 双精度数值，每条分别执行 zlib level 6 和
+zstandard level 3 无损压缩，保存较短结果，codec 列记录对应编码。
+两种编码均使用同一 stream 的前一条完整内容：zlib 字典最多 32 KiB，
+zstandard RAWCONTENT 字典最多 128 KiB，每 128 条独立开始。
+全部字段和 float64 位模式保持一致。
 keyframe 列指定该段起点，随机读取只需恢复对应 stream 的当前段。
 重复状态参与字典压缩，原有字段和事件均可完整还原。
 
@@ -21,7 +24,8 @@ WAL 自动 checkpoint 继续关闭，采样结束后执行 TRUNCATE checkpoint�
 已经提交的记录可在写入进程运行期间读取。`synchronous=NORMAL` 保留原有
 进程异常恢复语义；本次 SIGKILL 验证不代表主机断电时最后事务仍能保存。
 
-格式通过 `PRAGMA user_version` 判断：0 为旧 JSON，2 为当前格式。
+格式通过 `PRAGMA user_version` 判断：0 为旧 JSON，
+2 为 MessagePack/zlib level 1，3 为当前编码。
 未知版本、非有限写入、缺少字典、压缩内容损坏和不存在的指定记录均报告错误。
 新写入目标必须不存在；异常运行保留记录，批量实验沿用原有未完成状态管理。
 
@@ -38,8 +42,11 @@ python scripts/static_obstacle_experiment.py replay \
   --output output/compact-s0 --resource-root "$PWD"
 ```
 
+转换入口接受格式 0 或 2，输出格式 3。
 `storage_migration.json` 保存源目录、全部源文件 SHA-256、原始 manifest、
 各流数量、逐条内容身份以及转换数据库 SHA-256。原有报告位于 `source_reports/`。
+升级格式 2 时保留它的历史来源报告，并将直接来源的报告与迁移说明保存到
+`source_reports/format-2/`。
 旧报告已经保存的身份字段必须匹配；缺少的历史身份字段单独列出，转换后
 重新评价并生成绑定 manifest、result、数据库和迁移说明的完整报告。
 重放和报告读取均核对转换说明中的数据库、manifest、result、path 身份；
@@ -78,6 +85,9 @@ python -m pytest tests/test_static_recording.py tests/test_static_campaign.py \
   tests/test_static_execution_evaluation.py -q
 python scripts/validate_static_storage.py \
   --output output/static-storage-validation --resource-root "$PWD"
+python scripts/validate_static_recording_upgrade.py \
+  --source-root output/static-storage-validation-05 \
+  --output output/static-recording-upgrade --resource-root "$PWD"
 ```
 
 真实验证默认处理接手包中的完整 S0、S2、S4、S5 记录，输出目录必须不存在。
@@ -85,6 +95,11 @@ python scripts/validate_static_storage.py \
 真实 SIGKILL 已提交记录恢复、旧格式和新格式的独立指标与派生数组重算，
 以及读写耗时、目录容量、WAL 处理峰值和内存峰值。
 历史机器生成的派生数组与当前重算的最大差值另外保存。
+升级验证针对四组完整格式 2 来源，逐条检查所有字段及 float64 位模式，
+比较同机独立重算的全部指标与派生数组，并对每个数据库执行 1,200 条
+已提交记录的真实 SIGKILL 恢复。升级验证全程使用精确比较。
+编码研究工具 `scripts/benchmark_static_codecs.py` 将对照数据库标记为格式
+100，生产读取入口拒绝读取这些实验文件。
 
 容量和耗时结论以[接手记录](static_obstacle_experiments_handoff.md)所指向的
 本机测量为准。S4/S5、共同周期和其他正式实验前置条件仍需分别验收。

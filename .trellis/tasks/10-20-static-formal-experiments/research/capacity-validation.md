@@ -6,6 +6,9 @@
 `output/static-experiments/`；输入紧凑副本为
 `output/static-storage-validation-05/`。
 
+逐条格式 3 的编码、完整升级和恢复验证见
+[编码验证](codec-validation.md)。本文件的容量数字保留格式 2 样本估算身份。
+
 ## 实际命令和数据身份
 
 在独立 worktree `.scratch/worktrees/static-capacity` 执行：
