@@ -172,7 +172,6 @@ class StaticExperimentController(Node):
         super().__init__("static_experiment_controller")
         from work.static_control import StaticControl
         from work.static_motion import ActuatorState
-        from work.static_recovery import RecoveryRules, RecoveryState
 
         self.config, self.recorder = config, recorder
         self.recording_budget = RecordingBudget(RecordingLimits(
@@ -182,11 +181,7 @@ class StaticExperimentController(Node):
         self.path, geometry, self.planner = _resources(config)
         self.settings = config.values["control"]
         self.control = StaticControl(self.path, geometry, self.planner, self.settings)
-        self.control.propose(
-            ActuatorState(config.initial_position, np.zeros(9), np.zeros(9)), 0.,
-            time_s=0., executed_feed=0.,
-        )
-        self.control.recovery = RecoveryState(RecoveryRules(**self.settings["recovery"]))
+        self.control.warmup(ActuatorState(config.initial_position, np.zeros(9), np.zeros(9)))
         self._executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="static_control")
         self._calculation = None
         self.latest = None
