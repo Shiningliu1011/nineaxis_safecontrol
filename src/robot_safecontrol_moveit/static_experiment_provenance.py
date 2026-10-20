@@ -12,7 +12,7 @@ import sys
 import zipfile
 
 from .static_experiment_config import content_hash
-from .static_experiment_recording import write_json
+from .static_experiment_recording import FORMAT_VERSION, write_json
 
 
 def source_identity(resource_root: Path) -> dict:
@@ -50,7 +50,7 @@ def environment_identity() -> dict:
         "packages": distributions, "system_packages": packages,
         "runtime_environment": {name: os.environ.get(name) for name in (
             "RMW_IMPLEMENTATION", "JAX_PLATFORMS", "XLA_FLAGS", "OMP_NUM_THREADS",
-            "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS",
+            "OPENBLAS_NUM_THREADS", "OPENBLAS_CORETYPE", "MKL_NUM_THREADS",
         )},
     }
     # CPU 当前频率随负载变化，只用于来源记录。
@@ -92,8 +92,10 @@ def snapshot_sources(resource_root: Path, manifests: list[dict], directory: Path
         package_marker,
         root / "portable_oscbf/requirements.txt", root / "portable_oscbf/requirements-geometry.txt",
         root / "portable_oscbf/data/ik_input.mat",
-        root / "requirements-static-report.txt", root / "scripts/static_obstacle_experiment.py",
+        root / "requirements-static-report.txt", root / "requirements-static-recording.txt",
+        root / "scripts/static_obstacle_experiment.py",
         root / "docs/static_obstacle_experiments.md",
+        root / "docs/static_experiment_storage.md",
         root / "docs/specs/static-obstacle-experiments.md",
     ])
     archive = directory / "sources.zip"
@@ -106,6 +108,7 @@ def snapshot_sources(resource_root: Path, manifests: list[dict], directory: Path
     logical_paths.update({
         (root / name).resolve(): name
         for name in ("setup.py", "setup.cfg", "package.xml", "requirements-static-report.txt",
+                     "requirements-static-recording.txt",
                      "resource/robot_safecontrol_moveit")
     })
     logical_paths[package_marker.resolve(strict=True)] = "resource/robot_safecontrol_moveit"
@@ -182,6 +185,31 @@ def recording_hashes(directory: Path) -> dict:
     return records
 
 
+def validate_storage_migration(directory: Path, identities: dict) -> str:
+    path = directory / "storage_migration.json"
+    migration = json.loads(path.read_text())
+    if migration["schema_version"] != 1 or migration["recording_format"] != FORMAT_VERSION:
+        raise ValueError(f"不支持的转换说明版本：{path}")
+    records = identities["records_sha256"]
+    databases = migration["databases"]
+    if set(databases) != set(records):
+        raise ValueError(f"转换数据库集合不一致：{directory}")
+    for role, actual in records.items():
+        if databases[role]["database_sha256"] != actual:
+            raise ValueError(f"转换数据库身份不一致：{directory / (role + '.sqlite3')}")
+        if databases[role]["source_sha256"] != migration["source_files_sha256"][f"{role}.sqlite3"]:
+            raise ValueError(f"转换来源数据库身份不一致：{role}")
+    for filename, key in (
+        ("manifest.json", "manifest_sha256"), ("result.json", "result_sha256"),
+        ("path.npz", "path_sha256"),
+    ):
+        if migration["source_files_sha256"][filename] != identities[key]:
+            raise ValueError(f"转换保留文件身份不一致：{directory / filename}")
+    if migration["source_manifest"] != json.loads((directory / "manifest.json").read_text()):
+        raise ValueError(f"转换来源 manifest 不一致：{directory}")
+    return content_hash(path)
+
+
 def validate_run_report(directory: Path) -> tuple[dict, dict]:
     manifest_path, report_path = directory / "manifest.json", directory / "feedback_report.json"
     manifest = json.loads(manifest_path.read_text())
@@ -193,6 +221,9 @@ def validate_run_report(directory: Path) -> tuple[dict, dict]:
         "path_sha256": content_hash(directory / "path.npz"),
         "records_sha256": recording_hashes(directory),
     }
+    migration = directory / "storage_migration.json"
+    if migration.exists() or "storage_migration_sha256" in report:
+        identities["storage_migration_sha256"] = validate_storage_migration(directory, identities)
     if (any(report.get(key) != value for key, value in identities.items())
             or identities["path_sha256"] != manifest["path_sha256"]):
         raise ValueError(f"反馈报告与原始运行身份不一致：{directory}")

@@ -18,7 +18,7 @@ from rclpy.executors import ExternalShutdownException
 from .oscbf_trajectory import bootstrap_portable, default_portable_root
 from .static_experiment_config import ExperimentConfig, content_hash, METHODS
 from .static_experiment_evaluation import evaluate_run
-from .static_experiment_recording import RunRecorder, finalize_recording, write_json
+from .static_experiment_recording import FORMAT_VERSION, RunRecorder, finalize_recording, write_json
 from .static_experiment_provenance import source_identity
 
 
@@ -95,6 +95,7 @@ def run_experiment(args, config: ExperimentConfig) -> dict:
     manifest = {
         **config.manifest(), "source_sha256": _sources(config),
         "path_sha256": content_hash(directory / "path.npz"),
+        "recording_format": FORMAT_VERSION,
         "python": sys.version, "command": sys.argv,
         "geometry_runtime": {
             "fcl_version": robot_static_fcl.fcl_version,
@@ -183,7 +184,7 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description="静态障碍物仿真实验")
     parser.add_argument("mode", choices=(
         "run", "replay", "show", "worker", "prepare", "witness", "witness-replay", "benchmark",
-        "freeze", "batch", "paired-report", "report",
+        "freeze", "batch", "paired-report", "report", "compact",
     ))
     parser.add_argument("--resource-root", type=Path, default=default_portable_root().parent)
     parser.add_argument("--config", type=Path)
@@ -198,6 +199,9 @@ def main(argv=None) -> int:
     parser.add_argument("--joint-travel-scale", type=float, choices=(1., .7, .4))
     parser.add_argument("--clearance-reserve-m", type=float)
     parser.add_argument("--baseline", type=Path)
+    parser.add_argument("--source", type=Path)
+    parser.add_argument("--save-samples", action="store_true",
+                        help="重放时保存逐反馈派生数组")
     parser.add_argument("--scene-selection", type=Path)
     parser.add_argument("--witness-request", type=Path)
     parser.add_argument("--scene-evidence", type=Path)
@@ -210,11 +214,19 @@ def main(argv=None) -> int:
     args = parser.parse_args(argv)
     if not 0 <= args.domain <= 232:
         parser.error("--domain 必须在 0–232 范围")
+    if args.mode == "compact":
+        if args.source is None or args.output is None:
+            parser.error("compact 需要 --source 和尚不存在的 --output")
+        from .static_experiment_storage import compact_run
+        compact_run(args.source, args.output)
+        evaluate_run(args.output, resource_root=args.resource_root)
+        print(f"已转换并重算：{args.output}", flush=True)
+        return 0
     if args.mode == "report":
         if args.output is None:
             parser.error("report 需要 --output 指定已经评价的运行目录")
         command = [
-            str(args.report_python.resolve(strict=True)), "-m",
+            str(args.report_python.absolute()), "-m",
             "robot_safecontrol_moveit.static_experiment_reporting",
             "--run", str(args.output), "--resource-root", str(args.resource_root),
         ]
@@ -222,7 +234,9 @@ def main(argv=None) -> int:
             command.extend(["--output", str(args.figures_output)])
         return subprocess.run(
             command, check=False,
-            env={**os.environ, "PYTHONPATH": str(Path(__file__).resolve().parents[1])},
+            env={**os.environ, "PYTHONPATH": os.pathsep.join(filter(None, (
+                str(Path(__file__).resolve().parents[1]), os.environ.get("PYTHONPATH"),
+            )))},
         ).returncode
     if args.mode in ("freeze", "batch", "paired-report"):
         from .static_formal_experiments import freeze_formal, run_formal, paired_report
@@ -246,7 +260,9 @@ def main(argv=None) -> int:
     if args.mode == "replay":
         if args.output is None:
             parser.error("replay 需要 --output")
-        report = evaluate_run(args.output, resource_root=args.resource_root)
+        report = evaluate_run(
+            args.output, resource_root=args.resource_root, save_samples=args.save_samples,
+        )
         print(f"重算结果：{report['verdict']}", flush=True)
         return 0 if report["verdict"] == "pass" else 1
     config = ExperimentConfig.load(

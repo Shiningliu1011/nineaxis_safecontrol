@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import asdict
-from contextlib import closing
 import json
 from pathlib import Path
-import sqlite3
 
 import jax.numpy as jnp
 import jsonschema
@@ -14,7 +12,7 @@ from scipy.optimize import linprog, minimize
 
 from .static_experiment_config import content_hash
 from .static_experiment_nodes import _resources
-from .static_experiment_recording import write_json
+from .static_experiment_recording import read_record, write_json
 from .static_scene_evidence import project_fixed_pose
 
 
@@ -228,14 +226,7 @@ def run_witness_request(config, request_path: Path, directory: Path):
     if manifest["config_sha256"] != config.identity:
         raise ValueError("见证配置与实际暂停候选来源不一致")
     database = run / "controller.sqlite3"
-    with closing(sqlite3.connect(database.as_uri() + "?mode=ro", uri=True)) as connection:
-        row = connection.execute(
-            "SELECT payload FROM samples WHERE stream='candidate' AND sequence=?",
-            (request["candidate_sequence"],),
-        ).fetchone()
-    if row is None:
-        raise ValueError("来源记录中没有指定候选")
-    candidate = json.loads(row[0])
+    candidate = read_record(database, request["candidate_sequence"], stream="candidate")["values"]
     blocked = bool(candidate["trials"]) and not any(
         trial["feed_m_s"] > 1e-8 and trial["certificate"]["accepted"] for trial in candidate["trials"]
     )

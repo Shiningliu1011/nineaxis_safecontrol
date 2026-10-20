@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from contextlib import closing
-import json
 from pathlib import Path
-import sqlite3
 
 import numpy as np
+
+from .static_experiment_recording import iter_records
 
 
 def ordered_coverage(progress, reference, total_length, initial_error, endpoint_error) -> dict:
@@ -30,10 +29,8 @@ def ordered_coverage(progress, reference, total_length, initial_error, endpoint_
 
 
 def _records(path: Path, stream: str):
-    with closing(sqlite3.connect(path.resolve().as_uri() + "?mode=ro", uri=True)) as connection:
-        for row in connection.execute(
-                "SELECT payload FROM samples WHERE stream=? ORDER BY sequence", (stream,)):
-            yield json.loads(row[0])
+    for row in iter_records(path, stream):
+        yield row["values"]
 
 
 def evaluate_execution(directory: Path, manifest: dict, feedback: list, commands: list) -> dict:
@@ -231,13 +228,15 @@ def evaluate_execution(directory: Path, manifest: dict, feedback: list, commands
     }
 
 
-def arc_statistics(directory: Path, total_length: float, progress, series: dict) -> dict:
+def arc_statistics(directory: Path, total_length: float, progress, series: dict,
+                   *, save_samples: bool = True) -> dict:
     progress = np.asarray(progress)
     forward, indices = np.unique(np.maximum.accumulate(progress), return_index=True)
     grid = np.linspace(0., total_length, 2001)
     observed = grid[(grid >= forward[0]) & (grid <= forward[-1])]
     values = {name: np.interp(observed, forward, data[indices]) for name, data in series.items()}
-    np.savez_compressed(directory / "feedback_arc_metrics.npz", progress_m=observed, **values)
+    if save_samples:
+        np.savez_compressed(directory / "feedback_arc_metrics.npz", progress_m=observed, **values)
     return {
         "grid_points": len(grid), "observed_points": len(observed),
         "spacing_m": total_length / (len(grid) - 1),

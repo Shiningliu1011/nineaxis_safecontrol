@@ -17,6 +17,7 @@ import trimesh
 
 from .oscbf_trajectory import bootstrap_portable
 from .static_experiment_config import content_hash
+from .static_experiment_evaluation import evaluation_samples
 from .static_experiment_recording import read_stream, write_json
 from .static_experiment_provenance import relocate_manifest, validate_run_report
 
@@ -71,20 +72,24 @@ def plot_run(directory: Path, resource_root: Path, output: Path | None = None):
     if not output.is_relative_to(resource_root / "picture"):
         raise ValueError("实验图表必须保存在仓库 picture 目录")
     manifest, report = validate_run_report(directory)
+    with evaluation_samples(directory, resource_root, report) as (data_directory, data_report):
+        return _plot_run(directory, resource_root, output, manifest, report, data_directory, data_report)
+
+
+def _plot_run(directory, resource_root, output, manifest, report, data_directory, data_report):
     manifest = relocate_manifest(manifest, resource_root)
-    if "derived_data_sha256" not in report:
-        raise ValueError("绘图需要包含测量文件身份的反馈报告，请执行 replay")
-    for filename, expected in report["derived_data_sha256"].items():
-        if content_hash(directory / filename) != expected:
+    data_hashes = data_report["derived_data_sha256"]
+    for filename, expected in data_hashes.items():
+        if content_hash(data_directory / filename) != expected:
             raise ValueError(f"图表测量数据身份不一致：{filename}")
     if content_hash(directory / "path.npz") != report["path_sha256"]:
         raise ValueError("图表路径身份不一致")
     for role in ("plant", "controller"):
         if content_hash(directory / f"{role}.sqlite3") != report["records_sha256"][role]:
             raise ValueError("原始数据与反馈报告身份不一致")
-    with np.load(directory / "feedback_metrics.npz", allow_pickle=False) as data:
+    with np.load(data_directory / "feedback_metrics.npz", allow_pickle=False) as data:
         metrics = {name: data[name] for name in data.files}
-    with np.load(directory / "clearance_metrics.npz", allow_pickle=False) as data:
+    with np.load(data_directory / "clearance_metrics.npz", allow_pickle=False) as data:
         clearances = {name: data[name] for name in data.files}
     with np.load(directory / "path.npz", allow_pickle=False) as data:
         path = {name: data[name] for name in data.files}
@@ -218,7 +223,11 @@ def plot_run(directory: Path, resource_root: Path, output: Path | None = None):
     record = {
         "run": str(directory), "report_sha256": content_hash(directory / "feedback_report.json"),
         "renderer_sha256": content_hash(Path(__file__)),
-        "inputs_sha256": report["derived_data_sha256"],
+        "inputs_sha256": data_hashes,
+        "evaluation_provenance": {
+            name: data_report.get(name)
+            for name in ("evaluator_sha256", "evaluation_sources_sha256")
+        },
         "representative_samples": representative_samples,
         "fonts": fonts, "files": files, "versions": {
             name: version(name) for name in ("numpy", "scipy", "matplotlib", "Pillow", "trimesh")

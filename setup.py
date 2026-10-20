@@ -37,11 +37,16 @@ setup(
     )],
     data_files=[
         ("share/ament_index/resource_index/packages", [f"resource/{package_name}"]),
-        (f"share/{package_name}", ["package.xml", "setup.py", "setup.cfg", "requirements-static-report.txt"]),
+        (f"share/{package_name}", [
+            "package.xml", "setup.py", "setup.cfg", "requirements-static-report.txt",
+            "requirements-static-recording.txt",
+        ]),
         (f"share/{package_name}/scripts", ["scripts/static_obstacle_experiment.py"]),
         (f"share/{package_name}/docs", [
             "docs/static_obstacle_experiments.md",
             "docs/static_obstacle_experiments_handoff.md",
+            "docs/static_experiment_storage.md",
+            "docs/host_recovery_20261020.md",
         ]),
         (f"share/{package_name}/docs/specs", ["docs/specs/static-obstacle-experiments.md"]),
         (f"share/{package_name}/config", glob("config/*.yaml")),
@@ -98,7 +103,7 @@ setup(
             glob("portable_oscbf/vendor/dpax/dpax/*.py"),
         ),
     ],
-    install_requires=["setuptools", *PORTABLE_OSCBF_RUNTIME_REQUIREMENTS],
+    install_requires=["setuptools", "msgpack==1.1.2", *PORTABLE_OSCBF_RUNTIME_REQUIREMENTS],
     extras_require={"hardware": ["python-can==4.6.1", "PyYAML>=5.4.1,<7"]},
     tests_require=["pytest"],
     zip_safe=False,

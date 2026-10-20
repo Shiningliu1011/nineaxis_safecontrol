@@ -2,9 +2,10 @@
 
 ## 当前状态
 
-工作分支为 `codex/static-obstacle-experiments`，开发基准为 `34a2e34`。
-#171 尚未完成验收，#172–#183 保持开放。用户要求空间不足时停止本机任务并同步远程，
-随后补充主机也可能无法提供 200 GB 空间。当前已停止新增实验采集。
+工作分支为 `codex/static-obstacle-experiments`，本次恢复与存储改动基准为 `6afe1d34`。
+#171 尚未完成验收，#172–#183 保持开放。项目已在当前主机恢复到
+`/home/lsn/robot/robot_safecontrol`。紧凑存储已完成四组完整真实记录验证，
+原始数据保留；正式 1,080 次采集继续停止，验证限定 sim。
 
 接手入口是 `.trellis/tasks/10-20-static-formal-experiments/`；
 总任务及子任务对应关系见
@@ -21,28 +22,44 @@
 正式矩阵为 8 个场景配置 × 3 个初态 × 3 档进给 × 5 个方法 × 3 次重复，
 共 1,080 次。正式数据尚未取得，现有开发结果不构成总体效果或真机能力结论。
 
-## 存储核查
+## 存储验证与容量
 
-当前 S0 完整运行的 15 个主要文件共 186,952,238 字节。ZIP/LZMA 无损压缩并逐文件
-核对 SHA-256 后为 67,511,754 字节。按这个样本乘以 1,080，分别约为
-202 GB 和 73 GB；实际体积随运行时长、暂停次数和场景对象数量变化。
-S2 的当前完整运行目录约为 219 MB。
+新格式使用 SQLite 逐条事务、MessagePack float64 和 zlib 字典压缩；
+每个 stream 每 128 条独立开始。原始字段、事件和数值精度完整保留，
+旧 JSON 数据库继续可读。汇总评价完整计算，逐反馈派生数组按需生成。
+转换只写入新目录，报告同时核对来源说明和转换后的数据库身份。
+使用方法见[静态实验紧凑存储](static_experiment_storage.md)。
 
-主要体积来自两个 SQLite 数据库中的 JSON 数值记录，以及逐反馈的派生评价数组。
-`RunRecorder` 位于 `src/robot_safecontrol_moveit/static_experiment_recording.py`；
-`static_clearance_evaluation.py` 和 `static_experiment_evaluation.py`
-生成派生 NPZ。NPZ 已使用压缩保存，普通目录压缩仍有上述体积。
+| 完整来源目录 | 原始 MB | 紧凑 MB | 存储验证 | 实验结论 |
+|---|---:|---:|---|---|
+| `s0-joint-full-geometry-01` | 187.03 | 43.26 | pass | pass |
+| `s2-joint-development-01` | 218.38 | 49.32 | pass | pass |
+| `s4-joint-development-10` | 206.87 | 46.44 | pass | fail |
+| `s5-joint-development-01` | 84.77 | 12.01 | pass | fail |
 
-本机清理了 Git 识别出的 42 个遗留临时打包文件、经检查无活动进程使用且具有完整
-PyInstaller 依赖标记的解压目录、pip 下载缓存及压缩测量副本。
-释放约 30.98 GB，可用空间由 25.89 GB 增至 56.87 GB。
-清理前后 Git 连通性检查均通过，实验原始记录仍保留。
+四组共 331,573 条记录的数量、时间戳、数值位模式、状态和全部字段一致。
+原格式与紧凑格式分别重算的指标及派生数组一致；8 次实际 SIGKILL
+检查恢复全部已确认提交的记录。源目录前后 SHA-256 一致。
+图表按需生成、六类图表导出及来源身份检查通过。
 
-**接手后的前置工作是核定存储方案与实测容量。**
-数值记录可以研究无损的紧凑表示，重复状态可以通过身份关联，
-可重算数组可以研究按需生成。尚未实施这些改动，也没有新的体积承诺。
-修改时须同时处理报告身份校验、重放、异常退出恢复和完整周期测量，
-并用真实记录逐字段核查。原始反馈、控制决策、失败原因和验收精度必须保持完整。
+新记录格式另有本机完整 S0 sim 通过：`output/static-storage-control-01`，
+有效反馈 87,116 条；1,719 个完整周期的 P99.9 为 68.333 ms，
+最大 70.513 ms，100 ms 周期内没有超时。
+该目录最终为 43.36 MB，包含 WAL 的运行容量观测峰值为 998.50 MB。
+完整命令、环境及文件身份见上述存储验证记录。
+
+按最大完整样本直接乘以 1,080，预计 53.26 GB；按三档进给时长反比外推，
+预计 65.10 GB。该外推没有覆盖全部场景与失败时长，不能作为容量上界。
+验证观测磁盘分配峰值 1.13 GB，进程 RSS 峰值 0.99 GB；
+清理重复迁移资料后，可用空间约 80.99 GB。
+直接外推后剩余约 27.72 GB，进给外推后剩余约 15.89 GB；
+当前空间可以容纳该样本外推，全部场景的正式容量上界仍需验证。
+容量快照见 `output/host-recovery-capacity.json`。
+
+完整读写耗时、各流计数、恢复步骤及原始数据库 SHA-256 见
+[本次存储验证记录](../.trellis/tasks/10-20-static-formal-experiments/research/storage-validation.md)。
+测量文件为 `output/static-storage-validation-05/validation.json`，
+SHA-256：`740eafa49b709b5b70d2d744b854f1cbe1af45d1fc4612181011af78a9005209`。
 
 ## 已有运行与未完成项
 
@@ -65,37 +82,47 @@ S2 使用候选 15、31，S4 使用候选 0、2。S4 当前配置尚未执行完
 
 后续尚需完成：
 
-1. 存储改动的容量、内容一致性、异常恢复和重放验证。
+1. 根据共同周期、完整场景和进给测量确认正式容量上界及失败重试余量。
 2. 当前参数下 S4 的独立见证及实际暂停、构型调整、恢复全过程，S5 终止和耗时复核。
 3. S0–S4 对应初态与行程范围的可行性证据。
 4. 五种方法、四种候选周期的 20 次完整测量。开发配置的 100 ms 尚未被选为正式周期。
 5. 固定正式清单，执行 1,080 次实验，完成配对统计与六类图表。
-6. 当前版本的完整回归及项目规范、需求两方面的独立审查。
+6. 保留本机回归、控制周期及规范、需求审查证据；处理仍阻碍正式实验的问题。
 
 ## 验证状态
 
-- 本次接手检查 `bash scripts/agent_check.sh` 通过：Python 编译、纯模块导入、
+- 本机 `bash scripts/agent_check.sh` 通过：Python 编译、纯模块导入、
   shell 语法、Git diff 检查及 69 项纯逻辑测试通过。
-- 最近相关检查包括连续运动 6 项、终点与求解器 13 项、真实 ROS 节点与执行评价
-  4 项通过；对应开发记录保存在各子任务中。
-- 本次标准 package 构建通过，耗时 1.70 s；安装后的 CLI 入口及接手文档安装路径核查通过。
-- 当前完整回归尚未完成。控制内核测试入口已采用按文件串行启动 pytest，
-  用于释放各文件的 JAX 编译缓存。接手时执行 `bash run_all_tests.sh`。
-- 项目规范与需求的独立审查尚未完成；本次同步用于继续开发。
+- 本机 `robot_safecontrol_moveit`、`aeb_rrtstar_ompl`、`pymoveit2` 构建通过，
+  原生模块导入和 ROS CLI 入口通过。
+- 本机存储、评价、实验管理的 25 项针对性测试通过。
+- 本机完整回归通过：主包 678 passed、1 skipped，控制内核 486 passed、
+  34 skipped，C++ CTest 4 passed，三个部分退出码均为 0。
+- 本机完整 S0 sim 的实际周期和两方面独立审查已经记录；
+  正式场景与共同周期的待办保持开放。
+- 测试产物隔离的 ROS 用例 14 项、控制内核用例 10 项通过；
+  ROS 完整流程另外启用线程异常严格检查，1 项通过且无警告。
+  8 份历史基准与报告的 SHA-256 保持一致。
+- 本机环境固定 `OPENBLAS_CORETYPE=Haswell`；十个闭合 STL、URDF、
+  来源记录和几何生成物的 10 项检查通过。该设置参与环境身份计算。
 
 ## 接手所需文件与环境
 
 代码、配置、测试、图表及 Trellis 记录由 Git 分支同步。
-当前全部实验记录在原机器
+当前全部实验记录在笔记本和本次恢复的主机目录
 `/home/lsn/robot/robot_safecontrol/output/static-experiments/`，约 3.5 GiB，
 由 `.gitignore` 排除，Git 拉取不会传输这些记录。
 
-完整项目迁移资料已整理到
-`/home/lsn/robot/robot_safecontrol/output/robot-safecontrol-transfer/`。
-资料包含项目和 Git 历史、上述实验记录、场景选择、S4 见证请求、
-容量测量、接手检查日志，以及相关项目目录、标定数据和个人 skills。
-文件范围、实际容量、校验及恢复方法见[Linux 主机迁移](project_migration.md)。
-使用包内 `SHA256SUMS` 校验文件，恢复到尚无同名项目的 Linux 工作目录。
+本机迁移资料已经完成恢复，重复分卷按用户授权删除，释放 26.77 GB。
+来源说明、`project-files.json`、`PACKAGE-INFO.json`、`SHA256SUMS`、
+环境清单、skills、字体及安装资料保存在
+`output/host-recovery-migration-evidence/`。项目、Git 历史、实验记录、
+场景选择、S4 见证请求、标定及研究数据保留在恢复后的目录。
+三份历史基准产物 `output/baseline_tracking.npz`、`output/oscbf_m6_perf.md`、
+`output/oscbf_m8_nullspace.md` 与笔记本原件的 SHA-256 一致；
+本机重测结果保存在独立目录。文件原始 SHA-256 与来源位置见
+[主机恢复记录](host_recovery_20261020.md#数据身份)。
+文件范围和原始恢复方法见[Linux 主机迁移](project_migration.md)。
 既有记录中的原始绝对路径和来源身份必须保留；涉及目录移动的评价使用项目的资源重定位接口。
 
 笔记本和台式机通过[双设备工作流程](two_machine_workflow.md)同步当前分支、
@@ -103,9 +130,13 @@ Trellis 进度和接手记录；大型原始数据按需要另行传输并验证
 
 当前运行环境为 Ubuntu 22.04、ROS 2 Humble、Python 3.10，原生几何模块依赖
 FCL 与 pybind11。Python 控制依赖见 `portable_oscbf/requirements.txt`；
+记录依赖见 `requirements-static-recording.txt`，
 绘图环境见 `requirements-static-report.txt`。新机器须重新构建原生模块。
 构建与运行入口见[实验说明](static_obstacle_experiments.md)及
 [项目运行指南](PROJECT_GUIDE.md)。
 
 新机器的设备身份和运行时间必须重新测量。共同周期或正式清单不能沿用其他机器的
 性能结论。所有工作继续限定在 sim。
+
+本机安装、环境入口、字体及资料校验记录见
+[2026-10-20 主机恢复](host_recovery_20261020.md)。

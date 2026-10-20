@@ -588,11 +588,6 @@ def test_perf_report_p95_within_budget(tmp_path):
         node.destroy_node()
         rclpy.shutdown(context=context)
     text = perf.read_text(encoding="utf-8")
-    # Preserve failed measurements too; a stale passing report must not hide
-    # the latest regression. Keep isolated evidence separate from demo output.
-    evidence_path = REPO_ROOT / "output" / "oscbf_m10_perf_isolated.md"
-    evidence_path.parent.mkdir(parents=True, exist_ok=True)
-    evidence_path.write_text(text, encoding="utf-8")
     match = re.search(r"p95: ([0-9.]+) ms", text)
     assert match is not None, f"missing p95 in report:\n{text}"
     p95 = float(match.group(1))

@@ -21,6 +21,6 @@
   "children": [],
   "parent": "10-20-static-obstacle-experiments",
   "relatedFiles": [],
-  "notes": "用户要求空间不足时停止本机任务并同步远程，且主机也可能无法提供 200 GB。当前停止新增采集，正式矩阵尚未开始；接手时先验证紧凑存储与容量。详细状态见 docs/static_obstacle_experiments_handoff.md。",
+  "notes": "本机环境已恢复，S0/S2/S4/S5 共 331573 条真实记录完成紧凑存储一致性、重放和 SIGKILL 恢复验证。原始实验记录及历史基准测试产物保留并校验。完整回归和完整 S0 sim 通过。正式容量上界、S4/S5 和共同周期前置条件尚未通过，正式矩阵保持停止；本次恢复和存储改动已获提交及同步授权。状态见 docs/static_obstacle_experiments_handoff.md 和 research/storage-validation.md。",
   "meta": {}
 }

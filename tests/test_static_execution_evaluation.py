@@ -2,6 +2,8 @@ from copy import deepcopy
 from dataclasses import asdict, fields
 import json
 from pathlib import Path
+import shutil
+import sqlite3
 import time
 
 import numpy as np
@@ -9,9 +11,12 @@ import pytest
 
 from robot_safecontrol_moveit.oscbf_trajectory import bootstrap_portable
 from robot_safecontrol_moveit.static_experiment_config import ExperimentConfig, content_hash
-from robot_safecontrol_moveit.static_experiment_evaluation import evaluate_run
+from robot_safecontrol_moveit.static_experiment_evaluation import evaluate_run, evaluation_samples
 from robot_safecontrol_moveit.static_experiment_nodes import _resources
-from robot_safecontrol_moveit.static_experiment_recording import RunRecorder, read_stream, write_json
+from robot_safecontrol_moveit.static_experiment_recording import (
+    RunRecorder, iter_records, read_stream, write_json,
+)
+from robot_safecontrol_moveit.static_experiment_storage import compact_run
 from robot_safecontrol_moveit.static_experiment_provenance import validate_run_report
 from robot_safecontrol_moveit.static_execution_evaluation import evaluate_execution, arc_statistics, ordered_coverage
 
@@ -94,6 +99,60 @@ def test_actual_processed_motion_and_rejected_admission_have_reconstructable_pro
     assert evaluated["functional_verdict"] == "fail"
     assert evaluated["runtime_verdict"] == report["timing"]["status"]
     assert validate_run_report(tmp_path)[1] == evaluated
+    assert evaluated["derived_data_policy"] == "on_demand"
+    assert not (tmp_path / "feedback_metrics.npz").exists()
+    report_hash = content_hash(tmp_path / "feedback_report.json")
+    with evaluation_samples(tmp_path, ROOT, evaluated) as (samples, recomputed):
+        hashes = recomputed["derived_data_sha256"]
+        assert set(hashes) == {
+            "feedback_metrics.npz", "clearance_metrics.npz", "feedback_arc_metrics.npz",
+        }
+        assert samples != tmp_path
+        assert all(content_hash(samples / name) == expected for name, expected in hashes.items())
+        assert recomputed["evaluator_sha256"] == evaluated["evaluator_sha256"]
+        assert recomputed["evaluation_sources_sha256"] == evaluated["evaluation_sources_sha256"]
+    assert not samples.exists()
+    assert content_hash(tmp_path / "feedback_report.json") == report_hash
+    legacy = tmp_path / "legacy"
+    legacy.mkdir()
+    for name in ("manifest.json", "result.json", "path.npz"):
+        shutil.copy2(tmp_path / name, legacy / name)
+    for role in ("plant", "controller"):
+        with sqlite3.connect(legacy / f"{role}.sqlite3") as connection:
+            connection.execute(
+                "CREATE TABLE samples (sequence INTEGER PRIMARY KEY, stream TEXT, "
+                "monotonic_s REAL, simulation_s REAL, ros_time_ns INTEGER, payload TEXT)"
+            )
+            for row in iter_records(tmp_path / f"{role}.sqlite3"):
+                connection.execute("INSERT INTO samples VALUES (?, ?, ?, ?, ?, ?)", (
+                    row["sequence"], row["stream"], row["monotonic_s"], row["simulation_s"],
+                    row["ros_time_ns"], json.dumps(row["values"], allow_nan=False),
+                ))
+    evaluate_run(legacy, resource_root=ROOT)
+    compact = tmp_path / "compact"
+    compact_run(legacy, compact)
+    converted = evaluate_run(compact, resource_root=ROOT)
+    assert validate_run_report(compact)[1] == converted
+    converted_report_hash = content_hash(compact / "feedback_report.json")
+    for filename in ("manifest.json", "result.json", "path.npz"):
+        target = compact / filename
+        original = target.read_bytes()
+        target.write_bytes(original + b"\n")
+        with pytest.raises(ValueError, match="转换保留文件身份"):
+            evaluate_run(compact, resource_root=ROOT)
+        with pytest.raises(ValueError, match="转换保留文件身份"):
+            validate_run_report(compact)
+        target.write_bytes(original)
+    with sqlite3.connect(compact / "plant.sqlite3") as connection:
+        deleted = connection.execute("DELETE FROM samples WHERE stream='admission'").rowcount
+        assert deleted > 0
+        connection.commit()
+        connection.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+    with pytest.raises(ValueError, match="转换数据库身份"):
+        evaluate_run(compact, resource_root=ROOT)
+    with pytest.raises(ValueError, match="转换数据库身份"):
+        validate_run_report(compact)
+    assert content_hash(compact / "feedback_report.json") == converted_report_hash
     write_json(tmp_path / "result.json", {"termination": "changed"})
     with pytest.raises(ValueError, match="原始运行身份"):
         validate_run_report(tmp_path)

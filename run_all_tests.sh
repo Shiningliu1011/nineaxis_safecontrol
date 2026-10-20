@@ -22,9 +22,16 @@ set +u
 source install/setup.bash
 set -u
 
+mkdir -p "$REPO_ROOT/.scratch"
+test_artifacts="$(mktemp -d "$REPO_ROOT/.scratch/regression-XXXXXXXX")"
+export OSCBF_TEST_OUTPUT_DIR="$test_artifacts/portable"
+export TMPDIR="$test_artifacts/tmp"
+mkdir -p "$OSCBF_TEST_OUTPUT_DIR" "$TMPDIR"
+echo "测试产物目录: $test_artifacts"
+
 echo "==> 主包 tests/"
 main_status=0
-python3 -m pytest tests/ -q || main_status=$?
+python3 -m pytest tests/ -q --basetemp "$test_artifacts/main" || main_status=$?
 
 echo "==> portable_oscbf/tests/"
 kernel_status=0

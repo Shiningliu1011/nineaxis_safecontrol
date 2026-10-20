@@ -1,15 +1,14 @@
 from __future__ import annotations
 
-from contextlib import closing
 import json
 from pathlib import Path
-import sqlite3
 
 import numpy as np
 from scipy.spatial.transform import Rotation
 
 from .oscbf_trajectory import bootstrap_portable
 from .static_experiment_config import content_hash
+from .static_experiment_recording import read_record
 from .static_experiment_nodes import _resources
 from .static_reconfiguration_evidence import _position_motion, certify_fixed_pose, independent_forward_candidate
 
@@ -31,13 +30,7 @@ def verify_reconfiguration(config, directory: Path) -> dict:
     database = Path(source["run"]) / "controller.sqlite3"
     if content_hash(database) != source["database_sha256"]:
         raise ValueError("构型见证的实际候选记录身份不一致")
-    with closing(sqlite3.connect(database.resolve().as_uri() + "?mode=ro", uri=True)) as connection:
-        value = connection.execute(
-            "SELECT payload FROM samples WHERE stream='candidate' AND sequence=?", (source["sequence"],),
-        ).fetchone()
-    if value is None:
-        raise ValueError("缺少构型见证的实际候选")
-    candidate = json.loads(value[0])
+    candidate = read_record(database, source["sequence"], stream="candidate")["values"]
     if not candidate["trials"] or any(
         trial["feed_m_s"] > 1e-8 and trial["certificate"]["accepted"] for trial in candidate["trials"]
     ):
