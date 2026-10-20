@@ -59,8 +59,8 @@ def generalized_sns(jacobian, desired, matrix, lower, upper) -> SnsSolution:
             or upper.shape != (len(A),) or not len(A) or not J.shape[0]
             or not np.all(np.isfinite(np.concatenate([
                 J.ravel(), desired, A.ravel(), lower, upper,
-            ]))) or np.any(lower > 0) or np.any(upper < 0)):
-        raise ValueError("Generalized-SNS 输入无效或零速度不满足限制")
+            ]))) or np.any(lower > upper)):
+        raise ValueError("Generalized-SNS 输入无效或广义限制上下界顺序无效")
     identity = np.eye(J.shape[1])
     active = np.empty((0, J.shape[1]))
     saturated_values = np.empty(0)
