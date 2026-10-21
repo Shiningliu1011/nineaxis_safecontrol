@@ -21,8 +21,11 @@ Trellis 接手入口是 `.trellis/tasks/10-20-static-obstacle-experiments/`，
 
 完整计时修复已经独立审查，定向测试和真实 ROS 记录证据见
 正式任务的 `research/complete-cycle-timing-implementation.md`。
-集成后的完整回归由 `static-final-regression-04.service` 执行，日志为
-`output/static-capacity-20261020/final-regression-04.log`，尚未取得最终结果。
+集成后的完整回归04已结束：主包752 passed、1 failed、1 skipped，
+控制内核退出0、CTest4/4通过。唯一断言失败为既有50 Hz性能超期比例；
+相同测试独占复验通过，301个采样P95为15.232 ms、最大17.851 ms，超期零次。
+两份原始日志、产物位置及SHA-256见正式任务的 `research/full-regression-04.md`。
+完整回归保留未全部通过状态，日志中的两条ROS收尾诊断正在核查。
 源码 `40d43bb` 的既有回归与三卷容量证据保留其原始身份。
 新计时统计容量需要通过三卷前置验证重新核查，入口为
 正式任务的 `research/complete-cycle-preflight.py`；当前尚未执行。
