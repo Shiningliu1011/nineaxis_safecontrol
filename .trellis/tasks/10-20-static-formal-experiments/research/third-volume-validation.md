@@ -68,3 +68,32 @@ taskset -c 16-21 ionice -c 3 bash \
 字节；运行模块与 `40d43bb` 内容相同。全部数据库验证结果将在实际执行后补充。
 第三卷完整 D/S5 由主会话既有 `.scratch/static-implementation/run_guarded_windows_s5.sh`
 执行，本文脚本仅负责离线文件系统验证。
+
+## 三卷工程容量重建入口
+
+`rebuild-three-volume-capacity.py` 保存全部十一项 guarded 报告身份，使用其中
+五份完整 D 运行、ext4 生命周期及第三卷完整 D/S5 作为共同控制参数证据。
+全部 A/B/E 和强制 WAL 终止报告保存在输入身份清单；现有容量生成器的
+生命周期参数要求与 D 的共同控制配置相同。第三卷 `storage-guard-01` 的
+双 writer、SIGKILL、收尾余量和源码身份也必须通过执行前检查。
+
+第三卷三份结果未齐备时，脚本输出 `pending_evidence`，退出 2，不创建输出。
+默认模式只核查报告和挂载；`--execute` 才调用现有容量生成器。完整执行会
+沿用十九组编码审计，并由生成器核对原始数据库身份，保持原始数据库内容。
+
+```bash
+source /home/lsn/robot/robot_safecontrol/.scratch/host-recovery/env.sh
+taskset -c 16-21 ionice -c 3 python \
+  /home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-capacity/.trellis/tasks/10-20-static-formal-experiments/research/rebuild-three-volume-capacity.py \
+  --resource-root /home/lsn/robot/robot_safecontrol --execute
+```
+
+结果写入主仓库 `output/static-capacity-20261020/three-volume-capacity-01/`；
+三卷分配位置为原有 `formal-runs-ext4/`、第二卷原有 `formal-runs/`，以及
+第三卷新建的 `formal-runs/`。输出路径存在时拒绝覆盖。
+每卷完整计入 WAL 与 reserve，其他预算参数沿用现有生成器。
+结果保持 `formal_bound=false`，正式采集继续依赖后续正式清单绑定与准入。
+
+准备时 AST 语法检查和 `git diff --check` 通过；实际默认模式准确列出第三卷
+文件系统、storage guard 和生命周期三份缺失报告，返回 `pending_evidence`、
+退出 2。输出目录尚未创建，本轮未执行十九组原始数据库身份核查。
