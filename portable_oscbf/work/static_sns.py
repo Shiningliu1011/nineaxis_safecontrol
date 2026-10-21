@@ -35,6 +35,7 @@ class SnsSolution:
 
 def _feasible_scale(direction, bias, lower, upper, available):
     low, high, critical = 0., 1., None
+    minimum_critical = None
     for index in np.flatnonzero(available):
         slope, offset = direction[index], bias[index]
         if abs(slope) <= 1e-12:
@@ -42,11 +43,12 @@ def _feasible_scale(direction, bias, lower, upper, available):
                 return 0., index
             continue
         first, last = sorted(((lower[index] - offset) / slope, (upper[index] - offset) / slope))
-        low = max(low, first)
+        if first > low:
+            low, minimum_critical = first, index
         if last < high:
             high, critical = last, index
     if low > high or high < 0:
-        return 0., critical
+        return 0., critical if critical is not None else minimum_critical
     return float(high), critical
 
 
@@ -59,8 +61,8 @@ def generalized_sns(jacobian, desired, matrix, lower, upper) -> SnsSolution:
             or upper.shape != (len(A),) or not len(A) or not J.shape[0]
             or not np.all(np.isfinite(np.concatenate([
                 J.ravel(), desired, A.ravel(), lower, upper,
-            ]))) or np.any(lower > 0) or np.any(upper < 0)):
-        raise ValueError("Generalized-SNS 输入无效或零速度不满足限制")
+            ]))) or np.any(lower > upper)):
+        raise ValueError("Generalized-SNS 输入无效或广义限制上下界顺序无效")
     identity = np.eye(J.shape[1])
     active = np.empty((0, J.shape[1]))
     saturated_values = np.empty(0)

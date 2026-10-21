@@ -1,0 +1,78 @@
+schema_version: 1
+mode: sim
+scenario: S4
+obstacles:
+- center_m:
+  - 0.01063882915869803
+  - 0.3430000465301045
+  - 0.1344757956872619
+  name: obstacle_1
+  radius_m: 0.06
+- center_m:
+  - 0.0726001853066962
+  - 0.352075324058839
+  - 0.7411556848692086
+  name: obstacle_2
+  radius_m: 0.06
+control:
+  period_s: 0.1
+  solver_mode: separated
+  nominal_feed_multiplier: 0.05
+  cbf_alpha: 5.0
+  task_gains:
+  - 8.0
+  - 8.0
+  - 8.0
+  - 8.0
+  - 8.0
+  task_weights:
+  - 10000.0
+  - 10000.0
+  - 10000.0
+  - 1000.0
+  - 1000.0
+  posture_weight: 0.01
+  smooth_weight: 0.02
+  feed_weight: 100.0
+  posture_speed_limit: 0.02
+  posture_influence_m: 0.08
+  posture_joint_margin_fraction: 0.05
+  recovery:
+    mode: basic
+    pause_position_m: 0.001
+    resume_position_m: 0.0003
+    pause_angle_rad: 0.003490658503988659
+    resume_angle_rad: 0.0006981317007977317
+    confirmation_s: 0.2
+    timeout_s: 30.0
+    feed_acceleration_m_s2: 0.03
+  clearance_reserve_m: 0.0001
+path_radius_m: 0.2706
+workpiece_radius_m: 0.2206
+external_clearance_m: 0.03
+self_clearance_m: 0.01
+workpiece_axial_margin_m: 0.1
+table_half_extents_m:
+- 0.4
+- 0.025
+- 0.4
+initial_position:
+- 0.4660888592305836
+- -1.3046859102762256
+- 0.4878612339833056
+- 1.383984286344668
+- 1.1002338370759628
+- 0.4395349231726782
+- 0.8587900071557233
+- -1.4530208372077718
+- -0.9479481508485612
+timeout_s: 420.0
+endpoint_hold_s: 0.5
+settle_s: 2.0
+controller_profile: config/oscbf_controller.yaml
+plant_profile: config/oscbf_plant.yaml
+trajectory_mat: data/nurbs/ik_input.mat
+kinematics_config: portable_oscbf/config/nineaxis.yaml
+urdf: models/ninezzhou/urdf/ninezzhou.urdf
+mesh_directory: models/ninezzhou/meshes
+collision_mesh_manifest: portable_oscbf/config/collision_geometry_sources.json

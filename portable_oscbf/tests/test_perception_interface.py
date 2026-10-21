@@ -12,6 +12,7 @@ jax.config.update("jax_enable_x64", True)
 import _path_setup  # noqa: F401
 import numpy as np
 import pytest
+from artifact_paths import TEST_OUTPUT
 
 from work.ik_data_loader import load_repository_trajectory
 from work.jax_control_facade import JaxControlLoop
@@ -27,7 +28,7 @@ from work.safety_snapshot import (
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CURRENT_TRAJECTORY = REPO_ROOT / "data" / "nurbs" / "ik_input.mat"
-BASELINE_PATH = REPO_ROOT / "output" / "baseline_tracking.npz"
+BASELINE_PATH = TEST_OUTPUT / "baseline_tracking.npz"
 
 
 def _control_kwargs(q):
@@ -59,7 +60,9 @@ def sdf_loop():
 
 def test_sdf_disabled_matches_m7_baseline(plain_loop):
     """sdf_enabled=false must reproduce the M7 baseline step-for-step."""
+    from test_modular_jit_equivalence import _ensure_current_baseline
 
+    _ensure_current_baseline()
     baseline = np.load(BASELINE_PATH)
     q = baseline["initial_q"].copy()
     path_state = plain_loop.initial_path_state()

@@ -13,7 +13,7 @@ the baseline artifact produced by ``test_baseline_tracking`` under the
 remaining M6 acceptance criteria that stay meaningful for the modular build:
 single JIT cache entry after the first frame, sub-30 s modular compilation,
 and per-step cost within 20% of the baseline.  Results are written to
-``output/oscbf_m6_perf.md``.
+``oscbf_m6_perf.md`` in the test artifact directory.
 """
 
 from __future__ import annotations
@@ -28,6 +28,7 @@ jax.config.update("jax_enable_x64", True)
 
 import _path_setup  # noqa: F401
 import numpy as np
+from artifact_paths import TEST_OUTPUT
 
 from work.ik_data_loader import load_repository_trajectory
 from work.jax_control_facade import JaxControlLoop
@@ -36,8 +37,8 @@ from work.path_following import PathFollowingConfig
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CURRENT_TRAJECTORY = REPO_ROOT / "data" / "nurbs" / "ik_input.mat"
-BASELINE_PATH = REPO_ROOT / "output" / "baseline_tracking.npz"
-PERF_REPORT_PATH = REPO_ROOT / "output" / "oscbf_m6_perf.md"
+BASELINE_PATH = TEST_OUTPUT / "baseline_tracking.npz"
+PERF_REPORT_PATH = TEST_OUTPUT / "oscbf_m6_perf.md"
 NUM_STEPS = 3000
 CURRENT_SEMANTICS = "m7_elastic_qp_v11_final"
 

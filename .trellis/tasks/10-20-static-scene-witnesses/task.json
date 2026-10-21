@@ -3,7 +3,7 @@
   "name": "static-scene-witnesses",
   "title": "#177 固定场景与独立可行性见证",
   "description": "从 S0 反馈生成候选障碍、三组初态、受限行程和固定末端构型调整见证，逐项保存连续安全与阻塞证据",
-  "status": "in_progress",
+  "status": "completed",
   "dev_type": null,
   "scope": null,
   "package": null,
@@ -11,7 +11,7 @@
   "creator": "Lsn",
   "assignee": "Lsn",
   "createdAt": "2026-10-20",
-  "completedAt": null,
+  "completedAt": "2026-10-21",
   "branch": "codex/static-obstacle-experiments",
   "base_branch": "main",
   "worktree_path": null,
@@ -21,6 +21,6 @@
   "children": [],
   "parent": "10-20-static-obstacle-experiments",
   "relatedFiles": [],
-  "notes": "",
+  "notes": "#177九项条款核查通过，逐项验收评论6306806376已发布并关闭。当前正式物理输入登记research/formal-scene-input.json，SHA-256 0f27070df3e6bd707426db43b85ff61d442e93f89aa55af3fdf12a319e7f3c9e，7份来源与72配置身份已核对。S2 D/B各32条获准双活动约束；S4独立见证及九组D完整ROS通过；其余组合的证据不足状态明确。完整参数冻结、共同周期、容量及正式矩阵由#182–183继续。",
   "meta": {}
 }

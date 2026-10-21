@@ -56,6 +56,9 @@ class VelocitySolution:
     task_scale: float | None = None
     task_residual: float | None = None
     saturated: tuple[int, ...] = ()
+    dual: np.ndarray | None = None
+    reused_zero_feed: bool = False
+    reused_problem: bool = False
 
 
 def build_constraints(
@@ -139,7 +142,7 @@ def _solve(P, c, G, h):
 
 @jax.jit
 def _solve_joint(P, c, G, h):
-    solution, health, _, iterations, _ = _solve(P, c, G, h)
+    solution, health, _, iterations, original_dual = _solve(P, c, G, h)
 
     def boundary_solution():
         # 固定进给后重新求解九轴运动，两个分支在预热时共同编译。
@@ -162,20 +165,79 @@ def _solve_joint(P, c, G, h):
             lambda valid, invalid: jnp.where(reduced_health.accepted, valid, invalid),
             corrected_health, reduced_health,
         )
-        return corrected, final_health, iterations + reduced_iterations
+        return corrected, final_health, iterations + reduced_iterations, dual
 
     return jax.lax.cond(
         health.accepted & ((solution[9] < 0.) | (solution[9] > 1.)),
-        boundary_solution, lambda: (solution, health, iterations),
+        boundary_solution, lambda: (solution, health, iterations, original_dual),
     )
 
 
-def _solve_problem(problem, *, joint):
-    values = [jnp.asarray(problem[key]) for key in ("P", "c", "G", "h")]
+@jax.jit
+def _solve_or_reuse(P, c, G, h, solution, dual, can_reuse):
+    size = len(solution)
+    health = terminal_qp_health(
+        P, c, jnp.zeros((0, size)), jnp.zeros(0), G, h, solution,
+        h - G @ solution, dual, jnp.zeros(0), solver_tol=1e-8,
+    )
+
+    def solve_new_problem():
+        if size == 10:
+            result, checked, iterations, multipliers = _solve_joint(P, c, G, h)
+        else:
+            result, checked, _, iterations, multipliers = _solve(P, c, G, h)
+        return result, checked, iterations, multipliers, False
+
+    return jax.lax.cond(
+        can_reuse & health.accepted,
+        lambda: (solution, health, jnp.asarray(0), dual, True),
+        solve_new_problem,
+    )
+
+
+def _zero_feed_candidate(problem, previous, *, joint):
+    if previous is None or previous.solver != "qp" or previous.feed_m_s != 0.:
+        return None
+    previous_joint = len(previous.solution) == 10
+    old_rows = slice(None, -2) if previous_joint else slice(None)
+    rows = slice(None, -2) if joint else slice(None)
+    original = previous.problem
+    if previous.dual is None or not all((
+        np.array_equal(problem["P"][:9, :9], original["P"][:9, :9]),
+        np.array_equal(problem["c"][:9], original["c"][:9]),
+        np.array_equal(problem["G"][rows, :9], original["G"][old_rows, :9]),
+        np.array_equal(problem["h"][rows], original["h"][old_rows]),
+    )):
+        return None
+    solution = np.r_[previous.velocity, 0.] if joint else previous.velocity.copy()
+    dual = previous.dual[old_rows].copy()
     if joint:
-        return _solve_joint(*values)
-    solution, health, _, iterations, _ = _solve(*values)
-    return solution, health, iterations
+        derivative = (problem["P"] @ solution + problem["c"]
+                      + problem["G"][:-2].T @ dual)[9]
+        dual = np.r_[dual, 0., derivative]
+    return solution, dual
+
+
+def _same_problem_candidate(problem, previous):
+    if (previous is None or previous.solver != "qp" or previous.dual is None
+            or set(problem) != set(previous.problem)
+            or not all(np.array_equal(value, previous.problem[key]) for key, value in problem.items())):
+        return None
+    return previous.solution.copy(), previous.dual.copy()
+
+
+def _solve_problem(problem, *, joint, previous_zero_feed=None, previous_problem=None):
+    exact = _same_problem_candidate(problem, previous_problem)
+    candidate = exact if exact is not None else _zero_feed_candidate(problem, previous_zero_feed, joint=joint)
+    solution, dual = (
+        (np.zeros(len(problem["c"])), np.zeros(len(problem["h"])))
+        if candidate is None else candidate
+    )
+    result = _solve_or_reuse(
+        *[jnp.asarray(problem[key]) for key in ("P", "c", "G", "h")],
+        jnp.asarray(solution), jnp.asarray(dual), jnp.asarray(candidate is not None),
+    )
+    return (*result, exact is not None)
 
 
 def _separated_feed(jacobian, reference_rate, correction, posture, constraints, nominal):
@@ -202,7 +264,9 @@ def solve_velocity(
         gains=(40., 40., 40., 20., 20.),
         task_weights=(1e4, 1e4, 1e4, 1e3, 1e3),
         posture_weight: float = .01, smooth_weight: float = .02,
-        feed_weight: float = 100., max_velocity=None, fixed_feed: bool = False) -> VelocitySolution:
+        feed_weight: float = 100., max_velocity=None, fixed_feed: bool = False,
+        previous_zero_feed: VelocitySolution | None = None,
+        previous_problem: VelocitySolution | None = None) -> VelocitySolution:
     if mode not in ("separated", "joint", "sns"):
         raise ValueError("solver_mode 必须为 separated、joint 或 sns")
     if not np.isfinite(nominal_feed) or nominal_feed < 0:
@@ -283,7 +347,10 @@ def solve_velocity(
         "P": P, "c": c, "G": G, "h": h,
         "variable_scale": np.r_[np.ones(9), nominal_feed] if joint else np.ones(9),
     }
-    solution, health, iterations = _solve_problem(problem, joint=joint)
+    solution, health, iterations, dual, reused, exact = _solve_problem(
+        problem, joint=joint, previous_zero_feed=previous_zero_feed,
+        previous_problem=previous_problem,
+    )
     solution = np.asarray(solution)
     residual = float(health.kkt_residual)
     violation = max(0., float(np.max(original_G @ solution - original_h)))
@@ -295,4 +362,6 @@ def solve_velocity(
             raise SolverFailure(f"QP 进给超出允许范围：{feed}", problem)
     return VelocitySolution(
         solution[:9].copy(), feed, solution, problem, residual, violation, int(iterations),
+        dual=np.asarray(dual).copy(), reused_zero_feed=bool(reused) and not exact,
+        reused_problem=bool(reused) and exact,
     )

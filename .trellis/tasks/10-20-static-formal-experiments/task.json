@@ -21,6 +21,10 @@
   "children": [],
   "parent": "10-20-static-obstacle-experiments",
   "relatedFiles": [],
-  "notes": "用户要求空间不足时停止本机任务并同步远程，且主机也可能无法提供 200 GB。当前停止新增采集，正式矩阵尚未开始；接手时先验证紧凑存储与容量。详细状态见 docs/static_obstacle_experiments_handoff.md。",
-  "meta": {}
+  "notes": "用户要求开题后继续，实验已暂停。implement-spec执行整个#171，#172–181已关闭，#182–183开放。固定源码504a274、125项来源一致。三卷前置已结束exit0；S0/S4完整通过，三卷S5功能/生命周期通过、两个runtime失败保留。当前工程容量10项检查通过，需求215718965248、余量67940061184字节，formal_bound=false。共同周期服务已停止，20ms A/B两份完整原始报告保存，实际2/20且均失败；B无父队列process元数据，C未启动。正式采集0/1080，正式清单与最终容量未绑定。开题数据、21张PNG及SVG/PDF、独立结论文档位于docs/proposal-static-obstacles/，原始数据身份、大型路径、未完成草稿和继续条件见research/proposal-pause.md。全部原件保留。",
+  "meta": {
+    "execution_state": "paused_by_user",
+    "resume_condition": "用户开题结束后明确要求继续",
+    "delivery": "docs/proposal-static-obstacles/README.md"
+  }
 }

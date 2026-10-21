@@ -1,0 +1,26 @@
+{
+  "lifecycle": {
+    "deadline_monotonic_s": 10699.613402088,
+    "run_started_monotonic_s": 10279.613404572,
+    "startup_order": [
+      "controller",
+      "plant"
+    ],
+    "stop_requested_monotonic_s": 10699.69163086,
+    "workers_exited_monotonic_s": 10701.36064323
+  },
+  "ready_sha256": {
+    "controller": "f91040ce1c37ba8e0b5586763f6892bf8ad949fa59f4af3cba0a47e53ddf8763",
+    "plant": "fd6e875e4cef71deb880d9dbacf24265476fc47dbfaf4c427b31acebfe78e810"
+  },
+  "reason": "run_timeout",
+  "recording_statistics_sha256": {
+    "controller": "fe0314b4182c4cba56095ed8013c30df22131277cf6746915bce030e6cd3a874",
+    "plant": "e350ecb5d3a2509986d32cedd6914ac9ee83222f589f5e502e31111825d7206d"
+  },
+  "termination": "timeout",
+  "worker_exit_codes": [
+    0,
+    0
+  ]
+}

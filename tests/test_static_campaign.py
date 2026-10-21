@@ -9,14 +9,15 @@ import zipfile
 
 import pytest
 
-from robot_safecontrol_moveit.static_experiment_config import content_hash
+from robot_safecontrol_moveit.static_experiment_config import ExperimentConfig, content_hash
 from robot_safecontrol_moveit.static_experiment_provenance import (
     environment_identity, relocate_manifest, snapshot_sources, verify_snapshot,
     recording_hashes,
 )
-from robot_safecontrol_moveit.static_experiment_recording import RunRecorder, finalize_recording, read_stream
-from robot_safecontrol_moveit.static_formal_experiments import experiment_rows
+from robot_safecontrol_moveit.static_experiment_recording import RunRecorder, finalize_recording, read_stream, write_json
+from robot_safecontrol_moveit.static_formal_experiments import experiment_rows, freeze_formal, SCENARIOS
 from robot_safecontrol_moveit.static_period_measurement import select_period, PERIODS
+from robot_safecontrol_moveit.static_cycle_timing import CYCLE_TIMING_BOUNDARY
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -35,13 +36,19 @@ def test_formal_plan_has_every_required_paired_configuration():
 def test_period_selection_requires_complete_measurements_and_all_five_methods():
     rows = [
         {"period_s": period, "method": method, "status": "measured", "samples": 1000,
-         "p999_s": .04, "maximum_s": .06, "deadline_misses": 1 if period < .06 else 0}
+         "p999_s": .04, "maximum_s": .06, "deadline_misses": 1 if period < .06 else 0,
+         "cycle_timing_boundary": CYCLE_TIMING_BOUNDARY}
         for period in PERIODS for method in "ABCDE"
     ]
     result = select_period(rows)
     assert result["status"] == "pass"
     assert result["selected_period_s"] == .05
     assert select_period(rows[:-1])["status"] == "insufficient_evidence"
+    legacy = deepcopy(rows)
+    for row in legacy:
+        del row["cycle_timing_boundary"]
+    assert select_period(legacy)["status"] == "insufficient_evidence"
+    assert select_period(legacy)["selected_period_s"] is None
     delayed = deepcopy(rows)
     for row in delayed:
         if row["method"] == "E":
@@ -73,6 +80,23 @@ def test_source_archive_preserves_actual_files_and_detects_changed_content(tmp_p
         verify_snapshot(tmp_path / "provenance")
 
 
+def test_formal_freeze_rejects_saved_period_with_legacy_boundary(tmp_path):
+    write_json(tmp_path / "catalog.json", {
+        "kind": "development", "initial_positions": [[0.] * 9] * 3,
+        "feed_factors": [.5, 1., 1.5], "scenarios": [{"id": scene} for scene in SCENARIOS],
+    })
+    write_json(tmp_path / "study.json", {})
+    write_json(tmp_path / "evidence.json", {})
+    write_json(tmp_path / "period_report.json", {
+        "status": "pass", "selected_period_s": .1, "groups": [],
+        "study_sha256": content_hash(tmp_path / "study.json"),
+    })
+    with pytest.raises(ValueError, match="完整测量"):
+        freeze_formal(tmp_path / "catalog.json", tmp_path, tmp_path / "evidence.json",
+                      tmp_path / "formal", ROOT)
+    assert not (tmp_path / "formal").exists()
+
+
 def test_recorder_commits_each_sample_and_checkpoints_after_sampling(tmp_path):
     database = tmp_path / "records.sqlite3"
     with RunRecorder(database) as recorder:
@@ -102,6 +126,27 @@ def test_relocation_preserves_resource_identity_and_original_manifest(tmp_path):
     assert manifest["outside_root"] == original["outside_root"]
     assert original["resources"]["config"]["path"] == str(source)
     assert relocate_manifest({"legacy": True}, tmp_path) == {"legacy": True}
+
+
+def test_legacy_scene_relocation_keeps_geometry_roles_and_hashes(tmp_path):
+    config = ExperimentConfig.load(ROOT / "config/static_experiment_s0.yaml", resource_root=ROOT)
+    original = config.manifest()
+    original.pop("resource_root")
+    relocated = relocate_manifest(original, tmp_path)
+    for first, second in zip(
+        original["scene"]["self_collision"]["meshes"],
+        relocated["scene"]["self_collision"]["meshes"],
+    ):
+        assert second == {
+            **first, "path": str(tmp_path / Path(first["path"]).relative_to(ROOT)),
+        }
+    assert relocated["scene"]["obstacles"] == original["scene"]["obstacles"]
+    assert relocated["execution_limits"] == original["execution_limits"]
+    assert "resource_root" not in original
+    changed = deepcopy(original)
+    changed["config"]["collision_mesh_manifest"] = "different/collision_geometry_sources.json"
+    with pytest.raises(ValueError, match="资源根目录"):
+        relocate_manifest(changed, tmp_path)
 
 
 def test_device_identity_is_repeatable_on_the_actual_environment():

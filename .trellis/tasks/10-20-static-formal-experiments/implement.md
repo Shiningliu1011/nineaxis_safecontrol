@@ -1,42 +1,53 @@
 # 实施与验证
 
-1. 完成共同周期测量、场景证据及固定来源记录。
-2. 生成正式清单，验证 1,080 个组合与方法配对身份。
-3. 接入串行执行、进度恢复、身份检查及全部失败记录。
-4. 实现配对指标与未完成状态报告，并运行正式实验。
-5. 重算原始反馈报告和论文图表，核查内容、字体与文件完整性。
-6. 串行运行受影响回归、构建和规范检查，完成内联需求与代码审查。
+`implement-spec` 管理整个 #171 的实现、子任务、集成及最终审查；Trellis 保存
+规划、验证证据与接手记录。集成目录 `/home/lsn/robot/robot_safecontrol`，分支
+`codex/static-obstacle-experiments`，环境入口 `.scratch/host-recovery/env.sh`。
+全部实验限定 sim，用户已授权相关修改、验证、子 agent、commit 和 push。
 
-当前共同周期和完整开发场景验证仍在进行；正式运行尚未开始。
+## 当前证据
 
-## 当前检查
+- #172–#181 已关闭，#182、#183 和 #171 保持开放，正式采集0/1080。
+- 完整计时修复 `8d022236` 与前置检查 `a6a422a5` 已审查并集成至 `3771bc88`。
+  定向验证、来源归档与校验值见 `research/complete-cycle-timing-implementation.md`。
+- 集成完整回归04结束：主包752 passed/1 failed/1 skipped，控制内核退出0，
+  CTest4/4。既有50 Hz性能用例独占复验通过，301采样超期零次；两份原件分别保留。
+  新增ROS终止两参数隔离复验通过且无收尾诊断，见 `research/full-regression-04.md`。
+- 容量公共参数修复、保存反馈播放与相关验证已经独立审查并集成至 `504a274`，
+  125项运行来源核查一致。三卷离线、七项sim及预期终止流程已全部完成，
+  新工程容量10项检查通过，需求215718965248、余量67940061184字节，
+  `formal_bound=false`。实际结果见 `research/complete-cycle-preflight-results.md`。
+- 新共同周期服务已按用户要求停止，20 ms A/B 两份完整原始报告保存，
+  实际2/20且均失败；B无队列process元数据，C未启动，全部原件保留。
+  当前转为开题资料交付，见 `docs/proposal-static-obstacles/` 和 `research/proposal-pause.md`。
+- 源码 `40d43bb` 的回归03通过：主包732 passed/1 skipped，控制内核
+  486 passed/34 skipped，CTest4/4。身份见 `research/full-regression-20261021.md`。
+- 相同旧源码三卷工程容量通过，需求214189355008字节，可用284842614784字节，
+  `formal_bound=false`。当前计时文件额度需要重新核查和绑定。
+- S4九组D方法完整运行与独立连续见证通过，新S2三个初态完整ROS运行通过。
+  36份完整来源支持39/72物理配置证明，见 `research/formal-proof-index-results.md`。
+- 旧周期队列在20 ms的A、B结束后停止，原件及SHA-256见
+  `research/period-study-records-01.md`。新边界需要测量全部20组。
 
-- 1,080 个组合、配对身份、周期判定、实际源文件归档、SQLite 持续提交与
-  异常退出恢复、资源路径移动和实际设备身份检查已运行通过。
-- 报告与 manifest、终止记录、原始数据库及派生数组关联；真实 Ruckig
-  反馈重算及身份变化拒绝检查通过。
-- `colcon build --symlink-install --base-paths "$PWD" "$PWD/src/aeb_rrtstar_ompl"
-  --packages-select robot_safecontrol_moveit` 通过，耗时 7.71 s。
-  安装入口 `ros2 run robot_safecontrol_moveit static_obstacle_experiment --help` 通过。
-- 闭合 mesh 生成器 `--check` 通过，`git diff --check` 通过。
-- 安装目录来源归档保存 166 个实际文件，代码、模型、依赖、入口与 package
-  marker 的目标路径核查通过。
-- 共享任务无效时，控制内核保留原有参考进度与关节状态；真实输入检查通过。
-  共同参考、场景管理和执行评价共 22 项通过，66.95 s。
-- 完整回归仍需运行。
+## 接续顺序
 
-## 接手状态
+当前按用户要求暂停，开题结束后收到明确继续请求才执行以下步骤。
 
-用户要求清理空间后仍无法容纳正式数据时停止本机任务并同步远程分支，
-随后说明主机也可能无法提供 200 GB 空间。当前已停止新增实验采集。
-清理释放约 30.98 GB，可用空间约 56.87 GB；存储格式仍需验证紧凑保存方式，
-再核定正式矩阵的实际容量。
+1. 保持运行源码 `504a274`、模型、控制参数和环境身份，保存全部原始数据。
+2. 保留已通过的三卷前置、新工程容量、源码归档和全部失败原件。
+3. 核查已保存 A/B、缺失的父队列元数据与接续方式，检查剩余空间，不覆盖已有记录。
+4. 完成20/40/50/100 ms × A–E全部20组，按完整周期P99.9选择最短合格周期。
+   没有合格候选时保持运行时间验收失败，修复有证据的问题并复验。
+5. 固定参数、源码、环境和1080项正式清单，核查登记的72配置身份与39/72证明；
+   容量绑定最终清单与周期，全部前置通过后串行采集，保留全部失败原件。
+6. 完成配对统计、六类图表、重算和播放验证；执行最终规范与规格独立审查，
+   修复并复验，关闭工单，更新接手记录并提交推送。
 
-`development-scenes-05` 已生成。当前 D/S2 完整运行通过，S4、S5 当前参数验证、
-共同周期测量、正式矩阵、完整回归和独立审查均未完成。
-本次接手检查 `scripts/agent_check.sh` 通过，其中纯逻辑测试 69 项通过。
-本次标准 package 构建通过，耗时 1.70 s；安装后的 CLI 入口及接手文档路径核查通过。
-状态、原始数据位置和继续工作顺序见 `docs/static_obstacle_experiments_handoff.md`。
+## 数据位置
 
-本次同步获得用户明确授权。没有完成任务归档或 spec promotion；
-本任务保持 `in_progress`，等待继续开发。
+主仓库 `output/` 和两个NTFS任务目录全部保留：
+`/media/lsn/宇宙小机器人/robot_safecontrol_static_experiments_20261020/`、
+`/media/lsn/Windows/robot_safecontrol_static_experiments_20261021/`。
+UUID分别为 `083CBB753CBB5BFE`、`6C001EAA001E7B72`。
+数据来源与校验值见 `docs/static_obstacle_experiments_handoff.md` 及所引研究文件。
+当前任务生命周期保持 `in_progress`，执行状态为 `paused_by_user`，正式采集0/1080。

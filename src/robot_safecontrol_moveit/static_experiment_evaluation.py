@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import json
 import hashlib
+from contextlib import contextmanager
+from copy import deepcopy
 from pathlib import Path
+import tempfile
 
 import jax
 import numpy as np
@@ -12,8 +15,11 @@ from .oscbf_trajectory import bootstrap_portable
 from .static_clearance_evaluation import evaluate_clearances
 from .static_experiment_config import content_hash
 from .static_experiment_recording import read_stream, write_json
-from .static_experiment_provenance import recording_hashes, relocate_manifest, source_identity
+from .static_experiment_provenance import (
+    recording_hashes, relocate_manifest, source_identity, validate_storage_migration,
+)
 from .static_execution_evaluation import evaluate_execution, arc_statistics, ordered_coverage
+from .static_cycle_timing import LEGACY_CYCLE_TIMING_BOUNDARY
 
 
 def distribution(values: np.ndarray) -> dict:
@@ -55,17 +61,24 @@ def ordered_projection(geometry, positions: np.ndarray) -> tuple[np.ndarray, np.
     return progress, distances
 
 
-def evaluate_run(directory: Path, *, resource_root: Path) -> dict:
+def evaluate_run(directory: Path, *, resource_root: Path, save_samples: bool = False,
+                 output_directory: Path | None = None) -> dict:
     directory = Path(directory)
+    output = directory if output_directory is None else Path(output_directory)
+    output.mkdir(parents=True, exist_ok=True)
     manifest = relocate_manifest(json.loads((directory / "manifest.json").read_text()), resource_root)
     result = json.loads((directory / "result.json").read_text())
     identities = {
         "manifest_sha256": content_hash(directory / "manifest.json"),
         "result_sha256": content_hash(directory / "result.json"),
-        "config_sha256": manifest["config_sha256"], "path_sha256": manifest["path_sha256"],
+        "config_sha256": manifest["config_sha256"],
+        "path_sha256": content_hash(directory / "path.npz"),
         "records_sha256": recording_hashes(directory),
         "evaluation_sources_sha256": source_identity(Path(resource_root)),
     }
+    migration = directory / "storage_migration.json"
+    if migration.exists():
+        identities["storage_migration_sha256"] = validate_storage_migration(directory, identities)
     identity = hashlib.sha256(json.dumps(
         manifest["config"], sort_keys=True, allow_nan=False,
     ).encode()).hexdigest()
@@ -107,7 +120,7 @@ def evaluate_run(directory: Path, *, resource_root: Path) -> dict:
             "runtime_verdict": "insufficient_evidence",
             "termination": result, "reason": "缺少反馈或命令记录",
         }
-        write_json(directory / "feedback_report.json", report)
+        write_json(output / "feedback_report.json", report)
         return report
     command_times = np.array([row["monotonic_s"] for row in commands])
     feedback_times = np.array([row["monotonic_s"] for row in feedback])
@@ -192,7 +205,7 @@ def evaluate_run(directory: Path, *, resource_root: Path) -> dict:
         result["termination"] == "completed" and coverage
         and held_s >= manifest["config"]["endpoint_hold_s"]
     )
-    clearance = evaluate_clearances(directory, manifest["scene"], measured)
+    clearance = evaluate_clearances(output, manifest["scene"], measured, save_samples=save_samples)
     geometry_pass = all(clearance[kind]["status"] == "pass" for kind in ("external", "self"))
     geometry_fail = any(clearance[kind]["status"] == "fail" for kind in ("external", "self"))
     execution = evaluate_execution(directory, manifest, feedback, commands)
@@ -237,7 +250,9 @@ def evaluate_run(directory: Path, *, resource_root: Path) -> dict:
                     "pass" if functional == runtime == "pass" else "insufficient_evidence"),
         "metrics": metrics,
         "execution": execution,
-        "arc_statistics": arc_statistics(directory, geometry.total_length_m, progress, series),
+        "arc_statistics": arc_statistics(
+            output, geometry.total_length_m, progress, series, save_samples=save_samples,
+        ),
         "phases": {
             phase: {"duration_s": float(np.count_nonzero(phases == phase) * .002),
                     **{name: distribution(values[phases == phase]) for name, values in series.items()}}
@@ -254,18 +269,20 @@ def evaluate_run(directory: Path, *, resource_root: Path) -> dict:
         "external_clearance": {**clearance["external"], "required_m": .03},
         "self_clearance": {**clearance["self"], "required_m": .01},
     }
-    np.savez_compressed(
-        directory / "feedback_metrics.npz", monotonic_s=feedback_times,
-        simulation_s=simulation_times, positions_m=positions, tool_axes=axes,
-        projected_progress_m=progress, reference_progress_m=reference_progress,
-        phase=phases, **series,
-    )
+    if save_samples:
+        np.savez_compressed(
+            output / "feedback_metrics.npz", monotonic_s=feedback_times,
+            simulation_s=simulation_times, positions_m=positions, tool_axes=axes,
+            projected_progress_m=progress, reference_progress_m=reference_progress,
+            phase=phases, **series,
+        )
+    report["derived_data_policy"] = "saved" if save_samples else "on_demand"
     report["derived_data_sha256"] = {
-        filename: content_hash(directory / filename)
+        filename: content_hash(output / filename)
         for filename in ("feedback_metrics.npz", "clearance_metrics.npz", "feedback_arc_metrics.npz")
-    }
-    write_json(directory / "feedback_report.json", report)
-    write_json(directory / "clearance_report.json", clearance)
+    } if save_samples else {}
+    write_json(output / "feedback_report.json", report)
+    write_json(output / "clearance_report.json", clearance)
     rows = [
         f"# {manifest['config']['scenario']} 反馈评价",
         "",
@@ -291,5 +308,35 @@ def evaluate_run(directory: Path, *, resource_root: Path) -> dict:
         f"QP：{execution['qp']['status']}；完整周期：{execution['timing']['status']}。",
         "全部测量来自 Ruckig 仿真被控对象的关节反馈。",
     ])
-    (directory / "feedback_report.md").write_text("\n".join(rows) + "\n", encoding="utf-8")
+    (output / "feedback_report.md").write_text("\n".join(rows) + "\n", encoding="utf-8")
     return report
+
+
+@contextmanager
+def evaluation_samples(directory: Path, resource_root: Path, report: dict):
+    if report.get("derived_data_policy") != "on_demand":
+        if not report.get("derived_data_sha256"):
+            raise ValueError("绘图需要完整的反馈评价，请执行 replay")
+        yield directory, report
+        return
+    temporary_root = resource_root / ".scratch/static-experiments"
+    temporary_root.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix="derived-", dir=temporary_root) as temporary:
+        output = Path(temporary)
+        recomputed = evaluate_run(
+            directory, resource_root=resource_root, save_samples=True, output_directory=output,
+        )
+        excluded = {"evaluation_sources_sha256", "evaluator_sha256",
+                    "derived_data_policy", "derived_data_sha256"}
+        expected = deepcopy({key: value for key, value in report.items() if key not in excluded})
+        actual = deepcopy({key: value for key, value in recomputed.items() if key not in excluded})
+        if ("boundary" not in expected.get("execution", {}).get("timing", {})
+                and actual["execution"]["timing"]["boundary"] == LEGACY_CYCLE_TIMING_BOUNDARY):
+            for item in (expected, actual):
+                item.pop("verdict", None)
+                item.pop("runtime_verdict", None)
+                for key in ("status", "schema_version", "boundary", "eligible_for_period", "sidecar_sha256"):
+                    item["execution"]["timing"].pop(key, None)
+        if actual != expected:
+            raise ValueError("按需生成的评价与保存的报告不一致，请核查后执行 replay")
+        yield output, recomputed

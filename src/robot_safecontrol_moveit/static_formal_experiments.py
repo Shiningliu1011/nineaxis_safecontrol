@@ -12,10 +12,13 @@ import numpy as np
 import yaml
 
 from .static_experiment_config import ExperimentConfig, METHODS, content_hash
+from .static_experiment_capacity import require_formal_capacity
+from .static_experiment_volumes import capacity_run_directory
 from .static_experiment_provenance import (
-    environment_identity, snapshot_sources, validate_run_report, verify_snapshot,
+    environment_identity, relocate_manifest, snapshot_sources, validate_run_report, verify_snapshot,
 )
 from .static_experiment_recording import write_json
+from .static_cycle_timing import CYCLE_TIMING_BOUNDARY, cycle_timing_summary, load_cycle_timing
 
 
 SCENARIOS = ("s0", "s1", "s2", "s3-travel-100", "s3-travel-70", "s3-travel-40", "s4", "s5")
@@ -35,9 +38,19 @@ def experiment_rows() -> list[dict]:
     ]
 
 
-def _physical_identity(manifest):
+def _physical_identity(manifest, resource_root: Path):
+    root = Path(resource_root).resolve(strict=True)
+    manifest = relocate_manifest(manifest, root)
     scene = deepcopy(manifest["scene"])
     del scene["config_sha256"]
+    collision = scene["self_collision"]
+    for record in [collision["manifest"], *collision["auxiliary"], *collision["meshes"]]:
+        if content_hash(Path(record["path"])) != record["sha256"]:
+            raise ValueError(f"可行性碰撞资源身份变化：{record['path']}")
+    for name in ("trajectory_mat", "kinematics_config"):
+        path = root / manifest["config"][name]
+        if content_hash(path) != manifest["resources"][name]["sha256"]:
+            raise ValueError(f"可行性资源身份变化：{path}")
     return {
         "scene": scene, "initial_position": manifest["config"]["initial_position"],
         "execution_limits": manifest["execution_limits"],
@@ -50,23 +63,41 @@ def freeze_formal(catalog_path: Path, period_directory: Path, evidence_index: Pa
                   directory: Path, resource_root: Path) -> dict:
     from .static_experiment import _sources
     from .static_scenario_evidence import verify_blockage, verify_reconfiguration
+    from .static_period_measurement import select_period, validate_period_storage
 
     catalog = json.loads(catalog_path.read_text())
     period = json.loads((period_directory / "period_report.json").read_text())
     study = json.loads((period_directory / "study.json").read_text())
     evidence = json.loads(evidence_index.read_text())
+    root = resource_root.resolve(strict=True)
     if (catalog["kind"] != "development" or len(catalog["initial_positions"]) != 3
             or catalog["feed_factors"] != [.5, 1., 1.5]
             or {row["id"] for row in catalog["scenarios"]} != set(SCENARIOS)):
         raise ValueError("开发清单必须包含完整场景、三个初态和三档进给")
     if (period["status"] != "pass" or period["selected_period_s"] is None
+            or period.get("cycle_timing_boundary") != CYCLE_TIMING_BOUNDARY
+            or study.get("cycle_timing_boundary") != CYCLE_TIMING_BOUNDARY
             or period["study_sha256"] != content_hash(period_directory / "study.json")):
+        raise ValueError("共同周期尚未通过完整测量")
+    selected = select_period([row for group in period["groups"] for row in group["methods"]])
+    if any(period.get(key) != value for key, value in selected.items()):
         raise ValueError("共同周期尚未通过完整测量")
     selected_period = period["selected_period_s"]
     for group in period["groups"]:
         for row in group["methods"]:
             run = period_directory / row["run"]
-            validate_run_report(run)
+            manifest, report = validate_run_report(run)
+            measured = load_cycle_timing(run, manifest)
+            timing = cycle_timing_summary(measured, group["period_s"])
+            if (not measured["eligible_for_period"]
+                    or row.get("cycle_timing_sha256") != measured["sidecar_sha256"]
+                    or any(row.get(key) != timing[key] for key in (
+                        "samples", "p999_s", "maximum_s", "deadline_misses"))
+                    or any(report["execution"]["timing"].get(key) != value
+                           for key, value in timing.items())):
+                raise ValueError("共同周期与完整计时原件不一致")
+            if validate_period_storage(run) != row.get("storage_statistics_sha256"):
+                raise ValueError("共同周期缺少匹配的容量守卫统计身份")
             if content_hash(run / "feedback_report.json") != row["report_sha256"]:
                 raise ValueError("周期测量报告身份不一致")
             for role, expected in row["records_sha256"].items():
@@ -87,11 +118,10 @@ def freeze_formal(catalog_path: Path, period_directory: Path, evidence_index: Pa
             if content_hash(run / f"{role}.sqlite3") != expected:
                 raise ValueError(f"可行性来源原始记录变化：{run}")
         feasible.append({
-            "physical_identity": _physical_identity(manifest), "run": str(run),
+            "physical_identity": _physical_identity(manifest, root), "run": str(run),
             "report_sha256": content_hash(run / "feedback_report.json"),
             "records_sha256": report["records_sha256"],
         })
-    root = resource_root.resolve(strict=True)
     environment = environment_identity()
     first_config = ExperimentConfig.load(
         catalog_path.parent / catalog["scenarios"][0]["config"], resource_root=root,
@@ -128,9 +158,10 @@ def freeze_formal(catalog_path: Path, period_directory: Path, evidence_index: Pa
             measured = StaticGeometry(manifest["scene"]).query(config.initial_position)
             if not all(item.distance.valid and item.distance.distance_m >= item.required_m for item in measured):
                 raise ValueError(f"正式初态未满足全部几何要求：{filename}")
-            matches = [item for item in feasible if item["physical_identity"] == _physical_identity(manifest)]
+            physical = _physical_identity(manifest, root)
+            matches = [item for item in feasible if item["physical_identity"] == physical]
             configurations[filename] = {
-                "sha256": content_hash(target), "physical_identity": _physical_identity(manifest),
+                "sha256": content_hash(target), "physical_identity": physical,
                 "feasibility": "proven" if matches else "insufficient_evidence",
                 "feasibility_runs": matches,
             }
@@ -195,22 +226,47 @@ def run_formal(directory: Path, *, resource_root: Path, domain: int, limit: int 
         raise ValueError("运行数量必须为正整数")
     (directory / "runs").mkdir(exist_ok=True)
     (directory / "logs").mkdir(exist_ok=True)
+    capacity = require_formal_capacity(directory, manifest)
     executed = 0
-    recorded_count = sum((directory / "runs" / row["id"]).exists() for row in manifest["runs"])
+    recorded_count = sum(
+        capacity_run_directory(directory, capacity, row["id"]).exists() for row in manifest["runs"]
+    )
     for row in manifest["runs"]:
         config = ExperimentConfig.load(
             directory / row["configuration"], resource_root=resource_root, method=row["method"],
         )
         if config.identity != row["config_sha256"] or _sources(config) != manifest["source_sha256"]:
             raise ValueError("正式运行的代码或配置身份变化")
-        run = directory / "runs" / row["id"]
+        run = capacity_run_directory(directory, capacity, row["id"])
         if run.exists():
             continue
+        capacity = require_formal_capacity(directory, manifest)
+        anchor = directory / "runs" / row["id"]
+        if anchor != run and not anchor.is_symlink():
+            anchor.symlink_to(run, target_is_directory=True)
         command = [
             sys.executable, "-m", "robot_safecontrol_moveit.static_experiment", "run",
             "--config", str(config.source), "--method", row["method"], "--output", str(run),
             "--resource-root", str(resource_root), "--domain", str(domain),
         ]
+        from .static_experiment_engineering_capacity import run_capacity_group
+        from .static_recording_capacity import runtime_storage_configuration
+
+        if capacity.get("is_validated_engineering_budget") is not True:
+            raise ValueError("正式运行需要逐 writer 空间预算证据")
+        engineering = json.loads(Path(capacity["engineering_evidence"]).read_text())
+        volume = next(item for item in capacity["volumes"] if row["id"] in item["run_ids"])
+        storage = runtime_storage_configuration(
+            engineering["models"][run_capacity_group(row, engineering)],
+            engineering["wal_bytes_per_record"], volume["budget"],
+        )
+        storage.update(
+            config_sha256=config.identity, source_sha256=manifest["source_sha256"],
+            filesystem_uuid=volume["filesystem_uuid"], run_id=row["id"],
+        )
+        storage_path = directory / "logs" / f"{row['id']}.storage.json"
+        write_json(storage_path, storage)
+        command.extend(["--storage-budget", str(storage_path)])
         if row["scene"] in manifest["scene_evidence"]:
             command.extend(["--scene-evidence", manifest["scene_evidence"][row["scene"]]["source"]])
         with (directory / "logs" / f"{row['id']}.log").open("x", encoding="utf-8") as log:
@@ -220,11 +276,19 @@ def run_formal(directory: Path, *, resource_root: Path, domain: int, limit: int 
         })
         executed += 1
         recorded_count += int(run.exists())
+        run_result = run / "result.json"
+        termination = (
+            json.loads(run_result.read_text())["termination"] if run_result.is_file() else None
+        )
         write_json(directory / "batch_progress.json", {
             "recorded_runs": recorded_count, "planned_runs": 1080,
             "last_run": row["id"], "last_returncode": process.returncode,
+            "stop_reason": "budget_exhausted" if termination == "budget_exhausted" else None,
         })
         print(f"正式运行 {row['id']}；已有记录 {recorded_count}/1080", flush=True)
+        if termination == "budget_exhausted":
+            break
+        require_formal_capacity(directory, manifest)
         if limit is not None and executed >= limit:
             break
     return paired_report(directory, manifest=manifest)

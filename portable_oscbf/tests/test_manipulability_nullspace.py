@@ -12,6 +12,7 @@ jax.config.update("jax_enable_x64", True)
 import _path_setup  # noqa: F401
 import numpy as np
 import pytest
+from artifact_paths import TEST_OUTPUT
 
 from work.ik_data_loader import load_repository_trajectory
 from work.jax_control_facade import JaxControlLoop
@@ -22,8 +23,8 @@ from work.path_following import PathFollowingConfig
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CURRENT_TRAJECTORY = REPO_ROOT / "data" / "nurbs" / "ik_input.mat"
-BASELINE_PATH = REPO_ROOT / "output" / "baseline_tracking.npz"
-EVIDENCE_PATH = REPO_ROOT / "output" / "oscbf_m8_nullspace.md"
+BASELINE_PATH = TEST_OUTPUT / "baseline_tracking.npz"
+EVIDENCE_PATH = TEST_OUTPUT / "oscbf_m8_nullspace.md"
 
 # Cross-test measurement log consumed by the final evidence writer.  Keys are
 # the AC8 metrics; each stage test fills the entries it owns.
@@ -160,6 +161,9 @@ def test_fixed_endpoint_manipulability_increases(robot, policy):
 
 
 def test_task_error_not_worse_than_baseline(robot, policy):
+    from test_modular_jit_equivalence import _ensure_current_baseline
+
+    _ensure_current_baseline()
     baseline = np.load(BASELINE_PATH)
     baseline_err = baseline["err_6d_sequence"]
     baseline_pos = np.max(np.linalg.norm(baseline_err[-1000:, :3], axis=1))

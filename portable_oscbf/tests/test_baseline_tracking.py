@@ -4,7 +4,7 @@
 Runs the copied whole-kernel controller unchanged (relax_cbf=False, joint
 mid-point null space, no controller-internal clipping) for >= 3000 steps on
 the repository trajectory, asserts the M5 gates, and stores the input/output
-sequence in ``output/baseline_tracking.npz`` for the M6 modular-JIT
+sequence in the test artifact directory for the M6 modular-JIT
 equivalence test.
 
 Note: M7 switched the controller to the elastic QP (relax_cbf=True) with
@@ -22,6 +22,7 @@ from time import perf_counter
 import _path_setup  # noqa: F401
 import numpy as np
 import pytest
+from artifact_paths import TEST_OUTPUT
 
 from work.ik_data_loader import load_repository_trajectory
 from work.jax_control_facade import JaxControlLoop
@@ -31,7 +32,7 @@ from work.path_following import PathFollowingConfig
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CURRENT_TRAJECTORY = REPO_ROOT / "data" / "nurbs" / "ik_input.mat"
-OUTPUT_PATH = REPO_ROOT / "output" / "baseline_tracking.npz"
+OUTPUT_PATH = TEST_OUTPUT / "baseline_tracking.npz"
 NUM_STEPS = 3000
 STEADY_START = 100
 

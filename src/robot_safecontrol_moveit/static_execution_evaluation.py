@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from contextlib import closing
-import json
 from pathlib import Path
-import sqlite3
 
 import numpy as np
+
+from .static_experiment_recording import iter_records
+from .static_cycle_timing import cycle_timing_summary, load_cycle_timing
 
 
 def ordered_coverage(progress, reference, total_length, initial_error, endpoint_error) -> dict:
@@ -30,10 +30,8 @@ def ordered_coverage(progress, reference, total_length, initial_error, endpoint_
 
 
 def _records(path: Path, stream: str):
-    with closing(sqlite3.connect(path.resolve().as_uri() + "?mode=ro", uri=True)) as connection:
-        for row in connection.execute(
-                "SELECT payload FROM samples WHERE stream=? ORDER BY sequence", (stream,)):
-            yield json.loads(row[0])
+    for row in iter_records(path, stream):
+        yield row["values"]
 
 
 def evaluate_execution(directory: Path, manifest: dict, feedback: list, commands: list) -> dict:
@@ -95,20 +93,10 @@ def evaluate_execution(directory: Path, manifest: dict, feedback: list, commands
         "minimum_task_scale": min(sns_scales) if sns_scales else None,
         "maximum_task_residual": max(sns_residuals) if sns_residuals else None,
     }
-    cycles = list(_records(controller, "cycle"))
     admissions = {row["command_id"]: row for row in _records(plant, "admission")}
-    durations = np.array([row["duration_s"] for row in cycles])
     period = manifest["config"]["control"]["period_s"]
-    timing = {
-        "status": ("insufficient_evidence" if not len(durations) else
-                   "pass" if np.quantile(durations, .999) <= .8 * period else "fail"),
-        "samples": len(durations), "period_s": period,
-        "p999_s": float(np.quantile(durations, .999)) if len(durations) else None,
-        "maximum_s": float(durations.max()) if len(durations) else None,
-        "deadline_misses": int(np.count_nonzero(durations > period)),
-        "admission_rejections": sum(not row["accepted"] for row in admissions.values()),
-        "rejected_cycles": sum(not row["accepted"] for row in cycles),
-    }
+    timing = cycle_timing_summary(load_cycle_timing(directory, manifest), period)
+    timing["admission_rejections"] = sum(not row["accepted"] for row in admissions.values())
     scheduled = {row["values"]["command_id"]: row["values"].get("scheduled") for row in commands}
     missing, unauthorized, inconsistent = 0, 0, 0
     maximum_progress_residual = 0.
@@ -201,10 +189,13 @@ def evaluate_execution(directory: Path, manifest: dict, feedback: list, commands
                 "recovery_delay_s": resumed_s - min(candidates) if candidates else None,
                 "delay_status": "measured" if candidates else "insufficient_evidence",
             })
-    limiting = {"status": "insufficient_evidence"}
-    if last_candidate is not None and "initial" in last_candidate and "geometry" in last_candidate:
+    limiting = {
+        "status": "insufficient_evidence",
+        "reason": "缺少执行器限制快照" if limits is None else "缺少末次候选几何记录",
+    }
+    if (limits is not None and last_candidate is not None
+            and "initial" in last_candidate and "geometry" in last_candidate):
         position = np.asarray(last_candidate["initial"]["position"])
-        limits = manifest["execution_limits"]
         limiting = {
             "status": "measured",
             "reference_progress_m": last_candidate["reference_progress_m"],
@@ -231,13 +222,15 @@ def evaluate_execution(directory: Path, manifest: dict, feedback: list, commands
     }
 
 
-def arc_statistics(directory: Path, total_length: float, progress, series: dict) -> dict:
+def arc_statistics(directory: Path, total_length: float, progress, series: dict,
+                   *, save_samples: bool = True) -> dict:
     progress = np.asarray(progress)
     forward, indices = np.unique(np.maximum.accumulate(progress), return_index=True)
     grid = np.linspace(0., total_length, 2001)
     observed = grid[(grid >= forward[0]) & (grid <= forward[-1])]
     values = {name: np.interp(observed, forward, data[indices]) for name, data in series.items()}
-    np.savez_compressed(directory / "feedback_arc_metrics.npz", progress_m=observed, **values)
+    if save_samples:
+        np.savez_compressed(directory / "feedback_arc_metrics.npz", progress_m=observed, **values)
     return {
         "grid_points": len(grid), "observed_points": len(observed),
         "spacing_m": total_length / (len(grid) - 1),

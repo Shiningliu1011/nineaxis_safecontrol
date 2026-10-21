@@ -2,14 +2,51 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import sqlite3
 import time
+import zlib
 from contextlib import closing
 from pathlib import Path
 
+import msgpack
+import zstandard
+
+from .static_recording_capacity import RecordingStorageGuard, RecordingStorageLimits
+
+
+FORMAT_VERSION = 3
+KEYFRAME_INTERVAL = 128
+DICTIONARY_BYTES = 131072
+ZLIB_DICTIONARY_BYTES = 32768
+
+
+def _validate_values(value) -> None:
+    if isinstance(value, float):
+        if not math.isfinite(value):
+            raise ValueError("记录数值必须有限")
+    elif isinstance(value, dict):
+        for key, item in value.items():
+            if not isinstance(key, str):
+                raise ValueError("记录字段名必须是字符串")
+            _validate_values(item)
+    elif isinstance(value, (list, tuple)):
+        for item in value:
+            _validate_values(item)
+    elif value is not None and not isinstance(value, (str, int, bool)):
+        raise TypeError(f"不支持的记录类型：{type(value).__name__}")
+
+
+def _version(connection) -> int:
+    version = connection.execute("PRAGMA user_version").fetchone()[0]
+    if version not in (0, 2, FORMAT_VERSION):
+        raise ValueError(f"不支持的记录格式：{version}")
+    return version
+
 
 class RunRecorder:
-    def __init__(self, path: Path):
+    def __init__(self, path: Path, *, storage_limits: dict | None = None):
+        limits = None if storage_limits is None else RecordingStorageLimits(**storage_limits)
         self.path = Path(path)
         if self.path.exists():
             raise FileExistsError(self.path)
@@ -20,14 +57,61 @@ class RunRecorder:
         self.connection.execute(
             "CREATE TABLE samples (sequence INTEGER PRIMARY KEY, stream TEXT NOT NULL, "
             "monotonic_s REAL NOT NULL, simulation_s REAL, ros_time_ns INTEGER, "
-            "payload TEXT NOT NULL)"
+            "payload BLOB NOT NULL, keyframe INTEGER NOT NULL, "
+            "codec INTEGER NOT NULL CHECK(codec IN (0, 1)))"
         )
+        self.connection.execute("CREATE INDEX stream_sequence ON samples (stream, sequence)")
+        self.connection.execute(f"PRAGMA user_version={FORMAT_VERSION}")
         self._last_times: dict[str, float] = {}
+        self._previous: dict[str, tuple[int, int, bytes]] = {}
+        self._sequence = 0
+        self._storage_guard = None if limits is None else RecordingStorageGuard(
+            self.path, self.connection, limits,
+        )
+
+    @property
+    def last_sequence(self) -> int:
+        return self._sequence
+
+    def check_capacity(self, *, pending_cycles: int = 0) -> None:
+        if self._storage_guard is not None:
+            self._storage_guard.check(pending_cycles=pending_cycles)
+
+    def capacity_snapshot(self) -> dict | None:
+        return None if self._storage_guard is None else self._storage_guard.snapshot()
+
+    def check_terminal_capacity(self, terminal: dict) -> None:
+        if self._storage_guard is not None:
+            raw = msgpack.packb(terminal, use_bin_type=True, use_single_float=False)
+            self._storage_guard.check(pending_record=("event", len(raw)), pending_statistics=True)
+
+    def write_statistics(self, values: dict, *, maximum_bytes: int) -> None:
+        path = self.path.with_suffix(".recording.json")
+        pending = path.with_suffix(".json.pending")
+        if path.exists() or pending.exists():
+            raise FileExistsError(path if path.exists() else pending)
+        data = (json.dumps(values, ensure_ascii=False, indent=2, sort_keys=True, allow_nan=False) + "\n").encode()
+        unit = os.statvfs(path.parent).f_frsize
+        allocation = math.ceil(len(data) / unit) * unit
+        if allocation > maximum_bytes:
+            raise ValueError("统计文件超过固定字段与周期数的容量界限")
+        if self._storage_guard is not None:
+            self._storage_guard.check_statistics_allocation(allocation, pending=True)
+        pending.write_bytes(data)
+        actual = pending.stat().st_blocks * 512
+        if actual > maximum_bytes:
+            raise ValueError("统计文件实际分配超过容量界限")
+        if self._storage_guard is not None:
+            self._storage_guard.check_statistics_allocation(actual, pending=True)
+        pending.rename(path)
+        if self._storage_guard is not None:
+            self._storage_guard.check_statistics_allocation(actual, pending=False)
 
     def append(self, stream: str, *, monotonic_s: float, values: dict,
-               simulation_s: float | None = None, ros_time_ns: int | None = None) -> float:
+               simulation_s: float | None = None, ros_time_ns: int | None = None,
+               sequence: int | None = None) -> float:
         started = time.monotonic()
-        if not stream or not math.isfinite(monotonic_s):
+        if not isinstance(stream, str) or not stream or not math.isfinite(monotonic_s):
             raise ValueError("stream 和 monotonic_s 必须有效")
         if stream in self._last_times and monotonic_s <= self._last_times[stream]:
             raise ValueError(f"{stream}: monotonic_s 必须严格递增")
@@ -35,13 +119,33 @@ class RunRecorder:
             raise ValueError("simulation_s 必须有限且非负")
         if ros_time_ns is not None and (not isinstance(ros_time_ns, int) or ros_time_ns < 0):
             raise ValueError("ros_time_ns 必须为非负整数")
-        payload = json.dumps(values, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
+        sequence = self._sequence + 1 if sequence is None else sequence
+        if type(sequence) is not int or sequence <= self._sequence:
+            raise ValueError("sequence 必须为严格递增的正整数")
+        if not isinstance(values, dict):
+            raise TypeError("values 必须为字典")
+        _validate_values(values)
+        raw = msgpack.packb(values, use_bin_type=True, use_single_float=False)
+        count, keyframe, dictionary = self._previous.get(stream, (0, sequence, b""))
+        if count % KEYFRAME_INTERVAL == 0:
+            keyframe, dictionary = sequence, b""
+        compressor = zlib.compressobj(level=6, zdict=dictionary[-ZLIB_DICTIONARY_BYTES:])
+        zlib_payload = compressor.compress(raw) + compressor.flush()
+        prefix = zstandard.ZstdCompressionDict(dictionary, dict_type=zstandard.DICT_TYPE_RAWCONTENT)
+        zstd_payload = zstandard.ZstdCompressor(
+            level=3, dict_data=prefix, write_checksum=True,
+        ).compress(raw)
+        codec, payload = (0, zlib_payload) if len(zlib_payload) <= len(zstd_payload) else (1, zstd_payload)
         self.connection.execute(
-            "INSERT INTO samples (stream, monotonic_s, simulation_s, ros_time_ns, payload) "
-            "VALUES (?, ?, ?, ?, ?)",
-            (stream, monotonic_s, simulation_s, ros_time_ns, payload),
+            "INSERT INTO samples (sequence, stream, monotonic_s, simulation_s, ros_time_ns, payload, keyframe, codec) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (sequence, stream, monotonic_s, simulation_s, ros_time_ns, payload, keyframe, codec),
         )
+        self._sequence = sequence
+        self._previous[stream] = (count + 1, keyframe, raw[-DICTIONARY_BYTES:])
         self._last_times[stream] = monotonic_s
+        if self._storage_guard is not None:
+            self._storage_guard.record_written(stream, len(raw))
         return time.monotonic() - started
 
     def close(self) -> None:
@@ -57,17 +161,72 @@ class RunRecorder:
         self.close()
 
 
-def read_stream(path: Path, stream: str) -> list[dict]:
+def iter_records(path: Path, stream: str | None = None, *, sequence: int | None = None):
     with closing(sqlite3.connect(Path(path).resolve().as_uri() + "?mode=ro", uri=True)) as connection:
+        version = _version(connection)
+        conditions, parameters = [], []
+        if stream is not None:
+            conditions.append("stream=?")
+            parameters.append(stream)
+        if sequence is not None:
+            anchor = connection.execute(
+                "SELECT stream, " + ("keyframe" if version else "sequence") +
+                " FROM samples WHERE sequence=?", (sequence,),
+            ).fetchone()
+            if anchor is None or (stream is not None and anchor[0] != stream):
+                return
+            conditions.extend(["stream=?", "sequence BETWEEN ? AND ?"])
+            parameters.extend([anchor[0], anchor[1], sequence])
+        where = " WHERE " + " AND ".join(conditions) if conditions else ""
         rows = connection.execute(
-            "SELECT monotonic_s, simulation_s, ros_time_ns, payload FROM samples "
-            "WHERE stream=? ORDER BY sequence", (stream,),
-        ).fetchall()
-    return [
-        {"monotonic_s": row[0], "simulation_s": row[1], "ros_time_ns": row[2],
-         "values": json.loads(row[3])}
-        for row in rows
-    ]
+            "SELECT sequence, stream, monotonic_s, simulation_s, ros_time_ns, payload, " +
+            ("keyframe" if version else "sequence") + ", " + ("codec" if version == 3 else "0") +
+            " FROM samples" + where + " ORDER BY sequence",
+            parameters,
+        )
+        previous = {}
+        for number, name, monotonic_s, simulation_s, ros_time_ns, payload, keyframe, codec in rows:
+            if version:
+                if keyframe == number:
+                    dictionary = b""
+                else:
+                    if name not in previous or previous[name][0] != keyframe:
+                        raise ValueError(f"记录缺少压缩字典：{path}:{number}")
+                    dictionary = previous[name][1]
+                if codec == 0:
+                    decoder = zlib.decompressobj(zdict=dictionary[-ZLIB_DICTIONARY_BYTES:])
+                    raw = decoder.decompress(payload) + decoder.flush()
+                    if not decoder.eof or decoder.unused_data:
+                        raise ValueError(f"压缩记录不完整：{path}:{number}")
+                elif codec == 1:
+                    prefix = zstandard.ZstdCompressionDict(
+                        dictionary, dict_type=zstandard.DICT_TYPE_RAWCONTENT,
+                    )
+                    raw = zstandard.ZstdDecompressor(dict_data=prefix).decompress(
+                        payload, allow_extra_data=False,
+                    )
+                else:
+                    raise ValueError(f"不支持的记录编码：{path}:{number}:{codec}")
+                dictionary_bytes = DICTIONARY_BYTES if version == 3 else ZLIB_DICTIONARY_BYTES
+                previous[name] = (keyframe, raw[-dictionary_bytes:])
+                values = msgpack.unpackb(raw, raw=False)
+            else:
+                values = json.loads(payload)
+            if sequence is None or number == sequence:
+                yield {"sequence": number, "stream": name, "monotonic_s": monotonic_s,
+                       "simulation_s": simulation_s, "ros_time_ns": ros_time_ns, "values": values}
+
+
+def read_record(path: Path, sequence: int, *, stream: str) -> dict:
+    row = next(iter_records(path, stream, sequence=sequence), None)
+    if row is None:
+        raise ValueError(f"缺少指定记录：{path}:{stream}:{sequence}")
+    return row
+
+
+def read_stream(path: Path, stream: str) -> list[dict]:
+    return [{key: row[key] for key in ("monotonic_s", "simulation_s", "ros_time_ns", "values")}
+            for row in iter_records(path, stream)]
 
 
 def finalize_recording(path: Path) -> None:

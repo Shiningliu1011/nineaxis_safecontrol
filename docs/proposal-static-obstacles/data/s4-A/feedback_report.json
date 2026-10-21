@@ -1,0 +1,2043 @@
+{
+  "arc_statistics": {
+    "grid_points": 2001,
+    "metrics": {
+      "path_distance_m": {
+        "maximum": 0.00014861056515901152,
+        "p95": 0.00010357447230168137,
+        "rms": 4.9661237838750747e-05
+      },
+      "reference_position_error_m": {
+        "maximum": 0.0002553685562848187,
+        "p95": 0.00011050532271519381,
+        "rms": 5.4973873537720284e-05
+      },
+      "tcp_workpiece_distance_m": {
+        "maximum": 0.05003630062063936,
+        "p95": 0.05003293445393973,
+        "rms": 0.05001109403605822
+      },
+      "tool_axis_angle_rad": {
+        "maximum": 0.0009607829368819768,
+        "p95": 0.00033880198404489934,
+        "rms": 0.00014730586793619416
+      }
+    },
+    "observed_points": 1323,
+    "spacing_m": 0.0009083798720292577
+  },
+  "completed": false,
+  "completion_time_s": null,
+  "config_sha256": "04e3b5f45fa883316ca8506388edf1043f68619267c2ceec0c982659499ed1ab",
+  "coverage": {
+    "endpoint_tolerance_m": 0.0005,
+    "final_progress_m": 1.2013198343568114,
+    "initial_progress_m": 0.0,
+    "maximum_forward_step_m": 2.9473575270555497e-05,
+    "ordered_full_path": false,
+    "reference_full_path": false,
+    "total_length_m": 1.8167597440585153,
+    "unreached_projected_length_m": 0.6154399097017038
+  },
+  "derived_data_policy": "on_demand",
+  "derived_data_sha256": {},
+  "endpoint": {
+    "held_s": 0.0,
+    "position_error_m": 0.19966556843802544,
+    "tool_axis_angle_rad": 0.5758066582149046
+  },
+  "evaluation_sources_sha256": {
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/native/static_fcl.cpp": "2c0bc33868ebcf3fd92d6d1fe808fab7c6ffb5de5f0733c39866c298241884ce",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/vendor/dpax/dpax/__init__.py": "7b0260bbdc9f523e2e51baaed59437da5667571d9fabf0a2c4f18dd194cfefb5",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/vendor/dpax/dpax/ellipsoids.py": "88e5ae05e5534f2221938ca8b023b26ad2a6f232f3f28c3832c6408712edce05",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/vendor/dpax/dpax/endpoints.py": "43c5fe73395a924f6425eaec5cea6fd4598459bedbb9c6e3048750bb0a11a5b1",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/vendor/dpax/dpax/mrp.py": "3662e87794d94b2cb21a1360c578bd557672421daa48d37b12713cd13244bf34",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/vendor/dpax/dpax/pdip_solver.py": "caf3aec8409c1fd13ab1b1f53beff6df3fc04263de5382f44c428b94c0cc724c",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/vendor/dpax/dpax/polytopes.py": "17482b54442eccfd25c40f96065d1783cec831948a8077cf0d935e732b02e4ab",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/vendor/dpax/dpax/qp_utils.py": "10131ac79d4ec134dd21a39b7fee23660dca6b1457bfa81086ad80e7e9bc0e4d",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/_collision_geometry.py": "828810448e21023fd63c2732f9e4d45f08f8b64728dcb078830e8b4ca528b433",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/_collision_scene.py": "19403f324803cedbbaaafcbaa02dd3f3d10f589cc25a1d2a83394467da49880c",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/_ellipsoid_dcol.py": "8ff1c44a445d693b20210fe157930170c29c244449a117a1fa7853350ad75e06",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/_ellipsoid_point.py": "6fcfb645f4c3d0c709d3f4306516fd697c30244a360577aac4ef572d0192e375",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/actuator_limits.py": "e68d72aff4b114c0aa92de1aab4c9ef12a031b7a8a0ce5f68731e60bb1a0215a",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/cbf_types.py": "7d2e1b33284f36088e40e811a811be7b508caab57167ff3d4f9c66fe34b2b459",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/collision_parameters.py": "e626a4ee0aaa1f8925c901343b1837b5961ab6352ea408d3aaa2284bbb853611",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/collision_safety.py": "e5179913c4dbbd6a14edf21b106d82c3b3256768bf7900ed90e1e79cd1b841a0",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/control_step_record.py": "b175fab74b053de996fbaa58e245c84ad333c15656a977aa139d5ab14b7dcbe5",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/controller_step_cache.py": "7d9829d054af8de3f8d8d4f94e67461add1f8ce1f8b147cab6f9f2a54477b360",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/cross_step_state.py": "5d983312c298fbf7059533a5893b1469fa345c8855543a7d02564d28109fa824",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/dpax_collision.py": "91a7c144fd0f4a3ff9fe603796197f2ed1513e094626b870f29540637dda4dcb",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/driver_simulator.py": "a3a74c5d82280ccb793266d4961d9545518c135b940a82c445d827c1b163d655",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/dynamic_clustering.py": "e30d80b1777b0ce840fc75b87fed805c4436fecfdd20643d121fa478c111c14c",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/dynamic_obstacle_placement.py": "39c7df6f7df76381426219e5bf4b266ac43328940cd97c41f355e9e97ffb04ac",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/dynamic_obstacles.py": "bd3f4f9e0fefc7ba542f75bfce2f43d73c79d41560493a9c35103de843e76dfe",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/fcl_collision.py": "b1daa5a10005542f1bd7eb37828bad81da211bc2102de7b195dff334cc1ce0ad",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/fcl_collision_mesh.py": "0c110bcd611b05ec1a448b8834143e820d629909b76c12dfb48fafc312b88271",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/fusion_engine.py": "9f8dfea41ef0f52db5c297b9f09c2f9a7fbb684b3c209273b635ca49caa12a4e",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/ik_data_loader.py": "045e16ce4d68008a119d7765e1326b6dca672649e55e209cfa4530dc64d15189",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/jax_barrier_terms.py": "4e37b4da12bd56aeb4f90b059f5dd2af89af1eb2ef671237b36a01ef02f380e4",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/jax_control_facade.py": "517bd2ba2e48290b52476479db2e1f8a1bca40cc392cdc8bc2277913312cb941",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/jax_kernel_factory.py": "9988536b8e2165f736f7533892100ad0e6329e168356409d865024e4b4eabfe2",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/jax_path_following.py": "88faf1d63bc8c366004e8ded43b91039beb7727c0761e45694b4f763e68c2311",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/jax_posture_reference.py": "73692083ae01f5839f421cce0cc44c447af0a585e9d3723644d4fa617fdd8256",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/joint_limit_contract.py": "77d544438874d85c629012e42f4fc1a4250beabcac5a67eda4e22e58ee1d0d7f",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/joint_trajectory_logging.py": "8579d0630a5af1cd655eab428b6abf431c994db2be21febdadb72d4fed2e8b66",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/joint_velocity_limits.py": "17be1ea84dc59fb84e1a15c10b6de0b762946a7848ca0ae253b0e0be64b1ab4c",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/kinematics_data.py": "aaed3e29d965bb3b4bd00dd4e20f2c96090dee0464f428da7b3c5a9761882a3f",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/manipulability_metric.py": "a3e36a489cbddd91b3d9435daddef0e567e48de56a8327f34abdfede488f6bb5",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/moving_reference_task.py": "aece83f7fc688e106030d3676652b547d1f9dc11afb5c056abb42e4049a6397e",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/nineaxis_kinematics.py": "f8dcec2204c5512f79a3cef314632771493098d8a4cebe366cfbe8a78cd4a349",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/nineaxis_manipulator_jax.py": "8afaef74dcdcaafdbd3d189347726ec5a9328419d25cd9ec8fbdaa3f011a405a",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/nullspace_policy.py": "a7e074175f2fa490f55cd2a64cb3090db3dd266f23044622749727d9c3fb3cf7",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/obb_collision_model.py": "5acd327061ac6abf4d9c7e2b5c270d82273bd7d8322f937bb1ea500be8040f73",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/obb_geometry_admission.py": "584d2d99b39e8aa49e035be5e051413322fb0349a2092ba9a14d4e13ebabf3dc",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/oscbf_velocity_config.py": "a962f9ea6d1cceeee1d8e730aad459489cfb84ff056cc163e07b366ba33149bf",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/path_following.py": "6b8d86b8d1b468a2ee9c56a8bc40694170f504ad86088356f7cd9d54fa60405d",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/path_posture_reference.py": "af5ab13447900d6be80afcecb9b7808fb02bda17c8d598b43ed3486a071c7e27",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/perception_config.py": "dee94c9e4ba623b950fc939781b815b51a95ccf4f33fb49fe0736b6dc1b4b5e5",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/point_cloud_obstacles.py": "7626f19fea002d7025fb635a7dd431ab1ea4ef6aec9ab65131157c88818534df",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/point_cloud_obstacles_dynamic.py": "51a318d790a227be5c6263a9521b8806e434a8d390fc008d3a3ae307ffbd2cc6",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/qp_solver_health.py": "c16d3d23eadbea00d0d955813bf7f3d224b5eca7d08774b1013acc0ccc01b283",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/robot_geometry.py": "ad5fd135009bdf0273ab258b4bcc0dba45aa379c7d116e830908d8ccfc24c9e5",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/safe_posture.py": "ba2925192b0fe2088bb2c4c940022aa4a9629225a9e82e79c3786016b176a965",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/safety_snapshot.py": "bbc4103b858baade69d7f3a58acafdc06df76642f167e33cb6449b532d48942b",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/static_collision.py": "ce813718f4dbcfaf8aa954be771bfb869cf229f0dc2eb7d6bd57367bafa85ff3",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/static_collision_meshes.py": "1a7e574ebdca8105a69c077c492e1310b79dcab6bca1e18aa60695684c7706a4",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/static_control.py": "ea3bbca005d0b66d430062d9064c982455feb8e8f1d4bad76abff7f0f5d05acf",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/static_execution.py": "2de8cd874ee4eeaac5e04edeb1516507d2b0f5574c1a4d88a4c87684664ef1b4",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/static_motion.py": "f22ef056b9b0de0df8785739a311a2c6c10e0dd05cf1343a0619de1923d7e3d0",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/static_motion_bounds.py": "ec12a6d1741a00ef5910c2450348e9e0f161d9a53a4a26df1cc505a884385904",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/static_occupancy.py": "1930056e71af5a456bb8a91ddcd490b0aec462756c12a6ec524b1eadb3420af9",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/static_recovery.py": "854c4b929e971f311a9babca6053071704a53407a26e6070a40afaf21f6aa6da",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/static_sns.py": "6ee00cb8dc513af6a1ebfa84815912c5e46cfad26257b7dd7f975bf3ad38cf90",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/static_swept_geometry.py": "1a87b23d0fab8801a2f8c07eb5ddc24417a53fdb48e9f58f2e98a353150715a5",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/static_velocity_solver.py": "0a78f75d9ec3c053a0664511555a1d4e2952ee6c62ec53fff81f91274b64df04",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/task_mode_contract.py": "ab879b83df9ab66ecff9269026b57cbeb0b64d7a83bfaab15c6e5570bcf12db8",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/portable_oscbf/work/tool_axis_task.py": "cf500304ce9e16c40c99ddecb8313ff5f367eafb116340ae4bd4ced05f83cfbf",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/__init__.py": "6022b438240171d220b37bbe904df07fd4d150ee27204b8453cc5c22bbca7de5",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/calibration_record.py": "aa3fe0551aa919c7dd7137e0e4515100405fd5546340103cbb8f456d9a655778",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/continuous_ik.py": "426e148cc5d502e465ce747636164863fd26103cb79eaaddde7df613b05d55e2",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/cylinder_geometry.py": "81cf2e43414e4aa365f65997e84f05d8220f7450431253af0d35af9d16f32c2a",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/drempower_can.py": "a124a02b068476b6e1e3bfbf1b7903aa4336519267e28b9c1514b9cc11cafaed",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/hardware_bridge.py": "0280a800c5dcc9a5fe0945cbc760cb461cde7b56b1b62a371494f5c2e9ca3a21",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/hardware_contract.py": "0774de1af6e939ef15d1e095934402488c655690af683ef091fbdb73faf76837",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/hardware_probe.py": "81555902629026986a1d2d1d1a1f092be941fba7015dae69579c6ccffea315c9",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/lidar_crop_experiment.py": "76e6898db31fa4ac17b01a8b3a667e84a5f962b9db7a7eb9b9c1cbf872a113fd",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/motion_planning.py": "065c2f98b4b971121d2b85afa9c228ec370d18cc2ccf485d0dd0913d5631f00a",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/moveit_runtime_config.py": "69db7da59a50aa8eb5093fb31dd534b2033a1a820e8f9ef5b93b7a2119af62aa",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/mujoco_viewer_with_cylinder.py": "e5c037714b9dfadd6b4d28bf47f19cbdf284f5a7156ca991e17d5304d1ed54fd",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/obstacle_extractor.py": "e5fa3fa9380964c58e242fd30cde276aa4604ba69e8c1b48479992acc7f862ee",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/oscbf_controller.py": "b860815ce3dfd996078470cffadf51db867fef35a057fc868c55a57627751fea",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/oscbf_plant.py": "5c4362237c50c7fe7498be281816075ff752d6a1002450f0b30a51165842d222",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/oscbf_trajectory.py": "e53a5463b8058d2c8bfdafab408c50448e629c770589219f9d16679bb487e1f3",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/perception_bridge.py": "b941d4a1ca5d17723416835a8154a8a6cd5e854882175d477a3f82200571cc9e",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/perception_demo.py": "c0c1ae43b52a870a83818c3e104d2a36625c86f4aa09349cfec22ba6c6a2bbf4",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/point_cloud_crop.py": "1a0a6bcd8f8f4f7292f606fe8ddf740ec3178ab067f602e7905558c288691992",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/production_config.py": "7d967ebb0187e6f5a7769fcd9a544eb5d7475b948b3e9a5429f45d45150bb1ac",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/python_can_backend.py": "f7af7d249203bc871bdbc36f29776464794e0a72f82eb94bc06e803e42973da4",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/robot_spec.py": "22eff820ede1f3d740ddeac5eddc732aceec1041eca58745a7ec5ef350ac0260",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/ros_conventions.py": "c80af636ff9049f155ed827d23486bd8a231ab89b86e03e1ef5519b9cd1333a9",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/runtime_snapshot.py": "8143f4507d44e891c2b4501e26d570a1e655d815ede0464e13db0577cc79937e",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/socketcan_backend.py": "a136d2e8eee7bb86e1a3e1f9c099a3302e8ff98672848541cba68516c530969f",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/static_clearance_evaluation.py": "cbac8e44f98fbd1ed0058cd6aa86af3dfea5fc0c80cb1baace921fefd5897930",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/static_execution_evaluation.py": "fb634f15fbbaa22c0556038978bfe5e926c7170b35819de8c7a74a700d240772",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/static_experiment.py": "6e75c3e6a314f2d007180572956104fc7d02eecf83a51e1ea65363494d37cd8a",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/static_experiment_campaign.py": "f555fad1989f3b4a49c9ca2a1d25a8de604b26eaddd420376ca480670a133401",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/static_experiment_capacity.py": "77079d36077849ed39fcbed9c873111c06afa620859946852c73d9fb2a0c5ead",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/static_experiment_config.py": "26299d23cdc306b33d123e64913b97dc5ae6d6bcd0d3812b3a07563cc959d28e",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/static_experiment_evaluation.py": "ad400ed2ae91d5bb80973a14f35c9907bd23a0bc8b11cfa80a057e23de814e0e",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/static_experiment_nodes.py": "97f9151c8ec6fc632dcd435979eec55b9ee8c590c0c6e528f2a7e6caeca349f7",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/static_experiment_provenance.py": "a05a95b4d77965f2aa2f3ec2e00502e66231b18df108c72bb42572033ff697a8",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/static_experiment_recording.py": "8332885ecc664d64bfddf1d61c77805798adb311c95ca09a081ccfcbdde58be3",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/static_experiment_reporting.py": "8add38bd01a3d3104e990944b25326d352f1ccdcf10670a351be5667a5480d85",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/static_experiment_storage.py": "5e08c14ba3f98d95f713a1237cd0c16bc8b43b8277b1ff01025b7e9cf8f5ec98",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/static_formal_experiments.py": "363cc323aab05ec2260f9c72eb92bb645cb4222107246c405ed459df70ba87b4",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/static_period_measurement.py": "b5a8d5ca60b39dee1ebaef5c53b84ab4db9ff2dc6772898dacf0c234ec79f166",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/static_reconfiguration_evidence.py": "b6a27137ff82f271ec8e8c707dbf2c7242c92099a53fa8fc36f868e26f5daec0",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/static_scenario_evidence.py": "764952903578987b5e999cfb8dd47ab166a94dd505d5eee3bcf8b4762193bccc",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/static_scene_evidence.py": "5ffa662691ccdf169653d88fcf9e59b59305ea7d4adc95637047f8b7d26d899a",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/task_target.py": "b77889a52109578ff632786ceaf7afae08ecac000381d943c4a74be665e318c3",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/tracking_contract.py": "c5f54b18d0581a04e0e30dd3ac71e79375d709a1374a38c819e89da6a3db4e51",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/tracking_evaluator.py": "05654fe8b04352b4084592037bec08046c132a4acc1970d336547587e1182e91",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/tracking_report_writer.py": "a3905c7962e26e2fa3af0a745f6d28fe37e88b90675649a2fff3fab10bba6a8b",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/tracking_run.py": "86ab25f5c98a7ba68476a1cb9cbda196d39c08055c5bdad85d5b9bc7a143cfb7",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/trajectory_execution.py": "2a8aec9f6511339f1f5bfebf0f2ba200de7f52a037191a16ff6ddea62e9e33cc",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/transition_executor.py": "07c45d4a978908c32131b9767ac09dd6f9abe99beb72031ca85810b66b02fa71",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/transition_planning_server.py": "cbae63bca548e5919334ad52e0248423cb7b2016bda4fdb5d79c99fea9da717b",
+    "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes/src/robot_safecontrol_moveit/unit_conversion.py": "1051308d7a41bde68085e4fdb22af86709e8b9e01d23d0091450461ffd87bade",
+    "/home/lsn/robot/robot_safecontrol/build/robot_safecontrol_moveit/src/robot_static_fcl.cpython-310-x86_64-linux-gnu.so": "5fc5756fa627bdef525569cc9faf44219985a5e3643535a48fe4ac83f401040b"
+  },
+  "evaluator_sha256": "ad400ed2ae91d5bb80973a14f35c9907bd23a0bc8b11cfa80a057e23de814e0e",
+  "execution": {
+    "joint_limits": {
+      "minimum_acceleration_margin": [
+        4.881569632785843,
+        31.256803689714044,
+        31.31920145605815,
+        31.301650646577468,
+        31.272079526278816,
+        31.114580218407784,
+        31.147808633973295,
+        31.16110862773798,
+        31.157702022101617
+      ],
+      "minimum_position_margin": [
+        0.00576550848602253,
+        0.1693187320329388,
+        0.7317240839284392,
+        0.1259973017966376,
+        1.6070751572320137,
+        0.3215386051410245,
+        3.884434920831126e-06,
+        0.03050916279222826,
+        0.11824296317785521
+      ],
+      "minimum_velocity_margin": [
+        0.46065586417186066,
+        2.8897965411607878,
+        2.892590196027564,
+        2.9028290460447947,
+        2.881133999166759,
+        2.855794847261312,
+        3.5738247312469262,
+        3.5813285511858823,
+        3.607173943996923
+      ],
+      "status": "pass"
+    },
+    "qp": {
+      "attempts": 2282,
+      "constraint_violations": 0,
+      "failures": 0,
+      "maximum_constraint_residual": 5.2795697539445325e-14,
+      "maximum_kkt_residual": 8.289461308364157e-10,
+      "status": "pass",
+      "success_fraction": 1.0,
+      "successes": 2282
+    },
+    "recovery": {
+      "events": [
+        {
+          "delay_status": "measured",
+          "first_positive_candidate_s": 134.0,
+          "following_interval_end_s": 138.70000000000002,
+          "maximum_position_error_m": 8.482117255480109e-05,
+          "maximum_tool_axis_angle_rad": 0.00023254246060463638,
+          "recovery_delay_s": 0.0,
+          "time_s": 134.0
+        },
+        {
+          "delay_status": "measured",
+          "first_positive_candidate_s": 139.0,
+          "following_interval_end_s": 194.6,
+          "maximum_position_error_m": 0.00026131786197799783,
+          "maximum_tool_axis_angle_rad": 0.0009863237046966687,
+          "recovery_delay_s": 0.0,
+          "time_s": 139.0
+        },
+        {
+          "delay_status": "measured",
+          "first_positive_candidate_s": 194.8,
+          "following_interval_end_s": 195.0,
+          "maximum_position_error_m": 4.739929567799959e-05,
+          "maximum_tool_axis_angle_rad": 0.00013783299104143756,
+          "recovery_delay_s": 0.0,
+          "time_s": 194.8
+        },
+        {
+          "delay_status": "measured",
+          "first_positive_candidate_s": 195.20000000000002,
+          "following_interval_end_s": 195.3,
+          "maximum_position_error_m": 5.617796637253455e-05,
+          "maximum_tool_axis_angle_rad": 0.0001630602851031784,
+          "recovery_delay_s": 0.0,
+          "time_s": 195.20000000000002
+        },
+        {
+          "delay_status": "measured",
+          "first_positive_candidate_s": 195.6,
+          "following_interval_end_s": 195.8,
+          "maximum_position_error_m": 7.49281685359933e-05,
+          "maximum_tool_axis_angle_rad": 0.0002176963402523205,
+          "recovery_delay_s": 0.0,
+          "time_s": 195.6
+        },
+        {
+          "delay_status": "measured",
+          "first_positive_candidate_s": 196.20000000000002,
+          "following_interval_end_s": 196.3,
+          "maximum_position_error_m": 8.585916995356246e-05,
+          "maximum_tool_axis_angle_rad": 0.00024911386843600537,
+          "recovery_delay_s": 0.0,
+          "time_s": 196.20000000000002
+        },
+        {
+          "delay_status": "measured",
+          "first_positive_candidate_s": 196.70000000000002,
+          "following_interval_end_s": 196.8,
+          "maximum_position_error_m": 0.00010177925827906791,
+          "maximum_tool_axis_angle_rad": 0.00029453666838563647,
+          "recovery_delay_s": 0.0,
+          "time_s": 196.70000000000002
+        },
+        {
+          "delay_status": "measured",
+          "first_positive_candidate_s": 197.20000000000002,
+          "following_interval_end_s": 197.3,
+          "maximum_position_error_m": 0.00010977122927929388,
+          "maximum_tool_axis_angle_rad": 0.0003170716743824359,
+          "recovery_delay_s": 0.0,
+          "time_s": 197.20000000000002
+        },
+        {
+          "delay_status": "measured",
+          "first_positive_candidate_s": 197.8,
+          "following_interval_end_s": 197.9,
+          "maximum_position_error_m": 0.00011414787881274776,
+          "maximum_tool_axis_angle_rad": 0.0003287009544537146,
+          "recovery_delay_s": 0.0,
+          "time_s": 197.8
+        }
+      ],
+      "faults": [
+        {
+          "from": "REFERENCE_PAUSED",
+          "reason": "pause_timeout",
+          "time_s": 228.0,
+          "to": "FAULT"
+        }
+      ],
+      "pauses": [
+        {
+          "duration_s": 0.088,
+          "maximum_joint_change": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "reference_progress_m": 0.0,
+          "reference_range_m": 0.0,
+          "resumed": true,
+          "start_simulation_s": 0.012
+        },
+        {
+          "duration_s": 1.5,
+          "maximum_joint_change": [
+            0.0012274880067745797,
+            0.006014853563959477,
+            0.0008675115518947951,
+            0.007021789260314826,
+            0.029511046167317923,
+            0.003914877929832583,
+            0.018422798127086082,
+            0.010843176720898073,
+            0.02087094731854866
+          ],
+          "reference_progress_m": 1.0621110896892627,
+          "reference_range_m": 0.0,
+          "resumed": true,
+          "start_simulation_s": 132.5
+        },
+        {
+          "duration_s": 0.3,
+          "maximum_joint_change": [
+            0.00022090836237770306,
+            0.000385104485666643,
+            9.810189362580157e-05,
+            0.0008190996888974844,
+            0.005833104792738575,
+            0.00027537196831528554,
+            0.004337243863253737,
+            0.0007689250391484936,
+            0.004740695481074697
+          ],
+          "reference_progress_m": 1.0644884751678205,
+          "reference_range_m": 0.0,
+          "resumed": true,
+          "start_simulation_s": 138.70000000000002
+        },
+        {
+          "duration_s": 0.2,
+          "maximum_joint_change": [
+            6.677984259773062e-05,
+            0.00043605457052509067,
+            8.099994898980167e-05,
+            0.0007063775881950285,
+            0.0009300007055419446,
+            0.0012169515263369401,
+            0.00038883603722100757,
+            0.003858036754095795,
+            2.084655853962225e-05
+          ],
+          "reference_progress_m": 1.1997853640279852,
+          "reference_range_m": 0.0,
+          "resumed": true,
+          "start_simulation_s": 194.6
+        },
+        {
+          "duration_s": 0.2,
+          "maximum_joint_change": [
+            3.720772213089418e-05,
+            0.0003527400511427192,
+            0.00012900273503024806,
+            0.000536043956945953,
+            0.0009580215215081456,
+            0.0012524860975173802,
+            0.00035143562344697177,
+            0.0038745014767439523,
+            9.487640489802551e-05
+          ],
+          "reference_progress_m": 1.199967783590699,
+          "reference_range_m": 0.0,
+          "resumed": true,
+          "start_simulation_s": 195.0
+        },
+        {
+          "duration_s": 0.3,
+          "maximum_joint_change": [
+            8.315920852253189e-05,
+            0.0004954382675319557,
+            0.00017535202814766837,
+            0.0008206923627724905,
+            0.001467879191970889,
+            0.0018845565625260075,
+            0.0004663498424529733,
+            0.00576732384944445,
+            0.00020145799748649829
+          ],
+          "reference_progress_m": 1.20010768023853,
+          "reference_range_m": 0.0,
+          "resumed": true,
+          "start_simulation_s": 195.3
+        },
+        {
+          "duration_s": 0.4,
+          "maximum_joint_change": [
+            2.2578903060344047e-05,
+            0.0007155933120306379,
+            0.00010322881041746612,
+            0.0011495551405666937,
+            0.002021733485720656,
+            0.002292856416743816,
+            0.00030768528937158424,
+            0.0076081904922566945,
+            0.00014900295634889815
+          ],
+          "reference_progress_m": 1.2003738706719473,
+          "reference_range_m": 0.0,
+          "resumed": true,
+          "start_simulation_s": 195.8
+        },
+        {
+          "duration_s": 0.4,
+          "maximum_joint_change": [
+            7.310919650427294e-05,
+            0.000560841628010067,
+            0.0001873969037341494,
+            0.0010151179482420503,
+            0.0020716729279304236,
+            0.002404872624022114,
+            0.00028249587211587324,
+            0.007548991749196543,
+            0.00038945814762270103
+          ],
+          "reference_progress_m": 1.2005700543191364,
+          "reference_range_m": 0.0,
+          "resumed": true,
+          "start_simulation_s": 196.3
+        },
+        {
+          "duration_s": 0.4,
+          "maximum_joint_change": [
+            6.0186306311327264e-05,
+            0.0004584408538608198,
+            0.0002088709580737591,
+            0.0008533084059085816,
+            0.0021228820035132934,
+            0.0024031175984851605,
+            0.00024474826684323103,
+            0.007504467770057421,
+            0.0004818047627221933
+          ],
+          "reference_progress_m": 1.2007992198319104,
+          "reference_range_m": 0.0,
+          "resumed": true,
+          "start_simulation_s": 196.8
+        },
+        {
+          "duration_s": 0.5,
+          "maximum_joint_change": [
+            5.956027279319098e-05,
+            0.0005545619917222133,
+            0.00021464146236938042,
+            0.0010936484751953301,
+            0.002702889389004648,
+            0.002926596105735313,
+            0.00021236733320034729,
+            0.009297549409090444,
+            0.0006782811410779299
+          ],
+          "reference_progress_m": 1.2010446089053823,
+          "reference_range_m": 0.0,
+          "resumed": true,
+          "start_simulation_s": 197.3
+        },
+        {
+          "duration_s": 32.674,
+          "maximum_joint_change": [
+            0.001545640672353632,
+            0.014672485469055196,
+            0.02254929752685897,
+            0.024453563934460965,
+            0.11750213753848726,
+            0.10400884008518424,
+            0.09185461426513378,
+            0.3646422014900963,
+            0.06526225284894083
+          ],
+          "reference_progress_m": 1.201319869571627,
+          "reference_range_m": 0.0,
+          "resumed": false,
+          "start_simulation_s": 197.9
+        }
+      ],
+      "planned_events": [
+        {
+          "from": "REFERENCE_PAUSED",
+          "reason": "forward_candidate_confirmed",
+          "recovery_delay_s": 0.0,
+          "time_s": 0.1,
+          "to": "RUNNING"
+        },
+        {
+          "from": "REFERENCE_PAUSED",
+          "reason": "forward_candidate_confirmed",
+          "recovery_delay_s": 0.0,
+          "time_s": 134.0,
+          "to": "RUNNING"
+        },
+        {
+          "from": "REFERENCE_PAUSED",
+          "reason": "forward_candidate_confirmed",
+          "recovery_delay_s": 0.0,
+          "time_s": 139.0,
+          "to": "RUNNING"
+        },
+        {
+          "from": "REFERENCE_PAUSED",
+          "reason": "forward_candidate_confirmed",
+          "recovery_delay_s": 0.0,
+          "time_s": 194.8,
+          "to": "RUNNING"
+        },
+        {
+          "from": "REFERENCE_PAUSED",
+          "reason": "forward_candidate_confirmed",
+          "recovery_delay_s": 0.0,
+          "time_s": 195.20000000000002,
+          "to": "RUNNING"
+        },
+        {
+          "from": "REFERENCE_PAUSED",
+          "reason": "forward_candidate_confirmed",
+          "recovery_delay_s": 0.0,
+          "time_s": 195.6,
+          "to": "RUNNING"
+        },
+        {
+          "from": "REFERENCE_PAUSED",
+          "reason": "forward_candidate_confirmed",
+          "recovery_delay_s": 0.0,
+          "time_s": 196.20000000000002,
+          "to": "RUNNING"
+        },
+        {
+          "from": "REFERENCE_PAUSED",
+          "reason": "forward_candidate_confirmed",
+          "recovery_delay_s": 0.0,
+          "time_s": 196.70000000000002,
+          "to": "RUNNING"
+        },
+        {
+          "from": "REFERENCE_PAUSED",
+          "reason": "forward_candidate_confirmed",
+          "recovery_delay_s": 0.0,
+          "time_s": 197.20000000000002,
+          "to": "RUNNING"
+        },
+        {
+          "from": "REFERENCE_PAUSED",
+          "reason": "forward_candidate_confirmed",
+          "recovery_delay_s": 0.0,
+          "time_s": 197.8,
+          "to": "RUNNING"
+        }
+      ],
+      "restart_count": 9
+    },
+    "reference_settlement": {
+      "inconsistent_samples": 0,
+      "maximum_reference_residual_m": 0.0,
+      "missing_records": 0,
+      "status": "pass",
+      "unauthorized_samples": 0
+    },
+    "sns": {
+      "attempts": 0,
+      "constraint_violations": 0,
+      "failures": 0,
+      "maximum_task_residual": null,
+      "minimum_task_scale": null,
+      "status": "not_applicable"
+    },
+    "terminal_constraints": {
+      "candidates": [
+        {
+          "certificate": {
+            "accepted": true,
+            "checked_intervals": 2,
+            "covered_pairs": 76,
+            "minimum_proven_margin_m": 8.445694946572283e-05,
+            "pair": null,
+            "reason": "certified"
+          },
+          "feed_m_s": 0.0
+        }
+      ],
+      "geometry": [
+        {
+          "distance_m": 0.858721057249257,
+          "kind": "external",
+          "margin_m": 0.8287210572492569,
+          "pair": [
+            "base_link",
+            "workpiece"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.6760859678694018,
+          "kind": "external",
+          "margin_m": 0.6460859678694018,
+          "pair": [
+            "base_link",
+            "table"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.2129993384269545,
+          "kind": "external",
+          "margin_m": 0.1829993384269545,
+          "pair": [
+            "base_link",
+            "obstacle_1"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.25202225666925254,
+          "kind": "external",
+          "margin_m": 0.22202225666925254,
+          "pair": [
+            "base_link",
+            "obstacle_2"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.8387119468648735,
+          "kind": "external",
+          "margin_m": 0.8087119468648735,
+          "pair": [
+            "Link1",
+            "workpiece"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.6593119468648729,
+          "kind": "external",
+          "margin_m": 0.6293119468648729,
+          "pair": [
+            "Link1",
+            "table"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.1359716090312916,
+          "kind": "external",
+          "margin_m": 0.1059716090312916,
+          "pair": [
+            "Link1",
+            "obstacle_1"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.1032082926666551,
+          "kind": "external",
+          "margin_m": 0.0732082926666551,
+          "pair": [
+            "Link1",
+            "obstacle_2"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.787688171725208,
+          "kind": "external",
+          "margin_m": 0.757688171725208,
+          "pair": [
+            "Link2",
+            "workpiece"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.5922187257235523,
+          "kind": "external",
+          "margin_m": 0.5622187257235522,
+          "pair": [
+            "Link2",
+            "table"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.26855522124615405,
+          "kind": "external",
+          "margin_m": 0.23855522124615405,
+          "pair": [
+            "Link2",
+            "obstacle_1"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.061185193288076124,
+          "kind": "external",
+          "margin_m": 0.031185193288076125,
+          "pair": [
+            "Link2",
+            "obstacle_2"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.5631417235983452,
+          "kind": "external",
+          "margin_m": 0.5331417235983452,
+          "pair": [
+            "Link3",
+            "workpiece"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.36025021372316296,
+          "kind": "external",
+          "margin_m": 0.330250213723163,
+          "pair": [
+            "Link3",
+            "table"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.36796673136250757,
+          "kind": "external",
+          "margin_m": 0.33796673136250754,
+          "pair": [
+            "Link3",
+            "obstacle_1"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.03481285659920641,
+          "kind": "external",
+          "margin_m": 0.004812856599206411,
+          "pair": [
+            "Link3",
+            "obstacle_2"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.4975246623790296,
+          "kind": "external",
+          "margin_m": 0.46752466237902957,
+          "pair": [
+            "Link4",
+            "workpiece"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.313196705307951,
+          "kind": "external",
+          "margin_m": 0.28319670530795105,
+          "pair": [
+            "Link4",
+            "table"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.5877191921738099,
+          "kind": "external",
+          "margin_m": 0.5577191921738098,
+          "pair": [
+            "Link4",
+            "obstacle_1"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.030099999687568095,
+          "kind": "external",
+          "margin_m": 9.999968756809613e-05,
+          "pair": [
+            "Link4",
+            "obstacle_2"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.3507588874273787,
+          "kind": "external",
+          "margin_m": 0.3207588874273787,
+          "pair": [
+            "Link5",
+            "workpiece"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.21547058261362445,
+          "kind": "external",
+          "margin_m": 0.18547058261362445,
+          "pair": [
+            "Link5",
+            "table"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.6283782299914245,
+          "kind": "external",
+          "margin_m": 0.5983782299914244,
+          "pair": [
+            "Link5",
+            "obstacle_1"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.03918743548068925,
+          "kind": "external",
+          "margin_m": 0.009187435480689253,
+          "pair": [
+            "Link5",
+            "obstacle_2"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.2945404825841411,
+          "kind": "external",
+          "margin_m": 0.2645404825841411,
+          "pair": [
+            "Link6",
+            "workpiece"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.147622621475796,
+          "kind": "external",
+          "margin_m": 0.117622621475796,
+          "pair": [
+            "Link6",
+            "table"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.711465871656287,
+          "kind": "external",
+          "margin_m": 0.681465871656287,
+          "pair": [
+            "Link6",
+            "obstacle_1"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.1047941379705935,
+          "kind": "external",
+          "margin_m": 0.0747941379705935,
+          "pair": [
+            "Link6",
+            "obstacle_2"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.2500898352088131,
+          "kind": "external",
+          "margin_m": 0.22008983520881312,
+          "pair": [
+            "Link7",
+            "workpiece"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.07350542171470938,
+          "kind": "external",
+          "margin_m": 0.04350542171470938,
+          "pair": [
+            "Link7",
+            "table"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.7857772667227271,
+          "kind": "external",
+          "margin_m": 0.755777266722727,
+          "pair": [
+            "Link7",
+            "obstacle_1"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.21646146516958964,
+          "kind": "external",
+          "margin_m": 0.18646146516958964,
+          "pair": [
+            "Link7",
+            "obstacle_2"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.22281888704082453,
+          "kind": "external",
+          "margin_m": 0.19281888704082453,
+          "pair": [
+            "Link8",
+            "workpiece"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.06947127566205806,
+          "kind": "external",
+          "margin_m": 0.03947127566205806,
+          "pair": [
+            "Link8",
+            "table"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.8819053773277932,
+          "kind": "external",
+          "margin_m": 0.8519053773277931,
+          "pair": [
+            "Link8",
+            "obstacle_1"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.3416173578937796,
+          "kind": "external",
+          "margin_m": 0.31161735789377965,
+          "pair": [
+            "Link8",
+            "obstacle_2"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.04999883989241925,
+          "kind": "external",
+          "margin_m": 0.019998839892419254,
+          "pair": [
+            "Link9",
+            "workpiece"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.09031180715073561,
+          "kind": "external",
+          "margin_m": 0.060311807150735613,
+          "pair": [
+            "Link9",
+            "table"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 1.0035022590384828,
+          "kind": "external",
+          "margin_m": 0.9735022590384828,
+          "pair": [
+            "Link9",
+            "obstacle_1"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.4668411861644932,
+          "kind": "external",
+          "margin_m": 0.4368411861644932,
+          "pair": [
+            "Link9",
+            "obstacle_2"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.2279410870175415,
+          "kind": "self",
+          "margin_m": 0.2179410870175415,
+          "pair": [
+            "base_link",
+            "Link2"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.2572232077622995,
+          "kind": "self",
+          "margin_m": 0.2472232077622995,
+          "pair": [
+            "base_link",
+            "Link3"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.3734974691123495,
+          "kind": "self",
+          "margin_m": 0.3634974691123495,
+          "pair": [
+            "base_link",
+            "Link4"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.40356445018416853,
+          "kind": "self",
+          "margin_m": 0.3935644501841685,
+          "pair": [
+            "base_link",
+            "Link5"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.4631485562385393,
+          "kind": "self",
+          "margin_m": 0.4531485562385393,
+          "pair": [
+            "base_link",
+            "Link6"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.5061244765792461,
+          "kind": "self",
+          "margin_m": 0.4961244765792461,
+          "pair": [
+            "base_link",
+            "Link7"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.574305000783986,
+          "kind": "self",
+          "margin_m": 0.564305000783986,
+          "pair": [
+            "base_link",
+            "Link8"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.6880896048329593,
+          "kind": "self",
+          "margin_m": 0.6780896048329593,
+          "pair": [
+            "base_link",
+            "Link9"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.10009553340172275,
+          "kind": "self",
+          "margin_m": 0.09009553340172276,
+          "pair": [
+            "Link1",
+            "Link3"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.28135240636837894,
+          "kind": "self",
+          "margin_m": 0.27135240636837893,
+          "pair": [
+            "Link1",
+            "Link4"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.2917348174418031,
+          "kind": "self",
+          "margin_m": 0.28173481744180306,
+          "pair": [
+            "Link1",
+            "Link5"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.3441657896936232,
+          "kind": "self",
+          "margin_m": 0.3341657896936232,
+          "pair": [
+            "Link1",
+            "Link6"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.43565898352462845,
+          "kind": "self",
+          "margin_m": 0.42565898352462844,
+          "pair": [
+            "Link1",
+            "Link7"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.5266293762155011,
+          "kind": "self",
+          "margin_m": 0.5166293762155011,
+          "pair": [
+            "Link1",
+            "Link8"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.6592995759051156,
+          "kind": "self",
+          "margin_m": 0.6492995759051156,
+          "pair": [
+            "Link1",
+            "Link9"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.13595618363349557,
+          "kind": "self",
+          "margin_m": 0.12595618363349556,
+          "pair": [
+            "Link2",
+            "Link4"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.17888226627973047,
+          "kind": "self",
+          "margin_m": 0.16888226627973046,
+          "pair": [
+            "Link2",
+            "Link5"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.3359587128885158,
+          "kind": "self",
+          "margin_m": 0.3259587128885158,
+          "pair": [
+            "Link2",
+            "Link6"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.44818448159705304,
+          "kind": "self",
+          "margin_m": 0.43818448159705303,
+          "pair": [
+            "Link2",
+            "Link7"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.5484609303154678,
+          "kind": "self",
+          "margin_m": 0.5384609303154678,
+          "pair": [
+            "Link2",
+            "Link8"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.680943845257361,
+          "kind": "self",
+          "margin_m": 0.670943845257361,
+          "pair": [
+            "Link2",
+            "Link9"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.017033521631020537,
+          "kind": "self",
+          "margin_m": 0.007033521631020537,
+          "pair": [
+            "Link3",
+            "Link5"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.23159983753114852,
+          "kind": "self",
+          "margin_m": 0.2215998375311485,
+          "pair": [
+            "Link3",
+            "Link6"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.35193549960687887,
+          "kind": "self",
+          "margin_m": 0.34193549960687886,
+          "pair": [
+            "Link3",
+            "Link7"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.4675422237303869,
+          "kind": "self",
+          "margin_m": 0.4575422237303869,
+          "pair": [
+            "Link3",
+            "Link8"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.5985596815517498,
+          "kind": "self",
+          "margin_m": 0.5885596815517498,
+          "pair": [
+            "Link3",
+            "Link9"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.14201263700848846,
+          "kind": "self",
+          "margin_m": 0.13201263700848845,
+          "pair": [
+            "Link4",
+            "Link6"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.2635557415452161,
+          "kind": "self",
+          "margin_m": 0.2535557415452161,
+          "pair": [
+            "Link4",
+            "Link7"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.3762222639600347,
+          "kind": "self",
+          "margin_m": 0.3662222639600347,
+          "pair": [
+            "Link4",
+            "Link8"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.508568607418856,
+          "kind": "self",
+          "margin_m": 0.498568607418856,
+          "pair": [
+            "Link4",
+            "Link9"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.023090200300970296,
+          "kind": "self",
+          "margin_m": 0.013090200300970295,
+          "pair": [
+            "Link5",
+            "Link7"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.13151378677942996,
+          "kind": "self",
+          "margin_m": 0.12151378677942996,
+          "pair": [
+            "Link5",
+            "Link8"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.2621018190127195,
+          "kind": "self",
+          "margin_m": 0.2521018190127195,
+          "pair": [
+            "Link5",
+            "Link9"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.029982634368352575,
+          "kind": "self",
+          "margin_m": 0.019982634368352577,
+          "pair": [
+            "Link6",
+            "Link8"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.1511562905025577,
+          "kind": "self",
+          "margin_m": 0.14115629050255768,
+          "pair": [
+            "Link6",
+            "Link9"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.035562323103752624,
+          "kind": "self",
+          "margin_m": 0.025562323103752622,
+          "pair": [
+            "Link7",
+            "Link9"
+          ],
+          "required_m": 0.01
+        }
+      ],
+      "joint_lower_margin": [
+        0.5154473922020535,
+        0.39895616212576734,
+        2.3871208002658078,
+        2.952415296012745,
+        4.676028182802828,
+        1.7407262821834015,
+        1.2405333731289305,
+        1.349562092175042,
+        0.11827503607027556
+      ],
+      "joint_upper_margin": [
+        0.06955260779794648,
+        2.7426438378742324,
+        0.7544791997341923,
+        0.1891847039872545,
+        1.6071718171971725,
+        1.2263337178165985,
+        1.7265266268710695,
+        1.617497907824958,
+        2.8487849639297247
+      ],
+      "reference_progress_m": 1.201319869571627,
+      "status": "measured"
+    },
+    "timing": {
+      "admission_rejections": 0,
+      "deadline_misses": 0,
+      "maximum_s": 0.08626538300086395,
+      "p999_s": 0.07166253653639072,
+      "period_s": 0.1,
+      "rejected_cycles": 1,
+      "samples": 2280,
+      "status": "pass"
+    }
+  },
+  "external_clearance": {
+    "measured_pairs": 40,
+    "minimum_m": 0.03004543591995326,
+    "required_m": 0.03,
+    "required_pairs": 40,
+    "samples": 115281,
+    "status": "pass",
+    "unsafe_samples": 0
+  },
+  "feedback": {
+    "samples": 115281,
+    "simulation_duration_s": 230.56,
+    "simulation_frequency_hz": 500.0,
+    "wall_frequency_hz": 497.5786159850446
+  },
+  "functional_verdict": "fail",
+  "manifest_sha256": "9633fd6e69d467913b7546f2e52f143ca5e2f9f9e9dc6d63a6b0bd5004a36e60",
+  "measurement_boundary": "simulated_actuator_feedback",
+  "metrics": {
+    "path_distance_m": {
+      "invalid": 0,
+      "maximum": 0.0001495725688919098,
+      "minimum": 2.1319842521531895e-08,
+      "p95": 8.533960950237947e-05,
+      "rms": 3.510372797128588e-05,
+      "samples": 115281,
+      "valid": 115281
+    },
+    "reference_position_error_m": {
+      "invalid": 0,
+      "maximum": 0.00026131786197799783,
+      "minimum": 8.635044739143965e-08,
+      "p95": 9.401556981888686e-05,
+      "rms": 4.0557735757651485e-05,
+      "samples": 115281,
+      "valid": 115281
+    },
+    "tcp_workpiece_distance_m": {
+      "invalid": 0,
+      "maximum": 0.05003630159974928,
+      "minimum": 0.04999480997663361,
+      "p95": 0.05002682854852217,
+      "rms": 0.05000503252004526,
+      "samples": 115281,
+      "valid": 115281
+    },
+    "tool_axis_angle_rad": {
+      "invalid": 0,
+      "maximum": 0.0009863237046966687,
+      "minimum": 1.4941825009019527e-08,
+      "p95": 0.0002638604927873198,
+      "rms": 0.00010939418910393426,
+      "samples": 115281,
+      "valid": 115281
+    }
+  },
+  "path_sha256": "ed50f33cb09929285233bc4f87703112e8cfe7007cc958ea6e67b70631492705",
+  "phases": {
+    "REFERENCE_PAUSED": {
+      "duration_s": 36.962,
+      "path_distance_m": {
+        "invalid": 0,
+        "maximum": 1.0077281909987987e-05,
+        "minimum": 7.865216061296845e-08,
+        "p95": 4.4940458976574337e-07,
+        "rms": 7.895221096294804e-07,
+        "samples": 18481,
+        "valid": 18481
+      },
+      "reference_position_error_m": {
+        "invalid": 0,
+        "maximum": 0.0001235352212609208,
+        "minimum": 8.635044739143965e-08,
+        "p95": 2.437887566257709e-05,
+        "rms": 1.2521264298124126e-05,
+        "samples": 18481,
+        "valid": 18481
+      },
+      "tcp_workpiece_distance_m": {
+        "invalid": 0,
+        "maximum": 0.050002763459129435,
+        "minimum": 0.04999947248784645,
+        "p95": 0.05000032792636086,
+        "rms": 0.0500000951999605,
+        "samples": 18481,
+        "valid": 18481
+      },
+      "tool_axis_angle_rad": {
+        "invalid": 0,
+        "maximum": 0.0003520910497554067,
+        "minimum": 1.1653891555737454e-07,
+        "p95": 7.15010986884094e-05,
+        "rms": 3.580686363356282e-05,
+        "samples": 18481,
+        "valid": 18481
+      }
+    },
+    "RUNNING": {
+      "duration_s": 193.6,
+      "path_distance_m": {
+        "invalid": 0,
+        "maximum": 0.0001495725688919098,
+        "minimum": 2.1319842521531895e-08,
+        "p95": 9.133799597621824e-05,
+        "rms": 3.830688335275536e-05,
+        "samples": 96800,
+        "valid": 96800
+      },
+      "reference_position_error_m": {
+        "invalid": 0,
+        "maximum": 0.00026131786197799783,
+        "minimum": 1.1119030789395503e-07,
+        "p95": 0.00010084056905643048,
+        "rms": 4.392090914641001e-05,
+        "samples": 96800,
+        "valid": 96800
+      },
+      "tcp_workpiece_distance_m": {
+        "invalid": 0,
+        "maximum": 0.05003630159974928,
+        "minimum": 0.04999480997663361,
+        "p95": 0.050028500361519526,
+        "rms": 0.050005975094919976,
+        "samples": 96800,
+        "valid": 96800
+      },
+      "tool_axis_angle_rad": {
+        "invalid": 0,
+        "maximum": 0.0009863237046966687,
+        "minimum": 1.4941825009019527e-08,
+        "p95": 0.000288965280936867,
+        "rms": 0.00011835140236983293,
+        "samples": 96800,
+        "valid": 96800
+      }
+    }
+  },
+  "records_sha256": {
+    "controller": "2db3d6d93d1a9c178868545338bb7696b6e31d35533811d7cc4903c16e7b0bfb",
+    "plant": "a603c820c499fe0ef4dc99f890025da64fc8eea81bb758bc99782c19aad8b402"
+  },
+  "result_sha256": "21a1e5b91380d6ffbc1a33bdafc921c2a00f0bfc274b6ebc76012090c6b69fc2",
+  "runtime_verdict": "pass",
+  "scenario": {
+    "independent_witness": {
+      "forward": {
+        "attempts": [
+          {
+            "certificate": {
+              "accepted": true,
+              "checked_intervals": 2,
+              "covered_pairs": 76,
+              "minimum_proven_margin_m": 0.006699670916890716,
+              "pair": null,
+              "reason": "certified"
+            },
+            "feed_cap_m_s": 0.008879531049669834,
+            "feed_m_s": 0.008879531049669834,
+            "velocity": [
+              -0.002071424635303458,
+              0.008016276993205677,
+              0.006461554178702506,
+              1.0961670093845198e-06,
+              -0.025740012943478812,
+              -0.010064728195552219,
+              0.03033426991593365,
+              -0.016949824301903196,
+              -0.006147336770905357
+            ]
+          }
+        ],
+        "feed_m_s": 0.008879531049669834,
+        "motion": {
+          "initial": {
+            "acceleration": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "position": [
+              0.47397882839143674,
+              -1.3507126525609536,
+              0.2379871782387216,
+              1.570799780766598,
+              -0.00049535735074864,
+              0.7371397760132926,
+              -0.17324874978810353,
+              -1.1288823339319456,
+              0.07488906270290283
+            ],
+            "velocity": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          },
+          "period_s": 0.1,
+          "target_velocity": [
+            -0.002071424635303458,
+            0.008016276993205677,
+            0.006461554178702506,
+            1.0961670093845198e-06,
+            -0.025740012943478812,
+            -0.010064728195552219,
+            0.03033426991593365,
+            -0.016949824301903196,
+            -0.006147336770905357
+          ]
+        },
+        "status": "proven"
+      },
+      "kind": "reconfiguration",
+      "reference_progress_m": 0.8252114850232904,
+      "segments": [
+        {
+          "duration_s": 0.16,
+          "maximum_angle_bound_rad": 5.843018896494342e-05,
+          "maximum_position_bound_m": 4.25116102790243e-05,
+          "motion": {
+            "accepted": true,
+            "checked_intervals": 2,
+            "covered_pairs": 76,
+            "minimum_proven_margin_m": 0.007008522150556792,
+            "pair": null,
+            "reason": "certified"
+          },
+          "task_intervals": 13
+        },
+        {
+          "duration_s": 0.16,
+          "maximum_angle_bound_rad": 6.568373321450035e-05,
+          "maximum_position_bound_m": 4.802547006021362e-05,
+          "motion": {
+            "accepted": true,
+            "checked_intervals": 2,
+            "covered_pairs": 76,
+            "minimum_proven_margin_m": 0.007010068063247492,
+            "pair": null,
+            "reason": "certified"
+          },
+          "task_intervals": 9
+        }
+      ],
+      "source": "/home/lsn/robot/robot_safecontrol/output/static-scene-validation-20261020/s4-paired-independent-witness-01/witness",
+      "source_candidate": {
+        "blocked": true,
+        "database_sha256": "dfd7c1b2969cec6547e73ffaf6aab40ecf74cf3f58357f3a8e185f381e616d58",
+        "origin_manifest_sha256": "21222d3ce206ff74a8951b56c8f1677f0d0550e56c559df2a753b1a9a0a29efa",
+        "origin_scene": {
+          "clearances": {
+            "external_m": 0.03,
+            "self_m": 0.01
+          },
+          "config_sha256": "95ba1557e79ae547c4c00695504558fdfe5ddfac1dc10563e0c2337e4da55918",
+          "frame_id": "base_link",
+          "obstacles": [
+            {
+              "center_m": [
+                0.01063882915869803,
+                0.3430000465301045,
+                0.1344757956872619
+              ],
+              "name": "obstacle_1",
+              "radius_m": 0.06
+            },
+            {
+              "center_m": [
+                0.0876001853066962,
+                0.352075324058839,
+                0.7411556848692086
+              ],
+              "name": "obstacle_2",
+              "radius_m": 0.06
+            }
+          ],
+          "self_collision": {
+            "auxiliary": [
+              {
+                "path": "/home/lsn/robot/robot_safecontrol/models/ninezzhou/collision_meshes/provenance.json",
+                "sha256": "9903874e0cc1c0bd2f852d57f9e4144450812f0b1e402b96fe3ded2403e9e087"
+              },
+              {
+                "path": "/home/lsn/robot/robot_safecontrol/models/ninezzhou/urdf/ninezzhou_collision.urdf",
+                "sha256": "081c8d5a7e1878b9d4c025544e957dcd09f5ab1755c3b6e96dedc244d41b8247"
+              },
+              {
+                "path": "/home/lsn/robot/robot_safecontrol/models/ninezzhou/urdf/ninezzhou.urdf",
+                "sha256": "766ea5870c41f110d7d57b46e6b31153335f45358faf15e641d465b3b31587a3"
+              },
+              {
+                "path": "/home/lsn/robot/robot_safecontrol/portable_oscbf/scripts/generate_closed_collision_meshes.py",
+                "sha256": "c88b553012763f300bd127d44b442c2079e1c7a6a8bb92f776498b33ed341b1b"
+              },
+              {
+                "path": "/home/lsn/robot/robot_safecontrol/models/ninezzhou/meshes/base_link.STL",
+                "sha256": "270e1f8fad8d036548a7e026656c92f8152c17ca87359bc74861070d7a6cea9e"
+              },
+              {
+                "path": "/home/lsn/robot/robot_safecontrol/models/ninezzhou/meshes/Link1.STL",
+                "sha256": "1f22430ea24c38de90bf5446181a431a53737e4ea7c14f014938e67928091f37"
+              },
+              {
+                "path": "/home/lsn/robot/robot_safecontrol/models/ninezzhou/meshes/Link2.STL",
+                "sha256": "3ae18dfbf09ed2a6bf2434e8fd04cd706c0a26bcb48e50ad926dc86135e3f6a4"
+              },
+              {
+                "path": "/home/lsn/robot/robot_safecontrol/models/ninezzhou/meshes/Link3.STL",
+                "sha256": "30aedaa83b64cdba385c4cc37d90eae4716817b16877d59b78c5b61b572b3b82"
+              },
+              {
+                "path": "/home/lsn/robot/robot_safecontrol/models/ninezzhou/meshes/Link4.STL",
+                "sha256": "c3e34e7bc222f57228ef591dd93721cd1910b58da34397bb2cfdc68edb7c6842"
+              },
+              {
+                "path": "/home/lsn/robot/robot_safecontrol/models/ninezzhou/meshes/Link5.STL",
+                "sha256": "396ee31ba138967a70e20eff23582f994f154a32a0381a0220d13739195af5cb"
+              },
+              {
+                "path": "/home/lsn/robot/robot_safecontrol/models/ninezzhou/meshes/Link6.STL",
+                "sha256": "d5e01454e20ceecdc12d56c1714c7876aa74ba4e00f71fc4204f41e09a07a97d"
+              },
+              {
+                "path": "/home/lsn/robot/robot_safecontrol/models/ninezzhou/meshes/Link7.STL",
+                "sha256": "20b12ecf0336b1271d7ec39779b4c80635705c1c97894ef4acaf225e3e023a8a"
+              },
+              {
+                "path": "/home/lsn/robot/robot_safecontrol/models/ninezzhou/meshes/Link8.STL",
+                "sha256": "ffad5ca923c0f66c7c0910438c0974af8d15f5b776f1151b068b65dcd0057d3b"
+              },
+              {
+                "path": "/home/lsn/robot/robot_safecontrol/models/ninezzhou/meshes/Link9.STL",
+                "sha256": "7ebcf726b70288929d68b13c489b2b49ca52bab369109429a20f04850c5bb369"
+              }
+            ],
+            "manifest": {
+              "path": "/home/lsn/robot/robot_safecontrol/portable_oscbf/config/collision_geometry_sources.json",
+              "sha256": "7417e54808ddceb370441b193a5ead549271565ddef86a176f456c3cb69802a8"
+            },
+            "meshes": [
+              {
+                "link": "base_link",
+                "path": "/home/lsn/robot/robot_safecontrol/models/ninezzhou/collision_meshes/base_link.stl",
+                "sha256": "0f971745eee735b2671e7d5f1c4ba2fa7f3760b5294410c7540f0903350cd00e"
+              },
+              {
+                "link": "Link1",
+                "path": "/home/lsn/robot/robot_safecontrol/models/ninezzhou/collision_meshes/Link1.stl",
+                "sha256": "409ee10b0e5d10287a8f0d8f9fa27e4b5bcce0474fdc48c05c016b9074879728"
+              },
+              {
+                "link": "Link2",
+                "path": "/home/lsn/robot/robot_safecontrol/models/ninezzhou/collision_meshes/Link2.stl",
+                "sha256": "516eb9c32146f6da99e51918e57bf486b2a506a131b4546f4607a2c7598afcd3"
+              },
+              {
+                "link": "Link3",
+                "path": "/home/lsn/robot/robot_safecontrol/models/ninezzhou/collision_meshes/Link3.stl",
+                "sha256": "5c7a03305c27e9ee3e445fa99b5a130d8688fa64a2abdb747801cc0d4e19539e"
+              },
+              {
+                "link": "Link4",
+                "path": "/home/lsn/robot/robot_safecontrol/models/ninezzhou/collision_meshes/Link4.stl",
+                "sha256": "b575b4be4248d07d396fd68ee5577e994c8f1cbbca8940f37958f46bff67290d"
+              },
+              {
+                "link": "Link5",
+                "path": "/home/lsn/robot/robot_safecontrol/models/ninezzhou/collision_meshes/Link5.stl",
+                "sha256": "33cfd5ed7c163cb9d3df37449d1acf1b72627de533affec5e65b122d515b06ca"
+              },
+              {
+                "link": "Link6",
+                "path": "/home/lsn/robot/robot_safecontrol/models/ninezzhou/collision_meshes/Link6.stl",
+                "sha256": "14015bad37b3cdf695a7181f4b3a330d0df5bf6730df5de6b3983adc794059d3"
+              },
+              {
+                "link": "Link7",
+                "path": "/home/lsn/robot/robot_safecontrol/models/ninezzhou/collision_meshes/Link7.stl",
+                "sha256": "2ea7cbae1b4f026838b873457b2f316253f0a72b859199412a217eb35c7df19e"
+              },
+              {
+                "link": "Link8",
+                "path": "/home/lsn/robot/robot_safecontrol/models/ninezzhou/collision_meshes/Link8.stl",
+                "sha256": "60c1eeb7cf97fab213c6548201696da1b95fad28c23c2e73eddfd9eb69625338"
+              },
+              {
+                "link": "Link9",
+                "path": "/home/lsn/robot/robot_safecontrol/models/ninezzhou/collision_meshes/Link9.stl",
+                "sha256": "df6faa44f60c4578a7a0b6c9916422d26bfed65b03a019d4bc69b306ee1441d7"
+              }
+            ],
+            "pairs": [
+              [
+                0,
+                2
+              ],
+              [
+                0,
+                3
+              ],
+              [
+                0,
+                4
+              ],
+              [
+                0,
+                5
+              ],
+              [
+                0,
+                6
+              ],
+              [
+                0,
+                7
+              ],
+              [
+                0,
+                8
+              ],
+              [
+                0,
+                9
+              ],
+              [
+                1,
+                3
+              ],
+              [
+                1,
+                4
+              ],
+              [
+                1,
+                5
+              ],
+              [
+                1,
+                6
+              ],
+              [
+                1,
+                7
+              ],
+              [
+                1,
+                8
+              ],
+              [
+                1,
+                9
+              ],
+              [
+                2,
+                4
+              ],
+              [
+                2,
+                5
+              ],
+              [
+                2,
+                6
+              ],
+              [
+                2,
+                7
+              ],
+              [
+                2,
+                8
+              ],
+              [
+                2,
+                9
+              ],
+              [
+                3,
+                5
+              ],
+              [
+                3,
+                6
+              ],
+              [
+                3,
+                7
+              ],
+              [
+                3,
+                8
+              ],
+              [
+                3,
+                9
+              ],
+              [
+                4,
+                6
+              ],
+              [
+                4,
+                7
+              ],
+              [
+                4,
+                8
+              ],
+              [
+                4,
+                9
+              ],
+              [
+                5,
+                7
+              ],
+              [
+                5,
+                8
+              ],
+              [
+                5,
+                9
+              ],
+              [
+                6,
+                8
+              ],
+              [
+                6,
+                9
+              ],
+              [
+                7,
+                9
+              ]
+            ]
+          },
+          "table": {
+            "center_m": [
+              -7.246874682720339e-05,
+              0.12842269782935856,
+              1.6372593390674266
+            ],
+            "half_extents_m": [
+              0.4,
+              0.025,
+              0.4
+            ]
+          },
+          "workpiece": {
+            "axis": [
+              0.0,
+              1.0,
+              0.0
+            ],
+            "center_m": [
+              -7.246874682720339e-05,
+              0.3466393505935161,
+              1.6372593390674266
+            ],
+            "height_m": 0.386433305528315,
+            "radius_m": 0.2206
+          }
+        },
+        "origin_witness_sha256": "35601a35b69dfd0f305cdf1334d9a2ae17c7bd5cc01b5f831d4e4eae1ba11f9b",
+        "request_sha256": "11c73aaa892749fd3aeae5c2a86b592c982332f5b99180068e9383547a09421d",
+        "resource_root": "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-scenes",
+        "revalidation_sha256": "9be1759f18d35f7b3459f1e9989185ed9eb5444f245c2ad912b0de9b825974f6",
+        "run": "/home/lsn/robot/robot_safecontrol/output/static-experiments/s4-joint-development-01",
+        "sequence": 3893
+      },
+      "states_sha256": "97ddc14d16a6dbcb448b51efcf8a87a14cfe7f10dfdd9af4259a6a818ffeafc0",
+      "status": "proven",
+      "witness_sha256": "53b77f141b84b4fa889a545d3595da5e9678e56108c2fae35bd4807a360db9ce"
+    },
+    "reason": "tracking_incomplete_or_inaccurate",
+    "requirement": "complete_tracking_and_reconfiguration",
+    "status": "fail"
+  },
+  "schema_version": 1,
+  "self_clearance": {
+    "measured_pairs": 36,
+    "minimum_m": 0.01578998431091369,
+    "required_m": 0.01,
+    "required_pairs": 36,
+    "samples": 115281,
+    "status": "pass",
+    "unsafe_samples": 0
+  },
+  "task_verdict": "fail",
+  "termination": {
+    "lifecycle": {
+      "deadline_monotonic_s": 22422.796166083,
+      "run_started_monotonic_s": 22002.796168743,
+      "startup_order": [
+        "controller",
+        "plant"
+      ],
+      "stop_requested_monotonic_s": 22234.398092414,
+      "workers_exited_monotonic_s": 22235.063839034
+    },
+    "monotonic_s": 22231.759704862,
+    "ready_sha256": {
+      "controller": "d5d67791ca65163e8ea8463881dc4b6e0831774259c3287bceddaba3dd9f6d8b",
+      "plant": "3e2047afdd6888cf19116473215a342b039bdbfe73dfb4939cd2237e73364b0f"
+    },
+    "recording_statistics_sha256": {
+      "controller": "2618b46ae6076b4f85ef06355bfbd452a6c8b5f4f9ff525eaee0f94b61185e62",
+      "plant": "6af381011c175e2025461bde62c7208d2c5d7804dc2e55f0bbcfc2791d7740d3"
+    },
+    "steps": 2279,
+    "termination": "pause_timeout",
+    "worker_exit_codes": [
+      0,
+      0
+    ]
+  },
+  "tracking_precision_verdict": "pass",
+  "verdict": "fail"
+}

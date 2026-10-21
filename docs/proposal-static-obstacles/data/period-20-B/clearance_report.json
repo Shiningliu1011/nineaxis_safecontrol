@@ -1,0 +1,860 @@
+{
+  "evaluator_sha256": "cbac8e44f98fbd1ed0058cd6aa86af3dfea5fc0c80cb1baace921fefd5897930",
+  "extension_sha256": "5fc5756fa627bdef525569cc9faf44219985a5e3643535a48fe4ac83f401040b",
+  "external": {
+    "measured_pairs": 40,
+    "minimum_m": 0.04997647681875975,
+    "required_pairs": 40,
+    "samples": 192460,
+    "status": "pass",
+    "unsafe_samples": 0
+  },
+  "fcl_version": "0.7.0",
+  "measurement_boundary": "independent_feedback_fk_and_fcl",
+  "pairs": [
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "external",
+      "minimum_m": 0.858721057249257,
+      "pair": [
+        "base_link",
+        "workpiece"
+      ],
+      "required_m": 0.03
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "external",
+      "minimum_m": 0.6760859678694018,
+      "pair": [
+        "base_link",
+        "table"
+      ],
+      "required_m": 0.03
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "external",
+      "minimum_m": 0.2129993384269545,
+      "pair": [
+        "base_link",
+        "obstacle_1"
+      ],
+      "required_m": 0.03
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "external",
+      "minimum_m": 0.25202225666925254,
+      "pair": [
+        "base_link",
+        "obstacle_2"
+      ],
+      "required_m": 0.03
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "external",
+      "minimum_m": 0.8880704798363431,
+      "pair": [
+        "Link1",
+        "workpiece"
+      ],
+      "required_m": 0.03
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "external",
+      "minimum_m": 0.7086704798363429,
+      "pair": [
+        "Link1",
+        "table"
+      ],
+      "required_m": 0.03
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "external",
+      "minimum_m": 0.06648194040711033,
+      "pair": [
+        "Link1",
+        "obstacle_1"
+      ],
+      "required_m": 0.03
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "external",
+      "minimum_m": 0.15256682563812507,
+      "pair": [
+        "Link1",
+        "obstacle_2"
+      ],
+      "required_m": 0.03
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "external",
+      "minimum_m": 0.87020752381096,
+      "pair": [
+        "Link2",
+        "workpiece"
+      ],
+      "required_m": 0.03
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "external",
+      "minimum_m": 0.6718705017323253,
+      "pair": [
+        "Link2",
+        "table"
+      ],
+      "required_m": 0.03
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "external",
+      "minimum_m": 0.2043522415918971,
+      "pair": [
+        "Link2",
+        "obstacle_1"
+      ],
+      "required_m": 0.03
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "external",
+      "minimum_m": 0.13262466396371372,
+      "pair": [
+        "Link2",
+        "obstacle_2"
+      ],
+      "required_m": 0.03
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "external",
+      "minimum_m": 0.7300358762215605,
+      "pair": [
+        "Link3",
+        "workpiece"
+      ],
+      "required_m": 0.03
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "external",
+      "minimum_m": 0.48228064748940075,
+      "pair": [
+        "Link3",
+        "table"
+      ],
+      "required_m": 0.03
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "external",
+      "minimum_m": 0.24722059285459733,
+      "pair": [
+        "Link3",
+        "obstacle_1"
+      ],
+      "required_m": 0.03
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "external",
+      "minimum_m": 0.10897339259566945,
+      "pair": [
+        "Link3",
+        "obstacle_2"
+      ],
+      "required_m": 0.03
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "external",
+      "minimum_m": 0.650407136370331,
+      "pair": [
+        "Link4",
+        "workpiece"
+      ],
+      "required_m": 0.03
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "external",
+      "minimum_m": 0.4123672469740147,
+      "pair": [
+        "Link4",
+        "table"
+      ],
+      "required_m": 0.03
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "external",
+      "minimum_m": 0.4586924567309061,
+      "pair": [
+        "Link4",
+        "obstacle_1"
+      ],
+      "required_m": 0.03
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "external",
+      "minimum_m": 0.11623180291625342,
+      "pair": [
+        "Link4",
+        "obstacle_2"
+      ],
+      "required_m": 0.03
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "external",
+      "minimum_m": 0.4002888684593677,
+      "pair": [
+        "Link5",
+        "workpiece"
+      ],
+      "required_m": 0.03
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "external",
+      "minimum_m": 0.23729692295574437,
+      "pair": [
+        "Link5",
+        "table"
+      ],
+      "required_m": 0.03
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "external",
+      "minimum_m": 0.5256106324301124,
+      "pair": [
+        "Link5",
+        "obstacle_1"
+      ],
+      "required_m": 0.03
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "external",
+      "minimum_m": 0.07275185893600601,
+      "pair": [
+        "Link5",
+        "obstacle_2"
+      ],
+      "required_m": 0.03
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "external",
+      "minimum_m": 0.2913879255907096,
+      "pair": [
+        "Link6",
+        "workpiece"
+      ],
+      "required_m": 0.03
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "external",
+      "minimum_m": 0.15596155062210643,
+      "pair": [
+        "Link6",
+        "table"
+      ],
+      "required_m": 0.03
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "external",
+      "minimum_m": 0.6731938618367848,
+      "pair": [
+        "Link6",
+        "obstacle_1"
+      ],
+      "required_m": 0.03
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "external",
+      "minimum_m": 0.08490474397658984,
+      "pair": [
+        "Link6",
+        "obstacle_2"
+      ],
+      "required_m": 0.03
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "external",
+      "minimum_m": 0.26783444935355827,
+      "pair": [
+        "Link7",
+        "workpiece"
+      ],
+      "required_m": 0.03
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "external",
+      "minimum_m": 0.15669460792525167,
+      "pair": [
+        "Link7",
+        "table"
+      ],
+      "required_m": 0.03
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "external",
+      "minimum_m": 0.7752295981087548,
+      "pair": [
+        "Link7",
+        "obstacle_1"
+      ],
+      "required_m": 0.03
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "external",
+      "minimum_m": 0.16827302538376507,
+      "pair": [
+        "Link7",
+        "obstacle_2"
+      ],
+      "required_m": 0.03
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "external",
+      "minimum_m": 0.21974361376820079,
+      "pair": [
+        "Link8",
+        "workpiece"
+      ],
+      "required_m": 0.03
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "external",
+      "minimum_m": 0.15253508639015126,
+      "pair": [
+        "Link8",
+        "table"
+      ],
+      "required_m": 0.03
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "external",
+      "minimum_m": 0.79875864327616,
+      "pair": [
+        "Link8",
+        "obstacle_1"
+      ],
+      "required_m": 0.03
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "external",
+      "minimum_m": 0.19302474228126923,
+      "pair": [
+        "Link8",
+        "obstacle_2"
+      ],
+      "required_m": 0.03
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "external",
+      "minimum_m": 0.04997647681875975,
+      "pair": [
+        "Link9",
+        "workpiece"
+      ],
+      "required_m": 0.03
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "external",
+      "minimum_m": 0.18233974599226546,
+      "pair": [
+        "Link9",
+        "table"
+      ],
+      "required_m": 0.03
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "external",
+      "minimum_m": 0.9089437493534945,
+      "pair": [
+        "Link9",
+        "obstacle_1"
+      ],
+      "required_m": 0.03
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "external",
+      "minimum_m": 0.302343558589525,
+      "pair": [
+        "Link9",
+        "obstacle_2"
+      ],
+      "required_m": 0.03
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "self",
+      "minimum_m": 0.22441443970001848,
+      "pair": [
+        "base_link",
+        "Link2"
+      ],
+      "required_m": 0.01
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "self",
+      "minimum_m": 0.25779985055762583,
+      "pair": [
+        "base_link",
+        "Link3"
+      ],
+      "required_m": 0.01
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "self",
+      "minimum_m": 0.368588175843089,
+      "pair": [
+        "base_link",
+        "Link4"
+      ],
+      "required_m": 0.01
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "self",
+      "minimum_m": 0.3967549166584817,
+      "pair": [
+        "base_link",
+        "Link5"
+      ],
+      "required_m": 0.01
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "self",
+      "minimum_m": 0.4622489736463852,
+      "pair": [
+        "base_link",
+        "Link6"
+      ],
+      "required_m": 0.01
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "self",
+      "minimum_m": 0.48643055475888297,
+      "pair": [
+        "base_link",
+        "Link7"
+      ],
+      "required_m": 0.01
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "self",
+      "minimum_m": 0.5021815658871894,
+      "pair": [
+        "base_link",
+        "Link8"
+      ],
+      "required_m": 0.01
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "self",
+      "minimum_m": 0.6316226911226657,
+      "pair": [
+        "base_link",
+        "Link9"
+      ],
+      "required_m": 0.01
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "self",
+      "minimum_m": 0.09855151299026546,
+      "pair": [
+        "Link1",
+        "Link3"
+      ],
+      "required_m": 0.01
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "self",
+      "minimum_m": 0.31986749578760454,
+      "pair": [
+        "Link1",
+        "Link4"
+      ],
+      "required_m": 0.01
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "self",
+      "minimum_m": 0.33071713322161217,
+      "pair": [
+        "Link1",
+        "Link5"
+      ],
+      "required_m": 0.01
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "self",
+      "minimum_m": 0.4084477367337762,
+      "pair": [
+        "Link1",
+        "Link6"
+      ],
+      "required_m": 0.01
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "self",
+      "minimum_m": 0.47274712541666836,
+      "pair": [
+        "Link1",
+        "Link7"
+      ],
+      "required_m": 0.01
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "self",
+      "minimum_m": 0.4709776804248687,
+      "pair": [
+        "Link1",
+        "Link8"
+      ],
+      "required_m": 0.01
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "self",
+      "minimum_m": 0.575602763204041,
+      "pair": [
+        "Link1",
+        "Link9"
+      ],
+      "required_m": 0.01
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "self",
+      "minimum_m": 0.13596545225880094,
+      "pair": [
+        "Link2",
+        "Link4"
+      ],
+      "required_m": 0.01
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "self",
+      "minimum_m": 0.1789340888022361,
+      "pair": [
+        "Link2",
+        "Link5"
+      ],
+      "required_m": 0.01
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "self",
+      "minimum_m": 0.34368790164120777,
+      "pair": [
+        "Link2",
+        "Link6"
+      ],
+      "required_m": 0.01
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "self",
+      "minimum_m": 0.43891599937597936,
+      "pair": [
+        "Link2",
+        "Link7"
+      ],
+      "required_m": 0.01
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "self",
+      "minimum_m": 0.47244343472438927,
+      "pair": [
+        "Link2",
+        "Link8"
+      ],
+      "required_m": 0.01
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "self",
+      "minimum_m": 0.566543112380722,
+      "pair": [
+        "Link2",
+        "Link9"
+      ],
+      "required_m": 0.01
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "self",
+      "minimum_m": 0.017019378082499592,
+      "pair": [
+        "Link3",
+        "Link5"
+      ],
+      "required_m": 0.01
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "self",
+      "minimum_m": 0.23155063805711407,
+      "pair": [
+        "Link3",
+        "Link6"
+      ],
+      "required_m": 0.01
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "self",
+      "minimum_m": 0.3383591604945358,
+      "pair": [
+        "Link3",
+        "Link7"
+      ],
+      "required_m": 0.01
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "self",
+      "minimum_m": 0.4103597468999238,
+      "pair": [
+        "Link3",
+        "Link8"
+      ],
+      "required_m": 0.01
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "self",
+      "minimum_m": 0.4839394479000271,
+      "pair": [
+        "Link3",
+        "Link9"
+      ],
+      "required_m": 0.01
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "self",
+      "minimum_m": 0.1419999529648159,
+      "pair": [
+        "Link4",
+        "Link6"
+      ],
+      "required_m": 0.01
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "self",
+      "minimum_m": 0.24924031224848936,
+      "pair": [
+        "Link4",
+        "Link7"
+      ],
+      "required_m": 0.01
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "self",
+      "minimum_m": 0.31406428388557633,
+      "pair": [
+        "Link4",
+        "Link8"
+      ],
+      "required_m": 0.01
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "self",
+      "minimum_m": 0.393695954928398,
+      "pair": [
+        "Link4",
+        "Link9"
+      ],
+      "required_m": 0.01
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "self",
+      "minimum_m": 0.023095802309500153,
+      "pair": [
+        "Link5",
+        "Link7"
+      ],
+      "required_m": 0.01
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "self",
+      "minimum_m": 0.08186309975060983,
+      "pair": [
+        "Link5",
+        "Link8"
+      ],
+      "required_m": 0.01
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "self",
+      "minimum_m": 0.14321961968423144,
+      "pair": [
+        "Link5",
+        "Link9"
+      ],
+      "required_m": 0.01
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "self",
+      "minimum_m": 0.029953552744555204,
+      "pair": [
+        "Link6",
+        "Link8"
+      ],
+      "required_m": 0.01
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "self",
+      "minimum_m": 0.0581664480427954,
+      "pair": [
+        "Link6",
+        "Link9"
+      ],
+      "required_m": 0.01
+    },
+    {
+      "below_clearance_samples": 0,
+      "collision_samples": 0,
+      "kind": "self",
+      "minimum_m": 0.03551722812819954,
+      "pair": [
+        "Link7",
+        "Link9"
+      ],
+      "required_m": 0.01
+    }
+  ],
+  "self": {
+    "measured_pairs": 36,
+    "minimum_m": 0.017019378082499592,
+    "required_pairs": 36,
+    "samples": 192460,
+    "status": "pass",
+    "unsafe_samples": 0
+  }
+}

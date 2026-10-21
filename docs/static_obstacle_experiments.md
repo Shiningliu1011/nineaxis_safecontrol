@@ -24,6 +24,30 @@
 - 正式实验采用三组初态、三档名义进给，每个组合重复三次；完整周期测量确定共同控制周期。
 - 路径距离 RMS/P95/最大值要求为 0.15/0.5/2 mm；真实工具轴夹角 RMS/最大值要求为 0.05°/0.5°。
 
+## 方法与数学对应
+
+`work.moving_reference_task` 提供同一进度处的五维误差 `e`、Jacobian `J_e`
+和参考变化率 `xi_e`。`work.static_velocity_solver.solve_velocity` 为静态实验的
+共同速度求解入口；B/D 使用九维速度 `u` 与进给 `nu` 的联合目标：
+
+```math
+\|J_e u-\xi_e\nu+K e\|_W^2
++w_p\|u-u_{\mathrm{posture}}\|^2
++w_s\|u-u_{\mathrm{previous}}\|^2
++w_f(\nu-\nu_{\mathrm{cap}})^2.
+```
+
+约束包含 `G u <= h` 及 `0 <= nu <= nu_cap`。`nu_cap` 同时受路径给定进给、
+共同进给增长率和剩余路径长度限制；求解器使用 `nu / nu_cap` 作为第十个变量。
+A/C 用相同的任务和全部限制确定进给，再求解九维关节速度。零进给与最后一个
+参考区间按确定的进给重新求解。QP 保存原始目标矩阵、经过行缩放的约束、
+变量缩放、结果和 KKT 残差；运动仍经过 Ruckig 连续检查及 plant 准入。
+
+[M09 联合 QP 项目 #157](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/157)
+与本实验共享五维误差和联合变量的数学定义。本实验通过
+`StaticControl`、`VelocitySolution` 和实验入口验收 A/B/C/D；
+M09 的 `LowerResult`、独立及协同模式接口、名义速度策略仍由 #157 单独验收。
+
 ## S0 运行与重放
 
 `config/static_experiment_s0.yaml` 统一声明固定初态、路径半径、工件半径、
@@ -67,6 +91,25 @@ ROS_DOMAIN_ID=198 ROS_LOCALHOST_ONLY=1 \
   python3 scripts/static_obstacle_experiment.py show
 ```
 
+保存反馈的 MuJoCo 播放使用已经评价并关闭数据库的运行目录：
+
+```bash
+python3 scripts/static_obstacle_experiment.py playback \
+  --output output/static-experiments/s0-run \
+  --playback-output output/static-experiments/s0-playback-01 --domain 232
+```
+
+入口核查 manifest、评价报告、数据库、路径和当前模型资源的 SHA-256，
+从 `plant.sqlite3` 读取原始九轴位置、速度和测量时间戳，按照
+`simulation_s` 的相对间隔发送至独立的显示 topic。MuJoCo 使用保存配置中的
+路径、工件、障碍物和机器人模型。`--time-scale 2` 将播放时长乘以 2；
+`--headless` 使用同一模型和 ROS 接收路径完成数值检查，不创建窗口。
+完整播放在最后一条反馈被模型接收后结束；关闭窗口或 Ctrl+C 保存中断结果并
+销毁本次节点。`playback.json` 和 `playback_result.json` 保存在新的
+`--playback-output` 目录，记录原件身份、播放源码、实际发送数量及模型末态。
+原始数据库与评价文件保持原内容。播放仅创建显示节点，不创建控制器、plant
+或 hardware bridge；`replay` 继续负责反馈评价重算。
+
 运行参数 `path_radius_m=0` 使用生产路径的拟合半径；S0 通过显式 override
 采用 270.6 mm。运行快照保存最终参数及其来源。
 
@@ -76,12 +119,16 @@ ROS_DOMAIN_ID=198 ROS_LOCALHOST_ONLY=1 \
 - `path.npz`：控制使用的完整路径、方向、弧长和名义进给数组。
 - `plant.sqlite3`：每个 2 ms 仿真积分步的关节位置、速度、加速度，以及实际收到的命令。
 - `controller.sqlite3`：全部 QP 输入、候选速度、逐对象查询、运动检查、
-  定时命令、准入回复、状态转换和完整周期耗时。
+  定时命令、准入回复、状态转换和基础周期耗时。
+- `controller.recording.json`：逐个 SQLite cycle sequence 对应的完整完成时间，
+  以及记录数量、WAL 和容量守卫统计。
 - `result.json`：完成、超时或异常终止原因，以及本次进程退出码。
 - `feedback_report.json`、`feedback_report.md`：基于执行反馈的独立评价。
 - `feedback_metrics.npz`：逐样本位置、工具轴、参考与投影进度、阶段和误差。
 - `feedback_arc_metrics.npz`：按实际有序进度等距采样的误差，未观测区间不补充数据。
 
+新 SQLite 记录使用 MessagePack 双精度数值与无损字典压缩，旧 JSON 数据库
+继续可读。格式、转换及验证入口见[紧凑存储](static_experiment_storage.md)。
 SQLite 在采样期间持续提交记录，运行异常保留已经写入的数据。
 运行期间关闭自动 checkpoint，停止采样后由记录连接执行完整 checkpoint。
 监督进程确认所属进程全部退出后，核查数据库完整性并完成剩余 checkpoint。
@@ -97,13 +144,27 @@ TCP 到工件表面的距离分别统计。命令参考与反馈按同机单调�
 终点位置与方向要求连续保持至少 0.5 s，并单独检查完整有序覆盖。
 参考进度使用 plant 结算值，按同一弧长独立插值参考位置和工具轴。
 独立执行评价逐积分步关联获准 command_id，并重算有效执行时间对应的进度。
+历史记录缺少执行器限制快照时，关节限制及末次限制对象评价明确返回“证据不足”；
+已有反馈、几何和进度仍分别评价。
 最后一个参考区间使用到达路径终点所需的进给重新求解关节运动，并完成
 连续检查和实际执行；参考结算至终点后进入 `ENDPOINT_HOLD`。
 完整覆盖要求参考确实结算至末端，实际运动连续经过声明区间，首末位置满足
 0.5 mm 终点范围；实际投影距终点的剩余长度单独报告。
 关节范围、QP 成功率、完整周期 P99.9 和超期次数参与综合判定。
 周期统计包含计算失败和终止阶段。报告分别列出全部拒绝周期及 plant 实际准入拒绝数量。
-反馈报告保存 manifest、终止记录、路径、原始数据库及派生数组的 SHA-256。
+完整周期从开始计算的 callback 入口计时，覆盖容量检查、求解、准入回复、
+cycle 自身同步提交和拒绝后的恢复处理及 transition 提交。终止时仍未完成的
+周期在故障处理和 terminal event 提交后完成。controller 在内存中保存固定上限的
+完成时间表，退出时原子发布；统计文件序列化与退出 checkpoint 单独计入存储工作空间。
+manifest 声明 `controller_after_synchronous_records_and_recovery_v1`；统计文件内
+`cycle_timing.schema_version=1`，result 绑定文件 SHA-256。评价、图表、共同周期和
+正式冻结使用同一读取检查，要求 sequence 一一对应、有限时间及完整耗时不小于基础耗时。
+缺少完成时间表、版本或身份不符时，当前口径不能通过。
+历史数据库和报告继续可读，基础数值显示为历史计时，重新评价的 runtime 返回
+`insufficient_evidence`；已有物理和任务指标分别保留。共同周期准入要求完整计时口径。
+反馈报告保存 manifest、终止记录、路径、原始数据库及已保存派生数组的 SHA-256。
+逐反馈派生数组默认按需生成；`replay --save-samples` 显式保存，绘图入口在
+独立中间目录重算并验证指标后使用。转换记录另行绑定来源说明的 SHA-256。
 共同周期与正式配对入口核查这些身份后使用报告。
 
 外部间距根据逐条反馈的独立 FCL 查询评价，结果保存为
@@ -156,6 +217,21 @@ controller 和 plant 共用 Ruckig 运动处理参数。候选从指定积分步
 控制周期截取位置和完整停止过程；速度、加速度及 jerk 均核对连续范围。
 实际中点违反关节或几何要求时立即拒绝候选；其余候选继续完成全部连续范围检查。
 各关节共享 Ruckig 临界时刻的状态计算。
+同次控制计算中的九轴速度完全相同时，共享对应的 Ruckig 运动与连续证书；
+每次进给试算保存独立 QP 输入、最终状态检查与证书。零进给解的九轴
+P、c、G、h 完全一致时，可以重建新问题的进给边界 dual；
+完整 KKT 与原始不等式均通过检查后复用该解，记录 dual 与来源 trial。
+其余问题执行完整迭代求解。两种分支在启动预热时共同编译。
+相邻控制周期的完整 P、c、G、h 与变量比例逐值相同时，复用前次真实解并重新
+检查当前完整 KKT 和原始不等式。位置、速度、加速度、周期、执行器限制、
+静态几何及目标速度均完全相同时，可共享已验证的 Ruckig 运动与连续证书。
+每条 trial 保存本次控制计算序号、仿真时间以及复用来源的序号、时间和 trial。
+缓存只保留前次控制计算的数据；参考条件、恢复确认和暂停超时每次照常检查。
+
+controller 创建时调用 `StaticControl.warmup`，使用实际初态和相同参数完成
+前进候选及零进给求解，覆盖联合问题的十维形状和固定进给问题的九维形状。
+预热使用独立控制对象，正式控制对象保留初始恢复状态、空复用记录和序号；
+首条正式 trial 的计算序号为 1，复用来源只引用本次运行已经记录的计算。
 
 controller 根据当前已获准运动预测下个周期起点，plant 独立检查候选，
 并在指定的 2 ms 积分步激活。过期、状态不一致、参考不一致及检查失败均拒绝。
@@ -166,6 +242,11 @@ plant 在有效执行区间按获准进给结算参考进度；自动停止期�
 基础恢复检查正向候选；改进恢复还检查更严格的位置、真实工具轴角度，
 并连续确认至少 0.2 s。暂停时继续计算误差校正及共同构型辅助，
 所有方法使用相同的进给渐增参数。持续暂停超过 30 s 时保存终止原因。
+当前开发配置的暂停阈值为位置 1 mm、角度 0.2°，恢复阈值为位置 0.3 mm、
+角度 0.04°，进给增长率为 0.03 m/s²。任一恢复条件失效都会清除连续确认起点。
+`transition` 保存状态转换的仿真时刻与原因；反馈报告在初始启动之后的每次暂停中，
+列出首个通过连续检查的正向候选时刻、实际反馈恢复时刻、两者的时间差和随后运行区间。
+恢复后的误差按该实际区间统计，初始启动单独识别。
 准入拒绝会重新开始恢复确认，持续暂停计时仍然保留。
 几何、求解或反馈故障记录 FAULT 状态及具体原因。
 QP 进给处于边界的数值误差范围时，固定边界进给重新计算九轴速度，
@@ -184,9 +265,18 @@ E 组依据 Amirhossein Kazemipour 等人的
 [作者公开实现](https://github.com/amrkzp/Generalized-SNS/tree/0d4df38bc735e137a69796dc3ca3396c9de3a616)，
 版本为 `0d4df38bc735e137a69796dc3ca3396c9de3a616`，许可为
 [CC BY 4.0](https://github.com/amrkzp/Generalized-SNS/blob/0d4df38bc735e137a69796dc3ca3396c9de3a616/LICENSE)。
+作者实现中的 `damped_pinv.m` 由 Fabrizio Flacco 编写、Amirhossein Kazemipour 修改。
+本项目将 MATLAB 单任务速度算法移植为 NumPy，增加输入和最终限制检查，
+接入共同五维任务、构型辅助、运动准入和记录接口；上述来源的作者署名与许可保留。
+来源材料按其 LICENSE 中的担保免责条款提供。
 Python 实现保留广义速度限制、逐项饱和和最大有效任务缩放语义；
 误差校正与路径速度共同乘以任务缩放量。SVD 阻尼参数为
 epsilon=0.1、lambda=0.001，秩检查阈值为 1e-6。
+广义上下界要求有限且顺序有效。当共同控制余量要求主动增加间距时，
+广义速度区间可以完全位于零点的一侧；SNS 按同一饱和过程求解该区间。
+缩放区间同时保留限制最小缩放量的对象；其要求超过允许区间时，
+该对象参与后续饱和计算，构型调整仍须满足全部原始限制。
+没有满足全部限制的结果时抛出求解错误。
 
 共同构型辅助和命令平滑的加权速度在主任务零空间内按允许比例加入，
 每个结果仍通过全部限制与连续运动检查。记录包含原始输入、任务缩放量、
@@ -230,20 +320,45 @@ python3 scripts/static_obstacle_experiment.py witness-replay \
 运行 S4 时用 `--scene-evidence` 指定见证目录；运行 S5 时指定
 `s5_blockage.json`。运行前重新核查见证，验证结果写入 manifest。
 S4 还要求实际暂停期间参考保持、关节构型变化及随后恢复。
+独立见证可在相同资源的其他检出目录重核。重核按资源角色迁移路径，
+继续比较各文件 SHA-256、固定障碍物、碰撞组合和执行器限制；
+历史记录缺少 `resource_root` 时，由 collision manifest 的配置相对路径
+及其资源绝对路径确定原始目录。原始见证与来源候选保持原有身份。
 S5 的阻塞证明允许 2 mm 位置误差和 0.5° 工具轴误差，验收要求持续阻塞后
 按规定终止、反馈确认停止、全部间距与关节限制有效，并报告未完成范围。
 未提供独立证据时，相应场景返回“证据不足”。
 
 ## 共同周期
 
+使用工程容量审计生成二十项运行预算。`--engineering-evidence` 指向
+`plan_static_engineering_capacity.py` 生成的 `engineering_evidence.json`；
+`--volume` 指向实际运行输出所在的已存在文件系统目录。以下示例的 S4
+包含 66 个几何对象组合，其他配置的 `--maximum-pairs` 使用其实际数量。
+预算输出目录需已创建，预算文件与索引需尚不存在。
+
 ```bash
+mkdir -p output/static-experiments/period-budgets
+python3 scripts/prepare_static_storage_budget.py \
+  --engineering-evidence output/static-capacity/engineering_evidence.json \
+  --resource-root "$PWD" \
+  --config output/static-experiments/development-scenes/s4.yaml \
+  --volume output/static-experiments --maximum-pairs 66 --study-index \
+  --output output/static-experiments/period-budgets/index.json
 python3 scripts/static_obstacle_experiment.py benchmark \
   --config output/static-experiments/development-scenes/s4.yaml \
+  --storage-budget-index output/static-experiments/period-budgets/index.json \
   --output output/static-experiments/period-study
 ```
 
+预算生成器核对审计文件身份，并重新绑定配置、当前源码与文件系统 UUID。
+省略 `--study-index` 时，`--method`、`--period-s` 和 `--feed-factor` 生成单次
+开发验证预算，运行入口通过 `--storage-budget` 使用。`--force-wal` 仅用于
+隔离的预算耗尽验证。这些预算不替代正式矩阵的完整容量准入。
+
 入口串行运行四个候选周期与 A–E 方法的 20 个完整 ROS 仿真，保存每次原始记录、
 退出状态及反馈评价。重复调用会检查已有配置、代码和设备环境身份，并继续尚未开始的组合。
+每次运行启用容量守卫；报告绑定预算与两个 worker 的统计身份，正式清单
+拒绝缺少守卫或发生预算终止的共同周期记录。
 `period_report.json` 记录每组 P99.9、最大耗时和超期次数，只有全部方法均
 不超过周期 80% 的候选可用；测量缺失和全部候选超时分别报告。
 周期通过与功能通过分别保存。
@@ -254,6 +369,10 @@ python3 scripts/static_obstacle_experiment.py benchmark \
 证据索引为 JSON，字段包含 `parameter_rationale`（开发参数选择说明文件）、
 `feasibility_runs`（完整跟随的实际运行目录列表）、`s4_witness`
 和 `s5_blockage`。参数说明记录搜索范围、选择依据及最终参数。
+可行性记录来自其他 worktree 时，依据来源 `resource_root` 重定位到本次资源目录，
+并逐项核查碰撞来源文件、全部 mesh、轨迹和运动学配置的 SHA-256。
+场景参数、初态、执行器限制和全部自碰撞组合继续参与物理身份比较；
+来源 manifest 与原始记录保持原内容。
 
 ```bash
 python3 scripts/static_obstacle_experiment.py freeze \

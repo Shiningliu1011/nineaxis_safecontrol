@@ -26,6 +26,9 @@
 
 - [静态障碍物仿真实验](static_obstacle_experiments.md)：规格、S0–S5 场景、A/B/C/D/E 对照及实施任务。
 - [静态实验接手记录](static_obstacle_experiments_handoff.md)：当前验证、数据容量、保存位置和剩余工作。
+- [静态障碍物开题资料](proposal-static-obstacles/README.md)：前期实验数据与结论、可修改文字、图片和跨设备使用说明。
+- [静态实验紧凑存储](static_experiment_storage.md)：无损记录、旧数据转换、按需数组及恢复验证。
+- [2026-10-20 主机恢复](host_recovery_20261020.md)：环境、skills、字体、资料身份和验证入口。
 - [九轴曲面作业完整项目](planning/nineaxis-full-project/README.md)：M01–M12、QP/MPC、系统集成、实机实验与个人项目成果的 Wayfinder 入口。
 - [设计决定](adr/)：按编号阅读已记录的决定。
 - [规格](specs/)：各主题的详细要求。

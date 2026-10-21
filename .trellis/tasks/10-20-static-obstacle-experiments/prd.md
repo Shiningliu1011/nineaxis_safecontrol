@@ -4,9 +4,15 @@
 
 用户明确要求使用 `implement-spec` 执行 #171，随后授权建立 Trellis 任务。
 完整规格见 `docs/specs/static-obstacle-experiments.md`。
-GitHub #172–#183 的正文、评论与原生依赖已读取；目前全部开放。
-主会话负责实现与检查，集成分支为 `codex/static-obstacle-experiments`，
-基准 commit 为 `34a2e34`。提交、推送及发布按项目授权要求处理。
+GitHub #171–#183 的最新正文、评论与原生依赖已于本次接续时重新读取。
+原生父任务为 #147，各任务引用 #171。#172–#176 已完成逐项验收并关闭，
+对应评论为 6291169329、6291173213、6291381543、6291386588、
+6291391112；其余任务继续按依赖验证。
+`implement-spec` 负责整个规格的执行、独立 worktree 子任务、集成与最终审查；
+Trellis 保存任务状态、规划、验证证据与接手资料。
+集成分支为 `codex/static-obstacle-experiments`，本次起点为 `35a1a61`。
+已获取 origin 更新并核查本地与远程相同，初始工作区没有未提交改动。
+用户明确授权本地修改、安装、构建、sim 验证、子 agent、commit 和 push。
 
 ## 共同要求
 

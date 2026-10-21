@@ -58,13 +58,14 @@ def _path_start_configuration() -> np.ndarray:
 
 
 @pytest.fixture(scope="module")
-def closed_loop():
+def closed_loop(tmp_path_factory):
     from robot_safecontrol_moveit.oscbf_controller import OscbfController
     from robot_safecontrol_moveit.oscbf_plant import OscbfPlant
 
     context = Context()
     rclpy.init(context=context, domain_id=_DOMAIN_ID)
     portable = str(REPO_ROOT / "portable_oscbf")
+    report_directory = tmp_path_factory.mktemp("oscbf_full_flow")
     plant = OscbfPlant(
         node_name="oscbf_plant_e2e",
         context=context,
@@ -90,6 +91,9 @@ def closed_loop():
                 value=str(REPO_ROOT / "portable_oscbf" / "config" / "nineaxis.yaml"),
             ),
             rclpy.parameter.Parameter("wait_for_start", value=True),
+            rclpy.parameter.Parameter(
+                "perf_report_path", value=str(report_directory / "perf.md"),
+            ),
         ],
     )
     executor = MultiThreadedExecutor(num_threads=4, context=context)
@@ -97,15 +101,20 @@ def closed_loop():
     executor.add_node(controller)
     thread = threading.Thread(target=executor.spin, daemon=True)
     thread.start()
+    additional_nodes = []
     try:
         yield {
             "plant": plant,
             "controller": controller,
             "context": context,
             "executor": executor,
+            "additional_nodes": additional_nodes,
         }
     finally:
         executor.shutdown()
+        thread.join()
+        for node in additional_nodes:
+            node.destroy_node()
         plant.destroy_node()
         controller.destroy_node()
         rclpy.shutdown(context=context)
@@ -119,6 +128,7 @@ def test_zero_transition_then_tracking(closed_loop):
     path_start = _path_start_configuration()
 
     probe = rclpy.create_node("full_flow_probe", context=context)
+    closed_loop["additional_nodes"].append(probe)
     plant_states = []
     commands = []
     probe.create_subscription(
@@ -164,6 +174,7 @@ def test_zero_transition_then_tracking(closed_loop):
 
         # 3. Handoff: the planning server's completion signal starts tracking.
         client_node = rclpy.create_node("full_flow_start_client", context=context)
+        closed_loop["additional_nodes"].append(client_node)
         client = client_node.create_client(Trigger, _START_SERVICE)
         executor.add_node(client_node)
         deadline = time.monotonic() + 5.0
@@ -224,7 +235,5 @@ def test_zero_transition_then_tracking(closed_loop):
         assert controller.progress_snapshot()["steps"] > steps_before, (
             "controller stalled on a converged (exact) plant state"
         )
-        client_node.destroy_node()
     finally:
         executor.remove_node(probe)
-        probe.destroy_node()

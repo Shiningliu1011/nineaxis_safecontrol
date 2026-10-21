@@ -9,7 +9,8 @@ import robot_static_fcl
 from .static_experiment_config import content_hash
 
 
-def evaluate_clearances(directory: Path, scene: dict, measured: np.ndarray) -> dict:
+def evaluate_clearances(directory: Path, scene: dict, measured: np.ndarray,
+                        *, save_samples: bool = True) -> dict:
     from work.nineaxis_manipulator_jax import NineaxisManipulatorJAX
     from work.obb_collision_model import OBB_LINK_NAMES
     from work.static_collision import StaticGeometry
@@ -32,10 +33,11 @@ def evaluate_clearances(directory: Path, scene: dict, measured: np.ndarray) -> d
     required = np.where(kinds == "self", geometry.self_clearance_m, geometry.external_clearance_m)
     if not np.all(np.isfinite(distance)):
         raise ValueError("反馈几何测量包含非有限距离")
-    np.savez_compressed(
-        directory / "clearance_metrics.npz", distance_m=distance, status=status,
-        pairs=np.array(labels), kind=kinds, required_m=required,
-    )
+    if save_samples:
+        np.savez_compressed(
+            directory / "clearance_metrics.npz", distance_m=distance, status=status,
+            pairs=np.array(labels), kind=kinds, required_m=required,
+        )
     result = {
         "measurement_boundary": "independent_feedback_fk_and_fcl",
         "fcl_version": robot_static_fcl.fcl_version,
