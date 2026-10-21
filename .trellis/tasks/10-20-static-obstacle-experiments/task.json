@@ -30,6 +30,6 @@
   ],
   "parent": null,
   "relatedFiles": [],
-  "notes": "implement-spec负责整个#171的执行、独立worktree、集成与最终审查，Trellis保存状态和证据。#172–181已关闭，#182–183继续。固定运行源码504a274包含完整计时、容量公共参数检查与保存反馈播放，125项来源核查一致，相关测试与独立集成审查通过。回归04主包752pass/1failed/1skip、kernel退出0、CTest4/4；唯一性能失败独占复验通过，301采样零超期；新增ROS终止两参数隔离通过。三卷离线存储验证通过，static-complete-cycle-preflight-01.service正执行sim生命周期；新容量待重建，旧源码40d43bb容量通过且formal_bound=false，原件保留。正式登记72配置，36份完整来源支持39/72证明；旧周期A/B数据归档，study02入口已准备但20组尚未执行。正式采集0/1080，全部前置通过前保持停止。用户授权sim、子agent、commit和push。",
+  "notes": "implement-spec负责整个#171，Trellis维护状态和证据。#172–181已关闭，#182–183继续。固定运行源码504a274，125项来源一致，完整计时、容量公共参数和真实反馈播放已相关验证及独立审查。三卷前置全部完成预期流程，S0/S4完整通过，S5三个功能/生命周期通过、两个runtime失败保留，420秒和8MiB预算收尾通过。当前工程容量10项检查通过，需求215718965248、余量67940061184字节，formal_bound=false，完整SHA见research/complete-cycle-preflight-results.md。static-complete-cycle-period-study-02.service执行完整20组，目前20ms/A，完成0/20，原件在原NTFS guarded-period-study-02。正式登记72配置、36份完整来源支持39/72证明；正式采集0/1080，全部前置通过前停止。回归04及性能独占复验分开保留。用户授权sim、子agent、commit和push。",
   "meta": {}
 }

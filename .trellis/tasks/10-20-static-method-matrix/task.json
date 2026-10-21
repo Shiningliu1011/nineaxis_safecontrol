@@ -21,6 +21,6 @@
   "children": [],
   "parent": "10-20-static-obstacle-experiments",
   "relatedFiles": [],
-  "notes": "",
+  "notes": "#178–181已验收关闭，#182继续。固定源码504a274，完整周期包含同步记录与拒绝恢复，三卷前置及当前工程容量已完成。static-complete-cycle-period-study-02.service正在测20/40/50/100ms乘A–E全部20组，当前20ms/A、0/20。原件在原NTFS任务目录guarded-period-study-02，预算和执行状态在主仓output/static-capacity-20261020/guarded-period-budgets-02。P999须全部方法不超过候选周期80%，选择最短合格候选；无合格候选保持失败。正式清单及容量绑定尚未生成，全部失败原件保留。",
   "meta": {}
 }
