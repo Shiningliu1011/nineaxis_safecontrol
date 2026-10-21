@@ -44,7 +44,15 @@ Trellis 接手入口是 `.trellis/tasks/10-20-static-obstacle-experiments/`，
 记录生命周期预算及异常收尾已经集成。S4 独立见证与九组数值预核通过；
 S4 九组 D 方法完整 ROS 运行均已通过；新 S2 的 D/A/B 完整运行、
 E/S4 及 D/E/B S5 验证已经完成。新 S2 的 initial 2、3 完整 ROS
-运行由 `static-guarded-s2-initials-01.service` 顺序执行。
+运行已经完整通过；两项分别记录1741/1740个周期，P99.9为
+69.909400/62.744659 ms，最大70.783760/69.441027 ms，均无超期和准入拒绝。
+原件在已有实验卷 `guarded-s2-initials-01/`；完成记录 SHA-256 为
+`66784ebd757e0c7b90bfb6cee9652abb2783fbbcdda4dcb9499f2e73a3a78ccb`，
+源码归档为 `output/static-capacity-20261020/guarded-s2-initials-01/source/sources.zip`，
+SHA-256 为 `e97ed434e33ad3e00a7daab30ea37a6ed56e92e5b380b6dfb8bba8bd27fe9a05`。
+36份完整来源重新核对后，物理路径证明为39/72；正式证据索引在
+`output/static-scene-validation-20261020/formal-feasibility-01/evidence_index.json`，
+SHA-256 为 `69e724c3cc392dc4980739c586bef85c2b6029b0822de9dcb3e09de2cdc38f16`。
 正式采集等待全部前置条件通过。
 
 S0 initial 2、3 的完整 D 组记录及生命周期验证均通过，来源和 SHA-256 见
@@ -262,9 +270,11 @@ B/C/E 及各方法的其他场景继续验证，具体组合与来源见
 后续尚需完成：
 
 1. 共同周期及正式清单固定后重新确认三卷正式容量准入。
-2. 完成新 S2 的 initial 2、3 完整 D 方法 ROS 运行，生成新的物理可行性矩阵和正式证据索引。
-3. S0–S4 对应初态与行程范围的可行性证据。
-4. 五种方法、四种候选周期的 20 次完整测量。开发配置的 100 ms 尚未被选为正式周期。
+2. 保持新物理可行性矩阵的39项证明及其余明确状态，正式清单采用已核查的证据索引。
+3. 完成五种方法、四种候选周期的20次完整测量。开发配置的100 ms尚未被选为正式周期。
+   当前服务为 `static-guarded-period-study-01.service`，日志为
+   `output/static-capacity-20261020/guarded-period-study-01.log`，
+   原始记录位于已有实验卷 `guarded-period-study-01/`。
 5. 固定正式清单，执行 1,080 次实验，完成配对统计与六类图表。
 6. 完成当前源码的本机完整回归、控制周期及规范、需求审查；处理验收问题。
 
