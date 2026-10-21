@@ -3,9 +3,9 @@
 ## 当前状态
 
 工作分支为 `codex/static-obstacle-experiments`，本次接续起点为 `35a1a61`，
-当前代码集成为 `2036cac`，包含独立预热、SNS 最小缩放限制处理及多卷工程预算。
-方法证据集成为 `57c601e`，S4 见证及开发证据集成为 `78b5626`，
-前置验收证据为 `5d52885`。
+当前代码集成为 `6aeb527`，运行源码身份基于 `40d43bb`，包含独立预热、
+SNS 最小缩放限制处理、多卷工程预算及运行期间的容量保护。
+容量与场景验收记录已集成至当前分支。
 #172–#176 已发布逐项证据并关闭；
 #171、#177–#183 尚未完成验收。项目已在当前主机恢复到
 `/home/lsn/robot/robot_safecontrol`。紧凑存储已完成四组完整真实记录验证，
@@ -27,9 +27,10 @@ Trellis 接手入口是 `.trellis/tasks/10-20-static-obstacle-experiments/`，
 
 正式容量准入仍未通过。多卷工程预算、运行前后空间检查已集成；
 19 组真实记录的编码审计及目标文件系统验证已保存。
-运行中的字节额度、空间检查及收尾余量正在实现和验证。
-最新规划 `engineering-plan-04` 生成时需求为 209,215,401,984 字节，
-可用 208,859,725,824 字节；开发验证仍在使用临时空间，正式启动前重新核查。
+运行中的字节额度、空间检查及收尾余量已经完成11项完整验证。
+最新两卷规划 `guarded-capacity-review-01/engineering-plan` 的需求为
+209,226,444,800 字节，可用 208,146,608,128 字节，缺口为
+1,079,836,672 字节；正式启动前继续核查现场空间。
 工程预算保持 `formal_bound=false`。计算依据见
 [`research/engineering-capacity-validation.md`](../.trellis/tasks/10-20-static-formal-experiments/research/engineering-capacity-validation.md)
 及
@@ -37,7 +38,9 @@ Trellis 接手入口是 `.trellis/tasks/10-20-static-obstacle-experiments/`，
 格式 3、S5 计算复用和 Generalized-SNS 广义区间支持已经集成，
 58 项组合测试通过，原始记录身份与跨段读取检查通过。
 记录生命周期预算及异常收尾已经集成。S4 独立见证与九组数值预核通过；
-完整 ROS 矩阵继续验证。正式采集等待全部前置条件通过。
+S4 九组 D 方法完整 ROS 运行均已通过；新 S2 的 D/A/B 完整运行、
+E/S4 及 D/E/B S5 验证已经完成。新 S2 的 initial 2、3 完整 ROS
+运行待执行。正式采集等待全部前置条件通过。
 
 S0 initial 2、3 的完整 D 组记录及生命周期验证均通过，来源和 SHA-256 见
 [`research/s0-initial-configurations.md`](../.trellis/tasks/10-20-static-formal-experiments/research/s0-initial-configurations.md)。
@@ -253,14 +256,25 @@ B/C/E 及各方法的其他场景继续验证，具体组合与来源见
 
 后续尚需完成：
 
-1. 完成运行中的容量停止及收尾检查，按最终源码、共同周期和现场空间确认工程容量准入。
-2. S4 九组 D 方法运行已有七组完整通过；复验 initial1/feed1.5、
-   initial3/feed0.5 的反馈时效失败，并完成新 S2 的 D/A/B 实际仿真。
-   B/S4、E/S1 已完整通过；E/S4 反馈时效失败待复验，B/S5 待运行。
+1. 完成第三卷的真实记录、随机读取、中断恢复、原子 JSON 与完整 S5
+   sim 验证，结合共同周期和现场空间重新确认三卷工程容量准入。
+2. 执行新 S2 的 initial 2、3 完整 D 方法 ROS 运行，补充物理可行性证据。
 3. S0–S4 对应初态与行程范围的可行性证据。
 4. 五种方法、四种候选周期的 20 次完整测量。开发配置的 100 ms 尚未被选为正式周期。
 5. 固定正式清单，执行 1,080 次实验，完成配对统计与六类图表。
-6. 保留本机回归、控制周期及规范、需求审查证据；处理仍阻碍正式实验的问题。
+6. 完成当前源码的本机完整回归、控制周期及规范、需求审查；处理验收问题。
+
+第三卷为 `/dev/nvme0n1p3`，UUID `6C001EAA001E7B72`，挂载目录为
+`/media/lsn/Windows`；本任务只使用其子目录
+`robot_safecontrol_static_experiments_20261021/`。恢复挂载时可用空间为
+77,810,987,008 字节，现有原始数据保留。第三卷的验证和容量准入尚未完成。
+已有实验卷 UUID 为 `083CBB753CBB5BFE`，目录为
+`/media/lsn/宇宙小机器人/robot_safecontrol_static_experiments_20261020/`。
+
+`final-regression-01.log`、`final-regression-02.log` 均保留于
+`output/static-capacity-20261020/`，两次运行均未生成最终汇总。
+当前接续入口为 `.scratch/static-implementation/run_final_regression.sh`，
+新日志使用 `final-regression-03.log`。完整通过以三部分最终退出码为准。
 
 最新方法运行与独立 SNS 核查见
 [E 方法 S1/S4 开发运行](../.trellis/tasks/10-20-static-method-matrix/research/current-sns-s1-s4.md)。
