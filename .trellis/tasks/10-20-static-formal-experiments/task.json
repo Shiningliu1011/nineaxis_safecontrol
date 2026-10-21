@@ -21,6 +21,6 @@
   "children": [],
   "parent": "10-20-static-obstacle-experiments",
   "relatedFiles": [],
-  "notes": "接续整个#171，implement-spec负责执行集成，运行源码40d43bb。#172–181已验收关闭。完整回归通过：主包732passed/1skipped，kernel486passed/34skipped，CTest4/4。第三卷UUID6C001EAA001E7B72的19,591条真实记录、42次随机读取、SIGKILL及atomicJSON通过，完整D/S5功能/生命周期通过，runtime P99991.120665ms失败保留。三卷工程容量通过，需求214189355008、可用284842614784、余量70653259776字节，formal_bound=false。S2两个初态由static-guarded-s2-initials-01.service顺序执行；共同周期及1080正式矩阵继续。正式采集0/1080，前置全部通过前保持停止。原始数据保留，用户授权sim验证、子agent、commit和push。",
+  "notes": "接续整个#171，implement-spec负责执行集成，运行源码40d43bb。#172–181已验收关闭。完整回归通过：主包732passed/1skipped，kernel486passed/34skipped，CTest4/4。第三卷UUID6C001EAA001E7B72的19,591条真实记录、42次随机读取、SIGKILL及atomicJSON通过；完整D/S5功能/生命周期通过，runtime P99991.120665ms失败保留。三卷工程容量通过，需求214189355008、可用284842614784、余量70653259776字节，formal_bound=false。S2两个初态完整pass；formal-feasibility-01核查36份完整来源，物理证明39/72，索引SHA69e724c3cc392dc4980739c586bef85c2b6029b0822de9dcb3e09de2cdc38f16。共同周期20组测量由static-guarded-period-study-01.service执行，1080正式矩阵待完成。正式采集0/1080，前置全部通过前保持停止。原始数据保留，用户授权sim验证、子agent、commit和push。",
   "meta": {}
 }
