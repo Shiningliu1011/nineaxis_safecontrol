@@ -219,6 +219,8 @@ def validate_storage_migration(directory: Path, identities: dict) -> str:
 
 
 def validate_run_report(directory: Path) -> tuple[dict, dict]:
+    from .static_cycle_timing import cycle_timing_summary, load_cycle_timing
+
     manifest_path, report_path = directory / "manifest.json", directory / "feedback_report.json"
     manifest = json.loads(manifest_path.read_text())
     report = json.loads(report_path.read_text())
@@ -240,4 +242,11 @@ def validate_run_report(directory: Path) -> tuple[dict, dict]:
     for filename, expected in report.get("derived_data_sha256", {}).items():
         if content_hash(directory / filename) != expected:
             raise ValueError(f"反馈派生数据身份不一致：{directory / filename}")
+    timing = report.get("execution", {}).get("timing", {})
+    if manifest.get("cycle_timing_boundary") is not None or "boundary" in timing:
+        expected = cycle_timing_summary(
+            load_cycle_timing(directory, manifest), manifest["config"]["control"]["period_s"],
+        )
+        if any(timing.get(key) != value for key, value in expected.items()):
+            raise ValueError(f"反馈报告与完整周期计时不一致：{directory}")
     return manifest, report

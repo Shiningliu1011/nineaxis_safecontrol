@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import sqlite3
 import time
 import zlib
@@ -68,6 +69,10 @@ class RunRecorder:
             self.path, self.connection, limits,
         )
 
+    @property
+    def last_sequence(self) -> int:
+        return self._sequence
+
     def check_capacity(self, *, pending_cycles: int = 0) -> None:
         if self._storage_guard is not None:
             self._storage_guard.check(pending_cycles=pending_cycles)
@@ -78,7 +83,29 @@ class RunRecorder:
     def check_terminal_capacity(self, terminal: dict) -> None:
         if self._storage_guard is not None:
             raw = msgpack.packb(terminal, use_bin_type=True, use_single_float=False)
-            self._storage_guard.check(pending_record=("event", len(raw)))
+            self._storage_guard.check(pending_record=("event", len(raw)), pending_statistics=True)
+
+    def write_statistics(self, values: dict, *, maximum_bytes: int) -> None:
+        path = self.path.with_suffix(".recording.json")
+        pending = path.with_suffix(".json.pending")
+        if path.exists() or pending.exists():
+            raise FileExistsError(path if path.exists() else pending)
+        data = (json.dumps(values, ensure_ascii=False, indent=2, sort_keys=True, allow_nan=False) + "\n").encode()
+        unit = os.statvfs(path.parent).f_frsize
+        allocation = math.ceil(len(data) / unit) * unit
+        if allocation > maximum_bytes:
+            raise ValueError("统计文件超过固定字段与周期数的容量界限")
+        if self._storage_guard is not None:
+            self._storage_guard.check_statistics_allocation(allocation, pending=True)
+        pending.write_bytes(data)
+        actual = pending.stat().st_blocks * 512
+        if actual > maximum_bytes:
+            raise ValueError("统计文件实际分配超过容量界限")
+        if self._storage_guard is not None:
+            self._storage_guard.check_statistics_allocation(actual, pending=True)
+        pending.rename(path)
+        if self._storage_guard is not None:
+            self._storage_guard.check_statistics_allocation(actual, pending=False)
 
     def append(self, stream: str, *, monotonic_s: float, values: dict,
                simulation_s: float | None = None, ros_time_ns: int | None = None,

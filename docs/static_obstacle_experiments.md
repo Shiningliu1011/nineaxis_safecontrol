@@ -100,7 +100,9 @@ ROS_DOMAIN_ID=198 ROS_LOCALHOST_ONLY=1 \
 - `path.npz`：控制使用的完整路径、方向、弧长和名义进给数组。
 - `plant.sqlite3`：每个 2 ms 仿真积分步的关节位置、速度、加速度，以及实际收到的命令。
 - `controller.sqlite3`：全部 QP 输入、候选速度、逐对象查询、运动检查、
-  定时命令、准入回复、状态转换和完整周期耗时。
+  定时命令、准入回复、状态转换和基础周期耗时。
+- `controller.recording.json`：逐个 SQLite cycle sequence 对应的完整完成时间，
+  以及记录数量、WAL 和容量守卫统计。
 - `result.json`：完成、超时或异常终止原因，以及本次进程退出码。
 - `feedback_report.json`、`feedback_report.md`：基于执行反馈的独立评价。
 - `feedback_metrics.npz`：逐样本位置、工具轴、参考与投影进度、阶段和误差。
@@ -131,6 +133,16 @@ TCP 到工件表面的距离分别统计。命令参考与反馈按同机单调�
 0.5 mm 终点范围；实际投影距终点的剩余长度单独报告。
 关节范围、QP 成功率、完整周期 P99.9 和超期次数参与综合判定。
 周期统计包含计算失败和终止阶段。报告分别列出全部拒绝周期及 plant 实际准入拒绝数量。
+完整周期从开始计算的 callback 入口计时，覆盖容量检查、求解、准入回复、
+cycle 自身同步提交和拒绝后的恢复处理及 transition 提交。终止时仍未完成的
+周期在故障处理和 terminal event 提交后完成。controller 在内存中保存固定上限的
+完成时间表，退出时原子发布；统计文件序列化与退出 checkpoint 单独计入存储工作空间。
+manifest 声明 `controller_after_synchronous_records_and_recovery_v1`；统计文件内
+`cycle_timing.schema_version=1`，result 绑定文件 SHA-256。评价、图表、共同周期和
+正式冻结使用同一读取检查，要求 sequence 一一对应、有限时间及完整耗时不小于基础耗时。
+缺少完成时间表、版本或身份不符时，当前口径不能通过。
+历史数据库和报告继续可读，基础数值显示为历史计时，重新评价的 runtime 返回
+`insufficient_evidence`；已有物理和任务指标分别保留。共同周期准入要求完整计时口径。
 反馈报告保存 manifest、终止记录、路径、原始数据库及已保存派生数组的 SHA-256。
 逐反馈派生数组默认按需生成；`replay --save-samples` 显式保存，绘图入口在
 独立中间目录重算并验证指标后使用。转换记录另行绑定来源说明的 SHA-256。

@@ -22,10 +22,12 @@ class RecordingStorageLimits:
     record_write_bytes: dict[str, int] | None = None
     completion_base_bytes: int = 0
     pending_cycle_bytes: int = 0
+    statistics_bytes: int = 65536
 
     def __post_init__(self):
         if any(type(getattr(self, key)) is not int or getattr(self, key) <= 0 for key in (
-                "database_bytes", "wal_bytes", "other_bytes", "minimum_free_bytes", "completion_bytes")):
+                "database_bytes", "wal_bytes", "other_bytes", "minimum_free_bytes", "completion_bytes",
+                "statistics_bytes")):
             raise ValueError("记录空间额度必须为正整数")
         if any(type(value) is not int or value < 0 for value in (
                 self.completion_base_bytes, self.pending_cycle_bytes)):
@@ -70,7 +72,8 @@ class RecordingStorageGuard:
             "free_bytes": shutil.disk_usage(self.path.parent).free,
         }
 
-    def check(self, *, pending_cycles: int = 0, pending_record: tuple[str, int] | None = None) -> None:
+    def check(self, *, pending_cycles: int = 0, pending_record: tuple[str, int] | None = None,
+              pending_statistics: bool = False) -> None:
         if type(pending_cycles) is not int or pending_cycles < 0:
             raise ValueError("待收尾周期数量必须为非负整数")
         observed = self.measure()
@@ -85,7 +88,8 @@ class RecordingStorageGuard:
         if self.reason is None:
             self.reason = next(
                 (key for key in ("database_bytes", "wal_bytes", "other_bytes")
-                 if observed[key] + (pending_bytes if key != "other_bytes" else 0)
+                 if observed[key] + (pending_bytes if key != "other_bytes" else
+                                     self.limits.statistics_bytes if pending_statistics else 0)
                  > getattr(self.limits, key)),
                 "free_bytes" if observed["free_bytes"] < self.limits.minimum_free_bytes else None,
             )
@@ -101,6 +105,16 @@ class RecordingStorageGuard:
             raise RecordingBudgetExhausted(f"budget_exhausted: storage/{self.reason}")
         self.maximum_pending_cycles = max(self.maximum_pending_cycles, pending_cycles)
         self.last_admitted = observed
+
+    def check_statistics_allocation(self, allocated_bytes: int, *, pending: bool) -> None:
+        if not 0 <= allocated_bytes <= self.limits.statistics_bytes:
+            raise ValueError("统计文件超过已配置字节上限")
+        snapshot = self.snapshot()
+        extra = allocated_bytes if pending else 0
+        if snapshot["completion_growth_bytes"] + extra > self.limits.completion_bytes:
+            raise ValueError("统计文件与已开始任务超过收尾保留空间")
+        if snapshot["observed"]["free_bytes"] < extra:
+            raise ValueError("文件系统空间不足以保存统计文件")
 
     def record_written(self, stream: str, raw_bytes: int) -> None:
         wal_bytes = Path(str(self.path) + "-wal").stat().st_blocks * 512
@@ -200,7 +214,8 @@ def runtime_storage_configuration(model: dict, wal_bytes_per_record: dict, volum
             name: (tree_pages + math.ceil((2 * size + 4096) / 4096)) * (2 * 4096 + 24)
             for name, size in raw.items()
         }
-        base = sum(writes[name] * count for name, count in counts[role].items())
+        statistics_bytes = model["statistics_bytes"][role]
+        base = sum(writes[name] * count for name, count in counts[role].items()) + statistics_bytes
         limits = RecordingStorageLimits(
             database_bytes=math.ceil(database["database_budget_bytes"] / 4096) * 4096,
             wal_bytes=math.ceil(wal_bytes_per_record[role] * database["maximum_records"] * 1.25 / 4096) * 4096,
@@ -209,11 +224,13 @@ def runtime_storage_configuration(model: dict, wal_bytes_per_record: dict, volum
             completion_bytes=completion_bytes, record_bytes=raw, record_write_bytes=writes,
             completion_base_bytes=base,
             pending_cycle_bytes=writes.get("cycle", 0),
+            statistics_bytes=statistics_bytes,
         )
         writers[role] = asdict(limits)
         proofs[role] = {
             "completion_record_counts": counts[role], "record_write_allowance_bytes": writes,
             "btree_changed_page_allowance": tree_pages,
+            "statistics_bytes": statistics_bytes,
         }
     if sum(row["wal_bytes"] for row in writers.values()) > volume_budget["transient_run_bytes"]:
         raise ValueError("两个 writer 的 WAL 额度超过单次工作空间")

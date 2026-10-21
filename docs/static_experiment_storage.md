@@ -127,6 +127,16 @@ manifest 的 `stream_record_limits` 逐流记录上限包含固定收尾额度�
 每个 worker 退出时保存 `*.recording.json`，记录 checkpoint 前的 WAL
 字节、分配字节、任务计数和开始时间。ready 文件包含 monotonic 时间、
 manifest 与源码身份，result 绑定 ready 和统计文件的 SHA-256。
+controller 统计文件另存版本化的完整周期时间表，以 SQLite cycle sequence
+逐项关联；计算失败和终止阶段也需要对应记录。每项固定包含 sequence、
+起点、终点和 duration，按 256 字节预留，其他固定统计字段预留 65,536 字节，
+总额向上取整至 4,096 字节。100 ms 周期最多 4,732 项，controller 预留
+1,277,952 字节；20 ms 周期最多 23,652 项，预留 6,123,520 字节。
+plant 统计文件预留 65,536 字节。工程预算明确将这两个额度加入每个运行的
+保留文件和 writer 收尾额度，内存表使用相同的记录数量上限。
+统计发布前验证 UTF-8 JSON 尺寸、文件系统分配单位和实际剩余空间；同目录
+pending 文件写完后验证实际分配，再原子重命名并检查已发布文件的收尾增加量。
+统计文件缺失或超出已声明空间时保留数据库并报告失败。
 收尾中的计算或准入 future 发生异常时，继续保存已有周期、故障事件
 和统计，关闭 ROS 后传播原异常。worker 结果使用同目录临时文件
 写完后重命名发布，supervisor 只读取完整 JSON。

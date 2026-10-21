@@ -17,6 +17,14 @@ WORKER_INTERRUPT_TIMEOUT_S = 5.
 SUPERVISOR_POLL_S = .1
 
 
+def statistics_storage_bytes(maximum_cycles: int) -> int:
+    if type(maximum_cycles) is not int or not 0 <= maximum_cycles < 2 ** 63:
+        raise ValueError("统计文件的最大周期数必须为非负 SQLite 整数")
+    # 每项含一个 19 位 sequence、三个最多 25 字节的有限 float64，以及固定字段和缩进。
+    # 其余统计字段、容量快照和容器头保留 64 KiB，文件分配按 4 KiB 向上取整。
+    return ((65536 + 256 * maximum_cycles + 4095) // 4096) * 4096
+
+
 @dataclass(frozen=True)
 class RecordingLimits:
     timeout_s: float

@@ -10,6 +10,7 @@ import sys
 from .static_experiment_config import ExperimentConfig, METHODS, content_hash
 from .static_experiment_provenance import environment_identity, validate_run_report
 from .static_experiment_recording import write_json
+from .static_cycle_timing import CYCLE_TIMING_BOUNDARY, cycle_timing_summary, load_cycle_timing
 
 
 PERIODS = (.02, .04, .05, .1)
@@ -51,18 +52,23 @@ def select_period(rows: list[dict]) -> dict:
         missing = sorted(set(METHODS) - {row["method"] for row in measured})
         passed = not missing and all(
             row["status"] == "measured" and row["samples"] > 0
+            and row.get("cycle_timing_boundary") == CYCLE_TIMING_BOUNDARY
             and row["p999_s"] <= .8 * period for row in measured
         )
         if passed:
             qualified.append(period)
         groups.append({"period_s": period, "qualified": passed, "missing_methods": missing,
                        "methods": measured})
-    complete = set(keys) == expected and all(row["status"] == "measured" for row in rows)
+    complete = set(keys) == expected and all(
+        row["status"] == "measured" and row.get("cycle_timing_boundary") == CYCLE_TIMING_BOUNDARY
+        for row in rows
+    )
     return {
         "status": "insufficient_evidence" if not complete else "pass" if qualified else "fail",
         "reason": ("missing_measurements" if not complete else
                    "all_periods_exceed_budget" if not qualified else "shortest_qualified_period"),
         "selected_period_s": min(qualified) if complete and qualified else None,
+        "cycle_timing_boundary": CYCLE_TIMING_BOUNDARY,
         "groups": groups,
     }
 
@@ -120,6 +126,7 @@ def run_period_study(config: ExperimentConfig, directory: Path, domain: int, *,
         "periods_s": list(PERIODS), "methods": list(METHODS), "domain": domain,
         "storage_budget_index_sha256": content_hash(storage_budget_index),
         "storage_budgets": budgets,
+        "cycle_timing_boundary": CYCLE_TIMING_BOUNDARY,
     }
     if study_path.exists():
         previous = json.loads(study_path.read_text())
@@ -128,7 +135,8 @@ def run_period_study(config: ExperimentConfig, directory: Path, domain: int, *,
                 or previous["environment"]["sha256"] != environment["sha256"]
                 or previous.get("storage_budgets") != budgets
                 or previous.get("storage_budget_index_sha256")
-                != identity["storage_budget_index_sha256"]):
+                != identity["storage_budget_index_sha256"]
+                or previous.get("cycle_timing_boundary") != CYCLE_TIMING_BOUNDARY):
             raise ValueError("周期测量的配置、代码或设备环境已变化")
     else:
         if any(directory.iterdir()):
@@ -174,7 +182,11 @@ def run_period_study(config: ExperimentConfig, directory: Path, domain: int, *,
                 report_path = run / "feedback_report.json"
                 report = validate_run_report(run)[1] if report_path.exists() else {}
                 timing = report.get("execution", {}).get("timing", {})
-                if timing.get("samples", 0):
+                measured = load_cycle_timing(run, recorded)
+                expected_timing = cycle_timing_summary(measured, period)
+                if timing.get("samples", 0) and measured["eligible_for_period"]:
+                    if any(timing.get(key) != value for key, value in expected_timing.items()):
+                        raise ValueError(f"周期测量报告与完整计时原件不一致：{run}")
                     row.update(
                         status="measured", samples=timing["samples"], p999_s=timing["p999_s"],
                         maximum_s=timing["maximum_s"], deadline_misses=timing["deadline_misses"],
@@ -184,6 +196,8 @@ def run_period_study(config: ExperimentConfig, directory: Path, domain: int, *,
                         records_sha256=report["records_sha256"],
                         storage_budget_sha256=budget["sha256"],
                         storage_statistics_sha256=statistics,
+                        cycle_timing_boundary=CYCLE_TIMING_BOUNDARY,
+                        cycle_timing_sha256=measured["sidecar_sha256"],
                     )
                 else:
                     row.update(status="insufficient_evidence", reason="missing_complete_cycles")
