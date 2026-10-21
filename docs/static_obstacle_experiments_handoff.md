@@ -297,7 +297,9 @@ ext4 D/S5 的功能与生命周期通过，时间验收失败。
 [#181](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/181#issuecomment-6306830304)。
 正式物理输入登记在场景任务的 `research/formal-scene-input.json`，
 SHA-256 为 `0f27070df3e6bd707426db43b85ff61d442e93f89aa55af3fdf12a319e7f3c9e`。
-当前源码的主包回归为732 passed、1 skipped；控制内核与CTest继续执行。
+当前源码完整回归通过：主包732 passed、1 skipped，控制内核486 passed、
+34 skipped，CTest 4/4通过，三个部分退出码均为0。
+日志及SHA-256见正式任务的 `research/full-regression-20261021.md`。
 
 ## 验证状态
 
