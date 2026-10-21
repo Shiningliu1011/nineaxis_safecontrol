@@ -232,6 +232,9 @@ def main():
             validation = load(validation_path)
             measured = load_cycle_timing(run, manifest)
             timing = cycle_timing_summary(measured, manifest["config"]["control"]["period_s"])
+            admissions = {record["values"]["command_id"]: record["values"]
+                          for record in iter_records(run / "plant.sqlite3", "admission")}
+            timing["admission_rejections"] = sum(not record["accepted"] for record in admissions.values())
             require(manifest["source_sha256"] == source_hashes, "运行生产源码身份不符")
             require(measured["eligible_for_period"] and measured["boundary"] == CYCLE_TIMING_BOUNDARY
                     and timing["samples"] > 0 and timing == feedback["execution"]["timing"],
@@ -259,7 +262,8 @@ def main():
                 "runtime_timing": timing, "verdict": feedback["verdict"], "statistics": statistics,
                 "lifecycle": str(validation_path), "lifecycle_sha256": content_hash(validation_path),
                 "budget": str(budget), "budget_sha256": content_hash(budget),
-                "sha256": {path.name: content_hash(path) for path in run.iterdir() if path.is_file()},
+                "sha256": {path.name: content_hash(path) for path in sorted(run.iterdir())
+                           if path.is_file() and path.suffix in (".sqlite3", ".json", ".ready", ".yaml", ".log")},
                 "terminal_events": {role: [record["values"] for record in iter_records(
                     run / f"{role}.sqlite3", "event")] for role in ("plant", "controller")},
             }
@@ -280,6 +284,8 @@ def main():
                         f"生命周期或容量收尾未通过：{name}")
                 if case["termination"] == "completed":
                     require(feedback["task_verdict"] == "pass" and feedback["completed"], "S0/S4 功能未通过")
+                if case["termination"] == "pause_timeout":
+                    require(feedback["task_verdict"] == "pass", "S5 功能未通过")
                 if case["termination"] == "timeout":
                     require(feedback["task_verdict"] != "pass"
                             and validation["inspection"]["full_timeout_recording_verified"],
