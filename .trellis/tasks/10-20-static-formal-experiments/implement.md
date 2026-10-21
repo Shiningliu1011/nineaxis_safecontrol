@@ -1,89 +1,45 @@
 # 实施与验证
 
-## 当前执行范围
+`implement-spec` 管理整个 #171 的实现、子任务、集成及最终审查；Trellis 保存
+规划、验证证据与接手记录。集成目录 `/home/lsn/robot/robot_safecontrol`，分支
+`codex/static-obstacle-experiments`，环境入口 `.scratch/host-recovery/env.sh`。
+全部实验限定 sim，用户已授权相关修改、验证、子 agent、commit 和 push。
 
-`implement-spec` 管理 #171 的全部实现、子任务、集成及最终审查。
-Trellis 沿用本任务和父任务保存规划、验证及接手状态。
-集成目录为 `/home/lsn/robot/robot_safecontrol`，本次起点 `35a1a61`，
-origin 已获取且本地与远程相同。环境入口为 `.scratch/host-recovery/env.sh`。
+## 当前证据
 
-当前并行核查容量、S4 与方法验收证据。容量检查使用完整矩阵、
-运行时限、记录内容、WAL、派生处理和失败重试要求；场景与控制修复继续
-遵守原始精度、间距、进度、暂停恢复和完整周期验收条件。
-正式采集等待所有前置验证通过。
+- #172–#181 已关闭，#182、#183 和 #171 保持开放，正式采集0/1080。
+- 完整计时修复 `8d022236` 与前置检查 `a6a422a5` 已审查并集成至 `3771bc88`。
+  定向验证、来源归档与校验值见 `research/complete-cycle-timing-implementation.md`。
+- 集成完整回归04正在执行；主包已出现一项既有50 Hz性能测试失败，尚待最终结果
+  与独占复验。日志在 `output/static-capacity-20261020/final-regression-04.log`，
+  产物在 `.scratch/regression-xiLHz4Py/`。不能记为通过。
+- 源码 `40d43bb` 的回归03通过：主包732 passed/1 skipped，控制内核
+  486 passed/34 skipped，CTest4/4。身份见 `research/full-regression-20261021.md`。
+- 相同旧源码三卷工程容量通过，需求214189355008字节，可用284842614784字节，
+  `formal_bound=false`。当前计时文件额度需要重新核查和绑定。
+- S4九组D方法完整运行与独立连续见证通过，新S2三个初态完整ROS运行通过。
+  36份完整来源支持39/72物理配置证明，见 `research/formal-proof-index-results.md`。
+- 旧周期队列在20 ms的A、B结束后停止，原件及SHA-256见
+  `research/period-study-records-01.md`。新边界需要测量全部20组。
 
-1. 完成共同周期测量、场景证据及固定来源记录。
-2. 生成正式清单，验证 1,080 个组合与方法配对身份。
-3. 接入串行执行、进度恢复、身份检查及全部失败记录。
-4. 实现配对指标与未完成状态报告，并运行正式实验。
-5. 重算原始反馈报告和论文图表，核查内容、字体与文件完整性。
-6. 串行运行受影响回归、构建和规范检查，按项目 code-review 完成两方面独立审查。
+## 接续顺序
 
-当前共同周期和完整开发场景验证仍在进行；正式运行尚未开始。
+1. 集成容量公共参数比较和保存数据播放入口，完成相关测试及独立审查。
+2. 在最终源码上执行 `research/complete-cycle-preflight.py`，验证三卷真实记录、
+   随机读取、中断恢复、原子JSON、D/S5、S0、S4、420秒timeout及预算耗尽。
+3. 使用新原件、当前来源和完整统计额度重建三卷工程容量，要求全部检查通过。
+4. 新目录测量20/40/50/100 ms × A–E全部20组，按完整周期P99.9选择最短合格周期。
+   没有合格候选时保持运行时间验收失败，修复有证据的问题并复验。
+5. 固定参数、源码、环境和1080项正式清单，核查登记的72配置身份与39/72证明；
+   容量绑定最终清单与周期，全部前置通过后串行采集，保留全部失败原件。
+6. 完成配对统计、六类图表、重算和播放验证；执行最终规范与规格独立审查，
+   修复并复验，关闭工单，更新接手记录并提交推送。
 
-当前集成 `7b643c4` 的 D/S5 在目标 ntfs3 文件系统完成独占 sim：
-346 个周期 P99.9 为 73.628 ms，最大 75.175 ms，超期零次，
-安全终止、逐流记录额度和来源绑定检查均通过。
-结果目录为
-`/media/lsn/宇宙小机器人/robot_safecontrol_static_experiments_20261020/lifecycle-s5-02/`。
-相同源码的 420 秒记录过程已经通过，全部记录额度与来源绑定有效。
-S4 新独立见证和当前 D 组完整运行通过；九个初态、进给组合的数值预核
-全部通过。两份 S0 补充初态的完整运行已经通过；S4 九组 D 方法
-完整运行均已通过，相关完整记录见 `research/guarded-preflight.md`。
-第二文件系统的 459,371 条逐值校验与八次 SIGKILL 恢复已经通过，
-正式矩阵使用的两卷工程容量证据仍未通过全部准入检查。
-A/C 的 S5 完整运行通过；源码 `e6fe012` 的 E/S5 完整复验也已通过。
-B 组完整预热与正式记录隔离已集成，39 项相关检查通过；
-SNS 饱和限制处理已集成，14 项检查及完整 E/S5 通过。
-运行源码 `40d43bb` 包含多卷工程预算、运行前后准入、运行中的字节额度、
-剩余空间及收尾检查。11项完整验证均已结束；最终正式容量保持未通过。
-两卷规划尚缺 1,079,836,672 字节；第三卷 UUID `6C001EAA001E7B72`
-已正常挂载至 `/media/lsn/Windows`，任务目录为
-`robot_safecontrol_static_experiments_20261021/`，可用 77,810,987,008 字节。
-完成该文件系统的真实记录、随机读取、中断恢复、原子 JSON 与完整 S5
-sim 验证后，重新生成三卷容量规划，保留原始记录和既定容量余量。
-新 S4 A/C 配对均因暂停超时终止，实际恢复次数为 9/6，
-原始失败与配对身份见 `research/s4-ac-development-pair.md`。
+## 数据位置
 
-## 本次检查
-
-- 完整 S0、S2、S4、S5 共 331,573 条真实记录逐字段和数值位模式一致，
-  两种格式独立重算的指标及派生数组一致；8 次 SIGKILL 已提交记录恢复通过。
-- 完整验证输出 `output/static-storage-validation-05/validation.json` 为 pass；
-  命令退出 0。CLI 转换 S5 和独立环境生成 S0 的 6 类图表均通过。
-- `robot_safecontrol_moveit`、`aeb_rrtstar_ompl`、`pymoveit2` 构建通过，
-  原生模块导入和 ROS CLI 入口通过。环境及安装过程记录于
-  `docs/host_recovery_20261020.md`。
-- 快速检查通过，包含 69 项纯逻辑测试；大然电机资料库只读查询、
-  14 项测试及依赖检查通过。
-- 本机固定 `OPENBLAS_CORETYPE=Haswell`，十个闭合 STL、URDF、来源记录和
-  几何生成物的 10 项检查通过；该设置纳入环境身份记录。
-- 本机完整回归通过：主包 678 passed、1 skipped，控制内核 486 passed、
-  34 skipped，C++ CTest 4 passed，各部分退出码均为 0。
-- 完整 S0 sim 为 pass，1,719 个完整周期最大 70.513 ms，100 ms 周期内
-  没有超时。两个独立审查者已复核存储来源检查和图表评价身份。
-- 存储与评价 25 项、产物隔离的 ROS 14 项和控制内核 10 项复核通过；
-  ROS 完整流程另以线程异常严格检查执行，1 项通过且无警告。
-  六类图表的完整性、字体、实际 evaluator 与评价源码身份检查通过。
-- M8 与 perception 各自从空测试目录实际生成基准，5 项和 3 项测试通过；
-  两个独立审查者的最终复核通过，记录在 `research/review.md`。
-- 三份历史基准测试产物与笔记本原件 SHA-256 一致，原始身份和来源位置已记录在
-  `docs/host_recovery_20261020.md`。本机重测文件单独保留。
-  回归产物保存到独立测试目录。
-
-## 接手状态
-
-当前只进行存储验证及 sim 复核，正式采集保持停止。
-当前容量依据为19组真实记录、完整矩阵、420秒运行时限、WAL 与收尾余量，
-两卷容量复核见 `research/guarded-engineering-capacity.md`。
-工程预算保持 `formal_bound=false`，正式来源及共同周期固定后继续最终准入。
-
-当前开发场景保存于 `output/static-scene-validation-20261020/development-scenes-07/`。
-新 S2 的 D/A/B、E/S4 及 D/E/B S5 完整验证通过；新 S2 的两个补充初态
-完整 ROS 运行、共同周期测量和正式矩阵待执行。
-完整回归03运行日志为 `output/static-capacity-20261020/final-regression-03.log`，
-完整通过以主包、控制内核、CTest 的最终退出码为准。
-状态、原始数据位置和继续工作顺序见 `docs/static_obstacle_experiments_handoff.md`。
-
-本次同步获得用户明确授权。没有完成任务归档或 spec promotion；
-本任务保持 `in_progress`，等待继续开发。
+主仓库 `output/` 和两个NTFS任务目录全部保留：
+`/media/lsn/宇宙小机器人/robot_safecontrol_static_experiments_20261020/`、
+`/media/lsn/Windows/robot_safecontrol_static_experiments_20261021/`。
+UUID分别为 `083CBB753CBB5BFE`、`6C001EAA001E7B72`。
+数据来源与校验值见 `docs/static_obstacle_experiments_handoff.md` 及所引研究文件。
+当前任务保持 `in_progress`，正式采集等待全部前置通过。
