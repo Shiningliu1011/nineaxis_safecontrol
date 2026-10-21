@@ -28,15 +28,20 @@ origin 已获取且本地与远程相同。环境入口为 `.scratch/host-recove
 `/media/lsn/宇宙小机器人/robot_safecontrol_static_experiments_20261020/lifecycle-s5-02/`。
 相同源码的 420 秒记录过程已经通过，全部记录额度与来源绑定有效。
 S4 新独立见证和当前 D 组完整运行通过；九个初态、进给组合的数值预核
-全部通过。两份 S0 补充初态的完整运行已经通过；S4 半速 initial 1
-完整运行通过，七组其余配置由 `static-s4-matrix-02.service` 继续验证。
+全部通过。两份 S0 补充初态的完整运行已经通过；S4 九组 D 方法
+完整运行均已通过，相关完整记录见 `research/guarded-preflight.md`。
 第二文件系统的 459,371 条逐值校验与八次 SIGKILL 恢复已经通过，
 正式矩阵使用的两卷工程容量证据仍未通过全部准入检查。
 A/C 的 S5 完整运行通过；源码 `e6fe012` 的 E/S5 完整复验也已通过。
 B 组完整预热与正式记录隔离已集成，39 项相关检查通过；
 SNS 饱和限制处理已集成，14 项检查及完整 E/S5 通过。
-当前集成 `2036cac` 包含多卷工程预算与运行前后准入，
-运行中的字节额度、剩余空间及收尾检查继续实现；最终正式容量保持未通过。
+运行源码 `40d43bb` 包含多卷工程预算、运行前后准入、运行中的字节额度、
+剩余空间及收尾检查。11项完整验证均已结束；最终正式容量保持未通过。
+两卷规划尚缺 1,079,836,672 字节；第三卷 UUID `6C001EAA001E7B72`
+已正常挂载至 `/media/lsn/Windows`，任务目录为
+`robot_safecontrol_static_experiments_20261021/`，可用 77,810,987,008 字节。
+完成该文件系统的真实记录、随机读取、中断恢复、原子 JSON 与完整 S5
+sim 验证后，重新生成三卷容量规划，保留原始记录和既定容量余量。
 新 S4 A/C 配对均因暂停超时终止，实际恢复次数为 9/6，
 原始失败与配对身份见 `research/s4-ac-development-pair.md`。
 
@@ -69,15 +74,15 @@ SNS 饱和限制处理已集成，14 项检查及完整 E/S5 通过。
 ## 接手状态
 
 当前只进行存储验证及 sim 复核，正式采集保持停止。
-最大完整样本约 49.32 MB，1,080 次直接外推约 53.26 GB；
-按三档进给时长反比外推约 65.10 GB。清理重复迁移资料后可用约 80.99 GB，
-可以容纳现有样本的外推。正式容量上界仍需结合全部场景和失败重试确定。
-完整测量见 `research/storage-validation.md`。
+当前容量依据为19组真实记录、完整矩阵、420秒运行时限、WAL 与收尾余量，
+两卷容量复核见 `research/guarded-engineering-capacity.md`。
+工程预算保持 `formal_bound=false`，正式来源及共同周期固定后继续最终准入。
 
-`development-scenes-05` 已生成，S4 新候选及来源保存于
-`output/static-scene-validation-20261020/development-scenes-06/`。
-当前 D/S2 和最新 D/S5 完整运行通过；S4 当前参数的完整组合验证、
-共同周期测量和正式矩阵继续进行。
+当前开发场景保存于 `output/static-scene-validation-20261020/development-scenes-07/`。
+新 S2 的 D/A/B、E/S4 及 D/E/B S5 完整验证通过；新 S2 的两个补充初态
+完整 ROS 运行、共同周期测量和正式矩阵待执行。
+完整回归03运行日志为 `output/static-capacity-20261020/final-regression-03.log`，
+完整通过以主包、控制内核、CTest 的最终退出码为准。
 状态、原始数据位置和继续工作顺序见 `docs/static_obstacle_experiments_handoff.md`。
 
 本次同步获得用户明确授权。没有完成任务归档或 spec promotion；
