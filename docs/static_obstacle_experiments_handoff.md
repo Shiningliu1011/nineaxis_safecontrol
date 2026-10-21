@@ -3,7 +3,7 @@
 ## 当前状态
 
 工作分支为 `codex/static-obstacle-experiments`，本次接续起点为 `35a1a61`，
-当前代码集成为 `6aeb527`，运行源码身份基于 `40d43bb`，包含独立预热、
+运行源码身份基于 `40d43bb`，包含独立预热、
 SNS 最小缩放限制处理、多卷工程预算及运行期间的容量保护。
 容量与场景验收记录已集成至当前分支。
 #172–#181 已发布逐项证据并关闭；
@@ -28,9 +28,13 @@ Trellis 接手入口是 `.trellis/tasks/10-20-static-obstacle-experiments/`，
 正式容量准入仍未通过。多卷工程预算、运行前后空间检查已集成；
 19 组真实记录的编码审计及目标文件系统验证已保存。
 运行中的字节额度、空间检查及收尾余量已经完成11项完整验证。
-最新两卷规划 `guarded-capacity-review-01/engineering-plan` 的需求为
-209,226,444,800 字节，可用 208,146,608,128 字节，缺口为
-1,079,836,672 字节；正式启动前继续核查现场空间。
+最新三卷规划 `three-volume-capacity-01/engineering-plan` 通过，需求为
+214,189,355,008 字节，可用 284,842,614,784 字节，余量为
+70,653,259,776 字节；正式启动前继续绑定最终清单并核查现场空间。
+容量规划 SHA-256 为
+`a958b7eff4882a8adf93ae8a19d2e479523b6a556247ad47d9e2959b5a5e696b`，
+工程证据 SHA-256 为
+`2119aa8150c5335858649f0066a08f6bd1a89b56426530b6c68b48cfae020422`。
 工程预算保持 `formal_bound=false`。计算依据见
 [`research/engineering-capacity-validation.md`](../.trellis/tasks/10-20-static-formal-experiments/research/engineering-capacity-validation.md)
 及
@@ -40,7 +44,8 @@ Trellis 接手入口是 `.trellis/tasks/10-20-static-obstacle-experiments/`，
 记录生命周期预算及异常收尾已经集成。S4 独立见证与九组数值预核通过；
 S4 九组 D 方法完整 ROS 运行均已通过；新 S2 的 D/A/B 完整运行、
 E/S4 及 D/E/B S5 验证已经完成。新 S2 的 initial 2、3 完整 ROS
-运行待执行。正式采集等待全部前置条件通过。
+运行由 `static-guarded-s2-initials-01.service` 顺序执行。
+正式采集等待全部前置条件通过。
 
 S0 initial 2、3 的完整 D 组记录及生命周期验证均通过，来源和 SHA-256 见
 [`research/s0-initial-configurations.md`](../.trellis/tasks/10-20-static-formal-experiments/research/s0-initial-configurations.md)。
@@ -256,9 +261,8 @@ B/C/E 及各方法的其他场景继续验证，具体组合与来源见
 
 后续尚需完成：
 
-1. 完成第三卷的真实记录、随机读取、中断恢复、原子 JSON 与完整 S5
-   sim 验证，结合共同周期和现场空间重新确认三卷工程容量准入。
-2. 执行新 S2 的 initial 2、3 完整 D 方法 ROS 运行，补充物理可行性证据。
+1. 共同周期及正式清单固定后重新确认三卷正式容量准入。
+2. 完成新 S2 的 initial 2、3 完整 D 方法 ROS 运行，生成新的物理可行性矩阵和正式证据索引。
 3. S0–S4 对应初态与行程范围的可行性证据。
 4. 五种方法、四种候选周期的 20 次完整测量。开发配置的 100 ms 尚未被选为正式周期。
 5. 固定正式清单，执行 1,080 次实验，完成配对统计与六类图表。
@@ -267,7 +271,11 @@ B/C/E 及各方法的其他场景继续验证，具体组合与来源见
 第三卷为 `/dev/nvme0n1p3`，UUID `6C001EAA001E7B72`，挂载目录为
 `/media/lsn/Windows`；本任务只使用其子目录
 `robot_safecontrol_static_experiments_20261021/`。恢复挂载时可用空间为
-77,810,987,008 字节，现有原始数据保留。第三卷的验证和容量准入尚未完成。
+77,810,987,008 字节，现有原始数据保留。第三卷19,591条真实记录、
+42次随机读取、SIGKILL恢复及原子JSON均通过；完整D/S5功能和生命周期通过。
+该项时间验收失败，P99.9为91.120665 ms，最大95.185244 ms，超期0次；
+完整失败记录保存在第三卷 `guarded-s5-01/`。
+三卷工程容量通过，正式容量继续等待最终清单绑定。
 已有实验卷 UUID 为 `083CBB753CBB5BFE`，目录为
 `/media/lsn/宇宙小机器人/robot_safecontrol_static_experiments_20261020/`。
 
