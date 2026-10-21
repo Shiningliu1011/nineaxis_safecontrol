@@ -54,9 +54,10 @@ SQLite sequence与完成表逐项对应，feedback timing及真实admission拒�
 
 ## 共同周期接续
 
-`static-complete-cycle-period-study-02.service` 已启动，实际20份预算准备通过。
+实际20份预算准备通过，`static-complete-cycle-period-study-02.service` 已按用户要求停止。
 预算目录为 `output/static-capacity-20261020/guarded-period-budgets-02/`，
 索引SHA为 `03dca59ec1d809ed884226789d443afccd42dbf1d7180b3a8c0a1d76b2a56c68`，
 prepared.json SHA为 `03e996d5f79f03b1b3eb36f8f057b8b2fc33191ed759272c38878bc79b2d713f`。
 20项保留数据与瞬时额度合计15548391424字节。数据位于原NTFS任务目录
-`guarded-period-study-02/`；当前执行20 ms/A，尚无完成测量，正式采集0/1080。
+`guarded-period-study-02/`；20 ms的A/B完整原始报告已保存，实际2/20且均失败，
+C未启动，正式采集0/1080。开题资料、暂停状态与校验值见 `proposal-pause.md`。

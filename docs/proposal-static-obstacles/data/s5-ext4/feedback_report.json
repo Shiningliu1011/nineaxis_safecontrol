@@ -1,0 +1,2243 @@
+{
+  "arc_statistics": {
+    "grid_points": 2001,
+    "metrics": {
+      "path_distance_m": {
+        "maximum": 4.1174774157450055e-05,
+        "p95": 3.495527570795764e-05,
+        "rms": 1.8960365207667057e-05
+      },
+      "reference_position_error_m": {
+        "maximum": 7.421505676532747e-05,
+        "p95": 6.444728041835232e-05,
+        "rms": 3.616748567316688e-05
+      },
+      "tcp_workpiece_distance_m": {
+        "maximum": 0.050002763459129435,
+        "p95": 0.05000234600617494,
+        "rms": 0.05000041363525215
+      },
+      "tool_axis_angle_rad": {
+        "maximum": 0.00019859753164540954,
+        "p95": 0.00015984317260086807,
+        "rms": 8.890153297385688e-05
+      }
+    },
+    "observed_points": 5,
+    "spacing_m": 0.0009083798720292577
+  },
+  "completed": false,
+  "completion_time_s": null,
+  "config_sha256": "90e35fee773cfb2c8ef5b6f0ee078cce73daa5b174e630f3b655a1835931716b",
+  "coverage": {
+    "endpoint_tolerance_m": 0.0005,
+    "final_progress_m": 0.0037905507365077096,
+    "initial_progress_m": 0.0,
+    "maximum_forward_step_m": 6.0916370711876396e-06,
+    "ordered_full_path": false,
+    "reference_full_path": false,
+    "total_length_m": 1.8167597440585153,
+    "unreached_projected_length_m": 1.8129691933220076
+  },
+  "derived_data_policy": "on_demand",
+  "derived_data_sha256": {},
+  "endpoint": {
+    "held_s": 0.0,
+    "position_error_m": 0.0028232310480878486,
+    "tool_axis_angle_rad": 0.00021244429558059974
+  },
+  "evaluation_sources_sha256": {
+    "/home/lsn/robot/robot_safecontrol/build/robot_safecontrol_moveit/src/robot_static_fcl.cpython-310-x86_64-linux-gnu.so": "5fc5756fa627bdef525569cc9faf44219985a5e3643535a48fe4ac83f401040b",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/native/static_fcl.cpp": "2c0bc33868ebcf3fd92d6d1fe808fab7c6ffb5de5f0733c39866c298241884ce",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/vendor/dpax/dpax/__init__.py": "7b0260bbdc9f523e2e51baaed59437da5667571d9fabf0a2c4f18dd194cfefb5",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/vendor/dpax/dpax/ellipsoids.py": "88e5ae05e5534f2221938ca8b023b26ad2a6f232f3f28c3832c6408712edce05",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/vendor/dpax/dpax/endpoints.py": "43c5fe73395a924f6425eaec5cea6fd4598459bedbb9c6e3048750bb0a11a5b1",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/vendor/dpax/dpax/mrp.py": "3662e87794d94b2cb21a1360c578bd557672421daa48d37b12713cd13244bf34",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/vendor/dpax/dpax/pdip_solver.py": "caf3aec8409c1fd13ab1b1f53beff6df3fc04263de5382f44c428b94c0cc724c",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/vendor/dpax/dpax/polytopes.py": "17482b54442eccfd25c40f96065d1783cec831948a8077cf0d935e732b02e4ab",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/vendor/dpax/dpax/qp_utils.py": "10131ac79d4ec134dd21a39b7fee23660dca6b1457bfa81086ad80e7e9bc0e4d",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/_collision_geometry.py": "828810448e21023fd63c2732f9e4d45f08f8b64728dcb078830e8b4ca528b433",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/_collision_scene.py": "19403f324803cedbbaaafcbaa02dd3f3d10f589cc25a1d2a83394467da49880c",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/_ellipsoid_dcol.py": "8ff1c44a445d693b20210fe157930170c29c244449a117a1fa7853350ad75e06",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/_ellipsoid_point.py": "6fcfb645f4c3d0c709d3f4306516fd697c30244a360577aac4ef572d0192e375",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/actuator_limits.py": "e68d72aff4b114c0aa92de1aab4c9ef12a031b7a8a0ce5f68731e60bb1a0215a",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/cbf_types.py": "7d2e1b33284f36088e40e811a811be7b508caab57167ff3d4f9c66fe34b2b459",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/collision_parameters.py": "e626a4ee0aaa1f8925c901343b1837b5961ab6352ea408d3aaa2284bbb853611",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/collision_safety.py": "e5179913c4dbbd6a14edf21b106d82c3b3256768bf7900ed90e1e79cd1b841a0",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/control_step_record.py": "b175fab74b053de996fbaa58e245c84ad333c15656a977aa139d5ab14b7dcbe5",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/controller_step_cache.py": "7d9829d054af8de3f8d8d4f94e67461add1f8ce1f8b147cab6f9f2a54477b360",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/cross_step_state.py": "5d983312c298fbf7059533a5893b1469fa345c8855543a7d02564d28109fa824",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/dpax_collision.py": "91a7c144fd0f4a3ff9fe603796197f2ed1513e094626b870f29540637dda4dcb",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/driver_simulator.py": "a3a74c5d82280ccb793266d4961d9545518c135b940a82c445d827c1b163d655",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/dynamic_clustering.py": "e30d80b1777b0ce840fc75b87fed805c4436fecfdd20643d121fa478c111c14c",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/dynamic_obstacle_placement.py": "39c7df6f7df76381426219e5bf4b266ac43328940cd97c41f355e9e97ffb04ac",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/dynamic_obstacles.py": "bd3f4f9e0fefc7ba542f75bfce2f43d73c79d41560493a9c35103de843e76dfe",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/fcl_collision.py": "b1daa5a10005542f1bd7eb37828bad81da211bc2102de7b195dff334cc1ce0ad",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/fcl_collision_mesh.py": "0c110bcd611b05ec1a448b8834143e820d629909b76c12dfb48fafc312b88271",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/fusion_engine.py": "9f8dfea41ef0f52db5c297b9f09c2f9a7fbb684b3c209273b635ca49caa12a4e",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/ik_data_loader.py": "045e16ce4d68008a119d7765e1326b6dca672649e55e209cfa4530dc64d15189",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/jax_barrier_terms.py": "4e37b4da12bd56aeb4f90b059f5dd2af89af1eb2ef671237b36a01ef02f380e4",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/jax_control_facade.py": "517bd2ba2e48290b52476479db2e1f8a1bca40cc392cdc8bc2277913312cb941",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/jax_kernel_factory.py": "9988536b8e2165f736f7533892100ad0e6329e168356409d865024e4b4eabfe2",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/jax_path_following.py": "88faf1d63bc8c366004e8ded43b91039beb7727c0761e45694b4f763e68c2311",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/jax_posture_reference.py": "73692083ae01f5839f421cce0cc44c447af0a585e9d3723644d4fa617fdd8256",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/joint_limit_contract.py": "77d544438874d85c629012e42f4fc1a4250beabcac5a67eda4e22e58ee1d0d7f",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/joint_trajectory_logging.py": "8579d0630a5af1cd655eab428b6abf431c994db2be21febdadb72d4fed2e8b66",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/joint_velocity_limits.py": "17be1ea84dc59fb84e1a15c10b6de0b762946a7848ca0ae253b0e0be64b1ab4c",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/kinematics_data.py": "aaed3e29d965bb3b4bd00dd4e20f2c96090dee0464f428da7b3c5a9761882a3f",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/manipulability_metric.py": "a3e36a489cbddd91b3d9435daddef0e567e48de56a8327f34abdfede488f6bb5",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/moving_reference_task.py": "aece83f7fc688e106030d3676652b547d1f9dc11afb5c056abb42e4049a6397e",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/nineaxis_kinematics.py": "f8dcec2204c5512f79a3cef314632771493098d8a4cebe366cfbe8a78cd4a349",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/nineaxis_manipulator_jax.py": "8afaef74dcdcaafdbd3d189347726ec5a9328419d25cd9ec8fbdaa3f011a405a",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/nullspace_policy.py": "a7e074175f2fa490f55cd2a64cb3090db3dd266f23044622749727d9c3fb3cf7",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/obb_collision_model.py": "5acd327061ac6abf4d9c7e2b5c270d82273bd7d8322f937bb1ea500be8040f73",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/obb_geometry_admission.py": "584d2d99b39e8aa49e035be5e051413322fb0349a2092ba9a14d4e13ebabf3dc",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/oscbf_velocity_config.py": "a962f9ea6d1cceeee1d8e730aad459489cfb84ff056cc163e07b366ba33149bf",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/path_following.py": "6b8d86b8d1b468a2ee9c56a8bc40694170f504ad86088356f7cd9d54fa60405d",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/path_posture_reference.py": "af5ab13447900d6be80afcecb9b7808fb02bda17c8d598b43ed3486a071c7e27",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/perception_config.py": "dee94c9e4ba623b950fc939781b815b51a95ccf4f33fb49fe0736b6dc1b4b5e5",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/point_cloud_obstacles.py": "7626f19fea002d7025fb635a7dd431ab1ea4ef6aec9ab65131157c88818534df",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/point_cloud_obstacles_dynamic.py": "51a318d790a227be5c6263a9521b8806e434a8d390fc008d3a3ae307ffbd2cc6",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/qp_solver_health.py": "c16d3d23eadbea00d0d955813bf7f3d224b5eca7d08774b1013acc0ccc01b283",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/robot_geometry.py": "ad5fd135009bdf0273ab258b4bcc0dba45aa379c7d116e830908d8ccfc24c9e5",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/safe_posture.py": "ba2925192b0fe2088bb2c4c940022aa4a9629225a9e82e79c3786016b176a965",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/safety_snapshot.py": "bbc4103b858baade69d7f3a58acafdc06df76642f167e33cb6449b532d48942b",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/static_collision.py": "ce813718f4dbcfaf8aa954be771bfb869cf229f0dc2eb7d6bd57367bafa85ff3",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/static_collision_meshes.py": "1a7e574ebdca8105a69c077c492e1310b79dcab6bca1e18aa60695684c7706a4",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/static_control.py": "658a06d7d44b3c08aeb4fa79e7ccc8aa36b6e24af284e262f042ed1251729b42",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/static_execution.py": "2de8cd874ee4eeaac5e04edeb1516507d2b0f5574c1a4d88a4c87684664ef1b4",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/static_motion.py": "f22ef056b9b0de0df8785739a311a2c6c10e0dd05cf1343a0619de1923d7e3d0",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/static_motion_bounds.py": "ec12a6d1741a00ef5910c2450348e9e0f161d9a53a4a26df1cc505a884385904",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/static_occupancy.py": "1930056e71af5a456bb8a91ddcd490b0aec462756c12a6ec524b1eadb3420af9",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/static_recovery.py": "854c4b929e971f311a9babca6053071704a53407a26e6070a40afaf21f6aa6da",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/static_sns.py": "12ec3a9723211a623e2932c7daf0acb2c93390e673b23f5bb4bf16a7e5afef2f",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/static_swept_geometry.py": "1a87b23d0fab8801a2f8c07eb5ddc24417a53fdb48e9f58f2e98a353150715a5",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/static_velocity_solver.py": "0a78f75d9ec3c053a0664511555a1d4e2952ee6c62ec53fff81f91274b64df04",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/task_mode_contract.py": "ab879b83df9ab66ecff9269026b57cbeb0b64d7a83bfaab15c6e5570bcf12db8",
+    "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/tool_axis_task.py": "cf500304ce9e16c40c99ddecb8313ff5f367eafb116340ae4bd4ced05f83cfbf",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/__init__.py": "6022b438240171d220b37bbe904df07fd4d150ee27204b8453cc5c22bbca7de5",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/calibration_record.py": "aa3fe0551aa919c7dd7137e0e4515100405fd5546340103cbb8f456d9a655778",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/continuous_ik.py": "426e148cc5d502e465ce747636164863fd26103cb79eaaddde7df613b05d55e2",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/cylinder_geometry.py": "81cf2e43414e4aa365f65997e84f05d8220f7450431253af0d35af9d16f32c2a",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/drempower_can.py": "a124a02b068476b6e1e3bfbf1b7903aa4336519267e28b9c1514b9cc11cafaed",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/hardware_bridge.py": "0280a800c5dcc9a5fe0945cbc760cb461cde7b56b1b62a371494f5c2e9ca3a21",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/hardware_contract.py": "0774de1af6e939ef15d1e095934402488c655690af683ef091fbdb73faf76837",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/hardware_probe.py": "81555902629026986a1d2d1d1a1f092be941fba7015dae69579c6ccffea315c9",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/lidar_crop_experiment.py": "76e6898db31fa4ac17b01a8b3a667e84a5f962b9db7a7eb9b9c1cbf872a113fd",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/motion_planning.py": "065c2f98b4b971121d2b85afa9c228ec370d18cc2ccf485d0dd0913d5631f00a",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/moveit_runtime_config.py": "69db7da59a50aa8eb5093fb31dd534b2033a1a820e8f9ef5b93b7a2119af62aa",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/mujoco_viewer_with_cylinder.py": "52f47a54e8dbd9426cba7a4108368d9ef84a8ed7e7ca0e95dfca1d824f28c3e9",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/obstacle_extractor.py": "e5fa3fa9380964c58e242fd30cde276aa4604ba69e8c1b48479992acc7f862ee",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/oscbf_controller.py": "b860815ce3dfd996078470cffadf51db867fef35a057fc868c55a57627751fea",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/oscbf_plant.py": "5c4362237c50c7fe7498be281816075ff752d6a1002450f0b30a51165842d222",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/oscbf_trajectory.py": "e53a5463b8058d2c8bfdafab408c50448e629c770589219f9d16679bb487e1f3",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/perception_bridge.py": "b941d4a1ca5d17723416835a8154a8a6cd5e854882175d477a3f82200571cc9e",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/perception_demo.py": "c0c1ae43b52a870a83818c3e104d2a36625c86f4aa09349cfec22ba6c6a2bbf4",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/point_cloud_crop.py": "1a0a6bcd8f8f4f7292f606fe8ddf740ec3178ab067f602e7905558c288691992",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/production_config.py": "7d967ebb0187e6f5a7769fcd9a544eb5d7475b948b3e9a5429f45d45150bb1ac",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/python_can_backend.py": "f7af7d249203bc871bdbc36f29776464794e0a72f82eb94bc06e803e42973da4",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/robot_spec.py": "22eff820ede1f3d740ddeac5eddc732aceec1041eca58745a7ec5ef350ac0260",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/ros_conventions.py": "c80af636ff9049f155ed827d23486bd8a231ab89b86e03e1ef5519b9cd1333a9",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/runtime_snapshot.py": "8143f4507d44e891c2b4501e26d570a1e655d815ede0464e13db0577cc79937e",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/socketcan_backend.py": "a136d2e8eee7bb86e1a3e1f9c099a3302e8ff98672848541cba68516c530969f",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/static_clearance_evaluation.py": "cbac8e44f98fbd1ed0058cd6aa86af3dfea5fc0c80cb1baace921fefd5897930",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/static_cycle_timing.py": "de99a224e0b443e055daf185edc1a0e588743b51ec89c5a9107b441869ae079c",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/static_execution_evaluation.py": "1f98f48b1258acde21422c03e3b0d6750a949e47b580b6ef6d7fb2806a3a1ed2",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/static_experiment.py": "19ce29c14e78b68a6c8bbde63b7d1705f1e8b48812b4e61d315805bfd0b3c4c8",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/static_experiment_campaign.py": "f555fad1989f3b4a49c9ca2a1d25a8de604b26eaddd420376ca480670a133401",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/static_experiment_capacity.py": "f80595fd01427047b8b81e70f11bc812ef73a65c8d6e1bd504195ebe2cf0ee60",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/static_experiment_config.py": "26299d23cdc306b33d123e64913b97dc5ae6d6bcd0d3812b3a07563cc959d28e",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/static_experiment_engineering_capacity.py": "ddd78f455d6e48bbf5c5d6bc9583b5d98431f1a1fb392a64eec786c466c724ff",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/static_experiment_evaluation.py": "03bb93880056fe30306b143d3148f408619f4302c78135717c93cf2ded0b46c3",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/static_experiment_nodes.py": "ab902215dd7c85064b88eb98c4dd0ebabc0880ce1e52d0314c0a1cda5415b2a0",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/static_experiment_playback.py": "d9f02d0534f54fc7bcc0659e464d66d326612cd82f786da26a7dc3ce00f8bd2c",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/static_experiment_provenance.py": "e334b6231ee56cfbb7a1963538580b1a7a21cc5fc1bd68a5f8aa0895588430a4",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/static_experiment_recording.py": "386d571031d18ee136aba079eee84d32c03bbebe525d429ff55cba8497546d65",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/static_experiment_reporting.py": "f2348caef322ff4a4d217cd9f831752176095dbfb81029e38fe69a89fc035cfc",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/static_experiment_storage.py": "5e08c14ba3f98d95f713a1237cd0c16bc8b43b8277b1ff01025b7e9cf8f5ec98",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/static_experiment_volumes.py": "572da4a2b4ca4cedfa512e5aa59319756a166d127995c2ce5a107d0bb091656b",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/static_formal_experiments.py": "e2d7bcfd9da8ac6eb4a5bc1968ec04fb039145232aebb2368f5d14f0b179345f",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/static_period_measurement.py": "a05a30711893dbd703d385c2d5636d6d7cef05e93f0a1abb5d87b3dca0b3aa50",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/static_reconfiguration_evidence.py": "b6a27137ff82f271ec8e8c707dbf2c7242c92099a53fa8fc36f868e26f5daec0",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/static_recording_capacity.py": "9cf2a3e6514683c1d5aff45291c2106c13a19728acf291d1878d79dad3c4d7a9",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/static_scenario_evidence.py": "764952903578987b5e999cfb8dd47ab166a94dd505d5eee3bcf8b4762193bccc",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/static_scene_evidence.py": "5ffa662691ccdf169653d88fcf9e59b59305ea7d4adc95637047f8b7d26d899a",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/task_target.py": "b77889a52109578ff632786ceaf7afae08ecac000381d943c4a74be665e318c3",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/tracking_contract.py": "c5f54b18d0581a04e0e30dd3ac71e79375d709a1374a38c819e89da6a3db4e51",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/tracking_evaluator.py": "05654fe8b04352b4084592037bec08046c132a4acc1970d336547587e1182e91",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/tracking_report_writer.py": "a3905c7962e26e2fa3af0a745f6d28fe37e88b90675649a2fff3fab10bba6a8b",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/tracking_run.py": "86ab25f5c98a7ba68476a1cb9cbda196d39c08055c5bdad85d5b9bc7a143cfb7",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/trajectory_execution.py": "2a8aec9f6511339f1f5bfebf0f2ba200de7f52a037191a16ff6ddea62e9e33cc",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/transition_executor.py": "07c45d4a978908c32131b9767ac09dd6f9abe99beb72031ca85810b66b02fa71",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/transition_planning_server.py": "cbae63bca548e5919334ad52e0248423cb7b2016bda4fdb5d79c99fea9da717b",
+    "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/unit_conversion.py": "1051308d7a41bde68085e4fdb22af86709e8b9e01d23d0091450461ffd87bade"
+  },
+  "evaluator_sha256": "03bb93880056fe30306b143d3148f408619f4302c78135717c93cf2ded0b46c3",
+  "execution": {
+    "joint_limits": {
+      "minimum_acceleration_margin": [
+        4.96727141658261,
+        31.244705584283764,
+        31.351705053302414,
+        31.319699228181243,
+        30.87053820392297,
+        30.94598035808785,
+        31.00741499154884,
+        30.30481730082248,
+        30.82636944271973
+      ],
+      "minimum_position_margin": [
+        0.11891114076941639,
+        0.26611408972377437,
+        1.0829387660166945,
+        0.1868157136553319,
+        2.0389836625950473,
+        1.018895487232771,
+        0.6247399928442767,
+        0.03050916279222826,
+        0.5355400886794373
+      ],
+      "minimum_velocity_margin": [
+        0.49511344258472345,
+        2.91620034307424,
+        2.9262658439766764,
+        2.9217825372914006,
+        2.875631497982161,
+        2.8822042599048485,
+        3.6226179169558015,
+        3.5416805428964677,
+        3.6047221341822375
+      ],
+      "status": "pass"
+    },
+    "qp": {
+      "attempts": 2808,
+      "constraint_violations": 0,
+      "failures": 0,
+      "maximum_constraint_residual": 3.0493186101154812e-18,
+      "maximum_kkt_residual": 1.94821183197174e-09,
+      "status": "pass",
+      "success_fraction": 1.0,
+      "successes": 2808
+    },
+    "recovery": {
+      "events": [
+        {
+          "delay_status": "measured",
+          "first_positive_candidate_s": 3.3000000000000003,
+          "following_interval_end_s": 3.702,
+          "maximum_position_error_m": 4.846803780239765e-05,
+          "maximum_tool_axis_angle_rad": 3.4336452293772874e-05,
+          "recovery_delay_s": 0.2999999999999998,
+          "time_s": 3.6
+        },
+        {
+          "delay_status": "measured",
+          "first_positive_candidate_s": 3.8000000000000003,
+          "following_interval_end_s": 4.5,
+          "maximum_position_error_m": 1.252213882676689e-05,
+          "maximum_tool_axis_angle_rad": 1.8564404390726798e-06,
+          "recovery_delay_s": 0.2999999999999994,
+          "time_s": 4.1
+        }
+      ],
+      "faults": [
+        {
+          "from": "REFERENCE_PAUSED",
+          "reason": "pause_timeout",
+          "time_s": 34.6,
+          "to": "FAULT"
+        }
+      ],
+      "pauses": [
+        {
+          "duration_s": 0.374,
+          "maximum_joint_change": [
+            0.00045910811692884135,
+            0.0003203353309590984,
+            0.00016318409065996242,
+            0.0008495409419722044,
+            8.932755083934651e-05,
+            0.0002181101200063873,
+            0.0008953462620067132,
+            0.002594869632339236,
+            1.466922784454372e-05
+          ],
+          "reference_progress_m": 0.0,
+          "reference_range_m": 0.0,
+          "resumed": true,
+          "start_simulation_s": 0.026000000000000002
+        },
+        {
+          "duration_s": 0.398,
+          "maximum_joint_change": [
+            0.0003345893983873749,
+            0.0007869117216237065,
+            0.00014668159513642198,
+            0.0009819804234552088,
+            0.0018994920352213285,
+            0.001360746912217603,
+            0.0011789949235112562,
+            0.0032137560496763307,
+            0.0017124927458419537
+          ],
+          "reference_progress_m": 0.0036463605780414758,
+          "reference_range_m": 0.0,
+          "resumed": true,
+          "start_simulation_s": 3.202
+        },
+        {
+          "duration_s": 0.398,
+          "maximum_joint_change": [
+            0.0004357931100198442,
+            0.0005375748748197573,
+            0.00010752243480632862,
+            0.0009583178613568055,
+            0.0007860451751366959,
+            0.0004440068480421333,
+            0.0004848810590389885,
+            0.0012451353889006977,
+            0.000694917749546109
+          ],
+          "reference_progress_m": 0.003719272061987543,
+          "reference_range_m": 0.0,
+          "resumed": true,
+          "start_simulation_s": 3.702
+        },
+        {
+          "duration_s": 32.218,
+          "maximum_joint_change": [
+            0.00041205461619642225,
+            0.0006664536935099274,
+            5.7686451655658555e-05,
+            0.0010037861159986061,
+            0.0013126001867531656,
+            0.0005316226265655866,
+            0.00015038051232452165,
+            0.00047466552394892503,
+            0.001071766518798145
+          ],
+          "reference_progress_m": 0.0037895319972561063,
+          "reference_range_m": 0.0,
+          "resumed": false,
+          "start_simulation_s": 4.5
+        }
+      ],
+      "planned_events": [
+        {
+          "from": "RECOVERING",
+          "reason": "forward_candidate_confirmed",
+          "recovery_delay_s": 0.30000000000000004,
+          "time_s": 0.4,
+          "to": "RUNNING"
+        },
+        {
+          "from": "RECOVERING",
+          "reason": "forward_candidate_confirmed",
+          "recovery_delay_s": 0.2999999999999998,
+          "time_s": 3.6,
+          "to": "RUNNING"
+        },
+        {
+          "from": "RECOVERING",
+          "reason": "forward_candidate_confirmed",
+          "recovery_delay_s": 0.2999999999999994,
+          "time_s": 4.1,
+          "to": "RUNNING"
+        }
+      ],
+      "restart_count": 2
+    },
+    "reference_settlement": {
+      "inconsistent_samples": 0,
+      "maximum_reference_residual_m": 0.0,
+      "missing_records": 0,
+      "status": "pass",
+      "unauthorized_samples": 0
+    },
+    "sns": {
+      "attempts": 0,
+      "constraint_violations": 0,
+      "failures": 0,
+      "maximum_task_residual": null,
+      "minimum_task_scale": null,
+      "status": "not_applicable"
+    },
+    "terminal_constraints": {
+      "candidates": [
+        {
+          "certificate": {
+            "accepted": false,
+            "checked_intervals": 2,
+            "covered_pairs": 0,
+            "minimum_proven_margin_m": null,
+            "pair": [
+              "Link9",
+              "path_block"
+            ],
+            "reason": "collision_clearance"
+          },
+          "feed_m_s": 0.0013441485437279271
+        },
+        {
+          "certificate": {
+            "accepted": false,
+            "checked_intervals": 2,
+            "covered_pairs": 0,
+            "minimum_proven_margin_m": null,
+            "pair": [
+              "Link9",
+              "path_block"
+            ],
+            "reason": "collision_clearance"
+          },
+          "feed_m_s": 0.0005753375145358866
+        },
+        {
+          "certificate": {
+            "accepted": false,
+            "checked_intervals": 2,
+            "covered_pairs": 0,
+            "minimum_proven_margin_m": null,
+            "pair": [
+              "Link9",
+              "path_block"
+            ],
+            "reason": "collision_clearance"
+          },
+          "feed_m_s": 0.0001909319999427855
+        },
+        {
+          "certificate": {
+            "accepted": false,
+            "checked_intervals": 2,
+            "covered_pairs": 0,
+            "minimum_proven_margin_m": null,
+            "pair": [
+              "Link9",
+              "path_block"
+            ],
+            "reason": "collision_clearance"
+          },
+          "feed_m_s": 4.56508722819417e-26
+        },
+        {
+          "certificate": {
+            "accepted": false,
+            "checked_intervals": 2,
+            "covered_pairs": 0,
+            "minimum_proven_margin_m": null,
+            "pair": [
+              "Link9",
+              "path_block"
+            ],
+            "reason": "collision_clearance"
+          },
+          "feed_m_s": 0.0
+        },
+        {
+          "certificate": {
+            "accepted": false,
+            "checked_intervals": 2,
+            "covered_pairs": 0,
+            "minimum_proven_margin_m": null,
+            "pair": [
+              "Link9",
+              "path_block"
+            ],
+            "reason": "collision_clearance"
+          },
+          "feed_m_s": 0.0
+        },
+        {
+          "certificate": {
+            "accepted": false,
+            "checked_intervals": 2,
+            "covered_pairs": 0,
+            "minimum_proven_margin_m": null,
+            "pair": [
+              "Link9",
+              "path_block"
+            ],
+            "reason": "collision_clearance"
+          },
+          "feed_m_s": 0.0
+        },
+        {
+          "certificate": {
+            "accepted": false,
+            "checked_intervals": 2,
+            "covered_pairs": 0,
+            "minimum_proven_margin_m": null,
+            "pair": [
+              "Link9",
+              "path_block"
+            ],
+            "reason": "collision_clearance"
+          },
+          "feed_m_s": 0.0
+        }
+      ],
+      "geometry": [
+        {
+          "distance_m": 0.858721057249257,
+          "kind": "external",
+          "margin_m": 0.8287210572492569,
+          "pair": [
+            "base_link",
+            "workpiece"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.6760859678694018,
+          "kind": "external",
+          "margin_m": 0.6460859678694018,
+          "pair": [
+            "base_link",
+            "table"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.7326167195231454,
+          "kind": "external",
+          "margin_m": 0.7026167195231454,
+          "pair": [
+            "base_link",
+            "path_block"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.8994807333324272,
+          "kind": "external",
+          "margin_m": 0.8694807333324271,
+          "pair": [
+            "Link1",
+            "workpiece"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.720080733332427,
+          "kind": "external",
+          "margin_m": 0.6900807333324269,
+          "pair": [
+            "Link1",
+            "table"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.7632319965209332,
+          "kind": "external",
+          "margin_m": 0.7332319965209332,
+          "pair": [
+            "Link1",
+            "path_block"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.8764081684858631,
+          "kind": "external",
+          "margin_m": 0.8464081684858631,
+          "pair": [
+            "Link2",
+            "workpiece"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.6786156713664491,
+          "kind": "external",
+          "margin_m": 0.648615671366449,
+          "pair": [
+            "Link2",
+            "table"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.7359398015910221,
+          "kind": "external",
+          "margin_m": 0.7059398015910221,
+          "pair": [
+            "Link2",
+            "path_block"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.7322841369761128,
+          "kind": "external",
+          "margin_m": 0.7022841369761128,
+          "pair": [
+            "Link3",
+            "workpiece"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.48684210725741334,
+          "kind": "external",
+          "margin_m": 0.45684210725741337,
+          "pair": [
+            "Link3",
+            "table"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.6076424025390528,
+          "kind": "external",
+          "margin_m": 0.5776424025390527,
+          "pair": [
+            "Link3",
+            "path_block"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.6537434919235507,
+          "kind": "external",
+          "margin_m": 0.6237434919235507,
+          "pair": [
+            "Link4",
+            "workpiece"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.4165360323468613,
+          "kind": "external",
+          "margin_m": 0.3865360323468613,
+          "pair": [
+            "Link4",
+            "table"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.5300781970822853,
+          "kind": "external",
+          "margin_m": 0.5000781970822853,
+          "pair": [
+            "Link4",
+            "path_block"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.40313620357009355,
+          "kind": "external",
+          "margin_m": 0.3731362035700936,
+          "pair": [
+            "Link5",
+            "workpiece"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.23982213427743354,
+          "kind": "external",
+          "margin_m": 0.20982213427743354,
+          "pair": [
+            "Link5",
+            "table"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.2781279878801867,
+          "kind": "external",
+          "margin_m": 0.24812798788018672,
+          "pair": [
+            "Link5",
+            "path_block"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.295200742050305,
+          "kind": "external",
+          "margin_m": 0.26520074205030497,
+          "pair": [
+            "Link6",
+            "workpiece"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.1578251062876675,
+          "kind": "external",
+          "margin_m": 0.1278251062876675,
+          "pair": [
+            "Link6",
+            "table"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.15976843677893846,
+          "kind": "external",
+          "margin_m": 0.12976843677893846,
+          "pair": [
+            "Link6",
+            "path_block"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.2775218203313889,
+          "kind": "external",
+          "margin_m": 0.2475218203313889,
+          "pair": [
+            "Link7",
+            "workpiece"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.17751450380726452,
+          "kind": "external",
+          "margin_m": 0.14751450380726452,
+          "pair": [
+            "Link7",
+            "table"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.13939990764490862,
+          "kind": "external",
+          "margin_m": 0.10939990764490862,
+          "pair": [
+            "Link7",
+            "path_block"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.21999929706942586,
+          "kind": "external",
+          "margin_m": 0.18999929706942587,
+          "pair": [
+            "Link8",
+            "workpiece"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.17151904104523338,
+          "kind": "external",
+          "margin_m": 0.14151904104523338,
+          "pair": [
+            "Link8",
+            "table"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.09679960171233987,
+          "kind": "external",
+          "margin_m": 0.06679960171233987,
+          "pair": [
+            "Link8",
+            "path_block"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.049998814246814356,
+          "kind": "external",
+          "margin_m": 0.019998814246814357,
+          "pair": [
+            "Link9",
+            "workpiece"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.2101871551750182,
+          "kind": "external",
+          "margin_m": 0.1801871551750182,
+          "pair": [
+            "Link9",
+            "table"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.03003536345142571,
+          "kind": "external",
+          "margin_m": 3.5363451425712844e-05,
+          "pair": [
+            "Link9",
+            "path_block"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.22485650342777935,
+          "kind": "self",
+          "margin_m": 0.21485650342777934,
+          "pair": [
+            "base_link",
+            "Link2"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.25723995682615497,
+          "kind": "self",
+          "margin_m": 0.24723995682615496,
+          "pair": [
+            "base_link",
+            "Link3"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.36738213726123675,
+          "kind": "self",
+          "margin_m": 0.35738213726123674,
+          "pair": [
+            "base_link",
+            "Link4"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.39649604606666633,
+          "kind": "self",
+          "margin_m": 0.3864960460666663,
+          "pair": [
+            "base_link",
+            "Link5"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.4691450429181066,
+          "kind": "self",
+          "margin_m": 0.4591450429181066,
+          "pair": [
+            "base_link",
+            "Link6"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.4934782708909028,
+          "kind": "self",
+          "margin_m": 0.4834782708909028,
+          "pair": [
+            "base_link",
+            "Link7"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.5114268232833497,
+          "kind": "self",
+          "margin_m": 0.5014268232833496,
+          "pair": [
+            "base_link",
+            "Link8"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.6464255111917115,
+          "kind": "self",
+          "margin_m": 0.6364255111917115,
+          "pair": [
+            "base_link",
+            "Link9"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.09998110223740597,
+          "kind": "self",
+          "margin_m": 0.08998110223740598,
+          "pair": [
+            "Link1",
+            "Link3"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.3218750661235862,
+          "kind": "self",
+          "margin_m": 0.3118750661235862,
+          "pair": [
+            "Link1",
+            "Link4"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.3338401946003245,
+          "kind": "self",
+          "margin_m": 0.3238401946003245,
+          "pair": [
+            "Link1",
+            "Link5"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.4173101342994721,
+          "kind": "self",
+          "margin_m": 0.4073101342994721,
+          "pair": [
+            "Link1",
+            "Link6"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.4804152089623417,
+          "kind": "self",
+          "margin_m": 0.4704152089623417,
+          "pair": [
+            "Link1",
+            "Link7"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.4794055515046628,
+          "kind": "self",
+          "margin_m": 0.4694055515046628,
+          "pair": [
+            "Link1",
+            "Link8"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.5870155200238953,
+          "kind": "self",
+          "margin_m": 0.5770155200238953,
+          "pair": [
+            "Link1",
+            "Link9"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.13604399576620627,
+          "kind": "self",
+          "margin_m": 0.12604399576620626,
+          "pair": [
+            "Link2",
+            "Link4"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.1819224397265706,
+          "kind": "self",
+          "margin_m": 0.1719224397265706,
+          "pair": [
+            "Link2",
+            "Link5"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.34892577298930333,
+          "kind": "self",
+          "margin_m": 0.3389257729893033,
+          "pair": [
+            "Link2",
+            "Link6"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.44270766028519304,
+          "kind": "self",
+          "margin_m": 0.43270766028519303,
+          "pair": [
+            "Link2",
+            "Link7"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.47759248680485344,
+          "kind": "self",
+          "margin_m": 0.46759248680485344,
+          "pair": [
+            "Link2",
+            "Link8"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.5736478697906452,
+          "kind": "self",
+          "margin_m": 0.5636478697906452,
+          "pair": [
+            "Link2",
+            "Link9"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.017028325960751208,
+          "kind": "self",
+          "margin_m": 0.007028325960751208,
+          "pair": [
+            "Link3",
+            "Link5"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.23156654258683612,
+          "kind": "self",
+          "margin_m": 0.2215665425868361,
+          "pair": [
+            "Link3",
+            "Link6"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.3397847833650582,
+          "kind": "self",
+          "margin_m": 0.3297847833650582,
+          "pair": [
+            "Link3",
+            "Link7"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.41618493099958975,
+          "kind": "self",
+          "margin_m": 0.40618493099958974,
+          "pair": [
+            "Link3",
+            "Link8"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.485574457199828,
+          "kind": "self",
+          "margin_m": 0.475574457199828,
+          "pair": [
+            "Link3",
+            "Link9"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.14200971011131983,
+          "kind": "self",
+          "margin_m": 0.13200971011131982,
+          "pair": [
+            "Link4",
+            "Link6"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.2501501345873383,
+          "kind": "self",
+          "margin_m": 0.2401501345873383,
+          "pair": [
+            "Link4",
+            "Link7"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.3195483959435064,
+          "kind": "self",
+          "margin_m": 0.3095483959435064,
+          "pair": [
+            "Link4",
+            "Link8"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.3951007709049036,
+          "kind": "self",
+          "margin_m": 0.3851007709049036,
+          "pair": [
+            "Link4",
+            "Link9"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.023121267948296182,
+          "kind": "self",
+          "margin_m": 0.013121267948296182,
+          "pair": [
+            "Link5",
+            "Link7"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.09156198174584376,
+          "kind": "self",
+          "margin_m": 0.08156198174584377,
+          "pair": [
+            "Link5",
+            "Link8"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.1442697490709687,
+          "kind": "self",
+          "margin_m": 0.1342697490709687,
+          "pair": [
+            "Link5",
+            "Link9"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.029961323124613883,
+          "kind": "self",
+          "margin_m": 0.019961323124613885,
+          "pair": [
+            "Link6",
+            "Link8"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.05884443273784628,
+          "kind": "self",
+          "margin_m": 0.04884443273784628,
+          "pair": [
+            "Link6",
+            "Link9"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.03557858185693288,
+          "kind": "self",
+          "margin_m": 0.025578581856932875,
+          "pair": [
+            "Link7",
+            "Link9"
+          ],
+          "required_m": 0.01
+        }
+      ],
+      "joint_lower_margin": [
+        0.4546786057344995,
+        0.284848703544077,
+        2.0561365101649853,
+        2.9254770709178173,
+        4.217506905721642,
+        1.9480523562096255,
+        2.3377837781206052,
+        0.03871226957230278,
+        0.5678081849903317
+      ],
+      "joint_upper_margin": [
+        0.1303213942655005,
+        2.856751296455923,
+        1.0854634898350146,
+        0.21612292908218245,
+        2.065693094278358,
+        1.0190076437903746,
+        0.6292762218793946,
+        2.9283477304276975,
+        2.399251815009668
+      ],
+      "reference_progress_m": 0.0037895319972561063,
+      "status": "measured"
+    },
+    "timing": {
+      "admission_rejections": 0,
+      "boundary": "controller_after_synchronous_records_and_recovery_v1",
+      "deadline_misses": 0,
+      "eligible_for_period": true,
+      "maximum_s": 0.09613074700064317,
+      "p999_s": 0.08548787408522829,
+      "period_s": 0.1,
+      "rejected_cycles": 302,
+      "samples": 346,
+      "schema_version": 1,
+      "sidecar_sha256": "271520591a8c7c44096b82bdf1cf5a36114f64433a4b4eed401cfc90d982ccb0",
+      "status": "fail"
+    }
+  },
+  "external_clearance": {
+    "measured_pairs": 30,
+    "minimum_m": 0.03001275566676892,
+    "required_m": 0.03,
+    "required_pairs": 30,
+    "samples": 18346,
+    "status": "pass",
+    "unsafe_samples": 0
+  },
+  "feedback": {
+    "samples": 18346,
+    "simulation_duration_s": 36.69,
+    "simulation_frequency_hz": 500.0,
+    "wall_frequency_hz": 495.94611949569656
+  },
+  "functional_verdict": "pass",
+  "manifest_sha256": "ed278c2b841c0a52acc799f561d6333f9b03d7f7afe579d6242c929f5e624e32",
+  "measurement_boundary": "simulated_actuator_feedback",
+  "metrics": {
+    "path_distance_m": {
+      "invalid": 0,
+      "maximum": 4.229982091832584e-05,
+      "minimum": 6.166888589595554e-10,
+      "p95": 3.1285909232480447e-07,
+      "rms": 3.798559075485941e-06,
+      "samples": 18346,
+      "valid": 18346
+    },
+    "reference_position_error_m": {
+      "invalid": 0,
+      "maximum": 0.0001517553675110122,
+      "minimum": 2.3764029500313483e-08,
+      "p95": 9.737247644955891e-06,
+      "rms": 1.1382017003294388e-05,
+      "samples": 18346,
+      "valid": 18346
+    },
+    "tcp_workpiece_distance_m": {
+      "invalid": 0,
+      "maximum": 0.050002763459129435,
+      "minimum": 0.04999859990599845,
+      "p95": 0.049999999485178276,
+      "rms": 0.05000000502477163,
+      "samples": 18346,
+      "valid": 18346
+    },
+    "tool_axis_angle_rad": {
+      "invalid": 0,
+      "maximum": 0.00019873624738132626,
+      "minimum": 3.04514291487959e-08,
+      "p95": 3.743347182434586e-06,
+      "rms": 1.811707887119095e-05,
+      "samples": 18346,
+      "valid": 18346
+    }
+  },
+  "path_sha256": "ed50f33cb09929285233bc4f87703112e8cfe7007cc958ea6e67b70631492705",
+  "phases": {
+    "RECOVERING": {
+      "duration_s": 1.002,
+      "path_distance_m": {
+        "invalid": 0,
+        "maximum": 3.6906999119883685e-05,
+        "minimum": 2.200799557499486e-09,
+        "p95": 3.23351146857349e-05,
+        "rms": 1.095749666539105e-05,
+        "samples": 501,
+        "valid": 501
+      },
+      "reference_position_error_m": {
+        "invalid": 0,
+        "maximum": 0.00015174055794622124,
+        "minimum": 2.3764029500313483e-08,
+        "p95": 0.0001328027252814483,
+        "rms": 4.3608646915331145e-05,
+        "samples": 501,
+        "valid": 501
+      },
+      "tcp_workpiece_distance_m": {
+        "invalid": 0,
+        "maximum": 0.050002763459129435,
+        "minimum": 0.04999859990599845,
+        "p95": 0.050002395305174446,
+        "rms": 0.05000012494093616,
+        "samples": 501,
+        "valid": 501
+      },
+      "tool_axis_angle_rad": {
+        "invalid": 0,
+        "maximum": 0.00018209503174113645,
+        "minimum": 3.04514291487959e-08,
+        "p95": 0.00015941982601428524,
+        "rms": 5.2196607300780105e-05,
+        "samples": 501,
+        "valid": 501
+      }
+    },
+    "REFERENCE_PAUSED": {
+      "duration_s": 32.386,
+      "path_distance_m": {
+        "invalid": 0,
+        "maximum": 4.229982091832584e-05,
+        "minimum": 1.4167675532148852e-08,
+        "p95": 3.545369397368573e-08,
+        "rms": 2.2488405885863694e-06,
+        "samples": 16193,
+        "valid": 16193
+      },
+      "reference_position_error_m": {
+        "invalid": 0,
+        "maximum": 0.0001517553675110122,
+        "minimum": 1.019355986456274e-06,
+        "p95": 1.019355986456274e-06,
+        "rms": 7.5465314108463535e-06,
+        "samples": 16193,
+        "valid": 16193
+      },
+      "tcp_workpiece_distance_m": {
+        "invalid": 0,
+        "maximum": 0.050002763459129435,
+        "minimum": 0.04999860190427943,
+        "p95": 0.049999999485178276,
+        "rms": 0.050000002757292626,
+        "samples": 16193,
+        "valid": 16193
+      },
+      "tool_axis_angle_rad": {
+        "invalid": 0,
+        "maximum": 0.00019066595521161786,
+        "minimum": 3.1897213978322223e-07,
+        "p95": 3.229723044671417e-07,
+        "rms": 1.029629380579598e-05,
+        "samples": 16193,
+        "valid": 16193
+      }
+    },
+    "RUNNING": {
+      "duration_s": 3.3040000000000003,
+      "path_distance_m": {
+        "invalid": 0,
+        "maximum": 4.1303447926920165e-05,
+        "minimum": 6.166888589595554e-10,
+        "p95": 2.4379470822415426e-05,
+        "rms": 8.617136818056436e-06,
+        "samples": 1652,
+        "valid": 1652
+      },
+      "reference_position_error_m": {
+        "invalid": 0,
+        "maximum": 7.649489843504196e-05,
+        "minimum": 1.8219316395010172e-07,
+        "p95": 4.2402273177883036e-05,
+        "rms": 1.742812448525161e-05,
+        "samples": 1652,
+        "valid": 1652
+      },
+      "tcp_workpiece_distance_m": {
+        "invalid": 0,
+        "maximum": 0.05000112456518821,
+        "minimum": 0.04999869107491947,
+        "p95": 0.050000812982040566,
+        "rms": 0.04999999088385932,
+        "samples": 1652,
+        "valid": 1652
+      },
+      "tool_axis_angle_rad": {
+        "invalid": 0,
+        "maximum": 0.00019873624738132626,
+        "minimum": 2.4127469162182776e-07,
+        "p95": 0.0001207350832870799,
+        "rms": 4.21862742878348e-05,
+        "samples": 1652,
+        "valid": 1652
+      }
+    }
+  },
+  "records_sha256": {
+    "controller": "1f2966f144f4e3d537a210716fbfc6bc4c5552608db671f5444ba276cfc5b5c2",
+    "plant": "9a3b87a48a42111637b247ed7e40e602ec2410dce9350ddf0e020903fbe4f8b3"
+  },
+  "result_sha256": "ee49c8f3a03b27b05a3c1333bc40a18ad7dcf4ca4219fa6df6453d925d9d9f10",
+  "runtime_verdict": "fail",
+  "scenario": {
+    "independent_blockage": {
+      "angle_tolerance_rad": 0.008726646259971648,
+      "blocked_interval_m": [
+        0.7100556224025047,
+        1.1067367203494947
+      ],
+      "kind": "blocked_path",
+      "maximum_distance_bound_m": 0.02998922105142987,
+      "obstacle": {
+        "center_m": [
+          0.0002744757528524406,
+          0.27357448955295105,
+          1.3404106022559328
+        ],
+        "name": "path_block",
+        "radius_m": 0.06
+      },
+      "path_length_m": 1.8167597440585153,
+      "position_tolerance_m": 0.002,
+      "source": "/home/lsn/robot/robot_safecontrol/output/static-scene-validation-20261020/development-scenes-07/s5_blockage.json",
+      "source_sha256": "72ddbb4a0e4119ee07a7bc0880ac558fb1b767e0cd762c354e20ab1923250189",
+      "status": "proven",
+      "tool_axis_offset_m": -0.02624893955859997
+    },
+    "requirement": "safe_blocked_termination",
+    "status": "pass",
+    "stopped": true,
+    "terminal_constraints": {
+      "candidates": [
+        {
+          "certificate": {
+            "accepted": false,
+            "checked_intervals": 2,
+            "covered_pairs": 0,
+            "minimum_proven_margin_m": null,
+            "pair": [
+              "Link9",
+              "path_block"
+            ],
+            "reason": "collision_clearance"
+          },
+          "feed_m_s": 0.0013441485437279271
+        },
+        {
+          "certificate": {
+            "accepted": false,
+            "checked_intervals": 2,
+            "covered_pairs": 0,
+            "minimum_proven_margin_m": null,
+            "pair": [
+              "Link9",
+              "path_block"
+            ],
+            "reason": "collision_clearance"
+          },
+          "feed_m_s": 0.0005753375145358866
+        },
+        {
+          "certificate": {
+            "accepted": false,
+            "checked_intervals": 2,
+            "covered_pairs": 0,
+            "minimum_proven_margin_m": null,
+            "pair": [
+              "Link9",
+              "path_block"
+            ],
+            "reason": "collision_clearance"
+          },
+          "feed_m_s": 0.0001909319999427855
+        },
+        {
+          "certificate": {
+            "accepted": false,
+            "checked_intervals": 2,
+            "covered_pairs": 0,
+            "minimum_proven_margin_m": null,
+            "pair": [
+              "Link9",
+              "path_block"
+            ],
+            "reason": "collision_clearance"
+          },
+          "feed_m_s": 4.56508722819417e-26
+        },
+        {
+          "certificate": {
+            "accepted": false,
+            "checked_intervals": 2,
+            "covered_pairs": 0,
+            "minimum_proven_margin_m": null,
+            "pair": [
+              "Link9",
+              "path_block"
+            ],
+            "reason": "collision_clearance"
+          },
+          "feed_m_s": 0.0
+        },
+        {
+          "certificate": {
+            "accepted": false,
+            "checked_intervals": 2,
+            "covered_pairs": 0,
+            "minimum_proven_margin_m": null,
+            "pair": [
+              "Link9",
+              "path_block"
+            ],
+            "reason": "collision_clearance"
+          },
+          "feed_m_s": 0.0
+        },
+        {
+          "certificate": {
+            "accepted": false,
+            "checked_intervals": 2,
+            "covered_pairs": 0,
+            "minimum_proven_margin_m": null,
+            "pair": [
+              "Link9",
+              "path_block"
+            ],
+            "reason": "collision_clearance"
+          },
+          "feed_m_s": 0.0
+        },
+        {
+          "certificate": {
+            "accepted": false,
+            "checked_intervals": 2,
+            "covered_pairs": 0,
+            "minimum_proven_margin_m": null,
+            "pair": [
+              "Link9",
+              "path_block"
+            ],
+            "reason": "collision_clearance"
+          },
+          "feed_m_s": 0.0
+        }
+      ],
+      "geometry": [
+        {
+          "distance_m": 0.858721057249257,
+          "kind": "external",
+          "margin_m": 0.8287210572492569,
+          "pair": [
+            "base_link",
+            "workpiece"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.6760859678694018,
+          "kind": "external",
+          "margin_m": 0.6460859678694018,
+          "pair": [
+            "base_link",
+            "table"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.7326167195231454,
+          "kind": "external",
+          "margin_m": 0.7026167195231454,
+          "pair": [
+            "base_link",
+            "path_block"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.8994807333324272,
+          "kind": "external",
+          "margin_m": 0.8694807333324271,
+          "pair": [
+            "Link1",
+            "workpiece"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.720080733332427,
+          "kind": "external",
+          "margin_m": 0.6900807333324269,
+          "pair": [
+            "Link1",
+            "table"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.7632319965209332,
+          "kind": "external",
+          "margin_m": 0.7332319965209332,
+          "pair": [
+            "Link1",
+            "path_block"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.8764081684858631,
+          "kind": "external",
+          "margin_m": 0.8464081684858631,
+          "pair": [
+            "Link2",
+            "workpiece"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.6786156713664491,
+          "kind": "external",
+          "margin_m": 0.648615671366449,
+          "pair": [
+            "Link2",
+            "table"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.7359398015910221,
+          "kind": "external",
+          "margin_m": 0.7059398015910221,
+          "pair": [
+            "Link2",
+            "path_block"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.7322841369761128,
+          "kind": "external",
+          "margin_m": 0.7022841369761128,
+          "pair": [
+            "Link3",
+            "workpiece"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.48684210725741334,
+          "kind": "external",
+          "margin_m": 0.45684210725741337,
+          "pair": [
+            "Link3",
+            "table"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.6076424025390528,
+          "kind": "external",
+          "margin_m": 0.5776424025390527,
+          "pair": [
+            "Link3",
+            "path_block"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.6537434919235507,
+          "kind": "external",
+          "margin_m": 0.6237434919235507,
+          "pair": [
+            "Link4",
+            "workpiece"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.4165360323468613,
+          "kind": "external",
+          "margin_m": 0.3865360323468613,
+          "pair": [
+            "Link4",
+            "table"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.5300781970822853,
+          "kind": "external",
+          "margin_m": 0.5000781970822853,
+          "pair": [
+            "Link4",
+            "path_block"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.40313620357009355,
+          "kind": "external",
+          "margin_m": 0.3731362035700936,
+          "pair": [
+            "Link5",
+            "workpiece"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.23982213427743354,
+          "kind": "external",
+          "margin_m": 0.20982213427743354,
+          "pair": [
+            "Link5",
+            "table"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.2781279878801867,
+          "kind": "external",
+          "margin_m": 0.24812798788018672,
+          "pair": [
+            "Link5",
+            "path_block"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.295200742050305,
+          "kind": "external",
+          "margin_m": 0.26520074205030497,
+          "pair": [
+            "Link6",
+            "workpiece"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.1578251062876675,
+          "kind": "external",
+          "margin_m": 0.1278251062876675,
+          "pair": [
+            "Link6",
+            "table"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.15976843677893846,
+          "kind": "external",
+          "margin_m": 0.12976843677893846,
+          "pair": [
+            "Link6",
+            "path_block"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.2775218203313889,
+          "kind": "external",
+          "margin_m": 0.2475218203313889,
+          "pair": [
+            "Link7",
+            "workpiece"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.17751450380726452,
+          "kind": "external",
+          "margin_m": 0.14751450380726452,
+          "pair": [
+            "Link7",
+            "table"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.13939990764490862,
+          "kind": "external",
+          "margin_m": 0.10939990764490862,
+          "pair": [
+            "Link7",
+            "path_block"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.21999929706942586,
+          "kind": "external",
+          "margin_m": 0.18999929706942587,
+          "pair": [
+            "Link8",
+            "workpiece"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.17151904104523338,
+          "kind": "external",
+          "margin_m": 0.14151904104523338,
+          "pair": [
+            "Link8",
+            "table"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.09679960171233987,
+          "kind": "external",
+          "margin_m": 0.06679960171233987,
+          "pair": [
+            "Link8",
+            "path_block"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.049998814246814356,
+          "kind": "external",
+          "margin_m": 0.019998814246814357,
+          "pair": [
+            "Link9",
+            "workpiece"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.2101871551750182,
+          "kind": "external",
+          "margin_m": 0.1801871551750182,
+          "pair": [
+            "Link9",
+            "table"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.03003536345142571,
+          "kind": "external",
+          "margin_m": 3.5363451425712844e-05,
+          "pair": [
+            "Link9",
+            "path_block"
+          ],
+          "required_m": 0.03
+        },
+        {
+          "distance_m": 0.22485650342777935,
+          "kind": "self",
+          "margin_m": 0.21485650342777934,
+          "pair": [
+            "base_link",
+            "Link2"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.25723995682615497,
+          "kind": "self",
+          "margin_m": 0.24723995682615496,
+          "pair": [
+            "base_link",
+            "Link3"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.36738213726123675,
+          "kind": "self",
+          "margin_m": 0.35738213726123674,
+          "pair": [
+            "base_link",
+            "Link4"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.39649604606666633,
+          "kind": "self",
+          "margin_m": 0.3864960460666663,
+          "pair": [
+            "base_link",
+            "Link5"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.4691450429181066,
+          "kind": "self",
+          "margin_m": 0.4591450429181066,
+          "pair": [
+            "base_link",
+            "Link6"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.4934782708909028,
+          "kind": "self",
+          "margin_m": 0.4834782708909028,
+          "pair": [
+            "base_link",
+            "Link7"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.5114268232833497,
+          "kind": "self",
+          "margin_m": 0.5014268232833496,
+          "pair": [
+            "base_link",
+            "Link8"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.6464255111917115,
+          "kind": "self",
+          "margin_m": 0.6364255111917115,
+          "pair": [
+            "base_link",
+            "Link9"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.09998110223740597,
+          "kind": "self",
+          "margin_m": 0.08998110223740598,
+          "pair": [
+            "Link1",
+            "Link3"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.3218750661235862,
+          "kind": "self",
+          "margin_m": 0.3118750661235862,
+          "pair": [
+            "Link1",
+            "Link4"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.3338401946003245,
+          "kind": "self",
+          "margin_m": 0.3238401946003245,
+          "pair": [
+            "Link1",
+            "Link5"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.4173101342994721,
+          "kind": "self",
+          "margin_m": 0.4073101342994721,
+          "pair": [
+            "Link1",
+            "Link6"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.4804152089623417,
+          "kind": "self",
+          "margin_m": 0.4704152089623417,
+          "pair": [
+            "Link1",
+            "Link7"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.4794055515046628,
+          "kind": "self",
+          "margin_m": 0.4694055515046628,
+          "pair": [
+            "Link1",
+            "Link8"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.5870155200238953,
+          "kind": "self",
+          "margin_m": 0.5770155200238953,
+          "pair": [
+            "Link1",
+            "Link9"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.13604399576620627,
+          "kind": "self",
+          "margin_m": 0.12604399576620626,
+          "pair": [
+            "Link2",
+            "Link4"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.1819224397265706,
+          "kind": "self",
+          "margin_m": 0.1719224397265706,
+          "pair": [
+            "Link2",
+            "Link5"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.34892577298930333,
+          "kind": "self",
+          "margin_m": 0.3389257729893033,
+          "pair": [
+            "Link2",
+            "Link6"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.44270766028519304,
+          "kind": "self",
+          "margin_m": 0.43270766028519303,
+          "pair": [
+            "Link2",
+            "Link7"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.47759248680485344,
+          "kind": "self",
+          "margin_m": 0.46759248680485344,
+          "pair": [
+            "Link2",
+            "Link8"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.5736478697906452,
+          "kind": "self",
+          "margin_m": 0.5636478697906452,
+          "pair": [
+            "Link2",
+            "Link9"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.017028325960751208,
+          "kind": "self",
+          "margin_m": 0.007028325960751208,
+          "pair": [
+            "Link3",
+            "Link5"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.23156654258683612,
+          "kind": "self",
+          "margin_m": 0.2215665425868361,
+          "pair": [
+            "Link3",
+            "Link6"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.3397847833650582,
+          "kind": "self",
+          "margin_m": 0.3297847833650582,
+          "pair": [
+            "Link3",
+            "Link7"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.41618493099958975,
+          "kind": "self",
+          "margin_m": 0.40618493099958974,
+          "pair": [
+            "Link3",
+            "Link8"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.485574457199828,
+          "kind": "self",
+          "margin_m": 0.475574457199828,
+          "pair": [
+            "Link3",
+            "Link9"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.14200971011131983,
+          "kind": "self",
+          "margin_m": 0.13200971011131982,
+          "pair": [
+            "Link4",
+            "Link6"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.2501501345873383,
+          "kind": "self",
+          "margin_m": 0.2401501345873383,
+          "pair": [
+            "Link4",
+            "Link7"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.3195483959435064,
+          "kind": "self",
+          "margin_m": 0.3095483959435064,
+          "pair": [
+            "Link4",
+            "Link8"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.3951007709049036,
+          "kind": "self",
+          "margin_m": 0.3851007709049036,
+          "pair": [
+            "Link4",
+            "Link9"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.023121267948296182,
+          "kind": "self",
+          "margin_m": 0.013121267948296182,
+          "pair": [
+            "Link5",
+            "Link7"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.09156198174584376,
+          "kind": "self",
+          "margin_m": 0.08156198174584377,
+          "pair": [
+            "Link5",
+            "Link8"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.1442697490709687,
+          "kind": "self",
+          "margin_m": 0.1342697490709687,
+          "pair": [
+            "Link5",
+            "Link9"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.029961323124613883,
+          "kind": "self",
+          "margin_m": 0.019961323124613885,
+          "pair": [
+            "Link6",
+            "Link8"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.05884443273784628,
+          "kind": "self",
+          "margin_m": 0.04884443273784628,
+          "pair": [
+            "Link6",
+            "Link9"
+          ],
+          "required_m": 0.01
+        },
+        {
+          "distance_m": 0.03557858185693288,
+          "kind": "self",
+          "margin_m": 0.025578581856932875,
+          "pair": [
+            "Link7",
+            "Link9"
+          ],
+          "required_m": 0.01
+        }
+      ],
+      "joint_lower_margin": [
+        0.4546786057344995,
+        0.284848703544077,
+        2.0561365101649853,
+        2.9254770709178173,
+        4.217506905721642,
+        1.9480523562096255,
+        2.3377837781206052,
+        0.03871226957230278,
+        0.5678081849903317
+      ],
+      "joint_upper_margin": [
+        0.1303213942655005,
+        2.856751296455923,
+        1.0854634898350146,
+        0.21612292908218245,
+        2.065693094278358,
+        1.0190076437903746,
+        0.6292762218793946,
+        2.9283477304276975,
+        2.399251815009668
+      ],
+      "reference_progress_m": 0.0037895319972561063,
+      "status": "measured"
+    },
+    "termination_reason": "pause_timeout",
+    "uncompleted_interval_m": [
+      0.0037895319972561063,
+      1.8167597440585153
+    ],
+    "unexpected_faults": []
+  },
+  "schema_version": 1,
+  "self_clearance": {
+    "measured_pairs": 36,
+    "minimum_m": 0.017028325960751232,
+    "required_m": 0.01,
+    "required_pairs": 36,
+    "samples": 18346,
+    "status": "pass",
+    "unsafe_samples": 0
+  },
+  "task_verdict": "pass",
+  "termination": {
+    "lifecycle": {
+      "deadline_monotonic_s": 8663.547538809,
+      "run_started_monotonic_s": 8243.547541895,
+      "startup_order": [
+        "controller",
+        "plant"
+      ],
+      "stop_requested_monotonic_s": 8280.512032814,
+      "workers_exited_monotonic_s": 8280.725987173
+    },
+    "monotonic_s": 8278.220783732,
+    "ready_sha256": {
+      "controller": "8118f599466755b3303afc4da805d0a3f28c4aa8269be8bbad545b2ef3520a12",
+      "plant": "2fc7e1cea71d7449f4c18254e777ce00c22240cb5ca28b07fe42cb240a6e9700"
+    },
+    "recording_statistics_sha256": {
+      "controller": "271520591a8c7c44096b82bdf1cf5a36114f64433a4b4eed401cfc90d982ccb0",
+      "plant": "0a32fdddb5b77098fb71f7385c1e28b35f6ed5fca63ed7e3ece2773efbed0ea7"
+    },
+    "steps": 44,
+    "termination": "pause_timeout",
+    "worker_exit_codes": [
+      0,
+      0
+    ]
+  },
+  "tracking_precision_verdict": "pass",
+  "verdict": "fail"
+}

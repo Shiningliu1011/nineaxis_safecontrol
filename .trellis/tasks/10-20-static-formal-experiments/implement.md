@@ -17,8 +17,9 @@
   125项运行来源核查一致。三卷离线、七项sim及预期终止流程已全部完成，
   新工程容量10项检查通过，需求215718965248、余量67940061184字节，
   `formal_bound=false`。实际结果见 `research/complete-cycle-preflight-results.md`。
-- 新共同周期服务 `static-complete-cycle-period-study-02` 已启动，当前20 ms/A，
-  完成0/20；全部原件与失败保留，正式采集等待测量与最终容量绑定。
+- 新共同周期服务已按用户要求停止，20 ms A/B 两份完整原始报告保存，
+  实际2/20且均失败；B无队列process元数据，C未启动，全部原件保留。
+  当前转为开题资料交付，见 `docs/proposal-static-obstacles/` 和 `research/proposal-pause.md`。
 - 源码 `40d43bb` 的回归03通过：主包732 passed/1 skipped，控制内核
   486 passed/34 skipped，CTest4/4。身份见 `research/full-regression-20261021.md`。
 - 相同旧源码三卷工程容量通过，需求214189355008字节，可用284842614784字节，
@@ -30,9 +31,11 @@
 
 ## 接续顺序
 
+当前按用户要求暂停，开题结束后收到明确继续请求才执行以下步骤。
+
 1. 保持运行源码 `504a274`、模型、控制参数和环境身份，保存全部原始数据。
 2. 保留已通过的三卷前置、新工程容量、源码归档和全部失败原件。
-3. 监测 `research/complete-cycle-period-study.py` 的当前测量和剩余空间。
+3. 核查已保存 A/B、缺失的父队列元数据与接续方式，检查剩余空间，不覆盖已有记录。
 4. 完成20/40/50/100 ms × A–E全部20组，按完整周期P99.9选择最短合格周期。
    没有合格候选时保持运行时间验收失败，修复有证据的问题并复验。
 5. 固定参数、源码、环境和1080项正式清单，核查登记的72配置身份与39/72证明；
@@ -47,4 +50,4 @@
 `/media/lsn/Windows/robot_safecontrol_static_experiments_20261021/`。
 UUID分别为 `083CBB753CBB5BFE`、`6C001EAA001E7B72`。
 数据来源与校验值见 `docs/static_obstacle_experiments_handoff.md` 及所引研究文件。
-当前任务保持 `in_progress`，正式采集等待全部前置通过。
+当前任务生命周期保持 `in_progress`，执行状态为 `paused_by_user`，正式采集0/1080。

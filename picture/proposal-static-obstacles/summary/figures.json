@@ -1,0 +1,51 @@
+{
+  "fonts": {
+    "SimSun": {
+      "family": "SimSun",
+      "sha256": "2e3cc9dbd787c827f73496f01633bba430e15c5db4d4f6ed9938386ea01f0171"
+    },
+    "Times New Roman": {
+      "family": "Times New Roman",
+      "sha256": "4e98adeff8ccc8ef4e3ece8d4547e288ff85fdc9c7ca711a4599c234874bbe86"
+    }
+  },
+  "source_sha256": "ea2b7469c117a4861e47236d88f79c19a54991ae42f43afb74408adb4e3aff3e",
+  "files": {
+    "tracking-summary.png": {
+      "sha256": "21059070245afbb0809eb4b49f80b1d1d0ce3bf961a42f808917597d9c940107",
+      "bytes": 84459
+    },
+    "tracking-summary.svg": {
+      "sha256": "fdd9ff1e1ad077133846806fd60cafc83f9c134185c3f2825582d2bb7a12db50",
+      "bytes": 11608
+    },
+    "tracking-summary.pdf": {
+      "sha256": "c004d068e9f1dcca4ec20a1a9549543dd69838624d1abd065b24b065879c3def",
+      "bytes": 26324
+    },
+    "cycle-summary.png": {
+      "sha256": "640b23e7ffe59a82845d7091f98071891fcf96daab7adfcf1bca9555b2737dbd",
+      "bytes": 94778
+    },
+    "cycle-summary.svg": {
+      "sha256": "5ce2b4803cbae43f67741cee76cde536a8e8b82a45916af47970570098105382",
+      "bytes": 12576
+    },
+    "cycle-summary.pdf": {
+      "sha256": "d0ecb49619654adfc3b74a7e7492bddd05ff51efaf358c4d66c4777bba6d8ecd",
+      "bytes": 31228
+    },
+    "recovery-pair.png": {
+      "sha256": "5c3aeccb10cd5127ed8865ef6beba56d46437ef8356e5e08550d784d428d91e7",
+      "bytes": 82915
+    },
+    "recovery-pair.svg": {
+      "sha256": "c87799fb8c4f51c3478ba5b4196eb79c6d3d40a3d1a6ad3f7c79b9a936839bee",
+      "bytes": 15864
+    },
+    "recovery-pair.pdf": {
+      "sha256": "07f7af8e48cba43e2b2a63fd7187130dfc2ba6d08fd810af5619e6ed24a8c8b9",
+      "bytes": 26472
+    }
+  }
+}

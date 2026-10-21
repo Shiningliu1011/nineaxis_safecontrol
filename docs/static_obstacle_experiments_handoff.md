@@ -2,6 +2,12 @@
 
 ## 当前状态
 
+用户要求开题后再继续，当前实验已暂停。开题数据、图片和独立结论文档见
+[开题资料](proposal-static-obstacles/README.md)，全部资料随当前分支同步。
+共同周期队列服务已停止，实际保存 A/B 两份完整原始运行报告（2/20），均失败；
+共同周期尚未取得，正式采集 0/1080。原始数据、校验值、未完成草稿与继续条件见
+[暂停接手记录](../.trellis/tasks/10-20-static-formal-experiments/research/proposal-pause.md)。
+
 工作分支为 `codex/static-obstacle-experiments`，本次接续起点为 `35a1a61`，
 当前运行源码固定为 `504a274740a1e0c27c597c8d61a889fe39154aed`，
 完整周期计时修复、容量公共参数检查和真实反馈播放均已完成独立集成审查，
@@ -45,11 +51,12 @@ Trellis 接手入口是 `.trellis/tasks/10-20-static-obstacle-experiments/`，
 正式任务的 `research/delivery-reproduction.md`，原始18397条反馈和数据库保持。
 旧共同周期队列已在 20 ms 的 A、B 两组完成后停止，原始数据和
 SHA-256 见 `research/period-study-records-01.md`；新计时边界需要重新测量全部20组。
-新共同周期已由 `static-complete-cycle-period-study-02.service` 启动，
+新共同周期使用 `static-complete-cycle-period-study-02.service`，当前已按用户要求停止，
 数据在原NTFS任务目录 `guarded-period-study-02/`，预算和执行状态在
 `output/static-capacity-20261020/guarded-period-budgets-02/`。
 日志为 `output/static-capacity-20261020/complete-cycle-period-study-02.log`；
-当前20 ms/A正在执行，完整20组及最终周期尚未取得。
+20 ms 的 A/B 原始报告均已保存，C 尚未启动，完整20组及最终周期尚未取得。
+B 没有队列进程退出元数据，报告与worker退出状态已保留，具体见暂停接手记录。
 
 本次完成的 S0–S1、共享参考、全部非相邻 mesh、自碰撞及 Ruckig 准入
 逐项证据见
