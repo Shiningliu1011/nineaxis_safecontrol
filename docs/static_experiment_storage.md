@@ -176,6 +176,10 @@ SNS 记录结构分组，每个固定运行编号保存自己的完整额度。�
 批量准入文件的变化单独测试；运行源码全部核对 SHA-256，
 `RecordingLimits`、`RecordingBudget` 及其前置依赖核对归档 AST。
 运行代码或公共参数变化需要更新对应运行证据。
+生命周期证据和正式容量准入使用相同的公共 control 比较：先核对 A–E
+方法组合，再排除 `solver_mode`、`recovery.mode` 和进给档位的
+`nominal_feed_multiplier`。控制周期、求解权重、构型辅助、全部恢复阈值
+及其他公共字段保持逐值比较；正式 A–E override 和 1,080 项矩阵保持原定义。
 
 在正式清单冻结后提供 `--formal <正式目录>`，生成器复核配置、来源和逐卷
 预算。将生成的 `capacity_plan.json` 放入该正式目录；未提供 `--formal` 的

@@ -21,8 +21,11 @@ Trellis 接手入口是 `.trellis/tasks/10-20-static-obstacle-experiments/`，
 
 完整计时修复已经独立审查，定向测试和真实 ROS 记录证据见
 正式任务的 `research/complete-cycle-timing-implementation.md`。
-集成后的完整回归由 `static-final-regression-04.service` 执行，日志为
-`output/static-capacity-20261020/final-regression-04.log`，尚未取得最终结果。
+集成后的完整回归04已结束：主包752 passed、1 failed、1 skipped，
+控制内核退出0、CTest4/4通过。唯一断言失败为既有50 Hz性能超期比例；
+相同测试独占复验通过，301个采样P95为15.232 ms、最大17.851 ms，超期零次。
+两份原始日志、产物位置及SHA-256见正式任务的 `research/full-regression-04.md`。
+完整回归保留未全部通过状态，日志中的两条ROS收尾诊断正在核查。
 源码 `40d43bb` 的既有回归与三卷容量证据保留其原始身份。
 新计时统计容量需要通过三卷前置验证重新核查，入口为
 正式任务的 `research/complete-cycle-preflight.py`；当前尚未执行。
@@ -39,7 +42,7 @@ SHA-256 见 `research/period-study-records-01.md`；新计时边界需要重新�
 正式容量准入仍未通过。多卷工程预算、运行前后空间检查已集成；
 19 组真实记录的编码审计及目标文件系统验证已保存。
 运行中的字节额度、空间检查及收尾余量已经完成11项完整验证。
-最新三卷规划 `three-volume-capacity-01/engineering-plan` 通过，需求为
+源码 `40d43bb` 的三卷规划 `three-volume-capacity-01/engineering-plan` 通过，需求为
 214,189,355,008 字节，可用 284,842,614,784 字节，余量为
 70,653,259,776 字节；正式启动前继续绑定最终清单并核查现场空间。
 容量规划 SHA-256 为
@@ -331,7 +334,7 @@ ext4 D/S5 的功能与生命周期通过，时间验收失败。
 [#181](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/181#issuecomment-6306830304)。
 正式物理输入登记在场景任务的 `research/formal-scene-input.json`，
 SHA-256 为 `0f27070df3e6bd707426db43b85ff61d442e93f89aa55af3fdf12a319e7f3c9e`。
-当前源码完整回归通过：主包732 passed、1 skipped，控制内核486 passed、
+源码 `40d43bb` 的完整回归03通过：主包732 passed、1 skipped，控制内核486 passed、
 34 skipped，CTest 4/4通过，三个部分退出码均为0。
 日志及SHA-256见正式任务的 `research/full-regression-20261021.md`。
 
