@@ -3,7 +3,8 @@
 ## 当前状态
 
 工作分支为 `codex/static-obstacle-experiments`，本次接续起点为 `35a1a61`，
-完整周期计时修复 `8d022236` 和前置检查 `a6a422a5` 已集成至 `3771bc88`，
+当前运行源码固定为 `504a274740a1e0c27c597c8d61a889fe39154aed`，
+完整周期计时修复、容量公共参数检查和真实反馈播放均已完成独立集成审查，
 运行源码包含独立预热、SNS 最小缩放限制处理、多卷工程预算、
 运行期间容量保护及同步记录与拒绝恢复的完整周期计时。
 容量与场景验收记录已集成至当前分支。
@@ -25,10 +26,19 @@ Trellis 接手入口是 `.trellis/tasks/10-20-static-obstacle-experiments/`，
 控制内核退出0、CTest4/4通过。唯一断言失败为既有50 Hz性能超期比例；
 相同测试独占复验通过，301个采样P95为15.232 ms、最大17.851 ms，超期零次。
 两份原始日志、产物位置及SHA-256见正式任务的 `research/full-regression-04.md`。
-完整回归保留未全部通过状态，日志中的两条ROS收尾诊断正在核查。
+完整回归保留未全部通过状态；新增ROS终止两参数隔离复验通过，
+完整退出日志没有复现两条收尾诊断，现有证据不能归因于新增用例。
 源码 `40d43bb` 的既有回归与三卷容量证据保留其原始身份。
 新计时统计容量需要通过三卷前置验证重新核查，入口为
-正式任务的 `research/complete-cycle-preflight.py`；当前尚未执行。
+正式任务的 `research/complete-cycle-preflight.py`；当前由
+`static-complete-cycle-preflight-01.service` 执行，正在ext4容量守卫阶段。
+日志为 `output/static-capacity-20261020/complete-cycle-preflight-01.log`，
+状态及各项原件在同名目录的 `status.json`、`logs/` 和三个卷的任务目录。
+当前125项运行来源核查文件为
+`.scratch/integration-frontier/playback-runtime-504a274.json`，SHA-256为
+`d3dc9d8bebb03da2a9aa7380622d49096be7c5bb47aa40fa581551529dc412c7`。
+新增播放的完整真实ROS、headless MuJoCo及信号中断验证见
+正式任务的 `research/delivery-reproduction.md`，原始18397条反馈和数据库保持。
 旧共同周期队列已在 20 ms 的 A、B 两组完成后停止，原始数据和
 SHA-256 见 `research/period-study-records-01.md`；新计时边界需要重新测量全部20组。
 

@@ -10,9 +10,12 @@
 - #172–#181 已关闭，#182、#183 和 #171 保持开放，正式采集0/1080。
 - 完整计时修复 `8d022236` 与前置检查 `a6a422a5` 已审查并集成至 `3771bc88`。
   定向验证、来源归档与校验值见 `research/complete-cycle-timing-implementation.md`。
-- 集成完整回归04正在执行；主包已出现一项既有50 Hz性能测试失败，尚待最终结果
-  与独占复验。日志在 `output/static-capacity-20261020/final-regression-04.log`，
-  产物在 `.scratch/regression-xiLHz4Py/`。不能记为通过。
+- 集成完整回归04结束：主包752 passed/1 failed/1 skipped，控制内核退出0，
+  CTest4/4。既有50 Hz性能用例独占复验通过，301采样超期零次；两份原件分别保留。
+  新增ROS终止两参数隔离复验通过且无收尾诊断，见 `research/full-regression-04.md`。
+- 容量公共参数修复、保存反馈播放与相关验证已经独立审查并集成至 `504a274`，
+  125项运行来源核查一致。三卷前置由 `static-complete-cycle-preflight-01.service`
+  执行，当前容量守卫阶段，尚未取得整体通过结果。
 - 源码 `40d43bb` 的回归03通过：主包732 passed/1 skipped，控制内核
   486 passed/34 skipped，CTest4/4。身份见 `research/full-regression-20261021.md`。
 - 相同旧源码三卷工程容量通过，需求214189355008字节，可用284842614784字节，
@@ -24,8 +27,8 @@
 
 ## 接续顺序
 
-1. 集成容量公共参数比较和保存数据播放入口，完成相关测试及独立审查。
-2. 在最终源码上执行 `research/complete-cycle-preflight.py`，验证三卷真实记录、
+1. 保持运行源码 `504a274`、模型、控制参数和环境身份，保存全部原始数据。
+2. 完成 `research/complete-cycle-preflight.py`，验证三卷真实记录、
    随机读取、中断恢复、原子JSON、D/S5、S0、S4、420秒timeout及预算耗尽。
 3. 使用新原件、当前来源和完整统计额度重建三卷工程容量，要求全部检查通过。
 4. 新目录测量20/40/50/100 ms × A–E全部20组，按完整周期P99.9选择最短合格周期。

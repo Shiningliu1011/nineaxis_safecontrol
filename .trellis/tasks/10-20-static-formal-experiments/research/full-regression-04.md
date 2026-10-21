@@ -18,7 +18,14 @@
 唯一断言失败为既有 `test_perf_report_p95_within_budget`：301个采样，
 P95为16.445 ms，最大53.134 ms，6次超期，比例1.99%超过1%，QP失败零次。
 日志还保留两条 `cannot use Destroyable because destruction was requested`
-未取出异常诊断，正在独立核查其来源；不能据此推断生产原因。
+未取出异常诊断。新增两个真实ROS终止用例已隔离复验，2 passed、15 deselected，
+50.42秒、进程退出0，完整stdout/stderr未出现这两类文本，现有证据不能归因于
+新增用例。没有修改生产或测试代码。
+
+隔离日志 `output/static-capacity-20261020/ros-exit-diagnostics-01/pytest.log`，
+SHA-256为 `3f67c24def8e06c8bec67bf4ff30216993b551dbd452b6a7be5d60d08b14d8b1`；
+同目录 `diagnosis.json` 的SHA-256为
+`86fa83f7aad468580e2417253616b54d82fca2faec5cf75a22999e52fd2306a5`。
 
 ## 独占性能复验
 
