@@ -182,6 +182,8 @@ class MuJoCoJointStateViewer(Node):
         self._joint_limits = self._read_joint_limits(joint_names)
         self._latest_positions: dict[str, float] = {}
         self._received_joint_state = False
+        self._latest_joint_state_time_ns: int | None = None
+        self._applied_joint_state_time_ns: int | None = None
 
         topic = str(self.get_parameter("joint_state_topic").value)
         self.create_subscription(
@@ -204,6 +206,10 @@ class MuJoCoJointStateViewer(Node):
     def data(self) -> mujoco.MjData:
         return self._data
 
+    @property
+    def applied_joint_state_time_ns(self) -> int | None:
+        return self._applied_joint_state_time_ns
+
     def viewer_rate_hz(self) -> float:
         rate_hz = float(self.get_parameter("viewer_rate_hz").value)
         if rate_hz <= 0.0:
@@ -218,6 +224,7 @@ class MuJoCoJointStateViewer(Node):
         for name, qpos_address in self._qpos_addresses.items():
             self._data.qpos[qpos_address] = self._latest_positions[name]
         mujoco.mj_forward(self._model, self._data)
+        self._applied_joint_state_time_ns = self._latest_joint_state_time_ns
         return True
 
     def _declare_parameters(self) -> None:
@@ -257,6 +264,7 @@ class MuJoCoJointStateViewer(Node):
             self.get_logger().warning("Ignoring /joint_states message with non-finite positions")
             return
         self._latest_positions = values
+        self._latest_joint_state_time_ns = message.header.stamp.sec * 1_000_000_000 + message.header.stamp.nanosec
         self._received_joint_state = True
 
     def _joint_qpos_addresses(self, joint_names: Sequence[str]) -> dict[str, int]:

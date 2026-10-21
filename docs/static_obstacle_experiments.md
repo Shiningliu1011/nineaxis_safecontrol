@@ -91,6 +91,25 @@ ROS_DOMAIN_ID=198 ROS_LOCALHOST_ONLY=1 \
   python3 scripts/static_obstacle_experiment.py show
 ```
 
+保存反馈的 MuJoCo 播放使用已经评价并关闭数据库的运行目录：
+
+```bash
+python3 scripts/static_obstacle_experiment.py playback \
+  --output output/static-experiments/s0-run \
+  --playback-output output/static-experiments/s0-playback-01 --domain 232
+```
+
+入口核查 manifest、评价报告、数据库、路径和当前模型资源的 SHA-256，
+从 `plant.sqlite3` 读取原始九轴位置、速度和测量时间戳，按照
+`simulation_s` 的相对间隔发送至独立的显示 topic。MuJoCo 使用保存配置中的
+路径、工件、障碍物和机器人模型。`--time-scale 2` 将播放时长乘以 2；
+`--headless` 使用同一模型和 ROS 接收路径完成数值检查，不创建窗口。
+完整播放在最后一条反馈被模型接收后结束；关闭窗口或 Ctrl+C 保存中断结果并
+销毁本次节点。`playback.json` 和 `playback_result.json` 保存在新的
+`--playback-output` 目录，记录原件身份、播放源码、实际发送数量及模型末态。
+原始数据库与评价文件保持原内容。播放仅创建显示节点，不创建控制器、plant
+或 hardware bridge；`replay` 继续负责反馈评价重算。
+
 运行参数 `path_radius_m=0` 使用生产路径的拟合半径；S0 通过显式 override
 采用 270.6 mm。运行快照保存最终参数及其来源。
 

@@ -330,7 +330,7 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description="静态障碍物仿真实验")
     parser.add_argument("mode", choices=(
         "run", "replay", "show", "worker", "prepare", "witness", "witness-replay", "benchmark",
-        "freeze", "batch", "paired-report", "report", "compact",
+        "freeze", "batch", "paired-report", "report", "compact", "playback",
     ))
     parser.add_argument("--resource-root", type=Path, default=default_portable_root().parent)
     parser.add_argument("--config", type=Path)
@@ -359,9 +359,22 @@ def main(argv=None) -> int:
     parser.add_argument("--limit", type=int)
     parser.add_argument("--report-python", type=Path, default=Path(sys.executable))
     parser.add_argument("--figures-output", type=Path)
+    parser.add_argument("--playback-output", type=Path)
+    parser.add_argument("--time-scale", type=float, default=1.)
+    parser.add_argument("--headless", action="store_true")
     args = parser.parse_args(argv)
     if not 0 <= args.domain <= 232:
         parser.error("--domain 必须在 0–232 范围")
+    if args.mode == "playback":
+        if args.output is None or args.playback_output is None:
+            parser.error("playback 需要 --output 原件目录和新的 --playback-output 目录")
+        from .static_experiment_playback import playback_run
+        report = playback_run(
+            args.output, args.playback_output, resource_root=args.resource_root,
+            domain=args.domain, time_scale=args.time_scale, headless=args.headless,
+        )
+        print(f"保存反馈播放：{report['status']}；{report['published_samples']} 条", flush=True)
+        return 0 if report["status"] == "completed" else 130
     if args.mode == "compact":
         if args.source is None or args.output is None:
             parser.error("compact 需要 --source 和尚不存在的 --output")
