@@ -64,6 +64,72 @@ def test_actual_free_space_check_prevents_new_work_and_preserves_existing_record
     assert read_stream(database, "event")[0]["values"]["reason"] == "budget_exhausted"
 
 
+def test_statistics_reservation_checks_pending_file_and_published_allocation(tmp_path):
+    import json
+    from robot_safecontrol_moveit.static_experiment_capacity import statistics_storage_bytes
+
+    bound = statistics_storage_bytes(0)
+    limits = _limits(wal_bytes=1024 * 1024, statistics_bytes=bound)
+    with RunRecorder(tmp_path / "controller.sqlite3", storage_limits=limits) as recorder:
+        recorder.append("event", monotonic_s=1., values={"reason": "worker_stopped"})
+        statistics = {"stream_counts": {"event": 1}, "storage_budget": recorder.capacity_snapshot()}
+        recorder.write_statistics(statistics, maximum_bytes=bound)
+        path = tmp_path / "controller.recording.json"
+        assert json.loads(path.read_text()) == statistics
+        assert not path.with_suffix(".json.pending").exists()
+        assert recorder.capacity_snapshot()["observed"]["other_bytes"] == path.stat().st_blocks * 512
+        assert recorder.capacity_snapshot()["completion_within_reserve"]
+        with pytest.raises(FileExistsError):
+            recorder.write_statistics(statistics, maximum_bytes=bound)
+
+
+def test_maximum_cycle_statistics_fit_reserved_file_and_completion_space(tmp_path):
+    import json
+    import sys
+    import time
+    from robot_safecontrol_moveit.static_cycle_timing import CycleTimings
+    from robot_safecontrol_moveit.static_experiment_capacity import statistics_storage_bytes
+
+    maximum = RecordingLimits(420., 2., .02).manifest()["maximum_candidate_records"]
+    assert maximum == 23652
+    bound = statistics_storage_bytes(maximum)
+    assert bound == 6123520
+    widest = {
+        "sequence": 2 ** 63 - 1, "started_monotonic_s": -sys.float_info.max,
+        "completed_monotonic_s": sys.float_info.max, "duration_s": -sys.float_info.max,
+    }
+    container = {"cycle_timing": {"cycles": []}}
+    populated = {"cycle_timing": {"cycles": [widest]}}
+    assert len(json.dumps(populated, indent=2)) - len(json.dumps(container, indent=2)) < 256
+    table = CycleTimings(maximum_records=maximum)
+    for sequence in range(1, maximum + 1):
+        table.record(sequence, time.monotonic())
+        table.complete(sequence)
+    limits = _limits(
+        statistics_bytes=bound, other_bytes=bound + 65536, completion_bytes=bound + 65536,
+        minimum_free_bytes=bound + 65536, wal_bytes=1024 * 1024,
+    )
+    with RunRecorder(tmp_path / "controller.sqlite3", storage_limits=limits) as recorder:
+        recorder.append("event", monotonic_s=time.monotonic(), values={"reason": "worker_stopped"})
+        recorder.write_statistics({"cycle_timing": table.snapshot()}, maximum_bytes=bound)
+        path = tmp_path / "controller.recording.json"
+        assert path.stat().st_blocks * 512 <= bound
+        assert len(json.loads(path.read_text())["cycle_timing"]["cycles"]) == maximum
+        assert recorder.capacity_snapshot()["completion_within_reserve"]
+        print({"maximum_cycles": maximum, "reserved_bytes": bound,
+               "serialized_bytes": path.stat().st_size, "allocated_bytes": path.stat().st_blocks * 512})
+
+
+def test_statistics_preflight_retains_database_when_file_exceeds_reserved_space(tmp_path):
+    with RunRecorder(tmp_path / "controller.sqlite3", storage_limits=_limits(statistics_bytes=4096)) as recorder:
+        recorder.append("event", monotonic_s=1., values={"reason": "worker_stopped"})
+        with pytest.raises(ValueError, match="统计文件"):
+            recorder.write_statistics({"values": list(range(2000))}, maximum_bytes=65536)
+        assert not (tmp_path / "controller.recording.json").exists()
+        assert not (tmp_path / "controller.recording.json.pending").exists()
+        assert len(read_stream(recorder.path, "event")) == 1
+
+
 def test_task_budget_checks_real_storage_before_incrementing_task_count(tmp_path):
     with RunRecorder(tmp_path / "controller.sqlite3", storage_limits=_limits(wal_bytes=1)) as recorder:
         budget = RecordingBudget(

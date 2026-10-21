@@ -5,6 +5,7 @@ from pathlib import Path
 import numpy as np
 
 from .static_experiment_recording import iter_records
+from .static_cycle_timing import cycle_timing_summary, load_cycle_timing
 
 
 def ordered_coverage(progress, reference, total_length, initial_error, endpoint_error) -> dict:
@@ -92,20 +93,10 @@ def evaluate_execution(directory: Path, manifest: dict, feedback: list, commands
         "minimum_task_scale": min(sns_scales) if sns_scales else None,
         "maximum_task_residual": max(sns_residuals) if sns_residuals else None,
     }
-    cycles = list(_records(controller, "cycle"))
     admissions = {row["command_id"]: row for row in _records(plant, "admission")}
-    durations = np.array([row["duration_s"] for row in cycles])
     period = manifest["config"]["control"]["period_s"]
-    timing = {
-        "status": ("insufficient_evidence" if not len(durations) else
-                   "pass" if np.quantile(durations, .999) <= .8 * period else "fail"),
-        "samples": len(durations), "period_s": period,
-        "p999_s": float(np.quantile(durations, .999)) if len(durations) else None,
-        "maximum_s": float(durations.max()) if len(durations) else None,
-        "deadline_misses": int(np.count_nonzero(durations > period)),
-        "admission_rejections": sum(not row["accepted"] for row in admissions.values()),
-        "rejected_cycles": sum(not row["accepted"] for row in cycles),
-    }
+    timing = cycle_timing_summary(load_cycle_timing(directory, manifest), period)
+    timing["admission_rejections"] = sum(not row["accepted"] for row in admissions.values())
     scheduled = {row["values"]["command_id"]: row["values"].get("scheduled") for row in commands}
     missing, unauthorized, inconsistent = 0, 0, 0
     maximum_progress_residual = 0.

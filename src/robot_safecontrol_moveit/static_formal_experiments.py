@@ -18,6 +18,7 @@ from .static_experiment_provenance import (
     environment_identity, relocate_manifest, snapshot_sources, validate_run_report, verify_snapshot,
 )
 from .static_experiment_recording import write_json
+from .static_cycle_timing import CYCLE_TIMING_BOUNDARY, cycle_timing_summary, load_cycle_timing
 
 
 SCENARIOS = ("s0", "s1", "s2", "s3-travel-100", "s3-travel-70", "s3-travel-40", "s4", "s5")
@@ -62,7 +63,7 @@ def freeze_formal(catalog_path: Path, period_directory: Path, evidence_index: Pa
                   directory: Path, resource_root: Path) -> dict:
     from .static_experiment import _sources
     from .static_scenario_evidence import verify_blockage, verify_reconfiguration
-    from .static_period_measurement import validate_period_storage
+    from .static_period_measurement import select_period, validate_period_storage
 
     catalog = json.loads(catalog_path.read_text())
     period = json.loads((period_directory / "period_report.json").read_text())
@@ -74,13 +75,27 @@ def freeze_formal(catalog_path: Path, period_directory: Path, evidence_index: Pa
             or {row["id"] for row in catalog["scenarios"]} != set(SCENARIOS)):
         raise ValueError("开发清单必须包含完整场景、三个初态和三档进给")
     if (period["status"] != "pass" or period["selected_period_s"] is None
+            or period.get("cycle_timing_boundary") != CYCLE_TIMING_BOUNDARY
+            or study.get("cycle_timing_boundary") != CYCLE_TIMING_BOUNDARY
             or period["study_sha256"] != content_hash(period_directory / "study.json")):
+        raise ValueError("共同周期尚未通过完整测量")
+    selected = select_period([row for group in period["groups"] for row in group["methods"]])
+    if any(period.get(key) != value for key, value in selected.items()):
         raise ValueError("共同周期尚未通过完整测量")
     selected_period = period["selected_period_s"]
     for group in period["groups"]:
         for row in group["methods"]:
             run = period_directory / row["run"]
-            validate_run_report(run)
+            manifest, report = validate_run_report(run)
+            measured = load_cycle_timing(run, manifest)
+            timing = cycle_timing_summary(measured, group["period_s"])
+            if (not measured["eligible_for_period"]
+                    or row.get("cycle_timing_sha256") != measured["sidecar_sha256"]
+                    or any(row.get(key) != timing[key] for key in (
+                        "samples", "p999_s", "maximum_s", "deadline_misses"))
+                    or any(report["execution"]["timing"].get(key) != value
+                           for key, value in timing.items())):
+                raise ValueError("共同周期与完整计时原件不一致")
             if validate_period_storage(run) != row.get("storage_statistics_sha256"):
                 raise ValueError("共同周期缺少匹配的容量守卫统计身份")
             if content_hash(run / "feedback_report.json") != row["report_sha256"]:

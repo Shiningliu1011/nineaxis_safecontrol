@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import hashlib
 from contextlib import contextmanager
+from copy import deepcopy
 from pathlib import Path
 import tempfile
 
@@ -18,6 +19,7 @@ from .static_experiment_provenance import (
     recording_hashes, relocate_manifest, source_identity, validate_storage_migration,
 )
 from .static_execution_evaluation import evaluate_execution, arc_statistics, ordered_coverage
+from .static_cycle_timing import LEGACY_CYCLE_TIMING_BOUNDARY
 
 
 def distribution(values: np.ndarray) -> dict:
@@ -326,8 +328,15 @@ def evaluation_samples(directory: Path, resource_root: Path, report: dict):
         )
         excluded = {"evaluation_sources_sha256", "evaluator_sha256",
                     "derived_data_policy", "derived_data_sha256"}
-        expected = {key: value for key, value in report.items() if key not in excluded}
-        actual = {key: value for key, value in recomputed.items() if key not in excluded}
+        expected = deepcopy({key: value for key, value in report.items() if key not in excluded})
+        actual = deepcopy({key: value for key, value in recomputed.items() if key not in excluded})
+        if ("boundary" not in expected.get("execution", {}).get("timing", {})
+                and actual["execution"]["timing"]["boundary"] == LEGACY_CYCLE_TIMING_BOUNDARY):
+            for item in (expected, actual):
+                item.pop("verdict", None)
+                item.pop("runtime_verdict", None)
+                for key in ("status", "schema_version", "boundary", "eligible_for_period", "sidecar_sha256"):
+                    item["execution"]["timing"].pop(key, None)
         if actual != expected:
             raise ValueError("按需生成的评价与保存的报告不一致，请核查后执行 replay")
         yield output, recomputed

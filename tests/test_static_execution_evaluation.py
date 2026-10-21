@@ -19,6 +19,10 @@ from robot_safecontrol_moveit.static_experiment_recording import (
 from robot_safecontrol_moveit.static_experiment_storage import compact_run
 from robot_safecontrol_moveit.static_experiment_provenance import validate_run_report
 from robot_safecontrol_moveit.static_execution_evaluation import evaluate_execution, arc_statistics, ordered_coverage
+from robot_safecontrol_moveit.static_cycle_timing import (
+    CYCLE_TIMING_BOUNDARY, LEGACY_CYCLE_TIMING_BOUNDARY, CycleTimings,
+    cycle_timing_summary, load_cycle_timing,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 bootstrap_portable(ROOT / "portable_oscbf")
@@ -35,6 +39,7 @@ def test_actual_processed_motion_and_rejected_admission_have_reconstructable_pro
     state = ActuatorState(config.initial_position, np.zeros(9), np.zeros(9))
     schedule = ExecutionSchedule(state, planner, .1)
     started = time.monotonic()
+    complete_timing = CycleTimings(maximum_records=2)
     candidate = control.propose(state, 0., time_s=.1, executed_feed=0.)
     assert candidate is not None and candidate.certificate.accepted
     command = ScheduledMotion(1, 50, 0., candidate.solution.feed_m_s, candidate.phase, candidate.motion)
@@ -56,10 +61,13 @@ def test_actual_processed_motion_and_rejected_admission_have_reconstructable_pro
                 "command_id": command_id, "accepted": reason == "accepted", "reason": reason,
                 "certificate": asdict(candidate.certificate),
             })
-            controller.append("cycle", monotonic_s=time.monotonic(), values={
+            base_completed = time.monotonic()
+            controller.append("cycle", monotonic_s=base_completed, values={
                 "command_id": command_id, "accepted": reason == "accepted", "reason": reason,
-                "duration_s": time.monotonic() - started, "period_s": .1,
+                "duration_s": base_completed - started, "period_s": .1,
             })
+            complete_timing.record(controller.last_sequence, started)
+            complete_timing.complete(controller.last_sequence)
             for _ in range(50 if command_id == 1 else 100):
                 snapshot = schedule.advance()
                 plant.append("feedback", monotonic_s=time.monotonic(),
@@ -85,6 +93,8 @@ def test_actual_processed_motion_and_rejected_admission_have_reconstructable_pro
     assert report["qp"]["status"] == "pass"
     assert report["timing"]["admission_rejections"] == 1
     assert report["timing"]["samples"] == 2
+    assert report["timing"]["boundary"] == LEGACY_CYCLE_TIMING_BOUNDARY
+    assert report["timing"]["status"] == "insufficient_evidence"
     assert not report["recovery"]["pauses"][-1]["resumed"]
     json.dumps(report, allow_nan=False)
     incomplete_manifest = deepcopy(manifest)
@@ -122,9 +132,42 @@ def test_actual_processed_motion_and_rejected_admission_have_reconstructable_pro
         assert recomputed["evaluation_sources_sha256"] == evaluated["evaluation_sources_sha256"]
     assert not samples.exists()
     assert content_hash(tmp_path / "feedback_report.json") == report_hash
+    historical = deepcopy(evaluated)
+    historical_timing = historical["execution"]["timing"]
+    for name in ("schema_version", "boundary", "eligible_for_period", "sidecar_sha256"):
+        del historical_timing[name]
+    historical_timing["status"] = (
+        "pass" if historical_timing["p999_s"] <= .8 * historical_timing["period_s"] else "fail"
+    )
+    historical["runtime_verdict"] = historical_timing["status"]
+    write_json(tmp_path / "historical_report.json", historical)
+    historical_hash = content_hash(tmp_path / "historical_report.json")
+    with evaluation_samples(tmp_path, ROOT, historical) as (_, recomputed):
+        assert recomputed["execution"]["timing"]["boundary"] == LEGACY_CYCLE_TIMING_BOUNDARY
+        assert recomputed["runtime_verdict"] == "insufficient_evidence"
+        assert recomputed["task_verdict"] == historical["task_verdict"]
+    assert content_hash(tmp_path / "historical_report.json") == historical_hash
+    manifest["cycle_timing_boundary"] = CYCLE_TIMING_BOUNDARY
+    write_json(tmp_path / "manifest.json", manifest)
+    write_json(tmp_path / "controller.recording.json", {"cycle_timing": complete_timing.snapshot()})
+    result = json.loads((tmp_path / "result.json").read_text())
+    result["recording_statistics_sha256"] = {"controller": content_hash(tmp_path / "controller.recording.json")}
+    write_json(tmp_path / "result.json", result)
+    completed_report = evaluate_run(tmp_path, resource_root=ROOT)
+    completed_timing = load_cycle_timing(tmp_path)
+    assert completed_timing["eligible_for_period"]
+    assert all(completed_report["execution"]["timing"][key] == value
+               for key, value in cycle_timing_summary(completed_timing, .1).items())
+    assert validate_run_report(tmp_path)[1] == completed_report
+    changed_report = deepcopy(completed_report)
+    changed_report["execution"]["timing"]["maximum_s"] += .01
+    write_json(tmp_path / "feedback_report.json", changed_report)
+    with pytest.raises(ValueError, match="完整周期"):
+        validate_run_report(tmp_path)
+    write_json(tmp_path / "feedback_report.json", completed_report)
     legacy = tmp_path / "legacy"
     legacy.mkdir()
-    for name in ("manifest.json", "result.json", "path.npz"):
+    for name in ("manifest.json", "result.json", "path.npz", "controller.recording.json"):
         shutil.copy2(tmp_path / name, legacy / name)
     for role in ("plant", "controller"):
         with sqlite3.connect(legacy / f"{role}.sqlite3") as connection:
@@ -141,6 +184,8 @@ def test_actual_processed_motion_and_rejected_admission_have_reconstructable_pro
     compact = tmp_path / "compact"
     compact_run(legacy, compact)
     converted = evaluate_run(compact, resource_root=ROOT)
+    assert load_cycle_timing(compact) == completed_timing
+    assert converted["execution"]["timing"] == completed_report["execution"]["timing"]
     assert validate_run_report(compact)[1] == converted
     converted_report_hash = content_hash(compact / "feedback_report.json")
     for filename in ("manifest.json", "result.json", "path.npz"):

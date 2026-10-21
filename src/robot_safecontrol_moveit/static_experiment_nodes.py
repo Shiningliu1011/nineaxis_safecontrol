@@ -16,6 +16,7 @@ from .oscbf_trajectory import bootstrap_portable
 from .robot_spec import DEFAULT_JOINT_NAMES
 from .ros_conventions import JOINT_STATE_TOPIC, command_stream_qos, state_stream_qos
 from .static_experiment_capacity import RecordingBudget, RecordingLimits
+from .static_cycle_timing import CycleTimings
 
 
 STATE_TOPIC = "/static_experiment/state"
@@ -189,6 +190,9 @@ class StaticExperimentController(Node):
         self._last_calculation_start_step = None
         self._sequence = 0
         self._cycle_started = {}
+        self.cycle_timings = CycleTimings(
+            maximum_records=self.recording_budget.limits["maximum_candidate_records"],
+        )
         self._event_count = 0
         self._endpoint_since = None
         self._execution_state = "tracking"
@@ -218,11 +222,12 @@ class StaticExperimentController(Node):
         self.recorder.append(
             "admission", monotonic_s=time.monotonic(), values=value,
         )
-        self._record_cycle(started, command_id, value["accepted"], value["reason"])
+        sequence = self._record_cycle(started, command_id, value["accepted"], value["reason"])
         if not value["accepted"]:
             self._waiting_id = None
             self.control.recovery.admission_rejected(value["step"] * .002, value["reason"])
             self._record_transitions()
+        self.cycle_timings.complete(sequence)
 
     def _record_cycle(self, started, command_id, accepted, reason):
         completed = time.monotonic()
@@ -230,6 +235,9 @@ class StaticExperimentController(Node):
             "command_id": command_id, "duration_s": completed - started,
             "accepted": accepted, "reason": reason, "period_s": self.settings["period_s"],
         })
+        sequence = self.recorder.last_sequence
+        self.cycle_timings.record(sequence, started)
+        return sequence
 
     def _record_transitions(self):
         for event in self.control.recovery.events[self._event_count:]:
@@ -331,14 +339,16 @@ class StaticExperimentController(Node):
             self._record_cycle(started, None, False, stop_reason)
             return
         if self.control.recovery.phase == "FAULT":
-            self._record_cycle(started, None, False, self.control.recovery.reason)
+            sequence = self._record_cycle(started, None, False, self.control.recovery.reason)
             self._execution_state, self._termination = "holding", self.control.recovery.reason
+            self.cycle_timings.complete(sequence)
             return
         if candidate is None:
             self.recorder.append("rejection", monotonic_s=time.monotonic(), values={
                 "reason": "no_certified_candidate", "start_step": start_step,
             })
-            self._record_cycle(started, None, False, "no_certified_candidate")
+            sequence = self._record_cycle(started, None, False, "no_certified_candidate")
+            self.cycle_timings.complete(sequence)
             return
         self._sequence += 1
         command = ScheduledMotion(

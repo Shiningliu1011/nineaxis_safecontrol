@@ -21,9 +21,11 @@ from .static_experiment_config import ExperimentConfig, content_hash, METHODS
 from .static_experiment_evaluation import evaluate_run
 from .static_experiment_recording import FORMAT_VERSION, RunRecorder, finalize_recording, write_json
 from .static_experiment_provenance import source_identity
+from .static_cycle_timing import CYCLE_TIMING_BOUNDARY
 from .static_experiment_capacity import (
     RecordingBudgetExhausted, RecordingLimits, SUPERVISOR_POLL_S, WORKER_STARTUP_TIMEOUT_S,
     WORKER_STOP_TIMEOUT_S, WORKER_INTERRUPT_TIMEOUT_S,
+    statistics_storage_bytes,
 )
 
 
@@ -62,8 +64,15 @@ def finish_worker_recording(node, recorder, directory: Path, *, role: str,
             "termination": "budget_exhausted", "reason": str(error), "monotonic_s": time.monotonic(),
         })
     recorder.append("event", monotonic_s=time.monotonic(), values=terminal)
+    timing = None
+    if role == "controller" and node is not None:
+        try:
+            node.cycle_timings.complete_pending()
+            timing = node.cycle_timings.snapshot()
+        except BaseException as error:
+            errors.append(error)
     wal = Path(str(recorder.path) + "-wal")
-    write_json(directory / f"{role}.recording.json", {
+    statistics = {
         "completed_monotonic_s": time.monotonic(),
         "wal_bytes_before_checkpoint": wal.stat().st_size,
         "wal_allocated_bytes_before_checkpoint": wal.stat().st_blocks * 512,
@@ -72,7 +81,15 @@ def finish_worker_recording(node, recorder, directory: Path, *, role: str,
         "stream_counts": dict(recorder.connection.execute(
             "SELECT stream,count(*) FROM samples GROUP BY stream",
         )),
-    })
+    }
+    if role == "controller":
+        statistics["cycle_timing"] = timing
+    maximum_cycles = timing["maximum_records"] if timing is not None else 0
+    statistics["statistics_storage_bytes"] = statistics_storage_bytes(maximum_cycles)
+    try:
+        recorder.write_statistics(statistics, maximum_bytes=statistics["statistics_storage_bytes"])
+    except BaseException as error:
+        errors.append(error)
     if errors:
         raise original or errors[0]
 
@@ -187,6 +204,7 @@ def run_experiment(args, config: ExperimentConfig) -> dict:
         **config.manifest(), "source_sha256": _sources(config),
         "path_sha256": content_hash(directory / "path.npz"),
         "recording_format": FORMAT_VERSION,
+        "cycle_timing_boundary": CYCLE_TIMING_BOUNDARY,
         "storage_budget": storage,
         "recording_limits": RecordingLimits(
             config.values["timeout_s"], config.values["settle_s"],

@@ -9,7 +9,7 @@ import zipfile
 
 import yaml
 
-from .static_experiment_capacity import RecordingLimits
+from .static_experiment_capacity import RecordingLimits, statistics_storage_bytes
 from .static_experiment_config import METHODS, content_hash
 from .static_experiment_recording import KEYFRAME_INTERVAL
 from .static_experiment_volumes import filesystem_identity
@@ -164,14 +164,20 @@ def engineering_model(audits: list[dict], limits: RecordingLimits, *, sns: bool 
                 (math.ceil(payload * factors[role]) + records * row_allowance + 16384) / 4096,
             ) * 4096,
         }
-    retained = sum(row["database_budget_bytes"] for row in databases.values()) + math.ceil(other * 1.25)
+    statistics_bytes = {
+        "plant": statistics_storage_bytes(0),
+        "controller": statistics_storage_bytes(limits.manifest()["maximum_candidate_records"]),
+    }
+    other_retained = math.ceil(other * 1.25) + sum(statistics_bytes.values())
+    retained = sum(row["database_budget_bytes"] for row in databases.values()) + other_retained
     return {
         "kind": "validated_engineering_envelope", "recording_limits": limits.manifest(),
         "candidate_group": "all" if sns is None else "sns" if sns else "qp",
         "maximum_geometry_pairs": maximum_pairs,
         "payload_margin_factor": 1.05, "sqlite_row_allowance_bytes": row_allowance,
         "streams": streams, "databases": databases,
-        "other_retained_bytes": math.ceil(other * 1.25),
+        "other_retained_bytes": other_retained,
+        "statistics_bytes": statistics_bytes,
         "retained_run_bytes": math.ceil(retained / 4096) * 4096,
         "raw_msgpack_at_sample_dimensions_bytes": raw,
         "basis": "observed_stream_encoding_with_fixed_counts_and_per_run_guard",

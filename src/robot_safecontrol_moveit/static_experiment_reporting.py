@@ -20,6 +20,7 @@ from .static_experiment_config import content_hash
 from .static_experiment_evaluation import evaluation_samples
 from .static_experiment_recording import read_stream, write_json
 from .static_experiment_provenance import relocate_manifest, validate_run_report
+from .static_cycle_timing import load_cycle_timing
 
 
 def _fonts():
@@ -99,7 +100,7 @@ def _plot_run(directory, resource_root, output, manifest, report, data_directory
     if not np.allclose(times[indices], metrics["simulation_s"], atol=1e-10, rtol=0):
         raise ValueError("关节反馈与图表测量时间不一致")
     q = np.array([feedback[index]["values"]["q"] for index in indices])
-    cycles = read_stream(directory / "controller.sqlite3", "cycle")
+    cycle_timing = load_cycle_timing(directory, manifest)
     fonts, coverage = _fonts()
     output.mkdir(parents=True, exist_ok=False)
     files = []
@@ -156,12 +157,12 @@ def _plot_run(directory, resource_root, output, manifest, report, data_directory
     files.append(_save(figure, output / "joint-margins.png", coverage))
 
     figure, axis = plt.subplots(figsize=(7, 4.5), layout="constrained")
-    durations = np.sort([row["values"]["duration_s"] * 1000 for row in cycles])
+    durations = np.sort([row["duration_s"] * 1000 for row in cycle_timing["cycles"]])
     axis.step(durations, np.arange(1, len(durations) + 1) / len(durations) * 100, where="post")
     period_ms = manifest["config"]["control"]["period_s"] * 1000
     axis.axvline(.8 * period_ms, color="#c55338", linestyle="--", label="周期的 80%")
     axis.axvline(period_ms, color="black", linestyle=":", label="完整周期")
-    axis.set_xlabel("计算与准入耗时 (ms)")
+    axis.set_xlabel("完整计算与准入耗时 (ms)" if cycle_timing["eligible_for_period"] else "历史基础计时 (ms)")
     axis.set_ylabel("累计比例 (%)")
     axis.grid(alpha=.2)
     axis.legend()
