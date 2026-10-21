@@ -29,10 +29,13 @@ Trellis 接手入口是 `.trellis/tasks/10-20-static-obstacle-experiments/`，
 完整回归保留未全部通过状态；新增ROS终止两参数隔离复验通过，
 完整退出日志没有复现两条收尾诊断，现有证据不能归因于新增用例。
 源码 `40d43bb` 的既有回归与三卷容量证据保留其原始身份。
-新计时统计容量需要通过三卷前置验证重新核查，入口为
-正式任务的 `research/complete-cycle-preflight.py`；当前由
-`static-complete-cycle-preflight-01.service` 执行，三卷离线存储检查已通过，
-正在执行sim生命周期检查，具体阶段以 `status.json` 为准。
+当前源码的三卷前置已完整通过预期流程，服务
+`static-complete-cycle-preflight-01.service` 退出0。三卷离线记录与恢复、
+三卷S5功能和生命周期、S0、S4、420秒记录、8 MiB预算耗尽收尾均已验证。
+两个S5运行的runtime失败保持原始判定。新工程容量10项检查全部通过，
+需求215718965248、可用283659026432、余量67940061184字节，
+`formal_bound=false`。完整原件、源码归档及校验值见正式任务的
+`research/complete-cycle-preflight-results.md`。
 日志为 `output/static-capacity-20261020/complete-cycle-preflight-01.log`，
 状态及各项原件在同名目录的 `status.json`、`logs/` 和三个卷的任务目录。
 当前125项运行来源核查文件为
@@ -42,6 +45,11 @@ Trellis 接手入口是 `.trellis/tasks/10-20-static-obstacle-experiments/`，
 正式任务的 `research/delivery-reproduction.md`，原始18397条反馈和数据库保持。
 旧共同周期队列已在 20 ms 的 A、B 两组完成后停止，原始数据和
 SHA-256 见 `research/period-study-records-01.md`；新计时边界需要重新测量全部20组。
+新共同周期已由 `static-complete-cycle-period-study-02.service` 启动，
+数据在原NTFS任务目录 `guarded-period-study-02/`，预算和执行状态在
+`output/static-capacity-20261020/guarded-period-budgets-02/`。
+日志为 `output/static-capacity-20261020/complete-cycle-period-study-02.log`；
+当前20 ms/A正在执行，完整20组及最终周期尚未取得。
 
 本次完成的 S0–S1、共享参考、全部非相邻 mesh、自碰撞及 Ruckig 准入
 逐项证据见
