@@ -1,0 +1,27 @@
+fast_calib:
+  ros__parameters:
+    fx: 606.9568481445312
+    fy: 606.98095703125
+    cx: 639.0324096679688
+    cy: 395.7186279296875
+    k1: 0.0
+    k2: 0.0
+    p1: 0.0
+    p2: 0.0
+    marker_size: 0.20
+    delta_width_qr_center: 0.55
+    delta_height_qr_center: 0.35
+    delta_width_circles: 0.5
+    delta_height_circles: 0.4
+    circle_radius: 0.12
+    min_detected_markers: 4
+    x_min: -0.2
+    x_max: 1.8
+    y_min: -3.0
+    y_max: -1.5
+    z_min: -0.8
+    z_max: 0.6
+    lidar_topic: /livox/lidar
+    bag_path: /home/lsn/robot/robot_safecontrol/.scratch/lidar-camera-calibration/scene01
+    image_path: /home/lsn/robot/robot_safecontrol/.scratch/lidar-camera-calibration/scene01/rectified.png
+    output_path: /home/lsn/robot/robot_safecontrol/.scratch/lidar-camera-calibration/scene01-result

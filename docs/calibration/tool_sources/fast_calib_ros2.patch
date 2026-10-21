@@ -1,0 +1,73 @@
+diff --git a/src/lidar_detect.hpp b/src/lidar_detect.hpp
+index 788cbfe..c3c6ceb 100644
+--- a/src/lidar_detect.hpp
++++ b/src/lidar_detect.hpp
+@@ -148,5 +148 @@ public:
+-        Eigen::Vector3d axis = normal.cross(z_axis);
+-        double angle = acos(normal.dot(z_axis));
+-
+-        Eigen::AngleAxisd rotation(angle, axis);
+-        Eigen::Matrix3d R = rotation.toRotationMatrix();
++        Eigen::Matrix3d R = Eigen::Quaterniond::FromTwoVectors(normal, z_axis).toRotationMatrix();
+@@ -206,3 +202,3 @@ public:
+-        ec.setClusterTolerance(0.01); // 0.02
+-        ec.setMinClusterSize(30);
+-        ec.setMaxClusterSize(1000);
++        ec.setClusterTolerance(0.025);
++        ec.setMinClusterSize(50);
++        ec.setMaxClusterSize(10000);
+@@ -229,0 +226,3 @@ public:
++            // 依次检查圆候选，使同组中的外边缘不会阻止圆孔提取。
++            for (int candidate = 0; candidate < 8 && cluster->size() >= 50; ++candidate)
++            {
+@@ -239 +238,2 @@ public:
+-            seg.setMaxIterations(1000);
++            seg.setRadiusLimits(circle_radius_ - 0.025, circle_radius_ + 0.025);
++            seg.setMaxIterations(10000);
+@@ -241,0 +242,2 @@ public:
++            if (inliers->indices.empty())
++                break;
+@@ -258 +260,10 @@ public:
+-                if (error < 0.02) // 0.02
++                std::vector<double> angles;
++                for (const auto &idx : inliers->indices)
++                    angles.push_back(std::atan2(cluster->points[idx].y - coefficients->values[1],
++                                                cluster->points[idx].x - coefficients->values[0]));
++                std::sort(angles.begin(), angles.end());
++                double max_gap = angles.front() + 2.0 * M_PI - angles.back();
++                for (size_t j = 1; j < angles.size(); ++j)
++                    max_gap = std::max(max_gap, angles[j] - angles[j - 1]);
++                // 检查圆周覆盖，排除仅有短弧的外边界和不完整圆孔。
++                if (error < 0.02 && inliers->indices.size() >= 50 && max_gap <= M_PI / 2.0)
+@@ -277,0 +289 @@ public:
++                    break;
+@@ -279,0 +292,8 @@ public:
++            pcl::ExtractIndices<pcl::PointXYZ> remove_candidate;
++            remove_candidate.setInputCloud(cluster);
++            remove_candidate.setIndices(inliers);
++            remove_candidate.setNegative(true);
++            pcl::PointCloud<pcl::PointXYZ>::Ptr remaining(new pcl::PointCloud<pcl::PointXYZ>);
++            remove_candidate.filter(*remaining);
++            cluster = remaining;
++            }
+diff --git a/src/main.cpp b/src/main.cpp
+index 23d97d2..dc4ac1a 100644
+--- a/src/main.cpp
++++ b/src/main.cpp
+@@ -10,0 +11 @@ which is included as part of this source code package.
++#include <stdexcept>
+@@ -41,0 +43,2 @@ int main(int argc, char **argv)
++  if (qr_center_cloud->size() != 4)
++    throw std::runtime_error("相机需要完整识别四个标定中心");
+@@ -46,0 +50,5 @@ int main(int argc, char **argv)
++  pcl::io::savePCDFileBinary(params.output_path + "/detected_lidar_centers.pcd", *lidar_center_cloud);
++  pcl::io::savePCDFileBinary(params.output_path + "/detected_camera_centers.pcd", *qr_center_cloud);
++  pcl::io::savePCDFileBinary(params.output_path + "/board_plane.pcd", *lidarDetectPtr->getPlaneCloud());
++  if (lidar_center_cloud->size() != 4)
++    throw std::runtime_error("雷达需要完整识别四个圆孔，终止外参求解");
+@@ -52,0 +61,2 @@ int main(int argc, char **argv)
++  if (qr_centers->size() != 4 || lidar_centers->size() != 4)
++    throw std::runtime_error("标定中心排序失败");
+@@ -57,0 +68,2 @@ int main(int argc, char **argv)
++  if (!transformation.allFinite())
++    throw std::runtime_error("标定变换含有无效数值");

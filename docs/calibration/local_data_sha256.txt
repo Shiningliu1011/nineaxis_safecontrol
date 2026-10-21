@@ -1,0 +1,5 @@
+c1e2c75259bdfcb38b3ac36a91bd4832fc7f3daa2fc0227c139669cc2ff19b50  .scratch/lidar-camera-calibration/scene04/scene04_0.db3
+fe77233c6f8d61e83a2644133e36d9bc4edbc759005e266c6ec5e6967df06f56  .scratch/lidar-camera-calibration/scene05/scene05_0.db3
+a7b432145b3b34ac91896b5d7f6298a19ad9c0139a888dd4b0e4a203fd653200  .scratch/lidar-camera-calibration/scene06/scene06_0.db3
+2f170c97f40745d25f6200b9c99f93fe4956c3ad6bf4cbc405a869669e689e74  .scratch/lidar-camera-calibration/scene07/scene07_0.db3
+9088f7a2f7854bd540b26128acfd4057746d3108acb22116cf678738f5ba53f3  .scratch/lidar-camera-calibration/dense_clouds.npz

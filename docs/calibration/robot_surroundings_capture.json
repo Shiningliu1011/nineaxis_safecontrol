@@ -1,0 +1,12 @@
+{
+  "duration_s": 10.001840711000114,
+  "lidar_frames": 99,
+  "lidar_points": 1612330,
+  "camera_points": 696113,
+  "time_synchronization_verified": false,
+  "static_accumulation": true,
+  "projected_roi_points": {
+    "lidar_camera": 65478,
+    "camera": 190997
+  }
+}
