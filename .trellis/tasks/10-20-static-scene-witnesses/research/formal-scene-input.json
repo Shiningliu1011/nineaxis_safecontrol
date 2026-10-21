@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "kind": "formal_physical_scene_input",
+  "issue": 177,
+  "registered_on": "2026-10-21",
+  "scope": "固定 S0–S5 共八种场景的坐标、三个初态、S3 三档行程、执行限制、路径与模型身份",
+  "configuration_count": 72,
+  "formal_run_admission": "pending_period_capacity_and_final_review",
+  "runtime_parameter_freeze_issue": 182,
+  "development_catalog": {
+    "path": "/home/lsn/robot/robot_safecontrol/output/static-scene-validation-20261020/development-scenes-07/catalog.json",
+    "sha256": "d4f03cb3d47cd76d8d11a44dfe54557e9b112af05d18a3a55d1772d10ac2ced0"
+  },
+  "physical_configurations": {
+    "path": "/home/lsn/robot/robot_safecontrol/output/static-scene-validation-20261020/configuration-feasibility-02/configurations.json",
+    "sha256": "18174f4272abe57fc9ca7889503eeaf07a224ef194085cdb17f795cdccec88c6"
+  },
+  "feasibility_snapshot": {
+    "path": "/home/lsn/robot/robot_safecontrol/output/static-scene-validation-20261020/guarded-scene-evidence-01/feasibility_matrix.json",
+    "sha256": "bec38ea319f28b87d4a2218c9e8ee5aadb60a7cc393513250ee429bd990a948a",
+    "proven_configurations": 33,
+    "insufficient_evidence_configurations": 39
+  },
+  "s2_selection": {
+    "path": "/home/lsn/robot/robot_safecontrol/output/static-scene-validation-20261020/development-scenes-07/s2-selection.json",
+    "sha256": "85cd986b5bea1ad0d436ed053b82b76a9307d3f4e56a0302020819377fa8d4f9"
+  },
+  "s4_witness": {
+    "path": "/home/lsn/robot/robot_safecontrol/output/static-scene-validation-20261020/s4-paired-independent-witness-01/witness/witness.json",
+    "sha256": "53b77f141b84b4fa889a545d3595da5e9678e56108c2fae35bd4807a360db9ce"
+  },
+  "s4_states": {
+    "path": "/home/lsn/robot/robot_safecontrol/output/static-scene-validation-20261020/s4-paired-independent-witness-01/witness/states.npz",
+    "sha256": "97ddc14d16a6dbcb448b51efcf8a87a14cfe7f10dfdd9af4259a6a818ffeafc0"
+  },
+  "s5_blockage": {
+    "path": "/home/lsn/robot/robot_safecontrol/output/static-scene-validation-20261020/development-scenes-07/s5_blockage.json",
+    "sha256": "72ddbb4a0e4119ee07a7bc0880ac558fb1b767e0cd762c354e20ab1923250189"
+  }
+}
