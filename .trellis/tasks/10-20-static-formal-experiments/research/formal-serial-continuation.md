@@ -1,6 +1,6 @@
 # 正式冻结、三卷容量绑定与 1080 项串行执行
 
-本记录基于 `3771bc8` 的完整周期计时源码，只核查现有 CLI、调用关系和小型研究文件。
+本记录依据当前完整周期计时与容量准入实现，只核查现有 CLI、调用关系和小型研究文件。
 没有运行 sim、性能测量、数据库校验或正式冻结。`complete-cycle-preflight-01`
 和 `guarded-period-study-02` 在本次检查时尚不存在；以下命令依赖其真实结果齐备。
 
@@ -13,14 +13,14 @@
 3. 参数选择说明更新至最终共同周期及公共控制参数。S4/S5、420 秒写入及三卷
    生命周期的 `RecordingLimits`、共同参数必须与选定周期相符；若选中周期与
    preflight 的 100 ms 不同，须取得对应生命周期证据，不能沿用不匹配参数。
-4. 下述容量公共参数比较缺口完成修复及相关验证，再固定最终源码身份。
+4. 容量 evidence 与正式清单使用相同公共参数；最终源码身份固定，三卷预算按正式清单重新生成。
 
-当前明确缺口：`plan_static_engineering_capacity.py` 使用 `method="D"` 加载配置，
-其 `common_control` 包含 `joint/improved`；`freeze_formal` 将正式配置保存为
-`separated/basic`，各次运行再按 A–E 加载方法。`require_engineering_evidence`
-只移除 `nominal_feed_multiplier` 后完整比较 control，因此正式绑定会因方法字段
-不同而抛出“工程容量公共参数与正式配置不一致”。现有未绑定计划没有经过该路径。
-该发现已报告主会话，本轮没有修改生产代码。
+`plan_static_engineering_capacity.py` 使用 D 的配置提供公共参数；`freeze_formal`
+将正式配置保存为 `separated/basic`，各次运行按 A–E 加载方法。生命周期证据与
+正式容量准入共同调用 `capacity_common_control`：先验证合法的 A–E 方法组合，
+再排除 `solver_mode`、`recovery.mode` 与 `nominal_feed_multiplier`。
+控制周期、求解权重、构型辅助、恢复阈值及其他公共字段继续逐值比较；
+来源、审计、生命周期、卷身份与现场空间检查继续作为正式容量准入条件。
 
 ## 固定来源和环境
 
