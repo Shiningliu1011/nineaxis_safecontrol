@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ast
+from copy import deepcopy
 import hashlib
 import json
 import math
@@ -22,6 +23,16 @@ BATCH_SOURCES = {
     "src/robot_safecontrol_moveit/static_experiment_engineering_capacity.py",
 }
 CAPACITY_SOURCE = "src/robot_safecontrol_moveit/static_experiment_capacity.py"
+
+
+def capacity_common_control(control: dict) -> dict:
+    if (control["solver_mode"], control["recovery"]["mode"]) not in METHODS.values():
+        raise ValueError("工程容量控制配置必须属于 A–E 方法组合")
+    common = deepcopy(control)
+    del common["solver_mode"]
+    del common["recovery"]["mode"]
+    del common["nominal_feed_multiplier"]
+    return common
 
 
 def relative_source_map(sources: dict) -> dict:
@@ -248,10 +259,8 @@ def build_engineering_evidence(*, audits: dict[str, dict], lifecycles: dict[str,
                 raise ValueError(f"生命周期原件身份变化：{directory / name}")
         proof = execution_source_compatibility(sources, manifest["source_sha256"], archive)
         proofs[filename] = proof
-        control = dict(manifest["config"]["control"])
-        expected_control = dict(common_control)
-        for item in (control, expected_control):
-            item.pop("nominal_feed_multiplier")
+        control = capacity_common_control(manifest["config"]["control"])
+        expected_control = capacity_common_control(common_control)
         valid = (
             report["status"] == "pass" and inspection["status"] == "pass"
             and inspection["bound_source_ready_statistics"] and inspection["within_recording_limits"]
@@ -380,9 +389,8 @@ def require_engineering_evidence(report: dict, manifest: dict, directory: Path) 
         raise ValueError("正式目录与已预算来源归档文件系统不一致")
     for name in manifest["configurations"]:
         config = yaml.safe_load((directory / name).read_text())
-        control, expected = dict(config["control"]), dict(evidence["common_control"])
-        control.pop("nominal_feed_multiplier")
-        expected.pop("nominal_feed_multiplier")
+        control = capacity_common_control(config["control"])
+        expected = capacity_common_control(evidence["common_control"])
         if (control != expected or config["timeout_s"] != evidence["limits"]["timeout_s"]
                 or config["settle_s"] != evidence["limits"]["settle_s"]):
             raise ValueError("工程容量公共参数与正式配置不一致")
