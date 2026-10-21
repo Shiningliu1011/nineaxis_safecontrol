@@ -62,12 +62,12 @@ def export(label, include_series):
                     identity["clearance_array_keys"] = list(clearance.files)
                 rows = zip(*arrays)
                 with gzip.open(target / "feedback-full.csv.gz", "wt", encoding="utf-8", newline="") as stream:
-                    writer = csv.writer(stream)
+                    writer = csv.writer(stream, lineterminator="\n")
                     writer.writerow(columns)
                     writer.writerows(rows)
                 indices = np.unique(np.r_[np.arange(0, len(arrays[0]), 20), len(arrays[0]) - 1])
                 with (target / "feedback-25hz.csv").open("w", encoding="utf-8", newline="") as stream:
-                    writer = csv.writer(stream)
+                    writer = csv.writer(stream, lineterminator="\n")
                     writer.writerow(columns)
                     writer.writerows(zip(*(array[indices] for array in arrays)))
                 identity["feedback_samples"] = len(arrays[0])
@@ -81,12 +81,22 @@ def export(label, include_series):
     print(label, "validated and exported", flush=True)
 
 
-def summarize():
+def summarize(refresh_csv):
     rows = []
     for label in RUNS:
         directory = PACK / "data" / label
         report = json.loads((directory / "feedback_report.json").read_text())
         manifest = json.loads((directory / "manifest.json").read_text())
+        if refresh_csv and (directory / "feedback-full.csv.gz").exists():
+            source = json.loads((directory / "source.json").read_text())
+            with gzip.open(directory / "feedback-full.csv.gz", "rt", encoding="utf-8", newline="") as full:
+                reader = csv.reader(full)
+                with (directory / "feedback-25hz.csv").open("w", encoding="utf-8", newline="") as sampled:
+                    writer = csv.writer(sampled, lineterminator="\n")
+                    writer.writerow(next(reader))
+                    for index, values in enumerate(reader):
+                        if index % 20 == 0 or index == source["feedback_samples"] - 1:
+                            writer.writerow(values)
         timing = report["execution"]["timing"]
         coverage = report["coverage"]
         row = {
@@ -116,7 +126,7 @@ def summarize():
         }
         rows.append(row)
     with (PACK / "data/metrics.csv").open("w", encoding="utf-8", newline="") as stream:
-        writer = csv.DictWriter(stream, fieldnames=list(rows[0]))
+        writer = csv.DictWriter(stream, fieldnames=list(rows[0]), lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
     write_json(PACK / "data/metrics.json", rows)
@@ -136,8 +146,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("label", choices=[*RUNS, "summary"])
     parser.add_argument("--series", action="store_true")
+    parser.add_argument("--refresh-csv", action="store_true")
     args = parser.parse_args()
     if args.label == "summary":
-        summarize()
+        summarize(args.refresh_csv)
     else:
         export(args.label, args.series)

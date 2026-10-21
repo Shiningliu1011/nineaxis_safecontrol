@@ -2,6 +2,7 @@ import csv
 import hashlib
 import json
 from pathlib import Path
+import xml.etree.ElementTree as ET
 
 import matplotlib
 matplotlib.use("Agg")
@@ -45,6 +46,9 @@ def main():
         for suffix in ("png", "svg", "pdf"):
             path = OUTPUT / f"{name}.{suffix}"
             figure.savefig(path, dpi=220, bbox_inches="tight")
+            if suffix == "svg":
+                canonical = ET.canonicalize(from_file=path, strip_text=True)
+                path.write_text(canonical + "\n", encoding="utf-8")
             exported[path.name] = {"sha256": checksum(path), "bytes": path.stat().st_size}
             if suffix == "png":
                 with Image.open(path) as image:
