@@ -63,7 +63,8 @@ python scripts/static_obstacle_experiment.py playback --output "$run" \
 `/media/lsn/宇宙小机器人/robot_safecontrol_static_experiments_20261020/guarded-preflight-01/e-s5/run`，
 原采集源码 `40d43bb`。输入 18,397 条反馈，simulation_s 为 0.002–36.794 秒。
 测试逐条比较原始 q、velocity、ROS 时间戳及顺序；实际 1.0 倍时间播放满足
-首末接收间隔断言。公共 CLI 的 0.1 倍时间播放耗时 3.679357 秒，计划 3.6792 秒，
+首末接收间隔断言。固定提交 `adbfcc9` 的公共 CLI 以 0.1 倍时间播放，
+耗时 3.679447 秒，计划 3.6792 秒，
 MuJoCo 末态九轴满足绝对误差 `1e-12`，并确认末条原始时间戳已经应用。
 SIGINT/SIGTERM 分别在真实 ROS 接收首条反馈后中断，保存 `interrupted`，
 退出 130；独立 ROS 观察节点确认显示节点和 publisher 全部清理，生产状态和
@@ -94,9 +95,23 @@ taskset -c 16-21 python -m pytest tests/test_static_experiment_playback.py -q \
 
 验证目录为
 `/home/lsn/robot/robot_safecontrol/.scratch/worktrees/static-evidence/.scratch/playback-validation/`。
-`green-01.log`、`green-04.log`、`green-05.log`、`green-06.log` 保存分项通过结果；
-RED 日志保留同目录。`pytest-green-05/` 保存完整播放，`pytest-green-06/` 保存两次
-中断。各次来源映射、配置、独立结果均保存原件，汇总 `evidence.json` SHA 为
-`4f881ca253de28a0410c6b9ec5d072b92f0e9e6b614c589e46aed0cf7377b0e0`。
-完整播放结果 SHA 为 `59e62c9af4f23c1c339fc36e2eb4bb4e240ddf59ae7ddb03a1bd801026f80e0b`。
-普通合入 `c684dfd` 后进行提交，公开入口的最终修改必须进入 study02 的新来源身份。
+`green-01.log`、`green-04.log` 保存加载与完整 ROS 接收结果；RED 和全部 TDD
+日志保留同目录。`pytest-green-07/` 保存固定 `adbfcc9` 的完整公共 CLI 验证，
+`pytest-green-06/` 保存两次中断。三份记录的播放模块 SHA 均为
+`d9f02d0534f54fc7bcc0659e464d66d326612cd82f786da26a7dc3ce00f8bd2c`，
+各自来源映射包含 125 个文件，涵盖新增的 `static_experiment_playback.py`。
+
+| 固定源码证据 | SHA-256 |
+| --- | --- |
+| green-07.log（1 passed，18.99 秒） | `65ec58591eae539638f0fc53f94971053ed40bf185b865521ed161dc7198baad` |
+| 完整 playback.json | `af3ffae7da6b8f0723f9cda68702cc1c877b8faab0b0baa7e65204ba7b431874` |
+| 完整 playback_result.json | `79674b16755fb67c04b3348a54a0b5bfed33342bb5d46f238efb48402cba757a` |
+| SIGINT playback_result.json | `45fd385ed4d2288b3945f46ab066055b76f25714bb3b3dc539c76c63916d4e78` |
+| SIGTERM playback_result.json | `78566020ba7ff9cc59f39216bb0093674d58ae3425cdc58248078a9e8edd5f64` |
+| fixed-source-evidence.json | `8804a95568c5e8e9305bddde15d09c73f35f4b23d234fcfa681e7e90aa89feaa` |
+
+固定版本单项命令为上述 pytest 命令追加
+`-k public_playback_cli_finishes --basetemp .scratch/playback-validation/pytest-green-07`。
+所有原件保持原内容，开发期间的 `evidence.json` 及 `pytest-green-05/` 独立保留。
+复验完成后普通合入 `2ce24d2`，本次更新仅修改研究说明；公开入口的最终修改
+必须进入 study02 的新来源身份。
