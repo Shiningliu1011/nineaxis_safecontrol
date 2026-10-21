@@ -6,8 +6,8 @@
 当前代码集成为 `6aeb527`，运行源码身份基于 `40d43bb`，包含独立预热、
 SNS 最小缩放限制处理、多卷工程预算及运行期间的容量保护。
 容量与场景验收记录已集成至当前分支。
-#172–#176 已发布逐项证据并关闭；
-#171、#177–#183 尚未完成验收。项目已在当前主机恢复到
+#172–#181 已发布逐项证据并关闭；
+#171、#182–#183 尚未完成验收。项目已在当前主机恢复到
 `/home/lsn/robot/robot_safecontrol`。紧凑存储已完成四组完整真实记录验证，
 原始数据保留；正式 1,080 次采集继续停止，验证限定 sim。
 
@@ -288,7 +288,16 @@ ext4 D/S5 的功能与生命周期通过，时间验收失败。
 校验值及接续入口见
 [容量保护完整仿真](../.trellis/tasks/10-20-static-formal-experiments/research/guarded-preflight.md)。
 当前正式实验仍为 `0/1080`。
-子任务 #172–#176 已关闭，#177–#183 保持开放。
+子任务 #172–#181 已关闭，#182–#183 保持开放。
+本轮评论链接为
+[#177](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/177#issuecomment-6306806376)、
+[#178](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/178#issuecomment-6306812755)、
+[#179](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/179#issuecomment-6306820342)、
+[#180](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/180#issuecomment-6306825233)、
+[#181](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/181#issuecomment-6306830304)。
+正式物理输入登记在场景任务的 `research/formal-scene-input.json`，
+SHA-256 为 `0f27070df3e6bd707426db43b85ff61d442e93f89aa55af3fdf12a319e7f3c9e`。
+当前源码的主包回归为732 passed、1 skipped；控制内核与CTest继续执行。
 
 ## 验证状态
 

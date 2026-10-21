@@ -1,4 +1,4 @@
-# #177 验收评论草稿
+# #177 验收证据
 
 场景证据已按九项条款核对，全部验证限定sim。当前正式物理输入登记为
 `.trellis/tasks/10-20-static-scene-witnesses/research/formal-scene-input.json`。

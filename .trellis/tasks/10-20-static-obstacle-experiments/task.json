@@ -30,6 +30,6 @@
   ],
   "parent": null,
   "relatedFiles": [],
-  "notes": "从 35a1a61 接续整个 #171，origin 已获取且初始工作区干净。implement-spec 负责全部子任务、独立 worktree、集成和最终审查；Trellis 保存状态和证据。容量、S4/S5、可行性及共同周期全部通过前，正式采集保持停止。用户授权本地实现、sim 验证、commit 和 push。",
+  "notes": "从35a1a61接续整个#171，implement-spec负责执行、独立worktree、集成和最终审查；Trellis保存状态和证据。#172–181已逐项验收并关闭，#182–183继续。正式物理场景输入已登记，72配置身份通过，33项完整ROS物理证明与其余证据不足状态明确。容量保护11项完整验证结束，第三卷离线检查/S5、新S2两个初态、共同周期、完整回归与1080项正式矩阵继续。主包回归732passed/1skipped，正式采集0/1080，全部前置通过前保持停止。用户授权sim验证、子agent、commit和push。",
   "meta": {}
 }
