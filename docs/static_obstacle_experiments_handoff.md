@@ -3,8 +3,9 @@
 ## 当前状态
 
 工作分支为 `codex/static-obstacle-experiments`，本次接续起点为 `35a1a61`，
-运行源码身份基于 `40d43bb`，包含独立预热、
-SNS 最小缩放限制处理、多卷工程预算及运行期间的容量保护。
+完整周期计时修复 `8d022236` 和前置检查 `a6a422a5` 已集成至 `3771bc88`，
+运行源码包含独立预热、SNS 最小缩放限制处理、多卷工程预算、
+运行期间容量保护及同步记录与拒绝恢复的完整周期计时。
 容量与场景验收记录已集成至当前分支。
 #172–#181 已发布逐项证据并关闭；
 #171、#182–#183 尚未完成验收。项目已在当前主机恢复到
@@ -17,6 +18,16 @@ Trellis 接手入口是 `.trellis/tasks/10-20-static-obstacle-experiments/`，
 总任务及子任务对应关系见
 `.trellis/tasks/10-20-static-obstacle-experiments/prd.md`。
 实现、参数和已有验证记录随本分支保存。
+
+完整计时修复已经独立审查，定向测试和真实 ROS 记录证据见
+正式任务的 `research/complete-cycle-timing-implementation.md`。
+集成后的完整回归由 `static-final-regression-04.service` 执行，日志为
+`output/static-capacity-20261020/final-regression-04.log`，尚未取得最终结果。
+源码 `40d43bb` 的既有回归与三卷容量证据保留其原始身份。
+新计时统计容量需要通过三卷前置验证重新核查，入口为
+正式任务的 `research/complete-cycle-preflight.py`；当前尚未执行。
+旧共同周期队列已在 20 ms 的 A、B 两组完成后停止，原始数据和
+SHA-256 见 `research/period-study-records-01.md`；新计时边界需要重新测量全部20组。
 
 本次完成的 S0–S1、共享参考、全部非相邻 mesh、自碰撞及 Ruckig 准入
 逐项证据见
