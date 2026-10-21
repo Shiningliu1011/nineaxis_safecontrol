@@ -53,15 +53,15 @@ SHA-256：`2119aa8150c5335858649f0066a08f6bd1a89b56426530b6c68b48cfae020422`
 | 项目 | 覆盖与判据 |
 | --- | --- |
 | 三卷离线验证 | 每卷调用 `validate_static_storage_guard.py` 和 `validate_static_filesystem.py`；使用全部 19,591 条真实记录，核对精确值、随机读取、SIGKILL 恢复、atomic JSON、当前 recording 源码 hash 和卷 UUID |
-| 三卷 D/S5 | 使用 `development-scenes-07/s5.yaml`、`s5_blockage.json`，66 pairs，预期 `pause_timeout`；worker 均正常退出，生命周期与存储预算检查通过 |
+| 三卷 D/S5 | 使用 `development-scenes-07/s5.yaml`、`s5_blockage.json`，66 pairs，预期 `pause_timeout`；worker 均正常退出，生命周期、存储预算与功能检查通过 |
 | 旧 NTFS D/S0 | 使用 `development-scenes-07/s0.yaml`，56 pairs，预期 `completed`，功能通过 |
 | 旧 NTFS D/S4 | 使用已具备完整恢复证据的 `s4-configurations/s4-initial-3-feed-0.5.yaml`，76 pairs；配置已经编码 nominal feed 0.025，额外 `feed_factor=1`；使用 `s4-paired-independent-witness-01/witness`，预期 `completed`，功能通过 |
 | 旧 NTFS 420 秒 timeout | S0，`feed_factor=0.01`，预期 `timeout`；要求 `full_timeout_recording_verified`，保留功能失败与实际 worker 退出状态 |
 | 旧 NTFS 8 MiB forced-WAL | S0，两个 writer 的 WAL 额度各为 8,388,608 bytes，预期 `budget_exhausted`；保留 validation 失败状态，要求实际终止 event、预算原因、完整 sidecar、统计 SHA 与收尾空间检查成立 |
 
-每个 run 均通过新 loader 检查 SQLite cycle sequence 与完整计时一一对应、边界版本、result 绑定的 sidecar SHA-256，以及基础计时与完整计时的一致性。入口同时检查统计文件实际 allocated bytes、每类记录大小、WAL 写入上限与 completion reserve。
+每个 run 均通过新 loader 检查 SQLite cycle sequence 与完整计时一一对应、边界版本、result 绑定的 sidecar SHA-256，以及基础计时与完整计时的一致性。完整 timing 还包含由真实 plant admission 记录按 `command_id` 去重后的 `admission_rejections`；相同 `command_id` 使用最后一条记录，与 evaluator 的处理一致，再对完整 timing 逐字段核对。入口同时检查统计文件实际 allocated bytes、每类记录大小、WAL 写入上限与 completion reserve。
 
-正常项目允许 runtime timing 为 `fail`，并在 `runtime_timing_statuses` 中独立显示；此时生命周期通过仅证明采样、保存和结束过程符合要求。完整周期计时是否满足 P99.9 阈值必须单独判定。timeout 与 budget_exhausted 保存为预期失败，不能报告功能通过。全部原始证据及文件校验值保存在 `status.json` / `completed.json`。异常终止时状态为 `incomplete`，日志与已生成证据保留。
+正常项目允许 runtime timing 为 `fail`，并在 `runtime_timing_statuses` 中独立显示；此时生命周期通过仅证明采样、保存和结束过程符合要求。完整周期计时是否满足 P99.9 阈值必须单独判定。timeout 与 budget_exhausted 保存为预期失败，不能报告功能通过。原始证据及持久文件校验值保存在 `status.json` / `completed.json`；持久文件包括 `.sqlite3`、`.json`、`.ready`、`.yaml`、`.log`，覆盖数据库、manifest、result、report、ready、recording、配置和日志。异常终止时状态为 `incomplete`，日志与已生成证据保留。
 
 ## 工程容量重建输入
 
