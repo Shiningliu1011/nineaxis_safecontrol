@@ -15,7 +15,7 @@
   新增ROS终止两参数隔离复验通过且无收尾诊断，见 `research/full-regression-04.md`。
 - 容量公共参数修复、保存反馈播放与相关验证已经独立审查并集成至 `504a274`，
   125项运行来源核查一致。三卷前置由 `static-complete-cycle-preflight-01.service`
-  执行，当前容量守卫阶段，尚未取得整体通过结果。
+  执行，三卷离线检查已通过、sim生命周期检查进行中，尚未取得整体通过结果。
 - 源码 `40d43bb` 的回归03通过：主包732 passed/1 skipped，控制内核
   486 passed/34 skipped，CTest4/4。身份见 `research/full-regression-20261021.md`。
 - 相同旧源码三卷工程容量通过，需求214189355008字节，可用284842614784字节，

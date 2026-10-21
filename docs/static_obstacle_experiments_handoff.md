@@ -31,7 +31,8 @@ Trellis 接手入口是 `.trellis/tasks/10-20-static-obstacle-experiments/`，
 源码 `40d43bb` 的既有回归与三卷容量证据保留其原始身份。
 新计时统计容量需要通过三卷前置验证重新核查，入口为
 正式任务的 `research/complete-cycle-preflight.py`；当前由
-`static-complete-cycle-preflight-01.service` 执行，正在ext4容量守卫阶段。
+`static-complete-cycle-preflight-01.service` 执行，三卷离线存储检查已通过，
+正在执行sim生命周期检查，具体阶段以 `status.json` 为准。
 日志为 `output/static-capacity-20261020/complete-cycle-preflight-01.log`，
 状态及各项原件在同名目录的 `status.json`、`logs/` 和三个卷的任务目录。
 当前125项运行来源核查文件为

@@ -21,6 +21,6 @@
   "children": [],
   "parent": "10-20-static-obstacle-experiments",
   "relatedFiles": [],
-  "notes": "implement-spec接续整个#171，#172–181已验收关闭，#182–183继续。源码40d43bb的完整回归732passed/1skipped、kernel486passed/34skipped、CTest4/4通过；三卷工程预算通过，余量70653259776字节，formal_bound=false，原始证据保留。正式索引核查36份完整来源、39/72物理证明。完整计时修复8d022236和前置脚本a6a422a5已独立审查并集成至3771bc88，完整回归04正在执行。新三卷生命周期与统计容量待验证。旧20ms/A、B完整记录已保存，归档SHA967080684db0e65c79c7ff6f5e83e58741ead47c86c7ddc0062af22dc5a6f872；新目录需测量全部20组。正式采集0/1080，前置全部通过前保持停止。用户授权sim验证、子agent、commit和push。",
+  "notes": "implement-spec执行整个#171，#172–181已关闭，#182–183继续。最终运行源码504a274，125项来源核查一致；完整计时、容量公共参数与保存反馈播放已经相关验证和独立审查。完整回归04主包752pass/1failed/1skip、kernel退出0、CTest4/4；性能项独占复验301采样零超期，新ROS终止两参数隔离通过，完整原件保留。三卷离线记录/随机读取/中断恢复检查通过，static-complete-cycle-preflight-01.service执行sim生命周期，日志output/static-capacity-20261020/complete-cycle-preflight-01.log；新容量待全部前置后重建。源码40d43bb的旧三卷预算pass、formal_bound=false。正式索引36份完整来源、39/72证明。旧周期A/B原件归档SHA967080684db0e65c79c7ff6f5e83e58741ead47c86c7ddc0062af22dc5a6f872，study02全20组入口已准备。正式采集0/1080，前置全部通过前停止。用户授权sim、子agent、commit和push。",
   "meta": {}
 }
