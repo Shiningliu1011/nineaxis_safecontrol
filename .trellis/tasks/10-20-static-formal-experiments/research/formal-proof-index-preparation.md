@@ -50,7 +50,8 @@ SHA-256 为 `ce2915969765ba1bd3732c2395c37f40d0a4a6d95e0cf196afb62501037333eb`�
 
 ## 输出和执行命令
 
-下列命令在两项实际来源完成后，由主会话安排执行：
+主会话已在两项实际来源完成后执行下列命令，结果见
+[formal-proof-index-results.md](formal-proof-index-results.md)：
 
 ```bash
 source /home/lsn/robot/robot_safecontrol/.scratch/host-recovery/env.sh
@@ -83,4 +84,4 @@ taskset -c 22-27 python /home/lsn/robot/robot_safecontrol/.trellis/tasks/10-20-s
 在实际 `completed.json` 尚不存在时调用入口，得到 `FileNotFoundError`
 并退出 1；未创建 `formal-feasibility-01` 输出目录，未进入大型原件校验。
 记录保存在本 worktree 的 `.scratch/proof-index-missing-results.log`。
-完整来源执行阶段等待两项真实结果，本轮没有将该阶段记为通过。
+完整来源执行阶段已由主会话通过；结果、来源和校验值见上述实际结果记录。
