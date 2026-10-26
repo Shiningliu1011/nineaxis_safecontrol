@@ -1,0 +1,139 @@
+{
+  "verification_passed": true,
+  "captures": [
+    {
+      "pose": "pose01",
+      "archive": "data/sensor_captures/20261026/pose01.tar.gz",
+      "archive_bytes": 27695790,
+      "archive_sha256": "906dada52eea60052c4b5d1dfb78b37dde40a7a63df714cf434ba3442d69a954",
+      "source_directory": ".scratch/fused-cloud-20261026-gyrIKgQI",
+      "archive_matches_source": true,
+      "original_array_shapes_verified": true,
+      "point_cloud_counts": {
+        "camera_roi": 42662,
+        "lidar_roi": 35369,
+        "merged_camera_frame": 78031
+      },
+      "image": "picture/robot_fused_cloud_20261026.png",
+      "files": [
+        {
+          "file": "camera_roi.pcd",
+          "bytes": 682774,
+          "sha256": "9bcbe76da4ffcca9c3fb5114f4d897c079b797bdd3a903c4376b2045f07a2dcd"
+        },
+        {
+          "file": "check_visibility.py",
+          "bytes": 3773,
+          "sha256": "e8df59fe499300ab6c38d3ce8fddc990588c8ff4f0b3f8bad55b6151ba684465"
+        },
+        {
+          "file": "current-camera.png",
+          "bytes": 1285609,
+          "sha256": "952701bc5dd3a2505d67ade7365011990239638f9300125ded692e9d8ceb399c"
+        },
+        {
+          "file": "fusion-report.json",
+          "bytes": 840,
+          "sha256": "7bd0941a23b7378ef2375243302e1f6b279368592e4f87be6c54b41bf6df3aa3"
+        },
+        {
+          "file": "independent_clouds.npz",
+          "bytes": 20488910,
+          "sha256": "5b9ae5fc0211cc194a2d103790176b3b834b5a227ed95e14ae342dd456616474"
+        },
+        {
+          "file": "inspection.json",
+          "bytes": 519,
+          "sha256": "ffc5f2a8331ea82b38cffe9c4b4a263e1fa7728d8c884ac912a2d4a5d6eafff0"
+        },
+        {
+          "file": "lidar-panorama.png",
+          "bytes": 4868883,
+          "sha256": "5ad81d2eb0ad03c7373c5d8b4e72fd759c5286fdfe615bf9586ffdfb1e387447"
+        },
+        {
+          "file": "lidar_roi.pcd",
+          "bytes": 566086,
+          "sha256": "59db591a303d01afd14e0f1024527c08bb5d93b1bc38f511996602a2700edc8f"
+        },
+        {
+          "file": "merged_camera_frame.pcd",
+          "bytes": 1248678,
+          "sha256": "845c2d002a440adfcbcecf66614ef930a2962d11f3a28b3b2ac85baf9577d898"
+        },
+        {
+          "file": "render_fusion.py",
+          "bytes": 8179,
+          "sha256": "8086e194de17528337c8564663889858a5ceae04683a95038a84d20d77bc4ec7"
+        }
+      ]
+    },
+    {
+      "pose": "pose02",
+      "archive": "data/sensor_captures/20261026/pose02.tar.gz",
+      "archive_bytes": 28192097,
+      "archive_sha256": "878681e1857a8bdc184858882877c758ff903def59bf2ac485ce68d0c3796b4d",
+      "source_directory": ".scratch/fused-cloud-20261026-ITy6es0e",
+      "archive_matches_source": true,
+      "original_array_shapes_verified": true,
+      "point_cloud_counts": {
+        "camera_roi": 56598,
+        "lidar_roi": 43063,
+        "merged_camera_frame": 99661
+      },
+      "image": "picture/robot_fused_cloud_pose02_20261026.png",
+      "files": [
+        {
+          "file": "camera_roi.pcd",
+          "bytes": 905750,
+          "sha256": "724f56ddced57b4f6c7d61c5a45c990b1decaebc9cd62ed41c95dbbcbafad37d"
+        },
+        {
+          "file": "check_visibility.py",
+          "bytes": 3773,
+          "sha256": "e8df59fe499300ab6c38d3ce8fddc990588c8ff4f0b3f8bad55b6151ba684465"
+        },
+        {
+          "file": "current-camera.png",
+          "bytes": 1268327,
+          "sha256": "c78918f5c8b32a4f6c3d22454c88590aca81eee44881f5bb03ca2306c3b04c75"
+        },
+        {
+          "file": "fusion-report.json",
+          "bytes": 848,
+          "sha256": "f5cfd5e3d65d1f03d49e7be7a2224344b381129c82f17fe7f3267f9804849f09"
+        },
+        {
+          "file": "independent_clouds.npz",
+          "bytes": 20535014,
+          "sha256": "e3036fcd22f3e4fbb0c7937013603895c9436d7cfb52c3d72863d30030c15ce6"
+        },
+        {
+          "file": "inspection.json",
+          "bytes": 519,
+          "sha256": "74c90e7573b7654cca51b0b9a2b20c041d4774b0c6bffe58dba5f49712289f99"
+        },
+        {
+          "file": "lidar-panorama.png",
+          "bytes": 4866027,
+          "sha256": "928efa564d199c696b45ec3cfb9cb5aca51ce1ee297725822e6df5b6c5278b17"
+        },
+        {
+          "file": "lidar_roi.pcd",
+          "bytes": 689190,
+          "sha256": "d47c9d159e42e701f4b48463efd8f3c89bfe5f1b0da97c1e7e6288b3290bc3a9"
+        },
+        {
+          "file": "merged_camera_frame.pcd",
+          "bytes": 1594758,
+          "sha256": "954d1daca67011c631c091d601bea3bce3f8523a19caf9f97de28008c00dc6a0"
+        },
+        {
+          "file": "render_fusion.py",
+          "bytes": 8186,
+          "sha256": "fadbb8dd9dd91455cf22604a6c46c512e792b008b8966b226b3c1956a5ff96ee"
+        }
+      ]
+    }
+  ]
+}
