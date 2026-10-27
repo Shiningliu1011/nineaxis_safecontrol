@@ -10,6 +10,7 @@
 - [需求与模块覆盖](coverage.md)：需求、决定、实现和验收的对应。
 - [任务编号与依赖](dependencies.md)：59 项主线任务的连续编号、主要依赖图、全部直接前置和可领取入口。
 - [事实依据](requirements-evidence.md)：当前控制代码、NURBS ZIP 参数与独立核查、实验状态和数据保存。
+- [电机与 NURBS 约束数值依据](motor-nurbs-constraint-limits-research.md)：厂家能力条件、源程序限制、独立数值核验及尚待确定的研究参数。
 - [地图维护验证](verification-20261027.md)：原生关系、取消状态、文档与本地远程同步检查。
 - [前期工作证据](../../static_obstacle_experiments_handoff.md)：已完成基础能力、原始记录和复用范围。
 - [九轴技术路线来源](../../../九轴技术路线/九轴机械臂曲面作业_技术路线.md)：保留师兄提供的模块与候选设计，当前要求由总体规格管理。
