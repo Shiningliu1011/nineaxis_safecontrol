@@ -15,7 +15,7 @@
   "branch": "main",
   "base_branch": "main",
   "worktree_path": null,
-  "commit": null,
+  "commit": "d126f87cb3c40424d8d65ac09171214bba3137e7",
   "pr_url": null,
   "subtasks": [],
   "children": [],
@@ -44,6 +44,7 @@
     "control_baseline_ctest_passed": 4,
     "spec_promotion": false,
     "delivery_branch": "main",
-    "delivery_remote": "origin"
+    "delivery_remote": "origin",
+    "storage_documentation_commit": "36912df7faf7bad1f2309513b9bf6379a63c7078"
   }
 }

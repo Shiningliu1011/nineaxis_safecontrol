@@ -104,3 +104,9 @@ Python 交接包为 `.scratch/pipe-assets-runtime/python-path-assets.tar.gz`，�
 实际执行 `.scratch/full-project-frontier/verify_delivery.py --completed 148 135`，退出码 0。保留全部 59 个子任务顺序与 179 条前置关系数量，只有本轮两项状态变化；其他任务正文、标题、标签与指派不变。地图正文与本次文件一致，45 个关联文档本地链接通过检查，HEAD 和用户两份文档校验值保持一致。直接结果为 `.scratch/full-project-frontier/delivery-verification.json`。
 
 新的可领取入口为[[04] 完整项目技术复用与实施依赖（需你拍板）](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/149)及[[05] M02 九轴模型、TCP 与标定接口（需你拍板）](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/136)。两项需要用户参与决定，本轮保持开放。
+
+### 主线交付
+
+2026-10-27，当前 Linux 电脑将程序、测试、依赖、Git 样本属性与相关文档提交为 `d126f87cb3c40424d8d65ac09171214bba3137e7`；原有两份静态实验文档按原内容独立提交为 `36912df7faf7bad1f2309513b9bf6379a63c7078`。两项均已推送到 `origin/main`，直接读取远程分支确认包含这两项提交。
+
+提交后的 69 个程序、测试及样本文件已从 Git 对象逐项读取，与通过 60 项测试的独立快照 SHA-256 一致；两份原有文档仍保持初始校验值。未更改运行算法。原始资料、生成结果和 Python 环境继续由各自资料包与目标电脑环境管理。
