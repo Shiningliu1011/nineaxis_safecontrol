@@ -1,8 +1,8 @@
 # 笔记本与台式机协作
 
-实验室笔记本电脑和课题室工位台式机通过同一个 GitHub 仓库交替开发。
+`lsn` 使用实验室笔记本电脑和课题室工位台式机，通过同一个 GitHub 仓库交替开发。
 仓库地址为 `https://github.com/Shiningliu1011/nineaxis_safecontrol.git`，
-当前工作分支为 `codex/static-obstacle-experiments`。
+当前工作分支为 `main`。
 后续更换工作分支时，在接手记录中保存分支名。
 
 ## 开始工作
@@ -19,7 +19,7 @@ git fetch origin
 工作区没有待保存改动且处于当前工作分支时，执行：
 
 ```bash
-git merge --ff-only origin/codex/static-obstacle-experiments
+git merge --ff-only origin/main
 ```
 
 已有本地改动时保留内容，检查是否属于上次未推送的工作。
@@ -27,9 +27,8 @@ git merge --ff-only origin/codex/static-obstacle-experiments
 保留共同历史，不强制推送。
 
 读取当前任务的 `prd.md`、`design.md`、`implement.md` 和接手记录。
-静态实验的接手入口为
-`.trellis/tasks/10-20-static-formal-experiments/` 与
-[静态实验接手记录](static_obstacle_experiments_handoff.md)。
+主线接手入口为[完整项目地图](planning/nineaxis-full-project/README.md)与
+[任务阻塞关系](planning/nineaxis-full-project/dependencies.md)。
 新会话依据现有任务重新选择当前任务，不复制其他会话的运行状态。
 
 ## 结束工作或切换设备

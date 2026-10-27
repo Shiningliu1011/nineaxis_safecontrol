@@ -1,0 +1,39 @@
+{
+  "id": "static-obstacle-experiments",
+  "name": "static-obstacle-experiments",
+  "title": "实现 #171 静态障碍物仿真实验",
+  "description": "按 #171 与 #172–#183 的依赖完成静态场景、五维任务、碰撞检查、五组算法、闭环评价与正式实验",
+  "status": "in_progress",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "Lsn",
+  "assignee": "Lsn",
+  "createdAt": "2026-10-20",
+  "completedAt": null,
+  "branch": "codex/static-obstacle-experiments",
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [
+    "10-20-static-s0-feedback",
+    "10-20-static-shared-reference",
+    "10-20-static-external-collision",
+    "10-20-static-self-collision",
+    "10-20-static-execution-admission",
+    "10-20-static-scene-witnesses",
+    "10-20-static-method-matrix",
+    "10-20-static-formal-experiments"
+  ],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "用户要求开题后继续，实验已暂停，服务inactive/dead/MainPID0。implement-spec负责整个#171，Trellis维护状态与证据。#172–181已关闭，#182–183开放；固定运行源码504a274，125项来源一致。三卷前置及工程容量10项检查通过，S0/S4完整通过，S5两个runtime失败保留，formal_bound=false。共同周期实际保存20ms A/B两份完整原始报告，2/20，均失败；B无父队列process元数据，C未启动，最终周期未选定。正式登记72配置、36份完整来源支持39/72证明，正式采集0/1080。已整理开题数据、图片和结论到docs/proposal-static-obstacles/，通过集成分支同步。大型数据身份、原始路径、验证及继续条件见正式任务research/proposal-pause.md。未完成driver草稿保存在codex/static-scenes提交81c6a5a并推送。",
+  "meta": {
+    "execution_state": "paused_by_user",
+    "resume_condition": "用户开题结束后明确要求继续",
+    "delivery": "docs/proposal-static-obstacles/README.md"
+  }
+}

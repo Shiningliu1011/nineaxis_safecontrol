@@ -1,43 +1,5 @@
-# #171 接续执行
+# 任务处置
 
-## 执行入口
+2026-10-27，用户取消静态实验。未完成的静态规格、方法周期和正式实验任务以 `not_planned` 关闭，已有完成记录及原始来源继续保存。
 
-集成分支为 `codex/static-obstacle-experiments`，恢复起点 `35a1a61`。
-`implement-spec` 管理全部 #172–#183 的实现、调度、集成和最终 code-review。
-Trellis 管理既有任务、规划、证据与接手记录。
-本机环境入口为 `.scratch/host-recovery/env.sh`；所有实验限定 sim。
-
-## 当前安排
-
-用户要求开题后继续，当前暂停全部采集。开题资料和验证见
-`docs/proposal-static-obstacles/`，暂停与数据身份见正式任务 `research/proposal-pause.md`。
-
-1. #172–#181 已关闭，#182–#183 保持开放，正式采集0/1080。
-2. 保留全部场景、三卷前置、当前工程容量和失败记录。
-3. 用户要求继续后核查环境、设备、来源和空间，接续共同周期剩余测量。
-4. 完成 #182 的二十组周期测量，固定最终参数并重新绑定正式容量。
-5. 全部前置条件通过后固定正式清单，执行 1,080 次实验及独立分析。
-6. 完成回归、规范与需求审查，修复发现并复验，按 tracker 规则关闭有充分证据的任务。
-7. 更新接手记录、数据身份与校验清单，提交并推送相关工作。
-
-## 子任务与计算资源
-
-实现工作使用基于集成分支的独立 worktree，原始大型数据由主目录只读提供。
-子任务提交前合并集成最新提交，集成由 merger 子 agent 执行。
-ROS sim 与周期测量由主会话协调；正式周期测量期间停止其他计算密集验证。
-容量与已有证据检查可独立推进，正式采集等待所有前置证据通过。
-
-固定运行源码为 `504a274`，包含独立预热、SNS、容量保护、完整周期计时与反馈播放。
-三卷前置及工程容量十项检查通过，正式容量 `formal_bound=false`。
-S4九组历史D方法完整功能通过，新S2三初态完整ROS通过，36份来源支持39/72配置证明。
-当前源码S0/S4完整通过，S5三个功能与生命周期通过，两个runtime失败保留。
-420秒记录、8 MiB预算耗尽及异常收尾已验证。
-共同周期新队列实际保存20ms A/B两份完整原始报告，2/20且均失败，服务已停止。
-完整回归04与独占性能复验分别保留，不能称为全量回归全部通过。
-场景agent未完成driver草稿保存在独立分支 `codex/static-scenes` 的 `81c6a5a`，
-已推送，未合入集成分支；不启动自动采集。
-完整测量目录、来源和 SHA-256 见 `docs/static_obstacle_experiments_handoff.md`。
-
-原始实验为 `output/static-experiments/`，紧凑验证为
-`output/static-storage-validation-05/`，恢复来源和逐文件身份见
-`docs/host_recovery_20261020.md`。新数据使用单独目录，原件保留。
+历史命令和结果见 [research/implementation-history-20261021.md](research/implementation-history-20261021.md)。当前开发与跨设备接手使用 `main`，入口为[主线地图](../../../docs/planning/nineaxis-full-project/README.md)。

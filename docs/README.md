@@ -25,10 +25,7 @@
 
 ## 设计与实施资料
 
-- [静态障碍物仿真实验](static_obstacle_experiments.md)：规格、S0–S5 场景、A/B/C/D/E 对照及实施任务。
-- [静态实验接手记录](static_obstacle_experiments_handoff.md)：当前验证、数据容量、保存位置和剩余工作。
-- [静态障碍物开题资料](proposal-static-obstacles/README.md)：前期实验数据与结论、可修改文字、图片和跨设备使用说明。
-- [静态实验紧凑存储](static_experiment_storage.md)：无损记录、旧数据转换、按需数组及恢复验证。
+- [预测协调控制总体规格](specs/predictive-coordination-control.md)：研究目标、工艺与电机限制、运动参考协调、MPC、三方法和完整项目验收。
 - [2026-10-20 主机恢复](host_recovery_20261020.md)：环境、skills、字体、资料身份和验证入口。
 - [九轴曲面作业完整项目](planning/nineaxis-full-project/README.md)：M01–M12、QP/MPC、系统集成、实机实验与个人项目成果的 Wayfinder 入口。
 - [激光跟踪仪零位标定准备](planning/laser-tracker-calibration/README.md)：测量条件、可辨识性、现场采集、离线求解与独立验收的本地规划资料。
@@ -39,7 +36,11 @@
 
 ## 历史资料
 
+- [静态实验前期资料](static_obstacle_experiments.md)与[证据保存位置](static_obstacle_experiments_handoff.md)：已完成基础能力和原始数据。
+- [静态障碍物开题资料](proposal-static-obstacles/README.md)：前期实验数据、文字、图片和跨设备使用说明。
+- [静态实验紧凑存储](static_experiment_storage.md)：记录读取、旧数据转换与恢复验证。
 - [OSCBF 移植指南](archive/OSCBF_PORTING_GUIDE.md)与[执行计划](archive/OSCBF_EXECUTION_PLAN.md)：旧阶段目标和实施记录，当前功能以源码与测试为准。
+- [静态实验历史规格](archive/static-obstacle-experiments-20261020.md)、[历史程序说明](static_obstacle_experiments_legacy.md)与[历史接手记录](static_obstacle_experiments_history.md)：原五组实验的要求、程序入口和原始证据。
 
 ## 文档维护
 

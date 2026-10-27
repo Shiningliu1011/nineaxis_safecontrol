@@ -1,0 +1,38 @@
+{
+  "id": "predictive-coordination-spec",
+  "name": "predictive-coordination-spec",
+  "title": "更新预测协调控制总体规格与项目地图",
+  "description": "维护完整项目规格与59项主线任务，核验阻塞关系并将相关工作同步至main",
+  "status": "review",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "Lsn",
+  "assignee": "Lsn",
+  "createdAt": "2026-10-26",
+  "completedAt": null,
+  "branch": "main",
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [
+    "docs/specs/predictive-coordination-control.md",
+    "docs/specs/static-obstacle-experiments.md",
+    "docs/planning/nineaxis-full-project/README.md",
+    "docs/planning/nineaxis-full-project/dependencies.md",
+    "docs/planning/nineaxis-full-project/verification-20261027.md",
+    "docs/static_obstacle_experiments_handoff.md"
+  ],
+  "notes": "59项主线、179条依赖、取消状态、前期证据和文档全部核验通过；负责人使用lsn。静态实验草稿本地分支已删除，等待main合并与远程同步完成。",
+  "meta": {
+    "delivery_kind": "planning_documents",
+    "github_map": 147,
+    "overall_spec": 145,
+    "verification": "docs/planning/nineaxis-full-project/verification-20261027.md"
+  }
+}

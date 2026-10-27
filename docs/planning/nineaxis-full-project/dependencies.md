@@ -1,8 +1,8 @@
 # 任务编号与阻塞关系
 
-[完整项目地图](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/147)统一管理全部任务。标题采用 **01–72 连续编号**，按前置关系排序；GitHub 自身编号仅用于保持原链接与评论。
+[完整项目地图](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/147)管理 **59 项主线任务**。标题采用 **01–59 连续编号**，按前置关系排序；GitHub issue 编号用于保持原链接与评论。
 
-读取方法：某项任务的全部前置完成后，才能领取该任务。编号较小的任务可以仍在另一条分支进行；连续编号不要求所有任务逐项串行。下表列出直接前置，完整关系以 GitHub 原生 blocking 为准。已完成的历史证据保留在原任务中。
+读取方法：某项任务的全部开放前置完成后，才能领取该任务。任务编号表达依赖顺序，各条独立路线可以同时推进。主表列出地图内全部直接前置，文末补充 19 条指向已完成来源任务的依赖；GitHub 原生 blocking 是状态依据。
 
 ## 主要汇合关系
 
@@ -23,8 +23,13 @@ flowchart TD
     n50 --> n56
     n41 --> n57["57 MPC 实机验收"]
     n56 --> n57
-    n57 --> n58["58 正式对照与统计"]
+    n36 --> n42["42 轨迹优化与逐点逆解"]
+    n42 --> n58["58 三方法验证、周期与正式统计"]
+    n15["15 验收与正式实验方案"] --> n58
+    n16["16 总体规格"] --> n58
+    n57 --> n58
     n58 --> n59["59 完整项目复现与展示"]
+    n16 --> n59
     n55["55 通用模块证据核对"] --> n59
 ```
 
@@ -47,7 +52,7 @@ flowchart TD
 | [13 初始逆解、入场退出与轨迹优化范围](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/140) | 04 复用；08 碰撞接口；09 进度结算 |
 | [14 M09 联合 QP 与独立、协同运行规则](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/143) | 10 数据与时间；13 入场及轨迹范围 |
 | [15 全项目验收、M12 与正式实验](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/144) | 14 联合 QP 定义 |
-| [16 完整项目规格与验收追踪定稿](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/145) | 04 复用；11 执行准入；12 MPC 定义；15 验收方案 |
+| [16 冗余机械臂预测协调控制总体项目规格](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/145) | 04 复用；11 执行准入；12 MPC 定义；15 验收方案 |
 
 ## 公共模块与独立闭环
 
@@ -83,7 +88,7 @@ flowchart TD
 | [39 实现异步计划接收与上下层协同](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/162) | 10 数据与时间；34 Runtime；38 MPC |
 | [40 实现未来冗余构型优化与消融入口](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/163) | 39 异步协同 |
 | [41 验收双速率协同与动态异常仿真](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/166) | 23 动态 support；40 冗余构型 |
-| [42 实现 JAX 完整任务轨迹优化](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/110) | 04 复用；13 适用范围；26 certify；30 AEB-RRT* |
+| [42 实现完整任务轨迹优化与逐点逆解比较方法](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/110) | 04 复用；13 适用范围；26 certify；30 AEB-RRT*；36 共用运动与参考协调 |
 | [43 接入最新场景复查、执行前视与风险触发重规划](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/116) | 04 复用；13 适用范围；24 场景；26 certify；42 轨迹优化 |
 | [44 实现碰撞故障锁存与受限恢复](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/114) | 04 复用；26 certify；31 CBF；43 前视重规划 |
 | [45 测量并冻结 CollisionParameterArtifact](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/117) | 03 外参标定；04 复用；24 场景；25 query；26 certify |
@@ -106,28 +111,38 @@ flowchart TD
 |---|---|
 | [56 验收低速独立 QP 实机作业](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/167) | 03 外参；20 设备测量；37 独立 QP；45 参数；50 CollisionSafety 切换 |
 | [57 验收 MPC 协同实机与受控动态作业](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/168) | 41 协同仿真；56 独立实机 |
-| [58 完成正式对照、消融与统计实验](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/169) | 15 实验方案；16 完整规格；57 协同实机 |
-| [59 验收完整项目复现与个人成果展示](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/170) | 16 完整规格；55 通用模块证据；58 正式实验 |
 
-## 静态障碍物仿真实验
-
-[60 静态障碍物仿真实验规格说明书](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/171)为已经确认的规格，提供以下 12 项任务的共同要求；[本地正文](../../specs/static-obstacle-experiments.md)及[实验入口说明](../../static_obstacle_experiments.md)保存在仓库中。
+## 全项目正式实验与交付
 
 | 任务 | 直接前置 |
 |---|---|
-| [61 可重复的 S0 仿真与反馈评价](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/172) | 无 |
-| [62 共享路径参考的五维跟随](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/173) | 61 仿真与反馈 |
-| [63 单个静态障碍物的臂身避让](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/174) | 61 仿真与反馈 |
-| [64 全部非相邻连杆的 mesh 自碰撞约束](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/175) | 63 外部避障 |
-| [65 Ruckig 处理后的命令检查与进度结算](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/176) | 62 共享参考；64 自碰撞 |
-| [66 S2–S5 场景及可行性见证](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/177) | 65 执行检查 |
-| [67 构型调整与基础暂停恢复，形成 A 组](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/178) | 66 场景见证 |
-| [68 进给与关节速度联合求解，形成 B 组](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/179) | 67 A 组 |
-| [69 持续确认与渐增进给恢复，形成 C 组](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/180) | 67 A 组 |
-| [70 Generalized-SNS 外部参考，形成 E 组](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/181) | 69 改进恢复 |
-| [71 五组方法组合验证与统一周期测量](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/182) | 68 联合求解；70 外部参考 |
-| [72 正式配对实验、论文图表与复现交付](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/183) | 71 方法与周期 |
+| [58 完成三方法验证、周期测量与正式统计实验](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/169) | 15 实验方案；16 总体规格；42 逐点逆解；57 协同实机 |
+| [59 验收完整项目复现与个人成果展示](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/170) | 16 总体规格；55 通用模块证据；58 正式实验 |
 
-62 与 63 可以分别推进，68 与 69 可以分别推进。规格作为各任务的定义来源，不增加未完成前置。
+58 的前置分别提供方法实现、统一验收方案、总体要求和协同实机证据。任务内依次核查三方法共同条件、完成目标设备周期测量、固定正式清单与容量、采集及统计。测量未通过时保持开放。59 汇合控制实验、通用模块证据和总体需求，核对完整交付。
 
-当前可新领取的起始工作是“核验完整项目基线与 M01–M12 资产”“取得完整工件、路径与 MATLAB 程序资产”和“可重复的 S0 仿真与反馈评价”。外参标定已由现有 Trellis 任务承接。新增任务或改变依赖后重新核对顺序，并同步本表；GitHub 原链接始终保留。
+## 已完成的外部前置
+
+以下 19 条原生依赖指向已关闭的来源任务，当前开放阻塞数为零。它们保留原实现和决定的追溯关系。
+
+| 当前任务 | 已完成来源任务 |
+|---|---|
+| #108 | #100 |
+| #105 | #106 |
+| #101 | #109 |
+| #104 | #93、#100 |
+| #112 | #100、#107、#109 |
+| #113 | #100、#107、#109 |
+| #125 | #106、#107、#109 |
+| #132 | #85、#93、#128、#130、#131 |
+
+## 当前可推进的入口
+
+- #148 基线与 M01–M12 资产核验：没有开放前置，尚未指派。
+- #135 工件、路径与 MATLAB 资产核验：没有开放前置，尚未指派。
+- #95 激光雷达外参标定：没有开放前置，由 `lsn`（GitHub `Shiningliu1011`）继续。
+- #132 基础文档：已指派，等待 #95；#145 总体规格已指派，等待 #144、#149、#150、#151。
+
+其余 56 项主线任务均有开放前置。编号 01–57 的主线范围与相互关系保持现有定义；58、59 负责最终汇合。#171、#182、#183 已取消并移出地图，#172–#181 的完成记录见[前期证据](../../static_obstacle_experiments_handoff.md)。
+
+仓库由 `lsn` 一人跨设备使用。assignee 表示当前正在跟进的任务；未指派任务属于项目待办。

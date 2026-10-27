@@ -1,5 +1,7 @@
 # 静态实验紧凑存储
 
+本文说明现有记录格式和历史容量测量，用于读取、验证和复现已有数据。项目当前清单与容量要求由[完整项目验收任务](planning/nineaxis-full-project/dependencies.md)管理。
+
 新运行使用 SQLite 格式 3；旧 JSON 和格式 2 数据库保持可读。安装记录依赖：
 
 ```bash
@@ -102,7 +104,7 @@ python scripts/validate_static_recording_upgrade.py \
 100，生产读取入口拒绝读取这些实验文件。
 
 容量和耗时结论以[接手记录](static_obstacle_experiments_handoff.md)所指向的
-本机测量为准。S4/S5、共同周期和其他正式实验前置条件仍需分别验收。
+历史测量为准。后续复用时核对对应源码、配置和记录身份。
 
 ## 正式矩阵容量准入
 

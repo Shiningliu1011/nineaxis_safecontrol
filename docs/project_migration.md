@@ -2,12 +2,12 @@
 
 远程仓库：`https://github.com/Shiningliu1011/nineaxis_safecontrol.git`
 
-当前工作分支：`codex/static-obstacle-experiments`
+当前工作分支：`main`
 
 在主机 Codex 中打开迁移资料文件夹，发送
-[主机接手提示词](prompts/static_experiments_host_handoff.md)。
+[主机接手提示词](prompts/project_host_handoff.md)。
 提示词要求完成文件校验、项目恢复、读取接手记录、安装 skills 和环境，
-并优先验证实验数据的紧凑保存方式。
+并核对主线地图和当前可推进任务。
 长期协作方式见[双设备工作流程](two_machine_workflow.md)。
 
 ## 本次迁移资料
@@ -51,7 +51,7 @@ cd "$HOME/robot/robot_safecontrol"
 git status --short --branch
 git remote -v
 git fetch origin
-git merge --ff-only origin/codex/static-obstacle-experiments
+git merge --ff-only origin/main
 ```
 
 恢复脚本自动校验 `SHA256SUMS`，并检查目标中的同名项目尚不存在。
@@ -59,17 +59,17 @@ git merge --ff-only origin/codex/static-obstacle-experiments
 本迁移说明与双设备流程由该提交之后的远程分支提供，恢复后获取最新分支即可读取。
 如果主机已有工作区，按照[双设备流程](two_machine_workflow.md)检查并保留现有内容。
 
-## 环境与实验
+## 环境与主线接手
 
 原机器为 Ubuntu 22.04、ROS 2 Humble、Python 3.10。
 依据主机实际系统和项目固定依赖文件安装环境，重新构建原生 FCL 模块及 ROS package。
 25 个个人 skills 和 20 个项目 skills 随资料提供；安装前阅读各自说明和项目路由。
 主机已有不同版本配置时，保留现有内容并检查差异。
 
-[实验接手记录](static_obstacle_experiments_handoff.md)说明现有验证和未完成项。
-正式 1,080 次采集保持停止；必须完成存储内容一致性、容量、重放、
-异常恢复及耗时验证，并满足实验前置条件后再评估是否开始。
-实验继续限定在 sim，设备性能依据主机实际运行重新测量。
+[主线地图](planning/nineaxis-full-project/README.md)和
+[阻塞关系](planning/nineaxis-full-project/dependencies.md)说明当前任务及前置。
+设备性能依据本机实际运行测量；真实设备操作遵守对应任务的现场授权。
+[前期证据](static_obstacle_experiments_handoff.md)提供已有记录与数据身份。
 
 ## 本机验证
 

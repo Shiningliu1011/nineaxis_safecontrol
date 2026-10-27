@@ -1,17 +1,5 @@
-# 集成与证据
+# 前期能力与数据归属
 
-整个规格通过 `codex/static-obstacle-experiments` 集成。沿用已有控制、记录、
-评价、场景与正式实验模块，按验收证据确定需要补充的行为。
-任务依赖以 GitHub 原生关系为准，本地子任务映射见 `prd.md`。
+任务状态为 `cancelled`。已完成基础子任务继续保存原验收范围、来源与数据，主线 #148 核查可复用能力。
 
-`implement-spec` 调度实现和 merger 子 agent，最终使用 `code-review` 检查
-完整集成差异。每个实现 worktree 起于集成分支，提交前普通合并最新集成。
-Trellis 记录每项实际命令、结果、数据身份与剩余工作。
-
-正式采集的必要条件为存储和容量通过、S4/S5 行为通过、所需场景可行性证据
-完整、共同周期通过，以及固定配置与软件身份可核查。各条件独立保存状态。
-任何失败运行仍保留原始记录并进入相应分析。
-
-所有 sim 使用本机独立环境，原始数据位于主项目的 `output/`。
-worktree 使用明确的源码和资源入口，记录实际导入路径，新增数据另建目录。
-性能测量使用本机 Performance-core，并与其他计算密集任务串行执行。
+数据保存与读取入口见[前期证据说明](../../../docs/static_obstacle_experiments_handoff.md)，现行系统要求由[完整项目地图](../../../docs/planning/nineaxis-full-project/README.md)管理。

@@ -1,9 +1,9 @@
 {
   "id": "static-method-matrix",
   "name": "static-method-matrix",
-  "title": "#178–#182 五组方法与共同周期",
-  "description": "完成分离、联合与 Generalized-SNS 方法、两种恢复规则及全部方法完整周期测量，保存来源和正式参数选择证据",
-  "status": "in_progress",
+  "title": "三种主方法组合验证与完整周期测量",
+  "description": "已取消的静态方法与周期任务，保存已有测量证据",
+  "status": "cancelled",
   "dev_type": null,
   "scope": null,
   "package": null,
@@ -21,9 +21,9 @@
   "children": [],
   "parent": "10-20-static-obstacle-experiments",
   "relatedFiles": [],
-  "notes": "用户要求开题后继续，#182暂停。#178–181已关闭。固定源码504a274，完整周期包含同步记录与拒绝恢复。共同周期队列已停止，实际20ms A/B完整原始报告2/20，P999为60.845293/59.573316ms，均失败；B无父队列process元数据，C未启动。最终共同周期未选定。原件在原NTFS guarded-period-study-02，预算在主仓output/static-capacity-20261020/guarded-period-budgets-02。P999须全部方法不超过候选周期80%，正式清单及容量绑定尚未生成。开题资料docs/proposal-static-obstacles/包含两份失败报告及已有开发实验，身份与继续条件见正式任务research/proposal-pause.md。",
+  "notes": "2026-10-27 用户取消静态实验，GitHub #182 以 not_planned 关闭并移出 #147。全项目共同条件与周期判据由 #144 定义，三方法联调及测量由 #169 承接。",
   "meta": {
-    "execution_state": "paused_by_user",
-    "resume_condition": "用户开题结束后明确要求继续"
+    "execution_state": "cancelled",
+    "cancelled_at": "2026-10-27"
   }
 }
