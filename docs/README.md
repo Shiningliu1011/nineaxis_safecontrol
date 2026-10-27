@@ -21,7 +21,7 @@
 - [控制内核](modules/portable_oscbf.md)：模块、依赖和移植入口。
 - [MID-360 / MID-360S 驱动](modules/livox_mid360.md)：安装、设备接口和验证范围。
 - [传感器布局与标定](sensor_layout_and_calibration.md)：坐标和安装方案。
-- [雷达与相机相对外参](lidar_camera_calibration.md)：静态多姿态测量、独立验收结果与本机复现命令。
+- [雷达与相机相对外参](lidar_camera_calibration.md)：当前安装关系的标定结果、静态多姿态测量、独立验收与本机复现命令。
 
 ## 设计与实施资料
 

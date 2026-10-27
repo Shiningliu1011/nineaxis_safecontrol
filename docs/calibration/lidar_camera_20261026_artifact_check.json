@@ -1,0 +1,9 @@
+{
+  "validation_passed": true,
+  "held_out_matrix_unchanged": true,
+  "transformed_points": 927622,
+  "colored_points": 220179,
+  "serialization_max_error_m": 6.744646718204001e-07,
+  "colored_subset_max_error_m": 0.0,
+  "source_snapshots_equal": true
+}

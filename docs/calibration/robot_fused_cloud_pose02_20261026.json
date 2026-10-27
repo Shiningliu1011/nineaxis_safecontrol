@@ -1,0 +1,33 @@
+{
+  "calibration": "docs/calibration/lidar_camera_20261026.json",
+  "frame": "camera_color_optical_frame",
+  "voxel_m": 0.005,
+  "roi_min_m": [
+    -0.75,
+    -0.35,
+    0.45
+  ],
+  "roi_max_m": [
+    0.6,
+    1.15,
+    2.4
+  ],
+  "raw_lidar_points": 1742254,
+  "lidar_frames": 100,
+  "raw_camera_points": 733737,
+  "camera_roi_points": 56598,
+  "lidar_roi_points": 43063,
+  "merged_points": 99661,
+  "lidar_to_camera_nearest_distance_median_m": 0.014179347927351047,
+  "lidar_to_camera_nearest_distance_p95_m": 0.19794831431400098,
+  "display_floor_plane_in_camera": [
+    0.07887188736952312,
+    -0.9781924534248148,
+    -0.19214252378250635,
+    0.8924706688045171
+  ],
+  "time_synchronization_verified": false,
+  "base_link_transform_verified": false,
+  "static_accumulation": true,
+  "image": "picture/robot_fused_cloud_pose02_20261026.png"
+}
