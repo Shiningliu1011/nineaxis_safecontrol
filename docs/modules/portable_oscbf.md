@@ -4,6 +4,7 @@
 
 - [目录结构](portable-oscbf/structure.md)：主要文件与职责。
 - [控制管线](portable-oscbf/pipeline.md)：输入、输出和处理路径。
+- [运动学接口](portable-oscbf/kinematics.md)：POE 正运动学、PSO 逆运动学、关节范围及 mm/° 输入。
 - [外部依赖](portable-oscbf/dependencies.md)：运行和开发依赖。
 - [快速开始](portable-oscbf/quickstart.md)：安装、调用与测试。
 - [移植到新项目](portable-oscbf/porting.md)：模型、轨迹和控制框架接入。

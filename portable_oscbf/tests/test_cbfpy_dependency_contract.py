@@ -18,6 +18,7 @@ PINNED_DEPENDENCIES = {
     "jsonschema": "4.23.0",
     "ruckig": "0.12.2",
     "trimesh": "5.1.0",
+    "pymoo": "0.6.2",
 }
 CBFPY_MEMBERS = (
     "m",

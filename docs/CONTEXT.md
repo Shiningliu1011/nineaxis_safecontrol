@@ -4,6 +4,7 @@
 
 - [系统结构](domain/system.md)：状态流、过渡管线和控制入口。
 - [机器人](domain/robot.md)：关节、坐标和被控对象。
+- [单位约定](units.md)：项目输入、参数展示、报告与计算接口的单位边界。
 - [轨迹与几何](domain/trajectory-and-geometry.md)：参考轨迹与几何表示。
 - [真机部署](domain/hardware.md)：硬件模式和反馈。
 - [障碍观测](domain/observation.md)：传感器输入与覆盖。

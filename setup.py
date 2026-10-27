@@ -14,6 +14,7 @@ PORTABLE_OSCBF_RUNTIME_REQUIREMENTS = [
     "jsonschema==4.23.0",
     "ruckig==0.12.2",
     "trimesh==5.1.0",
+    "pymoo==0.6.2",
 ]
 
 

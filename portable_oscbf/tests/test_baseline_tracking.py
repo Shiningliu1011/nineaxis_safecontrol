@@ -1,19 +1,3 @@
-#!/usr/bin/env python3
-"""M5 acceptance: baseline whole-kernel path tracking (reference semantics).
-
-Runs the copied whole-kernel controller unchanged (relax_cbf=False, joint
-mid-point null space, no controller-internal clipping) for >= 3000 steps on
-the repository trajectory, asserts the M5 gates, and stores the input/output
-sequence in the test artifact directory for the M6 modular-JIT
-equivalence test.
-
-Note: M7 switched the controller to the elastic QP (relax_cbf=True) with
-controller-internal clipping and DCOL obstacle rows.  Re-running this test
-now regenerates the baseline under the current (M7+) semantics and remains a
-closed-loop regression gate; the M6 equivalence gate skips when the M7
-semantics are active.
-"""
-
 from __future__ import annotations
 
 from pathlib import Path
@@ -35,6 +19,8 @@ CURRENT_TRAJECTORY = REPO_ROOT / "data" / "nurbs" / "ik_input.mat"
 OUTPUT_PATH = TEST_OUTPUT / "baseline_tracking.npz"
 NUM_STEPS = 3000
 STEADY_START = 100
+DT_S = 0.002
+CONSTRAINT_GROUPS = ("joint_linear", "joint_angular", "self_collision", "singularity")
 
 
 def _work_start_configuration(trajectory) -> np.ndarray:
@@ -47,29 +33,14 @@ def _work_start_configuration(trajectory) -> np.ndarray:
     target_position = trajectory.pos_world_at(0.0)
     target_rotation = trajectory.orientation_at(0.0)
     kinematics = NineaxisKinematics()
-    rng = np.random.default_rng(0)
-    seeds = [np.zeros(9)]
-    lower = np.asarray(kinematics.joint_limits.q_min)
-    upper = np.asarray(kinematics.joint_limits.q_max)
-    for _ in range(24):
-        seeds.append(rng.uniform(lower + 0.1, upper - 0.1))
-
-    best_q = None
-    best_error = float("inf")
-    for seed in seeds:
-        candidate = kinematics.ik(
-            target_position, target_rotation, q_init=seed)
-        if candidate is None:
-            continue
-        error = np.linalg.norm(
-            kinematics.ee_position(candidate) - target_position)
-        if error < best_error:
-            best_error = error
-            best_q = candidate
-    assert best_q is not None, "IK failed for every seed"
-    assert best_error < 1e-3, (
-        f"IK start position error {best_error * 1000:.3f} mm")
-    return best_q
+    initial = (kinematics.joint_limits.q_min + kinematics.joint_limits.q_max) / 2.0
+    result = kinematics.solve_ik(target_position, target_rotation, q_init=initial)
+    assert result.success, (
+        f"PSO 起点误差：{result.position_error_m * 1000:.3f} mm，"
+        f"{np.rad2deg(result.rotation_error_rad):.5f} °")
+    assert result.position_error_m <= 1e-4
+    assert result.rotation_error_rad <= 1e-3
+    return result.q
 
 
 def _run_baseline() -> tuple[dict, float, float]:
@@ -77,7 +48,7 @@ def _run_baseline() -> tuple[dict, float, float]:
     geometry = trajectory.path_geometry()
     initial_q = _work_start_configuration(trajectory)
 
-    loop = JaxControlLoop(dt=0.002, temporal_lambda=0.2, enable_x64=True)
+    loop = JaxControlLoop(dt=DT_S, temporal_lambda=0.2, enable_x64=True)
     loop.configure_path(geometry, PathFollowingConfig())
     loop.init_cbf()
 
@@ -98,6 +69,8 @@ def _run_baseline() -> tuple[dict, float, float]:
     err_sequence = []
     min_dist_sequence = []
     qp_ok_sequence = []
+    reference_position_sequence = []
+    constraint_residual_sequence = []
 
     step_times = []
     for _ in range(NUM_STEPS):
@@ -114,6 +87,11 @@ def _run_baseline() -> tuple[dict, float, float]:
         err_sequence.append(np.asarray(result.err_6d))
         min_dist_sequence.append(float(result.min_obs_dist))
         qp_ok_sequence.append(bool(result.qp_ok))
+        reference_position_sequence.append(result.reference_position_m)
+        constraint_residual_sequence.append([
+            result.constraint_metrics[group + ".residual"]["value"]
+            for group in CONSTRAINT_GROUPS
+        ])
     per_step_ms = float(np.mean(step_times[1:]) * 1000.0)
 
     arrays = {
@@ -123,13 +101,15 @@ def _run_baseline() -> tuple[dict, float, float]:
         "err_6d_sequence": np.stack(err_sequence),
         "min_dist_sequence": np.asarray(min_dist_sequence),
         "qp_ok_sequence": np.asarray(qp_ok_sequence),
+        "reference_position_sequence": np.stack(reference_position_sequence),
+        "constraint_residual_sequence": np.asarray(constraint_residual_sequence),
         "initial_q": initial_q,
         "per_step_ms_steady": np.asarray(per_step_ms),
         "first_call_s": np.asarray(first_call_s),
         # Semantic tag for downstream gates (M6): the M5 hard-QP baseline and
         # the post-M7 elastic-QP baseline must never be compared against each
         # other.  Bump this string whenever the controller semantics change.
-        "semantics": np.asarray("m7_elastic_qp_v11_final"),
+        "semantics": np.asarray("m7_elastic_qp_v12_full_position_feedback"),
     }
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     np.savez(OUTPUT_PATH, **arrays)
@@ -155,17 +135,33 @@ def test_baseline_path_tracking_gates_and_artifacts():
     assert np.all(np.isfinite(err_6d))
     assert np.all(np.isfinite(min_dist))
 
-    # AC5.3: steady-state position error < 5 mm (first 100 steps excluded).
-    # v4 decouples the reference advance from the end-effector projection:
-    # the old catch-up alignment zeroed the tangential phase lag but pinned
-    # the reference to the slow projection and throttled the feed ~20x.
-    # Schedule-only advance keeps the reference on time and leaves a steady
-    # 3-5 mm tangential lag for the transverse feedback to absorb, which
-    # matches the 5-7 mm seen on the live plant.
+    # 使用 NumPy POE 从关节状态独立复算报告中的位置误差。
+    kinematics = NineaxisKinematics()
+    positions = np.array([kinematics.ee_position(q) for q in q_sequence[1:]])
+    np.testing.assert_allclose(
+        err_6d[:, :3], positions - arrays["reference_position_sequence"], atol=1e-12)
+
+    # 同时刻参考位置与末端位置的稳态误差上限为 0.5 mm。
     steady_position_error = np.linalg.norm(
         err_6d[STEADY_START:, :3], axis=1)
-    assert np.max(steady_position_error) < 5e-3, (
+    assert np.max(steady_position_error) <= 0.5e-3, (
         f"steady max position error {np.max(steady_position_error) * 1000:.3f} mm")
+
+    # 六秒内的参考进度和末端投影进度分别达到 330 mm 与 328 mm。
+    path_states = arrays["path_state_sequence"]
+    assert np.all(np.diff(path_states[:, :2], axis=0) >= -1e-12)
+    assert path_states[-1, 0] >= 0.330
+    assert path_states[-1, 1] >= 0.328
+
+    # 保留关节位置、速度和已启用 CBF 约束的验证。
+    limits = kinematics.joint_limits
+    assert np.all(q_sequence >= limits.q_min - 1e-10)
+    assert np.all(q_sequence <= limits.q_max + 1e-10)
+    assert np.all(np.abs(u_safe) <= limits.dq_max + 1e-6)
+    np.testing.assert_allclose(np.diff(q_sequence, axis=0), u_safe * DT_S, atol=1e-12)
+    residuals = arrays["constraint_residual_sequence"]
+    assert np.all(np.isfinite(residuals))
+    assert np.max(residuals) <= 1e-6
 
     # AC5.4: positive dynamic margin throughout.
     assert np.all(min_dist > 0.0), (

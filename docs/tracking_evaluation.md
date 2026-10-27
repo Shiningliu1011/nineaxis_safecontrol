@@ -49,6 +49,36 @@ OFF-15 的评价器是纯 Python / NumPy 模块，不发布控制命令。主入
 
 一步记录对「本来就可能不适用」的槽位带显式状态位：`min_obs_dist_measured`、`min_esdf_dist_measured`。障碍或 ESDF 未启用时内核仍然填占位距离，状态位是内核侧「这不是观测」的表示。节点在交给评价器的样本里据状态位把 `min_obs_dist` 置为缺失（`None`），所以占位值不会进入统计；`min_esdf_dist` 目前没有消费方，节点不在返回样本里做同样的置空，将来读它的人必须自己先查 `min_esdf_dist_measured`。其余槽位（末端位姿、任务误差、耗时）每一步都有值，不加状态位。
 
+## 控制内核位置精度回归
+
+`portable_oscbf/tests/test_baseline_tracking.py` 对仓库轨迹
+`data/nurbs/ik_input.mat` 执行 3000 步模型闭环，控制周期为 2 ms。
+使用 `pose6d`、x64、PSO 起点、`kp_pos=60`、`kp_orient=10`、
+`damping=1e-3` 与 `temporal_lambda=0.2`。参考领先上限为 10 mm；
+外部障碍与 ESDF 未启用。
+
+位置指标为每一步积分后的末端位置与该步参考位置的三维距离。
+NumPy POE 从记录的关节状态独立复算该距离。
+稳态统计排除起始 100 步，其余 2900 步的最大误差要求 **≤0.5 mm**。
+同时检查 3000 次 QP 全部成功、关节位置与速度限值、已启用 CBF 约束残差、
+状态积分一致性，以及六秒内参考进度至少 330 mm、末端投影进度至少 328 mm。
+
+2026-10-27 本机结果：稳态最大误差 **0.15281 mm**、RMS **0.11133 mm**，
+包含起始阶段的全部 3000 步最大误差也是 **0.15281 mm**。
+最终参考进度 **332.76271 mm**、末端投影进度 **332.84736 mm**；
+全部关节限值与 QP 检查通过。原始记录保存在
+`.scratch/tracking-precision/baseline-after/baseline_tracking.npz`。
+该结果覆盖六秒模型闭环；整条路径和执行器反馈分别使用对应的完整区间检查。
+
+`portable_oscbf/tests/test_jax_path_position_feedback.py` 使用关节范围内的
+J1 平移生成可达路径，在 `pose6d` 与 `tool_axis_5d` 两种模式下，
+分别检查 3 mm 超前与 3 mm 滞后的误差收敛，并保留实际 QP、POE 与关节限值检查。
+
+本次 53 项相关回归检查通过，包含路径采样与推进、两种任务模式、姿态参考、
+3000 步逐步回放、停滞处理、终点保持、共享参考、QP 速度变化约束和 ESDF。
+日志保存在 `.scratch/tracking-precision/`。运行停滞日志检查时使用
+`pytest -p no:logging`，由 `capsys` 读取真实 logging 输出到 stderr 的消息。
+
 ## 预先声明子区间的例子
 
 下面声明只验证 1 米路径中的 0.6–1 米。区间对象在采样后不可改写；第一条样本必须覆盖声明起点。若输入是执行一步后的状态，可附 `projection_before_m` 记录第一步的实际初始投影。比较只允许浮点舍入量 `64 * ulp(max(1, total_length_m))`，不使用新增任务误差来掩盖跳过的路径。

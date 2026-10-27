@@ -554,15 +554,8 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
                 cap_qdot_null = nullspace_policy.nullspace_velocity(
                     q, full_jacobian, cap_jacobian_hash, cap_null_projector,
                     robot.joint_max_velocities)
-            tangent_error = sample.tangent * jnp.dot(
-                sample.tangent, cap_pos_err)
-            transverse_pos_err = cap_pos_err - tangent_error
-            position_feedback_error = jnp.where(
-                sample.at_endpoint, cap_pos_err,
-                transverse_pos_err + sample.tangent * jnp.maximum(
-                    jnp.dot(sample.tangent, cap_pos_err), 0.0))
-            if shared_path_reference:
-                position_feedback_error = cap_pos_err
+            # 切向与横向误差均参与位置反馈，进给上限包含相同的修正速度。
+            position_feedback_error = cap_pos_err
             # Saturate the position correction at a small arc-length radius:
             # beyond it the pull-back speed stays bounded (kp * sat) instead
             # of growing with the error, so a transient that exceeds the
@@ -655,14 +648,7 @@ def build_jax_control_kernels(*, cbf, robot, controller_config, dt,
                 ee_pos, ee_rot, full_jacobian, sample, orientation)
             pos_err = task_error[:3]
             orientation_err = task_error[3:]
-            tangent_error = sample.tangent * jnp.dot(sample.tangent, pos_err)
-            transverse_pos_err = pos_err - tangent_error
-            position_feedback_error = jnp.where(
-                sample.at_endpoint, pos_err,
-                transverse_pos_err + sample.tangent * jnp.maximum(
-                    jnp.dot(sample.tangent, pos_err), 0.0))
-            if shared_path_reference:
-                position_feedback_error = pos_err
+            position_feedback_error = pos_err
             fb_norm = jnp.linalg.norm(position_feedback_error)
             fb_scale = jnp.where(
                 fb_norm > _POSITION_FB_SATURATION_M,

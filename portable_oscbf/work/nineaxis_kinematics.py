@@ -1,15 +1,8 @@
-#!/usr/bin/env python3
-"""
-nineaxis_kinematics.py
-======================
-九轴机械臂运动学: POE 正运动学、螺旋轴雅可比、牛顿-拉夫森逆运动学。
-
-依赖: numpy, scipy
-"""
-
 import numpy as np
 
 from work.actuator_limits import load_actuator_limit_profile
+from work.particle_swarm_ik import ParticleSwarmResult, solve_particle_swarm
+from work.robot_units import joints_mm_deg_to_si, joints_si_to_mm_deg
 from scipy.spatial.transform import Rotation as R
 from typing import List, Dict, Tuple, Optional
 from dataclasses import dataclass
@@ -20,11 +13,9 @@ class JointLimits:
     """
     关节限位。
 
-    q_min/q_max: 位置限位 (J1: m, J2-J9: rad) — 与 C++/YAML 对齐。
-    dq_max/ddq_max: 电机规格限位 (rad/s, rad/s²), 反映实际电机能力。
-        Python 仿真使用这些宽松限位。C++ 使用更保守的仿真限位:
-          dq_sim = [±0.30, ±1.5, ±1.5, ±1.5, ±1.5, ±1.5, ±1.5, ±1.5, ±1.5]
-          ddq_sim = [±1.0, ±4.0, ±4.0, ±4.0, ±4.0, ±4.0, ±4.0, ±4.0, ±4.0]
+    q_min/q_max: J1 使用 m，J2–J9 使用 rad。
+    dq_max/ddq_max: J1 使用 m/s、m/s²，J2–J9 使用 rad/s、rad/s²。
+    速度与加速度限位读取执行器配置；项目展示时转换为 mm/° 对应单位。
     """
     q_min: np.ndarray   # 9, rad (J1: m)
     q_max: np.ndarray
@@ -159,7 +150,6 @@ def _axis_from_pi_rotation(R_mat: np.ndarray) -> np.ndarray:
 def se3_log(T: np.ndarray) -> np.ndarray:
     """SE(3) 对数映射: 4×4 齐次变换 → 空间旋量 [omega; v] (参照 se3_log.m)
 
-    用于空间系 NR IK 的 SE(3) 误差 xi = se3_log(T_target @ T_cur^{-1})。
     处理 theta≈0 (纯平移) 与 theta≈π (退化) 两种情形。
     """
     R_mat = T[:3, :3]
@@ -316,10 +306,18 @@ class NineaxisKinematics:
     # 末端执行器
     # ================================================================
     def ee_pose(self, q: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-        """末端执行器位姿 → (pos 3D, rot 3×3)"""
+        """内部 SI 接口：q 使用 m/rad，返回位置 m 和无量纲旋转矩阵。"""
         # 直接用 POE: T_ee = exp(S1q1)*...*exp(S9q9) * M
         T_ee = self._compute_ee_pose(q)
         return T_ee[:3, 3].copy(), T_ee[:3, :3].copy()
+
+    def ee_pose_mm_deg(self, q_mm_deg: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        """项目输入接口：J1 使用 mm，J2–J9 使用度，返回位置 mm 和旋转矩阵。"""
+        q = joints_mm_deg_to_si(q_mm_deg)
+        if q.shape != (N_JOINTS,):
+            raise ValueError("q_mm_deg 必须为包含 9 个关节的向量")
+        position, rotation = self.ee_pose(q)
+        return position * 1000.0, rotation
 
     def _compute_ee_pose(self, q: np.ndarray) -> np.ndarray:
         """POE: T_ee = exp(S1q1)*...*exp(S9q9) @ M"""
@@ -327,6 +325,32 @@ class NineaxisKinematics:
         for i in range(N_JOINTS):
             T = T @ _twist_exp(self._S_list[i], q[i])
         return T @ self.M
+
+    def _compute_ee_poses(self, q: np.ndarray) -> np.ndarray:
+        """批量 POE 正运动学；输入形状为 (N, 9)，内部使用 m/rad。"""
+        q = np.asarray(q, dtype=float)
+        if q.ndim != 2 or q.shape[1] != N_JOINTS or not np.all(np.isfinite(q)):
+            raise ValueError("q 必须为有限的 (N, 9) 关节配置")
+        transforms = np.broadcast_to(np.eye(4), (len(q), 4, 4)).copy()
+        for index, screw in enumerate(self._S_list):
+            motion = np.broadcast_to(np.eye(4), (len(q), 4, 4)).copy()
+            omega, velocity = screw[:3], screw[3:]
+            if np.linalg.norm(omega) < 1e-12:
+                motion[:, :3, 3] = q[:, index, None] * velocity
+            else:
+                skew = _skew(omega)
+                rotation = (
+                    np.eye(3)
+                    + np.sin(q[:, index, None, None]) * skew
+                    + (1.0 - np.cos(q[:, index, None, None])) * (skew @ skew)
+                )
+                motion[:, :3, :3] = rotation
+                motion[:, :3, 3] = (
+                    (np.eye(3) - rotation) @ np.cross(omega, velocity)
+                    + q[:, index, None] * omega * np.dot(omega, velocity)
+                )
+            transforms = transforms @ motion
+        return transforms @ self.M
 
     def ee_position(self, q: np.ndarray) -> np.ndarray:
         return self.ee_pose(q)[0]
@@ -432,73 +456,45 @@ class NineaxisKinematics:
         return np.diag(1.0 / np.diag(self.mass_matrix(q)))
 
     # ================================================================
-    # 牛顿-拉夫森逆运动学
+    # 粒子群逆运动学
     # ================================================================
-    def ik(self, target_pos: np.ndarray, target_R: Optional[np.ndarray] = None,
-           q_init: Optional[np.ndarray] = None, max_iter: int = 200,
-           tol_pos: float = 1e-4, tol_rot: float = 1e-3,
-           damping: float = 0.001) -> Optional[np.ndarray]:
-        """
-        牛顿-拉夫森 IK (阻尼最小二乘)。
-
-        q_{k+1} = q_k + J^T (J J^T + λ²I)^{-1} e
-        """
+    def solve_ik(self, target_pos: np.ndarray, target_R: Optional[np.ndarray] = None,
+                 q_init: Optional[np.ndarray] = None, max_iter: int = 1500,
+                 tol_pos: float = 1e-4, tol_rot: float = 1e-3, *,
+                 swarm_size: int = 128, seed: int = 0) -> ParticleSwarmResult:
+        """PSO 求解及诊断；位置单位 m，关节单位 m/rad，姿态容差单位 rad。"""
         if q_init is None:
             q_init = np.zeros(N_JOINTS)
-        q = q_init.copy()
-        q = np.clip(q, self.joint_limits.q_min, self.joint_limits.q_max)
+        return solve_particle_swarm(
+            self._compute_ee_poses, target_pos, target_R, q_init,
+            self.joint_limits.q_min, self.joint_limits.q_max,
+            max_iter=max_iter, tol_pos=tol_pos, tol_rot=tol_rot,
+            swarm_size=swarm_size, seed=seed,
+        )
 
-        best_q = q.copy()
-        best_err = float('inf')
+    def ik(self, target_pos: np.ndarray, target_R: Optional[np.ndarray] = None,
+           q_init: Optional[np.ndarray] = None, max_iter: int = 1500,
+           tol_pos: float = 1e-4, tol_rot: float = 1e-3, *,
+           swarm_size: int = 128, seed: int = 0) -> Optional[np.ndarray]:
+        """内部 SI 接口；位置和姿态分别满足容差时返回关节解，否则返回 None。"""
+        result = self.solve_ik(
+            target_pos, target_R, q_init, max_iter, tol_pos, tol_rot,
+            swarm_size=swarm_size, seed=seed,
+        )
+        return result.q.copy() if result.success else None
 
-        for _ in range(max_iter):
-            T_ee = self._compute_ee_pose(q)
-            pos = T_ee[:3, 3]
-            rot = T_ee[:3, :3]
-
-            dp = target_pos - pos
-            if target_R is not None:
-                # SE(3) 空间系误差 [omega; v] (参照 ik_nr_spatial.m: se3_log(T_target/T_cur))
-                # 配空间雅可比 J_s=[omega; v], 顺序与坐标系一致。
-                T_target = np.eye(4)
-                T_target[:3, :3] = target_R
-                T_target[:3, 3] = target_pos
-                error = se3_log(T_target @ np.linalg.inv(T_ee))
-                J = self.compute_spatial_jacobian_world(q)
-            else:
-                # 位置 IK: 末端位置雅可比 J_pos = J_s[3:] - skew(p_ee)·J_s[:3]
-                # 配末端位置误差 dp。注意 J_s[3:] 是空间线速度, 不等于末端线速度,
-                # 必须用 compute_position_jacobian (旧代码误用 J_s[3:] 导致不收敛)。
-                error = dp
-                J = self.compute_position_jacobian(q)
-
-            err_norm = np.linalg.norm(error)
-            if err_norm < best_err:
-                best_err = err_norm
-                best_q = q.copy()
-            if err_norm < tol_pos:
-                break
-
-            # 阻尼伪逆: J^T (J J^T + λ²I)^{-1}
-            m = J.shape[0]
-            JJT = J @ J.T + damping * np.eye(m)
-            dq = J.T @ np.linalg.solve(JJT, error)
-
-            # 线搜索
-            alpha = 1.0
-            for _ in range(10):
-                q_new = q + alpha * dq
-                q_new = np.clip(q_new, self.joint_limits.q_min, self.joint_limits.q_max)
-                T_new = self._compute_ee_pose(q_new)
-                err_new = np.linalg.norm(target_pos - T_new[:3, 3])
-                if err_new < err_norm:
-                    break
-                alpha *= 0.5
-
-            q = q + alpha * dq
-            q = np.clip(q, self.joint_limits.q_min, self.joint_limits.q_max)
-
-        return best_q
+    def ik_mm_deg(self, target_pos_mm: np.ndarray, target_R: Optional[np.ndarray] = None,
+                  q_init_mm_deg: Optional[np.ndarray] = None, max_iter: int = 1500,
+                  tol_pos_mm: float = 0.1, tol_rot_deg: float = np.rad2deg(1e-3), *,
+                  swarm_size: int = 128, seed: int = 0) -> Optional[np.ndarray]:
+        """项目输入接口；位置使用 mm，关节输入和结果使用 mm/°，姿态容差使用度。"""
+        q_init = None if q_init_mm_deg is None else joints_mm_deg_to_si(q_init_mm_deg)
+        result = self.ik(
+            np.asarray(target_pos_mm, dtype=float) / 1000.0, target_R, q_init,
+            max_iter, tol_pos_mm / 1000.0, np.deg2rad(tol_rot_deg),
+            swarm_size=swarm_size, seed=seed,
+        )
+        return None if result is None else joints_si_to_mm_deg(result)
 
     def ik_multiple(self, target_positions: List[np.ndarray],
                     q_init: Optional[np.ndarray] = None) -> List[np.ndarray]:
@@ -506,13 +502,12 @@ class NineaxisKinematics:
             q_init = np.zeros(N_JOINTS)
         solutions = []
         q_prev = q_init
-        for pos in target_positions:
+        for index, pos in enumerate(target_positions):
             q_sol = self.ik(pos, q_init=q_prev)
-            if q_sol is not None:
-                solutions.append(q_sol)
-                q_prev = q_sol
-            else:
-                solutions.append(q_prev.copy())
+            if q_sol is None:
+                raise RuntimeError(f"第 {index} 个轨迹目标未在 PSO 搜索预算内满足位置容差")
+            solutions.append(q_sol)
+            q_prev = q_sol
         return solutions
 
 
@@ -524,20 +519,20 @@ if __name__ == "__main__":
 
     q_zero = np.zeros(9)
     pos, rot = kin.ee_pose(q_zero)
-    print(f"POE 零位 EE 位置: [{pos[0]:.4f}, {pos[1]:.4f}, {pos[2]:.4f}] m")
-    print(f"POE 零位 EE 姿态 (RPY): {R.from_matrix(rot).as_euler('xyz')}")
+    print(f"POE 零位 EE 位置: {np.round(pos * 1000.0, 4)} mm")
+    print(f"POE 零位 EE 姿态 (RPY): {R.from_matrix(rot).as_euler('xyz', degrees=True)} °")
 
     # FK 全连杆
     T_all = kin.forward_kinematics(q_zero)
     for name in LINK_NAMES:
-        p = T_all[name][:3, 3]
-        print(f"  {name:10s}: pos=[{p[0]:.4f} {p[1]:.4f} {p[2]:.4f}]")
+        p = T_all[name][:3, 3] * 1000.0
+        print(f"  {name:10s}: pos=[{p[0]:.4f} {p[1]:.4f} {p[2]:.4f}] mm")
 
     # J1 方向验证
     q1 = np.zeros(9); q1[0] = 0.1
     pos1, _ = kin.ee_pose(q1)
-    delta = pos1 - pos
-    print(f"\nJ1=0.1 → delta=[{delta[0]:.4f} {delta[1]:.4f} {delta[2]:.4f}] (应沿世界 Z)")
+    delta = (pos1 - pos) * 1000.0
+    print(f"\nJ1=100 mm → delta=[{delta[0]:.4f} {delta[1]:.4f} {delta[2]:.4f}] mm (沿世界 Z)")
 
     # 雅可比验证
     J_pos = kin.compute_position_jacobian(q_zero)
@@ -547,9 +542,9 @@ if __name__ == "__main__":
     print(f"Manipulability: {kin.singularity_index(q_zero):.6f}")
 
     # IK 测试
-    print(f"\nNewton-Raphson IK → 目标=零位EE")
+    print("\nPSO IK → 目标=零位 EE")
     q_ik = kin.ik(pos)
     if q_ik is not None:
         pos_ik, _ = kin.ee_pose(q_ik)
         err = np.linalg.norm(pos_ik - pos)
-        print(f"  IK 误差: {err:.2e} m  q={np.round(q_ik, 3)}")
+        print(f"  IK 误差: {err * 1000.0:.2e} mm  q [mm/°]={np.round(joints_si_to_mm_deg(q_ik), 3)}")

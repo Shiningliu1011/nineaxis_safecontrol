@@ -104,31 +104,17 @@ def _resolve_dir(default_relative: str) -> Path:
 
 
 def _work_start_configuration(trajectory) -> np.ndarray:
-    """IK the trajectory start pose (mirrors the M5 baseline runner)."""
+    """使用 PSO 求解轨迹起始位姿，返回控制内核的 m/rad 关节配置。"""
     target_position = trajectory.pos_world_at(0.0)
     target_rotation = trajectory.orientation_at(0.0)
     kinematics = NineaxisKinematics()
-    rng = np.random.default_rng(0)
-    seeds = [np.zeros(9)]
-    lower = np.asarray(kinematics.joint_limits.q_min)
-    upper = np.asarray(kinematics.joint_limits.q_max)
-    for _ in range(24):
-        seeds.append(rng.uniform(lower + 0.1, upper - 0.1))
-    best_q = None
-    best_error = float("inf")
-    for seed in seeds:
-        candidate = kinematics.ik(target_position, target_rotation, q_init=seed)
-        if candidate is None:
-            continue
-        error = float(np.linalg.norm(
-            kinematics.ee_position(candidate) - target_position))
-        if error < best_error:
-            best_error = error
-            best_q = candidate
-    if best_q is None or best_error > 1e-3:
+    initial = (kinematics.joint_limits.q_min + kinematics.joint_limits.q_max) / 2.0
+    result = kinematics.solve_ik(target_position, target_rotation, q_init=initial)
+    if not result.success:
         raise RuntimeError(
-            f"IK failed to reach trajectory start (best error {best_error:.4f} m)")
-    return np.asarray(best_q, dtype=np.float64)
+            f"PSO 未满足轨迹起点容差：位置 {result.position_error_m * 1000.0:.4f} mm，"
+            f"姿态 {np.rad2deg(result.rotation_error_rad):.4f} °")
+    return np.asarray(result.q, dtype=np.float64)
 
 
 class PerceptionDemo(Node):

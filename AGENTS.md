@@ -16,6 +16,7 @@ ROS 2 Humble / MoveIt2 / MuJoCo 的九轴仿真闭环，控制内核位于 `port
 - 笔记本与台式机交替开发：按 `docs/two_machine_workflow.md` 获取远程更新、保存接手记录并同步当前工作；首次迁移见 `docs/project_migration.md`。
 - 控制内核依赖：查 `docs/modules/portable_oscbf.md`；生产配置和入口说明：查 `config/oscbf_controller.yaml` 与 `docs/PROJECT_GUIDE.md`。
 - 领域词汇、坐标语义和既有设计：查 `docs/CONTEXT.md` 与相关 `docs/adr/`，区分设计目标与实际完成进度。
+- 涉及输入、参数展示、报告或单位换算时，遵守 `docs/units.md`：项目使用 mm/°，ROS、URDF、碰撞与控制内核使用 m/rad，接口边界明确转换并标注单位。
 - ROS topic/QoS、关节身份/顺序、共享轨迹变换分别以 `src/robot_safecontrol_moveit/ros_conventions.py`、`robot_spec.py`、`oscbf_trajectory.py` 为规范来源。
 - 参数与接口教训按主题检索 `docs/LESSONS_LEARNED.md`；代码审查参考 `docs/CODING_STANDARDS.md`。
 - 需要 tracker 或领域文档操作时才读 `docs/agents/issue-tracker.md`、`docs/agents/domain.md`。

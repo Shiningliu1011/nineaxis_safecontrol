@@ -42,22 +42,13 @@ def _ik_path_start(trajectory) -> np.ndarray:
     kin = NineaxisKinematics()
     target_pos = trajectory.pos_world_at(0.0)
     target_rot = trajectory.orientation_at(0.0)
-    rng = np.random.default_rng(0)
-    seeds = [np.zeros(9)]
-    lower = np.asarray(kin.joint_limits.q_min)
-    upper = np.asarray(kin.joint_limits.q_max)
-    for _ in range(24):
-        seeds.append(rng.uniform(lower + 0.1, upper - 0.1))
-    best_q, best_err = None, float("inf")
-    for seed in seeds:
-        candidate = kin.ik(target_pos, target_rot, q_init=seed)
-        if candidate is None:
-            continue
-        err = float(np.linalg.norm(kin.ee_position(candidate) - target_pos))
-        if err < best_err:
-            best_err, best_q = err, candidate
-    assert best_q is not None
-    return best_q
+    initial = (kin.joint_limits.q_min + kin.joint_limits.q_max) / 2.0
+    result = kin.solve_ik(target_pos, target_rot, q_init=initial)
+    if not result.success:
+        raise RuntimeError(
+            f"PSO 起点误差：{result.position_error_m * 1000:.3f} mm，"
+            f"{np.rad2deg(result.rotation_error_rad):.5f} °")
+    return result.q
 
 
 def _orientation_error_6d(ee_rot: np.ndarray, des_rot: np.ndarray) -> np.ndarray:

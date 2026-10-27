@@ -1,0 +1,54 @@
+{
+  "id": "laser-tracker-calibration-preparation",
+  "name": "laser-tracker-calibration-preparation",
+  "title": "激光跟踪仪零位标定准备",
+  "description": "形成覆盖现场采集、离线求解与独立验收的标定准备方案，并记录需要后续决定的事项",
+  "status": "planning",
+  "dev_type": null,
+  "scope": "calibration",
+  "package": null,
+  "priority": "P2",
+  "creator": "Lsn",
+  "assignee": "Lsn",
+  "createdAt": "2026-10-26",
+  "completedAt": null,
+  "branch": "codex/static-obstacle-experiments",
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [
+    "docs/planning/laser-tracker-calibration/README.md",
+    "docs/planning/laser-tracker-calibration/decisions.md",
+    "docs/planning/laser-tracker-calibration/field-preparation.md",
+    "docs/planning/laser-tracker-calibration/offline-design.md",
+    "docs/README.md"
+  ],
+  "notes": "用户已确认完整准备方案的范围，并说明设备、安装座和测量数据均未具备。两项研究完成，精度、设备、基准、采样和验收决定仍开放。当前使用本地规划资料，正式项目归属沿用完整项目地图。",
+  "meta": {
+    "delivery_kind": "planning_documents",
+    "github_map": 147,
+    "related_issues": [136, 165],
+    "method": "wayfinder",
+    "workflow_owner": "trellis",
+    "tracker_publication": "local_draft",
+    "decision_dependencies": {
+      "project-interfaces": [],
+      "measurement-observability": [],
+      "accuracy-and-workspace": [],
+      "equipment-evidence": [],
+      "reference-and-target": [
+        "project-interfaces",
+        "measurement-observability",
+        "accuracy-and-workspace",
+        "equipment-evidence"
+      ],
+      "dataset-and-sampling": ["reference-and-target"],
+      "solver-and-validation": ["dataset-and-sampling"]
+    },
+    "resolved_research": ["project-interfaces", "measurement-observability"]
+  }
+}

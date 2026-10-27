@@ -17,6 +17,7 @@
 ## 模块与领域
 
 - [领域词汇](CONTEXT.md)：系统结构、机器人、轨迹、观测和安全要求。
+- [全项目单位约定](units.md)：项目输入与报告的 mm/°、计算内核的 m/rad 及边界换算。
 - [控制内核](modules/portable_oscbf.md)：模块、依赖和移植入口。
 - [MID-360 / MID-360S 驱动](modules/livox_mid360.md)：安装、设备接口和验证范围。
 - [传感器布局与标定](sensor_layout_and_calibration.md)：坐标和安装方案。
@@ -30,6 +31,7 @@
 - [静态实验紧凑存储](static_experiment_storage.md)：无损记录、旧数据转换、按需数组及恢复验证。
 - [2026-10-20 主机恢复](host_recovery_20261020.md)：环境、skills、字体、资料身份和验证入口。
 - [九轴曲面作业完整项目](planning/nineaxis-full-project/README.md)：M01–M12、QP/MPC、系统集成、实机实验与个人项目成果的 Wayfinder 入口。
+- [激光跟踪仪零位标定准备](planning/laser-tracker-calibration/README.md)：测量条件、可辨识性、现场采集、离线求解与独立验收的本地规划资料。
 - [设计决定](adr/)：按编号阅读已记录的决定。
 - [规格](specs/)：各主题的详细要求。
 - [复用研究索引](planning/oscbf-reuse/README.md)：研究、交接和验证证据。

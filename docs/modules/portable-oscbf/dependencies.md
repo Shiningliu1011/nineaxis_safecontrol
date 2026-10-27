@@ -7,6 +7,7 @@
 | `cbfpy` | CBF 框架 (CBFConfig, CBF 类) | ✅ 核心 |
 | `numpy` | 数组操作 | ✅ 核心 |
 | `scipy` | 旋转, 稀疏矩阵, .mat 加载 | ✅ 核心 |
+| `pymoo` | 有界 PSO 逆运动学搜索 | ✅ 运动学 |
 | `python-fcl` | FCL 距离/碰撞查询 | ✅ 碰撞检测 |
 | `trimesh` | STL 网格加载 | ✅ 碰撞检测 |
 | `osqp` | OSQP QP 求解器 (legacy 路径) | ⚠️ 可选 |
@@ -21,6 +22,8 @@
 `setup.py`。
 
 参数加载依赖 `jsonschema==4.23.0`，同样记录在运行依赖清单与 `setup.py` 中。加载完成后，JSON Schema 校验不进入控制周期。
+
+离线逆运动学使用 `pymoo==0.6.2` 的 PSO，版本同时记录在运行依赖清单与 `setup.py`。每次求解使用独立随机数生成器，固定 `seed` 可重复搜索结果。接口见[运动学说明](kinematics.md)。
 
 仿真执行器使用 `ruckig==0.12.2`，版本同时记录在运行依赖清单与 `setup.py`。
 每次位置目标更新保留当前速度和加速度，并使用本地 state-to-state 计算。
