@@ -7,3 +7,7 @@
 # picking either side (task state lives in task.json, not index.md). See
 # .trellis/spec/cli/backend/directory-structure.md for details.
 .trellis/workspace/*/journal-*.md merge=union
+
+# 原始数值样本保留 CRLF 行尾及逐字节身份。
+tests/data/pipe_assets/*.csv -text whitespace=cr-at-eol
+tests/data/pipe_assets/*.txt -text whitespace=cr-at-eol

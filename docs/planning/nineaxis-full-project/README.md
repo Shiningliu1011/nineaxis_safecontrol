@@ -10,6 +10,8 @@
 - [需求与模块覆盖](coverage.md)：需求、决定、实现和验收的对应。
 - [任务编号与依赖](dependencies.md)：59 项主线任务的连续编号、主要依赖图、全部直接前置和可领取入口。
 - [事实依据](requirements-evidence.md)：当前控制代码、NURBS ZIP 参数与独立核查、实验状态和数据保存。
+- [基线核验](baseline-audit.md)：当前 M01–M12 能力、实际运行与待补充输入。
+- [原始资产与 Python 运行核验](asset-inventory.md)：来源身份、资料包、真实样本与完整生成证据；[Python 使用说明](../../pipe_assets.md)。
 - [电机与 NURBS 约束数值依据](motor-nurbs-constraint-limits-research.md)：厂家能力条件、源程序限制、独立数值核验及尚待确定的研究参数。
 - [地图维护验证](verification-20261027.md)：原生关系、取消状态、文档与本地远程同步检查。
 - [前期工作证据](../../static_obstacle_experiments_handoff.md)：已完成基础能力、原始记录和复用范围。
@@ -19,7 +21,7 @@
 
 开放任务从地图的原生子 issue 查询，原生 blocking 表示前置关系。开放、没有开放前置且未指派的任务可以领取。标题按依赖使用 01–59 编号，GitHub issue 编号和评论保持永久身份。
 
-当前可独立开始的工作为[核验完整项目基线与 M01–M12 资产](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/148)和[取得完整工件、路径与 MATLAB 程序资产](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/135)。标定和基础文档沿用现有指派。MPC 的数学模型、求解器与周期由[联合预测模型与求解方案](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/150)研究确定。
+[核验完整项目基线与 M01–M12 资产](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/148)和[取得完整工件、路径与 MATLAB 程序资产](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/135)已完成本轮核验与运行交付。新的可领取入口为[[04] 完整项目技术复用与实施依赖（需你拍板）](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/149)及[[05] M02 九轴模型、TCP 与标定接口（需你拍板）](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/136)。两项均需要用户参与决定。标定和基础文档沿用现有指派。MPC 的数学模型、求解器与周期由[联合预测模型与求解方案](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/150)研究确定。
 
 总体规格保持开放，负责参数、决定与验收对应的完整性核对。三方法的共同条件、周期判据、正式规模与统计定义由 #144 确认，#169 负责三方法联调、完整周期测量、正式采集和统计。#169 的直接前置为 #110、#144、#145、#168。
 

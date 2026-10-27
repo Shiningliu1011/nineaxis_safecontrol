@@ -1,0 +1,87 @@
+{
+  "source_archive": "NURBS曲线.zip",
+  "source_archive_sha256": "907fbfc97e961aca04e83b69b8a38839aff2e4f6e32e98c8e89f7a2c1d06e58d",
+  "length_unit": "mm",
+  "angle_unit": "rad",
+  "time_unit": "s",
+  "files": [
+    {
+      "file": "pipe_path_20261013_170314.mat",
+      "member": "NURBS曲线/DiYiJieDuan/shiyanjianmo/jianmo_guiji/yilaixiang/jiemian/lujing/pipe_path_20261013_170314.mat",
+      "bytes": 64945,
+      "sha256": "c6d721a922d86d39382f8aa498b4d3c872b311fe86c5e6fd0e6c85413fa20c0c"
+    },
+    {
+      "file": "pipe_path_20261013_170314.csv",
+      "member": "NURBS曲线/DiYiJieDuan/shiyanjianmo/jianmo_guiji/yilaixiang/jiemian/lujing/pipe_path_20261013_170314.csv",
+      "bytes": 117684,
+      "sha256": "8da5570d2144c94a5568299f42c9b11e0f794c82246743e64ff0805d9b6c58ac"
+    },
+    {
+      "file": "pipe_path_20261013_180806.mat",
+      "member": "NURBS曲线/DiYiJieDuan/shiyanjianmo/jianmo_guiji/yilaixiang/jiemian/lujing/pipe_path_20261013_180806.mat",
+      "bytes": 75383,
+      "sha256": "884a9006c301e06317aca28d3d1729a595cfef5297f5b02c836e9ffde4490529"
+    },
+    {
+      "file": "pipe_path_20261013_180806.csv",
+      "member": "NURBS曲线/DiYiJieDuan/shiyanjianmo/jianmo_guiji/yilaixiang/jiemian/lujing/pipe_path_20261013_180806.csv",
+      "bytes": 137672,
+      "sha256": "53456d80f979237e1633a97dc7c86b76fb79de550e953a76804db411607f28e4"
+    },
+    {
+      "file": "pipe_path_20261014_165040.mat",
+      "member": "NURBS曲线/DiYiJieDuan/shiyanjianmo/jianmo_guiji/yilaixiang/jiemian/lujing/pipe_path_20261014_165040.mat",
+      "bytes": 116761,
+      "sha256": "3bf36aab1211f34b236827220eda18a9f8278896f0c27538bd688c0bc29b6c49"
+    },
+    {
+      "file": "pipe_path_20261014_165040.csv",
+      "member": "NURBS曲线/DiYiJieDuan/shiyanjianmo/jianmo_guiji/yilaixiang/jiemian/lujing/pipe_path_20261014_165040.csv",
+      "bytes": 217349,
+      "sha256": "4e5389dcb0ef58344289b654f3960330c95d6ee51a4d44c8a9e5382c07660334"
+    },
+    {
+      "file": "control_points.txt",
+      "member": "NURBS曲线/DiYiJieDuan/shiyanjianmo/jianmo_guiji/yilaixiang/jiemian/lujing/nihe_yilai/nurbs_nihe/control_points.txt",
+      "bytes": 25483,
+      "sha256": "b78e940f344e987ac2624e328d7be0a7972a30f0f83ff49ffdebbed08fc53b88"
+    },
+    {
+      "file": "knot_vector.txt",
+      "member": "NURBS曲线/DiYiJieDuan/shiyanjianmo/jianmo_guiji/yilaixiang/jiemian/lujing/nihe_yilai/nurbs_nihe/knot_vector.txt",
+      "bytes": 8583,
+      "sha256": "08c33b190a07b290b73793f609e9f586763d9907ec700b460c35f8c03d3fcbcd"
+    },
+    {
+      "file": "curve_data.csv",
+      "member": "NURBS曲线/DiYiJieDuan/shiyanjianmo/jianmo_guiji/yilaixiang/jiemian/lujing/nihe_yilai/nurbs_nihe/curve_data.csv",
+      "bytes": 298500,
+      "sha256": "f1a870705f2f97454e8ee50f51022f3b4349a2e8e5056f29dd6eebab6cfdae92"
+    },
+    {
+      "file": "nurbs_blocks.mat",
+      "member": "NURBS曲线/DiYiJieDuan/shiyanjianmo/jianmo_guiji/yilaixiang/jiemian/lujing/nihe_yilai/nurbs_nihe/sudu_yilai/sudu_fenpei/nurbs_blocks.mat",
+      "bytes": 300639,
+      "sha256": "7f7295cb7b7bf2b73b2b0e07f4e555a4cdbec4815cdd516982edd7dc8c63a4d0"
+    },
+    {
+      "file": "realtime_interpolation_results.mat",
+      "member": "NURBS曲线/DiYiJieDuan/shiyanjianmo/jianmo_guiji/yilaixiang/jiemian/lujing/nihe_yilai/nurbs_nihe/sudu_yilai/sudu_fenpei/realtime_interpolation_results.mat",
+      "bytes": 887865,
+      "sha256": "75ea5129dbb92413bd231a2088af9b4220feb9638a641ca6e04269143c30a0f6"
+    },
+    {
+      "file": "fit_reference.mat",
+      "member": "NURBS曲线/DiYiJieDuan/shiyanjianmo/jianmo_guiji/yilaixiang/jiemian/lujing/nihe_yilai/nurbs_nihe/sudu_yilai/sudu_fenpei/zitai_yilai/zitai_gouzao/fit_reference.mat",
+      "bytes": 126063,
+      "sha256": "e89301a0ed70fa5f2e8c1cc6d7d068c5a65d2f93b28460d27ab033174181c074"
+    },
+    {
+      "file": "pose_reference.mat",
+      "member": "NURBS曲线/DiYiJieDuan/shiyanjianmo/jianmo_guiji/yilaixiang/jiemian/lujing/nihe_yilai/nurbs_nihe/sudu_yilai/sudu_fenpei/zitai_yilai/zitai_gouzao/pose_reference.mat",
+      "bytes": 866518,
+      "sha256": "0deb8a83cb47f3397085eede4b84765933c1d08acf404189521f71c18a3f85b9"
+    }
+  ]
+}

@@ -138,11 +138,13 @@ flowchart TD
 
 ## 当前可推进的入口
 
-- #148 基线与 M01–M12 资产核验：没有开放前置，尚未指派。
-- #135 工件、路径与 MATLAB 资产核验：没有开放前置，尚未指派。
+- [[01] 核验完整项目基线与 M01–M12 资产](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/148)：已完成，证据见[基线核验](baseline-audit.md)。
+- [[02] 取得完整工件、路径与 MATLAB 程序资产](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/135)：已完成，证据见[资产核验](asset-inventory.md)和[Python 运行入口](../../pipe_assets.md)。
+- [[04] 完整项目技术复用与实施依赖（需你拍板）](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/149)：没有开放前置，尚未指派，需要用户参与决定。
+- [[05] M02 九轴模型、TCP 与标定接口（需你拍板）](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/136)：没有开放前置，尚未指派，需要用户参与决定。
 - #95 激光雷达外参标定：没有开放前置，由 `lsn`（GitHub `Shiningliu1011`）继续。
 - #132 基础文档：已指派，等待 #95；#145 总体规格已指派，等待 #144、#149、#150、#151。
 
-其余 56 项主线任务均有开放前置。编号 01–57 的主线范围与相互关系保持现有定义；58、59 负责最终汇合。#171、#182、#183 已取消并移出地图，#172–#181 的完成记录见[前期证据](../../static_obstacle_experiments_handoff.md)。
+当前开放 57 项主线任务，其中 54 项仍有开放前置。编号 01–57 的主线范围与相互关系保持现有定义；58、59 负责最终汇合。#171、#182、#183 已取消并移出地图，#172–#181 的完成记录见[前期证据](../../static_obstacle_experiments_handoff.md)。
 
 仓库由 `lsn` 一人跨设备使用。assignee 表示当前正在跟进的任务；未指派任务属于项目待办。

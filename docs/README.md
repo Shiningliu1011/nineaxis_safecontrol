@@ -18,6 +18,7 @@
 
 - [领域词汇](CONTEXT.md)：系统结构、机器人、轨迹、观测和安全要求。
 - [全项目单位约定](units.md)：项目输入与报告的 mm/°、计算内核的 m/rad 及边界换算。
+- [管道路径与运动 Python 工具](pipe_assets.md)：曲面模型、路径画笔、NURBS、进给插补与连续姿态生成。
 - [控制内核](modules/portable_oscbf.md)：模块、依赖和移植入口。
 - [MID-360 / MID-360S 驱动](modules/livox_mid360.md)：安装、设备接口和验证范围。
 - [传感器布局与标定](sensor_layout_and_calibration.md)：坐标和安装方案。

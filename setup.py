@@ -40,14 +40,15 @@ setup(
         ("share/ament_index/resource_index/packages", [f"resource/{package_name}"]),
         (f"share/{package_name}", [
             "package.xml", "setup.py", "setup.cfg", "requirements-static-report.txt",
-            "requirements-static-recording.txt",
+            "requirements-static-recording.txt", "requirements-pipe-assets.txt",
         ]),
-        (f"share/{package_name}/scripts", ["scripts/static_obstacle_experiment.py"]),
+        (f"share/{package_name}/scripts", ["scripts/static_obstacle_experiment.py", "scripts/pipe_assets.py"]),
         (f"share/{package_name}/docs", [
             "docs/static_obstacle_experiments.md",
             "docs/static_obstacle_experiments_handoff.md",
             "docs/static_experiment_storage.md",
             "docs/host_recovery_20261020.md",
+            "docs/pipe_assets.md", "docs/pipe_feed_assets.md", "docs/pipe_pose_assets.md",
         ]),
         (f"share/{package_name}/docs/specs", ["docs/specs/static-obstacle-experiments.md"]),
         (f"share/{package_name}/config", glob("config/*.yaml")),
@@ -56,6 +57,7 @@ setup(
         (f"share/{package_name}/launch", glob("launch/*.launch.py")),
         (f"share/{package_name}/tests", glob("tests/*.py")),
         (f"share/{package_name}/tests/data", glob("tests/data/*.npz")),
+        (f"share/{package_name}/tests/data/pipe_assets", glob("tests/data/pipe_assets/*")),
         # Model files: URDF, meshes, and MoveIt configuration.
         (
             f"share/{package_name}/models/ninezzhou/urdf",
@@ -105,7 +107,13 @@ setup(
         ),
     ],
     install_requires=["setuptools", "msgpack==1.1.2", *PORTABLE_OSCBF_RUNTIME_REQUIREMENTS],
-    extras_require={"hardware": ["python-can==4.6.1", "PyYAML>=5.4.1,<7"]},
+    extras_require={
+        "hardware": ["python-can==4.6.1", "PyYAML>=5.4.1,<7"],
+        "pipe-assets": [
+            "numpy>=1.26,<3", "scipy>=1.15,<2", "matplotlib>=3.10,<4",
+            "pymatreader==1.3.2", "h5py>=3.8,<4", "osqp>=1.0,<2",
+        ],
+    },
     tests_require=["pytest"],
     zip_safe=False,
     maintainer="robot_safecontrol maintainers",
@@ -123,6 +131,7 @@ setup(
             "oscbf_controller = robot_safecontrol_moveit.oscbf_controller:main",
             "oscbf_plant = robot_safecontrol_moveit.oscbf_plant:main",
             "static_obstacle_experiment = robot_safecontrol_moveit.static_experiment:main",
+            "pipe_assets = robot_safecontrol_moveit.pipe_assets.cli:main",
             "hardware_bridge = robot_safecontrol_moveit.hardware_bridge:main",
             "livox_mid360_node = robot_safecontrol_moveit.livox_mid360.ros_node:main",
             "livox_mid360_tool = robot_safecontrol_moveit.livox_mid360.cli:main",
