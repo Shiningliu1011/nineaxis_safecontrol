@@ -45,4 +45,6 @@ PYTHONDONTWRITEBYTECODE=1 python3 .trellis/scripts/task.py validate .trellis/tas
 
 该工作目录中的前期本地测量资料保存在 `.scratch/main-map-20261027/static-scenes-local-evidence.tar.gz`，SHA-256 为 `32e38a2b9b90b99169129ab3a51657f51a0c4bf35c654fe645c05059b9482fc3`。原始实验数据仍按[证据入口](../../static_obstacle_experiments_handoff.md)保存。
 
-本地和远程的最终提交在完成同步后核对。
+本次合并提交为 `5645a61aea8de895fc9ce990da7126436c44bc6e`。同步后读取远程引用，本地 `main`、远程 `main` 和 `codex/static-obstacle-experiments` 均为该提交；工作区没有未提交改动。
+
+`git branch --no-merged main` 与 `git log --branches --not main --oneline` 均无输出，全部有效分支提交已包含在 `main`。独立静态实验草稿的 `codex/static-scenes` 本地和远程分支均已删除。
