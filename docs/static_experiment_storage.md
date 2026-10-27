@@ -2,6 +2,12 @@
 
 本文说明现有记录格式和历史容量测量，用于读取、验证和复现已有数据。项目当前清单与容量要求由[完整项目验收任务](planning/nineaxis-full-project/dependencies.md)管理。
 
+静态实验数据保存在 `LSN` 移动硬盘。插入后设置归档输出目录，再按需读取；生成转换记录、数组或验证数据时，继续使用此输出目录：
+
+```bash
+export STATIC_OUTPUT="/media/lsn/LSN/资料/robot_safecontrol_static_experiments_20261027/project/output"
+```
+
 新运行使用 SQLite 格式 3；旧 JSON 和格式 2 数据库保持可读。安装记录依赖：
 
 ```bash
@@ -38,10 +44,10 @@ WAL 自动 checkpoint 继续关闭，采样结束后执行 TRUNCATE checkpoint�
 ```bash
 source .scratch/host-recovery/env.sh
 python scripts/static_obstacle_experiment.py compact \
-  --source output/static-experiments/s0-joint-full-geometry-01 \
-  --output output/compact-s0 --resource-root "$PWD"
+  --source "$STATIC_OUTPUT/static-experiments/s0-joint-full-geometry-01" \
+  --output "$STATIC_OUTPUT/compact-s0" --resource-root "$PWD"
 python scripts/static_obstacle_experiment.py replay \
-  --output output/compact-s0 --resource-root "$PWD"
+  --output "$STATIC_OUTPUT/compact-s0" --resource-root "$PWD"
 ```
 
 转换入口接受格式 0 或 2，输出格式 3。
@@ -63,7 +69,7 @@ python scripts/static_obstacle_experiment.py replay \
 
 ```bash
 python scripts/static_obstacle_experiment.py replay \
-  --output output/compact-s0 --resource-root "$PWD" --save-samples
+  --output "$STATIC_OUTPUT/compact-s0" --resource-root "$PWD" --save-samples
 ```
 
 绘图通过项目 `.scratch/static-experiments/derived-*` 中的独立目录重算数组，
@@ -86,10 +92,10 @@ python scripts/static_obstacle_experiment.py replay \
 python -m pytest tests/test_static_recording.py tests/test_static_campaign.py \
   tests/test_static_execution_evaluation.py -q
 python scripts/validate_static_storage.py \
-  --output output/static-storage-validation --resource-root "$PWD"
+  --output "$STATIC_OUTPUT/static-storage-validation" --resource-root "$PWD"
 python scripts/validate_static_recording_upgrade.py \
-  --source-root output/static-storage-validation-05 \
-  --output output/static-recording-upgrade --resource-root "$PWD"
+  --source-root "$STATIC_OUTPUT/static-storage-validation-05" \
+  --output "$STATIC_OUTPUT/static-recording-upgrade" --resource-root "$PWD"
 ```
 
 真实验证默认处理接手包中的完整 S0、S2、S4、S5 记录，输出目录必须不存在。
@@ -212,9 +218,9 @@ SNS 记录结构分组，每个固定运行编号保存自己的完整额度。�
 ```bash
 source .scratch/host-recovery/env.sh
 python scripts/validate_static_capacity.py \
-  --catalog output/static-experiments/development-scenes-05/catalog.json \
-  --validation output/static-storage-validation-05/validation.json \
-  --output output/static-capacity-check --resource-root "$PWD" \
+  --catalog "$STATIC_OUTPUT/static-experiments/development-scenes-05/catalog.json" \
+  --validation "$STATIC_OUTPUT/static-storage-validation-05/validation.json" \
+  --output "$STATIC_OUTPUT/static-capacity-check" --resource-root "$PWD" \
   --retry-runs 0 --reserve-bytes 10000000000
 ```
 

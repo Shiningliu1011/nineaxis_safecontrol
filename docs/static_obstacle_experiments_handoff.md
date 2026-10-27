@@ -2,6 +2,8 @@
 
 2026-10-27，静态实验已取消。#171、#182、#183 以 `not_planned` 关闭；#172–#181 保持已完成。上述 13 项均移出当前地图。项目开发入口为[完整项目地图](planning/nineaxis-full-project/README.md)。
 
+静态实验原始资料已集中转移至 `LSN` 移动硬盘的 `资料/robot_safecontrol_static_experiments_20261027/`，硬盘 UUID 为 `7EC40DAAC40D65AD`。插入后 Linux 默认读取路径为 `/media/lsn/LSN/资料/robot_safecontrol_static_experiments_20261027/`。归档包含 8,611 个文件，共 11,916,807,148 字节；逐文件 SHA-256 清单为归档内的 `SHA256SUMS`，校验状态记录在 `verification.json`。相关的项目 `output/static-*` 和 `.scratch` 目录在硬盘接入时指向归档；硬盘拔出时不能读取这些数据。
+
 ## 已完成任务
 
 | issue | 已有能力 |
@@ -34,7 +36,7 @@
 
 历史卷身份：
 
-- UUID `083CBB753CBB5BFE`，路径 `/media/lsn/宇宙小机器人/robot_safecontrol_static_experiments_20261020/`。
-- UUID `6C001EAA001E7B72`，路径 `/media/lsn/Windows/robot_safecontrol_static_experiments_20261021/`。
+- 原 UUID `083CBB753CBB5BFE` 的数据现位于归档 `volumes/083CBB753CBB5BFE/robot_safecontrol_static_experiments_20261020/`。
+- 原 UUID `6C001EAA001E7B72` 的数据现位于归档 `volumes/6C001EAA001E7B72/robot_safecontrol_static_experiments_20261021/`。
 
-恢复访问后依据 manifest 与 SHA-256 核验。数据复现使用[历史程序说明](static_obstacle_experiments_legacy.md)和[存储说明](static_experiment_storage.md)，保留每份记录对应的源码、配置和评价身份。
+重新插入后依据归档内 `SHA256SUMS` 与 `copy-plan.json` 核验。数据复现使用[历史程序说明](static_obstacle_experiments_legacy.md)和[存储说明](static_experiment_storage.md)，保留每份记录对应的源码、配置和评价身份。
