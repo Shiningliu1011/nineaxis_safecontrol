@@ -1,5 +1,38 @@
 # 当前执行与验收
 
+## 2026-10-28 路径参考修复
+
+本次在 `main` 的 `930b582a447d29af8e289bdd24c6ae5ed255abe6` 上继续处理审查记录的两项 P2。开始时工作区干净。用户已明确授权将本次修复、测试和相关文档提交到 `main`，并推送到 `origin/main`；完成同步后停止。
+
+测试边界采用既有公开接口 `generate_reference()`、`load_repository_trajectory()`、`set_surface_normal_orientation()`、`set_orientation_mode()`、`attach_continuous_reference()` 和 `path_geometry(require_continuous=True)`。使用正式生成器和真实蝴蝶来源文件，期望身份来自生成包的 manifest，位置、姿态和运动参考与相同参数的新加载结果核对。
+
+- [x] 自动发现：实际生成默认版本及 `ee_center=[0.0,0.344,1.387]` 版本，验证相同来源与半径下选择匹配变换的版本，并保持直接连接的身份拒绝。
+- [x] 姿态重新设置：验证 production/S0 重复设置、`surface_normal→fixed→surface_normal`，以及圆柱参数改变后的当前两次投影、连续身份及运动参考。
+- [x] 修改 `portable_oscbf/work/ik_data_loader.py` 中的候选身份检查与当前圆柱投影状态；回归放在 `tests/test_butterfly_reference_assets.py`。
+- [x] 运行 NumPy/JAX 连续参考、公共路径消费者和安装资源检查，更新 `docs/butterfly_reference.md` 与当前任务审查记录。
+
+候选筛选与显式连接共用 `_continuous_reference_mismatch()`，共同检查模型、变换和全部投影参数；选定版本仍执行完整文件、来源及连续表达验证。姿态设置保存并复用首次投影完成的位置、速度、加速度与 jerk，重新构建当前第二次投影及旋转参考。连续包和路径缓存随姿态设置更新。
+
+独立环境和所有新日志保存在已忽略的 `.scratch/reference-p2-fix-20261028/`。以下命令均从仓库根目录加载该目录的 `env.sh` 后执行。
+
+TDD 的两个行为分别完成失败与通过验证：
+
+- `python -m pytest -q tests/test_butterfly_reference_assets.py::test_reference_discovery_selects_the_matching_transform`：使用独立 `red-discovery-data` / `green-discovery-data` 作为 `--basetemp`，依次为 1 failed（退出 1，13.90 s）和 1 passed（退出 0，10.43 s）；日志为 `red-discovery.log` / `green-discovery.log`。
+- `python -m pytest -q tests/test_butterfly_reference_assets.py -k surface_normal_reset`：使用独立 `red-orientation-data` / `green-orientation-data` 作为 `--basetemp`，依次为 8 failed 和 8 passed，各有 5 deselected；退出码依次为 1 / 0，耗时 38.62 s / 84.27 s；日志为 `red-orientation.log` / `green-orientation.log`。
+
+最终相关回归命令：
+
+```bash
+python -m pytest -q tests/test_butterfly_reference_assets.py portable_oscbf/tests/test_continuous_path_reference.py --basetemp=.scratch/reference-p2-fix-20261028/reference-regression-data --junitxml=.scratch/reference-p2-fix-20261028/reference-regression.xml
+python -m pytest -q tests/test_trajectory_transform_unity.py tests/test_static_experiment.py::test_s0_uses_declared_geometry_and_complete_path portable_oscbf/tests/test_trajectory_loading.py portable_oscbf/tests/test_jax_path_following.py portable_oscbf/tests/test_path_posture_reference.py portable_oscbf/tests/test_path_precision_initialization.py --basetemp=.scratch/reference-p2-fix-20261028/consumer-regression-data --junitxml=.scratch/reference-p2-fix-20261028/consumer-regression.xml
+```
+
+两组分别为 55 passed（184.18 s）和 26 passed（28.53 s），均退出 0，无失败、错误、跳过或未选中用例。真实生成的两个配置各验证 14992 个来源点。production/S0 的八种重复设置组合均连续重设三次，核验全部 14992 个位置、旋转、速度、加速度、角速度和 jerk；改变轴向、中心及半径后的恢复与全新加载结果一致。错误模型、缺少匹配配置与选定产物损坏的拒绝检查通过。
+
+`python -m py_compile portable_oscbf/work/ik_data_loader.py tests/test_butterfly_reference_assets.py`、AST 与 `git diff --check` 通过。`python .scratch/reference-p2-fix-20261028/verify_results.py` 退出 0，核对两份 JUnit、生成版本来源验证及既有资源未改动，结果为 `verification.json`。文档已核对公开接口与当前行为，沿用既有单位与身份规则；本次没有新增规范决定。
+
+本次没有重新运行全量测试、性能矩阵或设备测试。两项 P2 的修复与相关验收完成，修复代码、回归测试、使用说明及两份 Trellis 记录共同纳入 `main` 提交与 `origin/main` 同步范围。同步结果通过本地提交和远程分支身份核验，其余地图任务保持原状态；完成后停止。
+
 ## 执行规则
 
 - 按原生未阻塞入口领取任务；决定先形成可审阅方案，满足票面确认条件后更新记录和任务图。
@@ -10,7 +43,7 @@
 
 ## 本轮完成范围
 
-用户要求完成当前并行工作后停止。#152/#105/#101的实现、独立审查、main集成与实际验收均已完成并关闭；#108和#153的完成状态继续保持。本轮#150研究已保存并发表，完整约束、选型及周期仍待测量，任务保持开放。后续任务未启动。用户已授权将本轮代码、配置、资产、测试与接手文档提交到本地main并推送origin/main；两个路径参考问题继续作为待处理事项保留。
+用户要求完成当前并行工作后停止。#152/#105/#101的实现、独立审查、main集成与实际验收均已完成并关闭；#108和#153的完成状态继续保持。本轮#150研究已保存并发表，完整约束、选型及周期仍待测量，任务保持开放。后续任务未启动。此前并行交付已按其授权同步；两项路径参考的本地修复和验收见上方专节。
 
 #136/#137/#138/#139/#140/#141/#142/#143/#144/#149/#151已确认并完成，完整规则及独立确认已发表。#144确认评论6443398104规定每效率场景每方法30次、保留全部失败及配对统计；每方法至少10000完整周期，p99.9使用20%余量，具体周期、容量与正式数据由#169提供。
 
@@ -40,14 +73,12 @@ controller四个P-core条件通过原门槛：303步、p95=14.342699509870727ms�
 
 真实原生快照为`.scratch/map147-decisions/frontier-after-101-105-152.json`：59项主线、179条依赖、41项开放、32项有开放前置；图无循环且原生摘要一致。#164/#104/#112/#113/#155/#156/#159均待领取；本轮没有启动这些任务。#95和#150保持现有指派，#145继续等待#150。
 
-检查入口为`python3 .scratch/map147-decisions/check_proposals.py`、`python3 .scratch/map147-decisions/check_frontier.py --snapshot .scratch/map147-decisions/frontier-after-101-105-152.json`及`git diff --check`。当前授权涵盖本地提交和远程推送；spec promotion、PR与真实设备动作保持原有边界。当前并行交付完成后停止。
+此前任务图检查入口为`python3 .scratch/map147-decisions/check_proposals.py`、`python3 .scratch/map147-decisions/check_frontier.py --snapshot .scratch/map147-decisions/frontier-after-101-105-152.json`及`git diff --check`。本次路径参考修复的授权、验证和停止条件见上方专节。
 
 集成核验：15份文档结构、96个本地链接、九轴范围及21项GitHub完整正文/状态检查通过；Trellis implement/check各三条context全部通过，`git diff --check`退出0。集成及本轮审查基准为`9c354d5505e26aa28b3e6fc323c661bd7542b105`，全部子agent与数值进程已经结束。
 
 ## 审查与跨设备接手
 
-2026-10-28在设备`lsn`审查main全部139份未提交与未跟踪文件。独立Spec与Standards审查及真实来源探针确认两个P2问题：自动发现相同半径、不同位置变换的连续参考时，前一个不匹配版本终止后续查找；重复设置surface_normal或从fixed恢复时，累计第三次投影使已有有效参考被拒绝。具体触发条件与代码入口见`research/review.md`，当前同步保留这两项待处理问题。
+2026-10-28在设备`lsn`完成两项路径参考 P2 的本地修复。自动发现与连接共用配置身份检查；姿态设置维护首次投影和当前圆柱投影。当前实际通过 81 项相关回归，命令、JUnit、来源身份与验证范围见上方专节及`research/review.md`。
 
-本轮实际执行`tests/test_butterfly_reference_assets.py`，4项通过；两个问题分别用真实生成文件和14992个原样本复现。139份审查文件在记录更新前SHA256全部一致。本轮未重新执行完整测试、性能矩阵或真实设备验证。
-
-本地原始审查数据位于`/home/lsn/robot/robot_safecontrol/.scratch/pr-review-20261028/`，完整报告为`review.md`，冻结范围为`scope.json`。该目录按现有忽略规则保留本地；跨设备接手使用仓库内本记录与`research/review.md`，需要原始证据时从该设备获取并核对`scope.json`。当前本地与远程的提交身份以`git log -1`及`origin/main`核验结果为准。
+本地原始审查数据保留在`/home/lsn/robot/robot_safecontrol/.scratch/pr-review-20261028/`，完整报告为`review.md`，冻结范围为`scope.json`。本次修复证据独立保存在`.scratch/reference-p2-fix-20261028/`。两个目录均按现有规则保留本地；跨设备接手使用仓库内本记录与`research/review.md`，需要原始证据时从该设备获取。修复基点为`930b582a447d29af8e289bdd24c6ae5ed255abe6`，本次修复、测试和相关文档共同纳入 `main` 提交与 `origin/main` 同步范围。

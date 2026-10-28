@@ -229,6 +229,10 @@ class IKTrajectoryData:
         _axis = np.array([0.0, 1.0, 0.0])
         _centre, _radius = self._fit_surface_with_radius(_axis)
         self._snap_path_onto_cylinder(_axis, _centre, _radius)
+        self._surface_projection_base = {
+            attr: getattr(self, attr).copy()
+            for attr in ("_pos_world", "_vel_world", "_acc_world", "_jerk_world")
+        }
 
         # ---- 预计算姿态参考标架 ----
         self._path_geometry = None
@@ -440,17 +444,22 @@ class IKTrajectoryData:
         if axis_len < 1e-12:
             raise ValueError("axis_direction must be a non-zero 3-vector")
         axis = axis / axis_len
-        if axis_point is None:
-            centre, radius = self._fit_surface_with_radius(axis)
-        else:
+        if axis_point is not None:
             centre = np.asarray(axis_point, dtype=float).ravel()
             if centre.shape != (3,):
                 raise ValueError("axis_point must be a 3-vector")
-            radius = self._fit_surface_with_radius(axis)[1]
-
         if radius_m is not None:
             if not np.isfinite(radius_m) or radius_m <= 0.0:
                 raise ValueError("radius_m must be finite and positive")
+
+        # 每次从首次投影结果构建当前圆柱，位置与运动参考使用相同来源。
+        for attr, values in self._surface_projection_base.items():
+            setattr(self, attr, values.copy())
+        self.projection_stages[1:] = []
+        fitted_centre, radius = self._fit_surface_with_radius(axis)
+        if axis_point is None:
+            centre = fitted_centre
+        if radius_m is not None:
             radius = float(radius_m)
 
         # 吸附到拟合圆柱表面 (镜像 cylinder_geometry.snap_path_to_cylindrical_surface):
@@ -718,17 +727,14 @@ class IKTrajectoryData:
     def angular_velocity_at(self, t: float) -> np.ndarray:
         return self._omega_series[self._time_to_idx(t)]
 
-    def attach_continuous_reference(self, bundle_path) -> None:
+    def _continuous_reference_mismatch(self, description) -> Optional[str]:
         from hashlib import sha256
-        from work.continuous_path_reference import load_reference_bundle
         from work import kinematics_data
 
-        bundle = load_reference_bundle(bundle_path, expected_source_sha256=sha256(self.mat_path.read_bytes()).hexdigest())
-        description = bundle.manifest["description"]
         if description["model_identity"]["kinematics_data_sha256"] != sha256(Path(kinematics_data.__file__).read_bytes()).hexdigest():
-            raise ValueError("continuous reference 的 model 身份不匹配")
+            return "continuous reference 的 model 身份不匹配"
         if self.orientation_mode != "surface_normal" or len(self.projection_stages) != 2:
-            raise ValueError("continuous reference 需要完整的两次圆柱投影和 surface_normal")
+            return "continuous reference 需要完整的两次圆柱投影和 surface_normal"
         actual = (self.T_traj_to_base, np.array([stage["axis"] for stage in self.projection_stages]),
                   np.array([stage["centre_m"] for stage in self.projection_stages]),
                   np.array([stage["radius_m"] for stage in self.projection_stages]))
@@ -736,7 +742,17 @@ class IKTrajectoryData:
                          ("transform", "projection_axes", "projection_centres_m", "projection_radii_m"))
         if any(value.shape != target.shape or not np.allclose(value, target, atol=2e-14, rtol=0)
                for value, target in zip(actual, expected)):
-            raise ValueError("continuous reference 的变换或圆柱身份不匹配")
+            return "continuous reference 的变换或圆柱身份不匹配"
+        return None
+
+    def attach_continuous_reference(self, bundle_path) -> None:
+        from hashlib import sha256
+        from work.continuous_path_reference import load_reference_bundle
+
+        bundle = load_reference_bundle(bundle_path, expected_source_sha256=sha256(self.mat_path.read_bytes()).hexdigest())
+        mismatch = self._continuous_reference_mismatch(bundle.manifest["description"])
+        if mismatch is not None:
+            raise ValueError(mismatch)
         self._continuous_reference_bundle = bundle
         self._path_geometry = None
 
@@ -762,13 +778,11 @@ class IKTrajectoryData:
                 if description["source_sha256"]["ik_input.mat"] != digest:
                     continue
                 matches_source = True
-                actual = np.array([stage["radius_m"] for stage in self.projection_stages])
-                expected = np.asarray(description["projection_radii_m"])
-                if actual.shape == expected.shape and np.allclose(actual, expected, atol=2e-14, rtol=0):
+                if self._continuous_reference_mismatch(description) is None:
                     self.attach_continuous_reference(manifest_path.parent)
                     return
         if matches_source:
-            raise ValueError("当前蝴蝶圆柱身份缺少匹配的 continuous reference，请生成相应版本文件")
+            raise ValueError("当前蝴蝶配置缺少匹配的 continuous reference，请生成相应版本文件")
         if required:
             if found_manifest:
                 raise ValueError("continuous reference source 身份无匹配版本")

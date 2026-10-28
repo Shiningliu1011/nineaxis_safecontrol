@@ -61,9 +61,13 @@ JAX 的 `side` 参数同时确定空间查询及弧长反解的一至三阶自�
 
 控制器的 `surface_normal` 分支与 `ExperimentConfig.load_path()` 明确要求连续包。加载时核验 MAT、模型、相似变换和两次圆柱投影身份；资源缺失或来源身份变化时拒绝构建路径。`PathGeometry.sample`、JAX 采样和移动参考使用同一连续表达，样本数组保留分支索引与既有形状接口。
 
+自动发现按当前 MAT 的 SHA256、运动学模型身份、相似变换，以及两次投影的轴向、中心和半径共同选择版本。同一来源可以保存多个配置版本；候选确定后，加载入口检查完整产物、来源校验值和连续表达。当前配置没有匹配版本、选定版本产物损坏或身份无效时直接报告错误。显式 `attach_continuous_reference()` 使用相同配置身份规则。
+
 连续与纯采样构造共用样本筛选处理。位置、旋转、名义进给、时间和连续弧长、导数采用同一组保留索引；完整连续参考仍保留全部源样本、源节点事件及重复终点的时间区间。
 
 公开 `set_orientation_mode("fixed", fixed_R=...)` 会清除连续包与路径缓存，并按当前固定旋转重新构建采样路径。明确传入 `require_continuous=True` 时要求 `surface_normal` 模式。
+
+每次 `set_surface_normal_orientation()` 从加载时首次圆柱投影完成的位置、速度、加速度和 jerk 重新构建当前圆柱参考，投影记录始终表达首次投影与当前姿态投影。重复设置相同参数，或经过 `fixed` 后恢复，保持相同连续身份和运动参考；省略中心或半径时，使用首次投影结果拟合。改变圆柱参数后，按新参数重新选择匹配的连续版本。
 
 使用 `PathGeometry.to_arrays()` 保存 NPZ，使用 `PathGeometry.from_arrays()` 恢复，读取时设置 `allow_pickle=False`。保存内容包含实际连续系数、弧长和最终参考身份。实时评价与记录回放均查询保存的连续参考。
 
@@ -71,6 +75,6 @@ JAX 的 `side` 参数同时确定空间查询及弧长反解的一至三阶自�
 
 ## 数值验证
 
-验证入口为 `tests/test_butterfly_reference_assets.py` 和 `portable_oscbf/tests/test_continuous_path_reference.py`，覆盖真实文件生成与安装、全部原始样本、独立 BSpline、SciPy 积分、独立自动微分、逐阶差分及步长收敛、节点左右、源参数/最终弧长反解、单位、工具轴、工作距离、暂停、记录恢复和输入拒绝。
+验证入口为 `tests/test_butterfly_reference_assets.py` 和 `portable_oscbf/tests/test_continuous_path_reference.py`，覆盖真实文件生成与安装、配置版本自动发现、圆柱姿态重复设置与恢复、全部原始样本、独立 BSpline、SciPy 积分、独立自动微分、逐阶差分及步长收敛、节点左右、源参数/最终弧长反解、单位、工具轴、工作距离、暂停、记录恢复和输入拒绝。
 
 构造时使用 Bernstein 凸包界检查整个源区间的径向范围，并以轴向与角向导数多项式的区间界证明最终参数速度具有正下界。无法在规定区间预算内证明时直接拒绝。运行反解最多执行六次 Newton 更新和固定 16 点 Gauss 积分；结果要求弧长残差不超过 `2e-11 m`。这些数值检查参数用于连续表达计算。

@@ -8,6 +8,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+import yaml
 from scipy.io import loadmat, savemat
 from work.continuous_path_reference import load_reference_bundle, reference_identity
 from work.ik_data_loader import load_repository_trajectory
@@ -17,6 +18,66 @@ from robot_safecontrol_moveit.pipe_assets.butterfly_reference import generate_re
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = Path(os.environ.get("BUTTERFLY_SOURCE_DIR", ROOT / "data/nurbs/butterfly_reference_v1/production/source"))
+
+
+@pytest.fixture(scope="module")
+def reference_variants(tmp_path_factory):
+    inputs = tmp_path_factory.mktemp("reference-variants")
+    shutil.copyfile(SOURCE / "ik_input.mat", inputs / "ik_input.mat")
+    default_config = ROOT / "portable_oscbf/config/nineaxis.yaml"
+    shifted_config = inputs / "shifted-kinematics.yaml"
+    config = yaml.safe_load(default_config.read_text())
+    config["kinematics"]["ee_center"] = [0., .344, 1.387]
+    shifted_config.write_text(yaml.safe_dump(config))
+    bundles = inputs / "butterfly_reference_v1"
+    manifests = {}
+    for name, kinematics in (("a-default", default_config), ("b-shifted", shifted_config)):
+        manifests[name] = generate_reference(
+            SOURCE, kinematics, ROOT / "config/oscbf_controller.yaml", bundles / name,
+        )
+    return inputs, shifted_config, manifests
+
+
+def test_reference_discovery_selects_the_matching_transform(reference_variants):
+    inputs, shifted_config, manifests = reference_variants
+    np.testing.assert_allclose(
+        manifests["a-default"]["description"]["projection_radii_m"],
+        manifests["b-shifted"]["description"]["projection_radii_m"], atol=2e-14, rtol=0,
+    )
+    assert all(manifest["validation"]["source_points"] == 14992 for manifest in manifests.values())
+    trajectory = load_repository_trajectory(str(inputs / "ik_input.mat"), str(shifted_config), 3.5)
+    trajectory.set_surface_normal_orientation([0., 1., 0.])
+    with pytest.raises(ValueError, match="变换或圆柱身份不匹配"):
+        trajectory.attach_continuous_reference(inputs / "butterfly_reference_v1/a-default")
+    geometry = trajectory.path_geometry(require_continuous=True)
+    assert geometry.reference_identity == manifests["b-shifted"]["identity"]
+    expected = load_reference_bundle(inputs / "butterfly_reference_v1/b-shifted").reference
+    for fraction in (0., .1734, .5, 1.):
+        np.testing.assert_allclose(geometry.sample(fraction * geometry.total_length_m).position_m,
+                                   expected.query(fraction).position_m, atol=2e-14, rtol=0)
+
+
+def test_reference_discovery_checks_model_and_selected_asset_integrity(reference_variants, tmp_path):
+    inputs, shifted_config, manifests = reference_variants
+    shutil.copyfile(inputs / "ik_input.mat", tmp_path / "ik_input.mat")
+    bundles = tmp_path / "butterfly_reference_v1"
+    for name in ("a-other-model", "b-matching"):
+        shutil.copytree(inputs / "butterfly_reference_v1/b-shifted", bundles / name)
+    manifest_path = bundles / "a-other-model/manifest.json"
+    other_model = json.loads(manifest_path.read_text())
+    other_model["description"]["model_identity"]["kinematics_data_sha256"] = "0" * 64
+    other_model["identity"] = reference_identity(other_model["description"])
+    manifest_path.write_text(json.dumps(other_model))
+    trajectory = load_repository_trajectory(str(tmp_path / "ik_input.mat"), str(shifted_config), 3.5)
+    trajectory.set_surface_normal_orientation([0., 1., 0.])
+    with pytest.raises(ValueError, match="model 身份不匹配"):
+        trajectory.attach_continuous_reference(bundles / "a-other-model")
+    assert trajectory.path_geometry(require_continuous=True).reference_identity == manifests["b-shifted"]["identity"]
+    (bundles / "b-matching/source/control_points.txt").write_text("invalid\n")
+    trajectory = load_repository_trajectory(str(tmp_path / "ik_input.mat"), str(shifted_config), 3.5)
+    trajectory.set_surface_normal_orientation([0., 1., 0.])
+    with pytest.raises(ValueError, match="SHA256"):
+        trajectory.path_geometry(require_continuous=True)
 
 
 def test_generate_and_load_real_butterfly_files(tmp_path):
@@ -133,3 +194,66 @@ def test_orientation_mode_change_rebuilds_the_actual_path_reference():
                                    np.eye(3), atol=1e-15, rtol=0.)
     with pytest.raises(ValueError, match="surface_normal"):
         trajectory.path_geometry(require_continuous=True)
+
+
+@pytest.mark.parametrize("bundle_name", ["production", "s0"])
+@pytest.mark.parametrize("via_fixed", [False, True], ids=["repeat", "fixed"])
+@pytest.mark.parametrize("explicit_cylinder", [False, True], ids=["fitted", "explicit"])
+def test_surface_normal_reset_preserves_the_actual_reference(bundle_name, via_fixed, explicit_cylinder):
+    manifest = json.loads((ROOT / f"data/nurbs/butterfly_reference_v1/{bundle_name}/manifest.json").read_text())
+    radius = None if bundle_name == "production" else manifest["description"]["projection_radii_m"][-1]
+    trajectory = load_repository_trajectory(
+        str(SOURCE / "ik_input.mat"), str(ROOT / "portable_oscbf/config/nineaxis.yaml"), 3.5,
+    )
+    trajectory.set_surface_normal_orientation([0., 1., 0.], radius_m=radius)
+    geometry = trajectory.path_geometry(require_continuous=True)
+    assert geometry.reference_identity == manifest["identity"]
+    original = trajectory.task_reference_sequence()
+    times = np.arange(trajectory.num_points) * trajectory.Ts
+    original_jerk = np.array([trajectory.jerk_world_at(time).copy() for time in times])
+    options = {"radius_m": radius}
+    if explicit_cylinder:
+        options.update(axis_point=trajectory.surface_centre.copy(), radius_m=trajectory.surface_radius)
+    for _ in range(3):
+        if via_fixed:
+            trajectory.set_orientation_mode("fixed", fixed_R=np.eye(3))
+            fixed = trajectory.path_geometry()
+            assert fixed.continuous_reference is None
+            np.testing.assert_allclose(fixed.sample(.5 * fixed.total_length_m).rotation, np.eye(3), atol=1e-15, rtol=0)
+        trajectory.set_surface_normal_orientation([0., 1., 0.], **options)
+        current = trajectory.path_geometry(require_continuous=True)
+        assert current.reference_identity == manifest["identity"]
+        assert current.total_length_m == geometry.total_length_m
+    restored = trajectory.task_reference_sequence()
+    assert len(restored) == len(original) == 14992
+    for field in ("pos", "vel", "accel", "R_des", "omega"):
+        np.testing.assert_allclose([getattr(sample, field) for sample in restored],
+                                   [getattr(sample, field) for sample in original], atol=2e-14, rtol=0)
+    np.testing.assert_allclose([trajectory.jerk_world_at(time) for time in times], original_jerk, atol=2e-14, rtol=0)
+
+
+@pytest.mark.parametrize("bundle_name", ["production", "s0"])
+def test_changing_cylinder_rebuilds_the_reference_from_the_loaded_path(bundle_name):
+    manifest = json.loads((ROOT / f"data/nurbs/butterfly_reference_v1/{bundle_name}/manifest.json").read_text())
+    radius = None if bundle_name == "production" else manifest["description"]["projection_radii_m"][-1]
+    trajectory = load_repository_trajectory(
+        str(SOURCE / "ik_input.mat"), str(ROOT / "portable_oscbf/config/nineaxis.yaml"), 3.5,
+    )
+    trajectory.set_surface_normal_orientation([0., 1., 0.])
+    trajectory.set_surface_normal_orientation(
+        [.02, 1., .01], axis_point=trajectory.surface_centre + [.01, 0., -.02], radius_m=.31,
+    )
+    with pytest.raises(ValueError, match="缺少匹配的 continuous reference"):
+        trajectory.path_geometry(require_continuous=True)
+    trajectory.set_surface_normal_orientation([0., 1., 0.], radius_m=radius)
+    geometry = trajectory.path_geometry(require_continuous=True)
+    assert geometry.reference_identity == manifest["identity"]
+    fresh = load_repository_trajectory(
+        str(SOURCE / "ik_input.mat"), str(ROOT / "portable_oscbf/config/nineaxis.yaml"), 3.5,
+    )
+    fresh.set_surface_normal_orientation([0., 1., 0.], radius_m=radius)
+    for accessor in ("pos_world_at", "vel_world_at", "accel_world_at", "jerk_world_at", "angular_velocity_at"):
+        times = np.arange(trajectory.num_points) * trajectory.Ts
+        np.testing.assert_array_equal([getattr(trajectory, accessor)(time) for time in times],
+                                      [getattr(fresh, accessor)(time) for time in times])
+    np.testing.assert_array_equal(geometry.rotations, fresh.path_geometry(require_continuous=True).rotations)

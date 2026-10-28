@@ -20,17 +20,17 @@
 
 #101的fix3来源清单为`.scratch/map147-101/review-fix3-handoff.json`，SHA256为`4fee0f00584babac2628b516c16b96fa75fecdcede05dde8afeac82e81aa0206`。main最终集成清单为`.scratch/map147-101/integration/final-files.json`，SHA256为`f73ac2871556604e70ab70c01f4af739de0bec7d1aebe7684ff41b2781979d42`。456项相关消费者、30项独立组合检查、43项实际安装接口通过，36份实际安装文件与main一致。主会话独立核验23份main文件、43份证据、76份保留身份及全部原始JUnit；#101已按completed关闭，完成评论6446396500。原8.349961508s期限失败原因未确定，原日志继续保留。
 
-规范提升审阅：本轮已有确认的决定继续由对应文档管理；本轮不新增规范、CONTEXT或ADR。用户已授权将本轮工作提交到本地main并推送origin/main。后续任务保持未启动状态。
+规范提升审阅：本轮已有确认的决定继续由对应文档管理；本轮不新增规范、CONTEXT或ADR。此前并行交付的提交与推送授权属于该批工作，本次路径参考修复的授权与验证见下节。后续任务保持未启动状态。
 
-## 2026-10-28工作区审查待处理事项
+## 2026-10-28工作区审查修复验收
 
-本次审查冻结main上139份未提交与未跟踪文件，基准与HEAD均为`9c354d5505e26aa28b3e6fc323c661bd7542b105`。Standards未发现明确违反；Spec与主会话实际探针确认以下两个P2问题，当前同步保留其行为。
+本次修复以已同步的`main`提交`930b582a447d29af8e289bdd24c6ae5ed255abe6`为起点，开始时工作区干净。用户已明确授权将两项 P2 的修复、测试和相关文档提交到 `main`，并推送到 `origin/main`，完成同步后停止。
 
-1. `portable_oscbf/work/ik_data_loader.py`的`_find_continuous_reference()`仅按来源MAT和`projection_radii_m`选择版本，随后立即执行完整身份验证。相同半径、不同位置变换的文件并存时，排在前面的版本会抛出异常，后面的匹配版本无法被发现。真实生成默认配置与`ee_center=[0.0,0.344,1.387]`两个版本，各自14992个来源点验证通过且半径一致；直接连接后者成功，自动发现抛出变换或圆柱身份不匹配。应在选择候选时完整比较当前变换、投影和模型身份。
-2. 同一文件的`_snap_path_onto_cylinder()`每次向`projection_stages`追加阶段，`attach_continuous_reference()`要求恰好两个阶段。重复设置相同`surface_normal`，或`surface_normal→fixed→surface_normal`，均使阶段数从2变为3。全部14992个位置的最大变化仅`2.220446049250313e-16 m`，`path_geometry(require_continuous=True)`随后拒绝已有有效参考。重新设置姿态需要维护当前有效的两次投影表达。
+1. 已完成连续参考自动发现修复。`portable_oscbf/work/ik_data_loader.py`的`_find_continuous_reference()`与`attach_continuous_reference()`共用完整配置身份检查，比较当前模型、变换、两次投影的轴向、中心和半径。真实生成默认配置与`ee_center=[0.0,0.344,1.387]`两个版本，各自14992个来源点验证通过；相同来源与半径下，自动发现选择对应变换的版本，显式连接保持身份拒绝，选定产物继续执行完整验证。
+2. 已完成圆柱姿态重新设置修复。`set_surface_normal_orientation()`从首次投影完成的位置与运动参考重新构建当前圆柱，维护两次投影表达。production/S0 的拟合及显式参数、重复设置和`surface_normal→fixed→surface_normal`共八种组合连续重新设置三次后，连续身份、弧长及全部14992个样本的运动参考保持一致。改变轴向、中心和半径后恢复至production/S0，与相同参数的新加载结果一致。
 
 可选维护建议：`nineaxis_model.py`与`butterfly_reference.py`分别保存相同的源工具轴转换矩阵；当前数值一致，可采用共同来源。
 
-实际验证：`python -m pytest -q tests/test_butterfly_reference_assets.py --basetemp=.scratch/pr-review-20261028/assets-pytest-data`退出0，4项通过，耗时26.68s。静态检查包括44份Python AST、配置格式、依赖声明、连续参考产物及模型来源身份；139份文件SHA256与HEAD在接手记录更新前全部一致。本次没有重新运行全量、性能矩阵或设备测试。
+实际验证：真实资产及连续参考组合55项通过（184.18 s），公共路径消费者26项通过（28.53 s），两组退出0，无失败、错误、跳过或未选中用例。检查覆盖production/S0、NumPy/JAX、安装资源、错误模型、缺少匹配配置、选定产物损坏及姿态重新设置。Python编译、AST、JUnit和生成版本来源核验通过，既有连续资源保持未改动。完整命令与TDD记录见`../implement.md`。本次没有重新运行全量测试、性能矩阵或设备测试。
 
-原始证据保存在设备`lsn`的`.scratch/pr-review-20261028/`：`check_reference_discovery.py`与`reference-discovery.log`记录首项复现；`spec/run_orientation_probe.sh`与`spec/orientation-reset.json`记录第二项复现；`assets-pytest.log`保存四项现有测试结果；`scope.json`保存文件身份。审查没有修改生产代码与原有测试。远程同步包括源码、连续参考资产、测试、规格和Trellis接手记录，原始审查目录继续按现有规则保留本地。
+原始审查证据保留在设备`lsn`的`.scratch/pr-review-20261028/`。本次修复证据独立保存在`.scratch/reference-p2-fix-20261028/`，包括TDD日志、两组最终回归日志与JUnit，以及`verification.json`中的生成版本身份和核验结果。使用说明更新于`docs/butterfly_reference.md`。两项修复与相关验收完成，修复、测试和相关文档共同纳入 `main` 提交与 `origin/main` 同步范围，同步结果通过实际 Git 分支身份核验。其余地图任务保持原状态。
