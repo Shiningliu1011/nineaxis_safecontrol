@@ -1,5 +1,17 @@
 # 当前执行与验收
 
+## 2026-10-28 场景服务与共享场景
+
+用户重新调用 `wayfinder` 和 `implement-spec`，本次 main 基点为 `8d5e938d4fe0185e07f17bc2359881157967baac`。已完成「[24] 实现 collision_scene_server 与双缓冲共享场景」：22 份文件使用 `apply_patch` 集成到 main 工作区，与实现及独立审查的冻结 SHA256 完全相等。本次代码、测试及相关文档纳入 `main` 提交与 `origin/main` 同步范围。
+
+main 受影响真实测试为 322 passed（82.36 s），快速检查中的纯逻辑测试为 69 passed；Spec 独立 41 项与来源探针、Standards 独立 27 项与 pending/FIFO/默认入口探针通过，当前均无确认发现。main 隔离安装的两个默认 ROS console 入口验收通过，13 份安装文件身份一致。完整命令、JUnit、机器清单与限制见[子任务主分支验收](../10-28-map147-scene-server/research/main-validation.md)。
+
+「[19] 实现 M11 真实设备协议与执行保护」已核验用户指定的 `大然电机/` 厂家资料与既有通信记录；命令实际采用、反馈采样时间、全轴身份与独立保护仍缺少确认依据，任务保持开放，详见[资料记录](../10-28-map147-scene-server/research/m11-context.md)。未执行设备动作。
+
+场景服务[完成记录](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/104#issuecomment-6460673198)已发表并关闭本票。原生图快照为 `.scratch/map147-104/parent/frontier-after-104.json`：59 项、179 条依赖、40 项开放、32 项有开放前置，无循环且原生摘要一致。本次只完成一项实现任务，后续实现未领取。地图与项目入口已同步。
+
+本次独立工作区已清理，全部忽略产物保存在 `.scratch/map147-104/worker-evidence/`；主会话以归档路径重新核验全部来源、证据与安装身份并通过。沿用既有规范，没有执行 spec promotion。用户已明确授权将本次改动与相关文档提交到 `main` 并推送远程；本次记录保留验证环境、数据位置与测试范围，供跨设备接手。
+
 ## 2026-10-28 圆柱拟合异常真实数据回归
 
 本次基点为 `b77e83718f6f7baaf0f0ce030bc0bd812b26538f`，开始时工作区干净。用户授权补充圆柱拟合异常分支的真实数据回归，验证失败后轨迹、投影记录和连续缓存保持不变，并将本次测试及相关文档提交到 `main`、推送到 `origin/main`，完成同步后停止。本次范围为测试及对应说明和验收记录。

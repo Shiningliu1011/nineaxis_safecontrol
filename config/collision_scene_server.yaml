@@ -1,0 +1,8 @@
+collision_scene_server:
+  ros__parameters:
+    source_manifest: ""
+    shared_path: /dev/shm/robot_safecontrol_collision_scene
+    joint_state_topic: /mujoco_joint_states
+    timed_lidar_topic: /perception/timed_lidar
+    revision_topic: /collision_scene/revision
+    health_period_s: 0.1

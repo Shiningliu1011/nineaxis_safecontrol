@@ -20,6 +20,7 @@
 - [全项目单位约定](units.md)：项目输入与报告的 mm/°、计算内核的 m/rad 及边界换算。
 - [管道路径与运动 Python 工具](pipe_assets.md)：曲面模型、路径画笔、NURBS、进给插补与连续姿态生成。
 - [控制内核](modules/portable_oscbf.md)：模块、依赖和移植入口。
+- [独立碰撞场景服务](modules/collision_scene_server.md)：逐点数据入口、场景来源、双缓冲共享内存及消费者恢复。
 - [MID-360 / MID-360S 驱动](modules/livox_mid360.md)：安装、设备接口和验证范围。
 - [传感器布局与标定](sensor_layout_and_calibration.md)：坐标和安装方案。
 - [雷达与相机相对外参](lidar_camera_calibration.md)：当前安装关系的标定结果、静态多姿态测量、独立验收与本机复现命令。

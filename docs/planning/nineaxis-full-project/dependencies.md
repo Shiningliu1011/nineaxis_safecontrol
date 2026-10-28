@@ -149,17 +149,18 @@ flowchart TD
 - [[11] Runtime、安全监督与真实执行准入（需你拍板）](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/151)：[完整Runtime方案](decision-151-runtime.md)已经用户确认，任务完成。
 - [[12] M08 联合预测模型与求解方案（需你拍板）](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/150)：本轮[真实模型、导数及求解器研究](mpc-solver-research.md)已保存，完整约束、选型及周期仍待测量，任务保持开放。
 - [[14] M09 联合 QP 与独立、协同运行规则（需你拍板）](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/143)、[[15] 全项目验收、M12 与正式实验（需你拍板）](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/144)：用户已确认并完成，分别见[共同QP](decision-143-joint-qp.md)、[验收与正式实验](decision-144-acceptance.md)。
-- [[19] 实现 M11 真实设备协议与执行保护](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/164)：已经解除阻塞，尚未开始实现，处于待领取状态。
+- [[19] 实现 M11 真实设备协议与执行保护](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/164)：已领取并核验项目 `大然电机/` 中的厂家资料、SDK 和现有通信记录；命令实际采用、反馈采样时间、全轴身份及独立保护仍缺少确认依据，任务保持开放，见[资料核验记录](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/164#issuecomment-6459917358)。
 - [[32] 实现 M05 状态快照与M06执行进度结算](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/155)、[[33] 实现 M10/M11 仿真执行与最终指令校验](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/156)、[[35] 实现 M12 记录、回放与整段评价](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/159)：已经解除阻塞，可以领取。
 - [[17] 实现 M01 工件、画笔、NURBS 与路径参考](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/152)：已完成main集成与验收，两份包各14992原样本核验及90项直接消费者通过；[完成记录](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/152#issuecomment-6445339517)保留全部功能、跳过和各CPU计时条件。
 - [[18] 实现 M02/M07 共用模型、导数与约束](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/153)：已完成main集成，79项相关检查、隔离安装与独立双线审查通过，任务完成。
 - [[21] 建立 LiDAR occupied/free/unknown 场景与固定模型并集](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/108)：已集成main工作区，272项回归和两路独立审查通过，任务完成。
 - [[22] 实现逐点时间 mesh ray self-filter](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/105)：已完成main集成与验收，311项相关检查和安装后真实导入通过，见[完成记录](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/105#issuecomment-6445352584)。
 - [[23] 建立动态 tracking 与 reachable support tube](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/101)：已完成main集成与独立双线审查，456项相关消费者、30项独立及组合检查、43项安装公开检查通过，见[完成记录](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/101#issuecomment-6446396500)。
-- [[24] 实现 collision_scene_server 与双缓冲共享场景](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/104)、[[25] 实现独立 primitive query 行与固定容量活动集合](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/112)、[[26] 实现自适应连续区间 certify](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/113)：已经解除阻塞，处于待领取状态，本轮未启动。
+- [[24] 实现 collision_scene_server 与双缓冲共享场景](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/104)：已完成 main 工作区集成并关闭；322 项受影响真实测试、69 项纯逻辑检查、独立双线审查及安装默认入口验收通过，13 份安装文件身份一致，见[完成记录](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/104#issuecomment-6460673198)。
+- [[25] 实现独立 primitive query 行与固定容量活动集合](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/112)、[[26] 实现自适应连续区间 certify](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/113)：已经解除阻塞，处于待领取状态。
 - #95 激光雷达外参标定：没有开放前置，由 `lsn`（GitHub `Shiningliu1011`）继续。
 - #132 基础文档：已指派，等待 #95；#145 总体规格已指派，等待 #150。
 
-当前原生快照`frontier-after-101-105-152.json`为59项主线、179条依赖、41项开放，其中32项仍有开放前置；图无循环且原生摘要一致。本轮已完成当前并行实现与#150研究记录，按用户要求停止，后续任务未启动。编号01–57的主线范围与相互关系保持现有定义；58、59负责最终汇合。#171、#182、#183已取消并移出地图，#172–#181的完成记录见[前期证据](../../static_obstacle_experiments_handoff.md)。
+当前原生快照 `.scratch/map147-104/parent/frontier-after-104.json` 为59项主线、179条依赖、40项开放，其中32项仍有开放前置；图无循环且原生摘要一致。场景服务实现及本票验收完成，设备协议任务保留明确的现场证据缺口；本会话没有领取后续实现任务。编号01–57的主线范围与相互关系保持现有定义；58、59负责最终汇合。#171、#182、#183已取消并移出地图，#172–#181的完成记录见[前期证据](../../static_obstacle_experiments_handoff.md)。
 
 仓库由 `lsn` 一人跨设备使用。assignee 表示当前正在跟进的任务；未指派任务属于项目待办。

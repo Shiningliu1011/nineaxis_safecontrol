@@ -1,0 +1,5 @@
+{"file":".trellis/spec/backend/index.md","reason":"完整受影响规范检查"}
+{"file":"docs/CODING_STANDARDS.md","reason":"来源、接口、时间和失败路径审查"}
+{"file":"docs/adr/0037-double-buffered-shared-scene.md","reason":"实际共享内存验收"}
+{"file":"docs/adr/0038-dedicated-collision-scene-server.md","reason":"进程唯一所有者与重启"}
+{"file":"docs/adr/0041-typed-collision-results-and-status.md","reason":"全部异常明确非OK"}

@@ -37,4 +37,4 @@ query 与 certify 使用 PreparedScene 时重新检查期限。query 在最终 J
 
 `portable_oscbf/tests/test_prepare_scene.py` 通过公开操作验证每项准入条件、错误状态、不可变性、期限和固定 shape。解析输入的时间预算只用于本机接口与数值测试，不能用于生产准入。
 
-场景服务、共享内存原子发布、support 合并、活动集合证明和动态 reachable support tube 由对应执行票提供。当前接口没有生产命令权限；其余操作说明见 [CollisionSafety 接口](collision-safety.md)。
+[独立场景服务](../collision_scene_server.md)负责来源组合、固定布局共享内存原子发布和读取；[动态 support](../dynamic_support.md)保存原观测与未来运动范围。当前接口没有生产命令权限；其余操作说明见 [CollisionSafety 接口](collision-safety.md)。

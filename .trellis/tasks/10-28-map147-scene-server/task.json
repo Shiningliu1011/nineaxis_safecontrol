@@ -1,0 +1,42 @@
+{
+  "id": "map147-scene-server",
+  "name": "map147-scene-server",
+  "title": "实现 collision_scene_server 与双缓冲共享场景",
+  "status": "completed",
+  "priority": "P1",
+  "creator": "Lsn",
+  "assignee": "Lsn",
+  "createdAt": "2026-10-28",
+  "completedAt": "2026-10-28",
+  "branch": "main",
+  "base_branch": "main",
+  "worktree_path": "/home/lsn/robot/robot_safecontrol",
+  "commit": null,
+  "pr_url": null,
+  "children": [],
+  "subtasks": [],
+  "parent": "10-27-map147-implementation",
+  "meta": {
+    "map": 147,
+    "issue": 104,
+    "baseline_commit": "8d5e938d4fe0185e07f17bc2359881157967baac",
+    "workflow_owner": "trellis",
+    "method": "implement-spec",
+    "spec_promotion": false,
+    "sync_authorized": true,
+    "sync_remote": "origin",
+    "sync_branch": "main",
+    "implementation_branch": "codex/map147-scene-server",
+    "implementation_worktree_removed": true,
+    "source_handoff_sha256": "b9d8f33923d8e8b706ee59b8bfaac7d2245f9dac4f49f589ad05598b976db2db",
+    "evidence_root": ".scratch/map147-104",
+    "completion_comment": "https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/104#issuecomment-6460673198",
+    "main_tests_passed": 322,
+    "installed_files_verified": 13,
+    "high_risk_changes": [
+      "共享场景跨进程原子发布",
+      "碰撞输入唯一所有者",
+      "场景来源与时间拒绝"
+    ]
+  }
+}

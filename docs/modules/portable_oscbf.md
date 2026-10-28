@@ -14,6 +14,7 @@
 - [CollisionSafety 接口](portable-oscbf/collision-safety.md)：三个公开操作、固定结果结构和当前准入状态。
 - [LiDAR 射线占据场景](lidar_occupancy.md)：occupied/free/unknown、固定模型并集、版本与 support 容量。
 - [LiDAR 逐点自体过滤](lidar_self_filter.md)：原始 mesh、逐点反馈、首交点、可见范围与覆盖撤销。
+- [独立碰撞场景服务](collision_scene_server.md)：唯一场景 owner、逐点数据转发、固定布局双缓冲、只读 reader 和本地 JAX 引用。
 - [CollisionParameterArtifact](portable-oscbf/collision-parameter-artifact.md)：安全参数格式、来源校验、不可变配置与 policy identity。
 - [Collision geometry artifact](portable-oscbf/collision-geometry-artifact.md)：封闭网格生成、离线几何资产与覆盖检查。
 - [动态 support 与未来范围](dynamic_support.md)：可选 tracking、原观测与固定模型来源、逐行预测时间、半径增长及未来包围。

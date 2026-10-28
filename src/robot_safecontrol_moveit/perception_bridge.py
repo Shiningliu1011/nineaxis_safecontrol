@@ -38,6 +38,7 @@ from __future__ import annotations
 import os
 import sys
 import time
+import uuid
 from collections import deque
 from pathlib import Path
 from threading import Lock
@@ -52,7 +53,7 @@ from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import JointState, PointCloud2, PointField
 from sensor_msgs_py import point_cloud2 as pc2
-from std_msgs.msg import Float32MultiArray, MultiArrayDimension, MultiArrayLayout
+from std_msgs.msg import Float32MultiArray, MultiArrayDimension, MultiArrayLayout, UInt8MultiArray
 
 from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus, KeyValue
 from moveit_msgs.msg import CollisionObject
@@ -71,13 +72,13 @@ from robot_safecontrol_moveit.calibration_record import (
 from robot_safecontrol_moveit.ros_conventions import (
     JOINT_STATE_TOPIC,
     PERCEPTION_TRACKS_TOPIC,
+    TIMED_LIDAR_TOPIC,
     state_stream_qos,
 )
+from robot_safecontrol_moveit.oscbf_trajectory import bootstrap_portable, package_portable_root
 
 # --- portable_oscbf on path (pure-python calculation core) --------------------
-_REPO_ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(_REPO_ROOT / "portable_oscbf"))
-sys.path.insert(0, str(_REPO_ROOT / "portable_oscbf" / "work"))
+bootstrap_portable(package_portable_root())
 
 from work.fusion_engine import FusionEngine  # noqa: E402
 from work.perception_config import (  # noqa: E402
@@ -167,6 +168,9 @@ class PerceptionBridge(Node):
         self._node_identity = f"{self.get_name()}#{os.getpid()}"
         self._decision = self._load_calibration_gate()
         self._record_extrinsics = self._record_matrices()
+        if self.get_parameter("scene_server_mode").value:
+            self._initialize_scene_forwarding()
+            return
 
         cfg = self._load_cfg()
         self._cfg = cfg
@@ -348,10 +352,46 @@ class PerceptionBridge(Node):
         self.declare_parameter("allow_uncalibrated_debug", [""])
         self.declare_parameter("source_time_domain_camera", "")
         self.declare_parameter("source_time_domain_lidar", "")
+        self.declare_parameter("scene_server_mode", False)
+        self.declare_parameter("timed_lidar_topic", TIMED_LIDAR_TOPIC)
         self.declare_parameter("publish_cloud_rate_hz", 5.0)
         self.declare_parameter("publish_esdf_rate_hz", 10.0)
         self.declare_parameter("publish_collision_rate_hz", 5.0)
         self.declare_parameter("collision_object_prefix", "camera_cluster")
+
+    def _initialize_scene_forwarding(self) -> None:
+        source_topic = str(self.get_parameter("source_topic_lidar").value)
+        target_topic = str(self.get_parameter("timed_lidar_topic").value)
+        source_clock = str(self.get_parameter("source_time_domain_lidar").value)
+        lidar = self._record.source("lidar")
+        if (str(self.get_parameter("source_topic").value).strip() or not source_topic.strip()
+                or not target_topic.strip() or not source_clock.strip()
+                or lidar is None or not lidar.admission_ready):
+            raise ValueError("场景转发模式需要独立 LiDAR、有效标定与显式原始时间域")
+        if self.resolve_topic_name(source_topic) == self.resolve_topic_name(target_topic):
+            raise ValueError("原始 LiDAR 与 timed LiDAR topic 必须互异")
+        self._scene_frame = str(self.get_parameter("input_frame_lidar").value)
+        self._scene_clock = source_clock
+        self._scene_calibration = self._record.file_sha256 + ":" + lidar.calibration_id
+        self._scene_source_instance = self._node_identity + ":" + uuid.uuid4().hex
+        self._timed_lidar_pub = self.create_publisher(UInt8MultiArray, target_topic, qos_profile_sensor_data)
+        self._lidar_sub = self.create_subscription(PointCloud2, source_topic, self._forward_timed_lidar, qos_profile_sensor_data)
+        self._calibration_pub = self.create_publisher(DiagnosticArray, PERCEPTION_CALIBRATION_STATUS_TOPIC, 10)
+        self._publish_calibration_status()
+        self._calibration_clock = Clock(clock_type=ClockType.STEADY_TIME)
+        self._calibration_timer = self.create_timer(1., self._publish_calibration_status, clock=self._calibration_clock)
+        self.get_logger().info(
+            f"PERCEPTION_TIMED_LIDAR_READY source={self.resolve_topic_name(source_topic)} "
+            f"target={self.resolve_topic_name(target_topic)} clock={source_clock} "
+            f"calibration={self._scene_calibration} instance={self._scene_source_instance}")
+
+    def _forward_timed_lidar(self, message: PointCloud2) -> None:
+        from robot_safecontrol_moveit.timed_lidar_transport import encode_timed_lidar
+
+        envelope = encode_timed_lidar(
+            message, source_clock_id=self._scene_clock, calibration_id=self._scene_calibration,
+            source_instance=self._scene_source_instance, frame_id=self._scene_frame)
+        self._timed_lidar_pub.publish(envelope)
 
     def _parameter_matches_default(self, name: str, default: object) -> bool:
         """探测已废弃参数是否被覆盖（值 != 内置默认即视为覆盖）。"""

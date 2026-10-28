@@ -14,8 +14,8 @@
   "worktree_path": "/home/lsn/robot/robot_safecontrol",
   "commit": null,
   "pr_url": null,
-  "subtasks": [],
-  "children": [],
+  "subtasks": ["10-28-map147-scene-server"],
+  "children": ["10-28-map147-scene-server"],
   "parent": null,
   "relatedFiles": [
     "docs/specs/predictive-coordination-control.md",
@@ -29,10 +29,13 @@
     "method": "implement-spec",
     "spec_promotion": false,
     "current_batch_completed": true,
-    "stop_after_current_parallel": true,
-    "current_batch_closed_issues": [101, 105, 152],
+    "stop_after_current_parallel": false,
+    "current_implementation_issue": null,
+    "last_completed_issue": 104,
+    "device_evidence_issue": 164,
+    "current_batch_closed_issues": [104],
     "research_issue_open": 150,
-    "remaining_map_open_issues": 41,
+    "remaining_map_open_issues": 40,
     "next_ticket_started": false
   }
 }

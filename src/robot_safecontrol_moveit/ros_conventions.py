@@ -15,6 +15,8 @@ if TYPE_CHECKING:
 JOINT_STATE_TOPIC = "/mujoco_joint_states"
 OSCBF_COMMAND_TOPIC = "/oscbf_command"
 PERCEPTION_TRACKS_TOPIC = "/perception/tracks"
+TIMED_LIDAR_TOPIC = "/perception/timed_lidar"
+COLLISION_SCENE_REVISION_TOPIC = "/collision_scene/revision"
 STATE_STREAM_QOS_DEPTH = 1
 COMMAND_STREAM_QOS_DEPTH = 5
 

@@ -15,6 +15,7 @@
 | `urdfdom_py` (`urdf-parser-py`) | 解析 URDF 并生成运动学常量 | ✅ 生成与一致性测试 |
 | `tetgen` | 对经过检查的 closed collision mesh 执行离线四面体化 | ✅ 几何资产生成 |
 | `jsonschema` | 检查版本化 CollisionParameterArtifact 与参数来源记录 | ✅ 参数加载 |
+| 系统 `libatomic1` | 独立共享场景的 lock-free acquire/release 发布与读取 | ✅ 共享场景传输 |
 | `ruckig` | 仿真执行器的连续位置轨迹与速度、加速度、jerk 限制 | ✅ 仿真执行器 |
 
 控制热路径固定使用 `cbfpy==0.0.1`、`jax==0.6.2`、`jaxlib==0.6.2`

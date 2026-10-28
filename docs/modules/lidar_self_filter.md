@@ -70,4 +70,4 @@ python -m pytest portable_oscbf/tests/test_lidar_self_filter.py \
 
 测试覆盖真实原始 URDF/STL、独立解析盒体、间隔几何、全部 link 首交点、origin/scale、逐点运动、时间误差、反馈缺失、原资源变更、传感器位于本体内部、近表面障碍、unknown 撤销及真实 `prepare_scene`。`tests/data/lidar_self_filter/analytic_scan_v1.json` 是明确标记的数学接口回放，保留原时间、原点、标定、反馈、身份与独立预期，并通过真实消息解码和完整场景更新。它没有提供真实 LiDAR、现场几何或物理停车能力证据。
 
-独立 server、固定真实 LiDAR 跨进程回放、设备参数和生产控制切换分别由 #104、#122、#117、#123 管理。当前生产控制链与硬件模式维持已有准入条件。
+[独立场景服务](collision_scene_server.md)组合此入口与占据、固定模型、动态 support 和共享发布；`perception_bridge` 的场景转发模式保留完整逐点数据与来源身份。固定真实 LiDAR 跨进程回放、设备参数和生产控制切换分别由对应任务继续验收。当前生产控制链与硬件模式维持已有准入条件。

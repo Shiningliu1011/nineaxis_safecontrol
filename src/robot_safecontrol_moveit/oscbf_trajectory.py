@@ -15,6 +15,18 @@ from typing import Sequence
 import numpy as np
 
 
+def package_portable_root() -> Path:
+    module_path = Path(__file__).resolve()
+    source = module_path.parents[2] / "portable_oscbf"
+    if (source / "work/__init__.py").is_file():
+        return source
+    for ancestor in module_path.parents:
+        installed = ancestor / "share/robot_safecontrol_moveit/portable_oscbf"
+        if (installed / "work/__init__.py").is_file():
+            return installed
+    raise FileNotFoundError(f"当前 Python 包缺少对应 portable_oscbf: {module_path}")
+
+
 def default_portable_root() -> Path:
     """Installed ``portable_oscbf``, or the source tree in a dev checkout."""
     try:
