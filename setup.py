@@ -61,7 +61,7 @@ setup(
           for directory in sorted(Path("data/nurbs/butterfly_reference_v1").rglob("*")) if directory.is_dir()],
         (f"share/{package_name}/launch", glob("launch/*.launch.py")),
         (f"share/{package_name}/tests", glob("tests/*.py")),
-        (f"share/{package_name}/tests/data", glob("tests/data/*.npz")),
+        (f"share/{package_name}/tests/data", glob("tests/data/*.npz") + glob("tests/data/*.json")),
         (f"share/{package_name}/tests/data/pipe_assets", glob("tests/data/pipe_assets/*")),
         (f"share/{package_name}/tests/data/lidar_self_filter", glob("tests/data/lidar_self_filter/*.json")),
         # Model files: URDF, meshes, and MoveIt configuration.
@@ -114,7 +114,7 @@ setup(
     ],
     install_requires=["setuptools", "msgpack==1.1.2", *PORTABLE_OSCBF_RUNTIME_REQUIREMENTS],
     extras_require={
-        "hardware": ["python-can==4.6.1", "PyYAML>=5.4.1,<7"],
+        "hardware": ["python-can==4.6.1", "PyYAML>=5.4.1,<7", "pyserial==3.5", "construct==2.10.70"],
         "pipe-assets": [
             "numpy>=1.26,<3", "scipy>=1.15,<2", "matplotlib>=3.10,<4",
             "pymatreader==1.3.2", "h5py>=3.8,<4", "osqp>=1.0,<2",
@@ -140,6 +140,7 @@ setup(
             "static_obstacle_experiment = robot_safecontrol_moveit.static_experiment:main",
             "pipe_assets = robot_safecontrol_moveit.pipe_assets.cli:main",
             "hardware_bridge = robot_safecontrol_moveit.hardware_bridge:main",
+            "motor_control = robot_safecontrol_moveit.motor_cli:main",
             "livox_mid360_node = robot_safecontrol_moveit.livox_mid360.ros_node:main",
             "livox_mid360_tool = robot_safecontrol_moveit.livox_mid360.cli:main",
         ],

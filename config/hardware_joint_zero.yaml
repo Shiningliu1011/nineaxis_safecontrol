@@ -1,15 +1,16 @@
-# 关节零位标定表（真机）。
-# 零位标定流程（机械零位标记法）：
-#   1. 手动摆到机械零位（各轴限位开关/卡槽/标记处）
-#   2. DrEmpower 0x08 set_zero（order 0x05）固化电机零位
-#   3. 逐关节 ±5° 命令验证正方向与符号
-#   4. 把 sign 和 zero_offset_deg 填入本文件
+# 关节软件零位标定表（真机）。
+#   1. 在可靠支撑条件下确认当前姿态对应 URDF 零位
+#   2. 静止采集各节点的输出轴角度，保存为 zero_offset_deg
+#   3. 在受控单关节测试中验证 sign 与模型方向的对应关系
 #
 # sign: +1 = 电机正转对应 URDF 正方向；-1 = 反向
-# zero_offset_deg: 电机零位与机械零位的角度偏移（set_zero 后通常为 0）
+# zero_offset_deg: 机械臂处于 URDF 零位时的电机输出轴角度读数
 #
 # 注意：所有 zero_offset_deg 均为编码器输出轴 deg；J1 减去偏移后才通过传动换算成 m。
-# 下方 +1/0 全是待验证占位，不是标定完成证据。
+# J2–J9 的 sign 根据用户观察记录，见 docs/motor_direction_change_20261021.md。
+# J2–J9 的 zero_offset_deg 来自用户确认 URDF 零位后的静止采集。
+# 记录见 docs/single_joint_execution.md；J1 仍待标定。
+# 调用接口已接入方向换算；J2 现场方向已确认，其余方向见执行记录。
 # 前置 P2：J1 丝杆传动参数实测后才能标定 J1。
 # 已实测（2026-09-06）：单头丝杠，导程 5 mm/rev；二级传动比/效率/行程/正方向/回零方式待测。
 
@@ -17,26 +18,26 @@ J1:
   sign: 1
   zero_offset_deg: 0.0         # 待实测（丝杆传动未标定前 J1 禁止运动）
 J2:
-  sign: 1
-  zero_offset_deg: 0.0
+  sign: -1
+  zero_offset_deg: -0.0000858306884765625
 J3:
   sign: 1
-  zero_offset_deg: 0.0
+  zero_offset_deg: -0.00005245208740234375
 J4:
-  sign: 1
-  zero_offset_deg: 0.0
+  sign: -1
+  zero_offset_deg: -0.00016510486602783203
 J5:
   sign: 1
-  zero_offset_deg: 0.0
+  zero_offset_deg: 0.00005125999450683594
 J6:
-  sign: 1
-  zero_offset_deg: 0.0
+  sign: -1
+  zero_offset_deg: -0.000037550926208496094
 J7:
-  sign: 1
-  zero_offset_deg: 0.0
+  sign: -1
+  zero_offset_deg: 0.000007748603820800781
 J8:
-  sign: 1
-  zero_offset_deg: 0.0
+  sign: -1
+  zero_offset_deg: 0.0001642480492591858
 J9:
-  sign: 1
-  zero_offset_deg: 0.0
+  sign: -1
+  zero_offset_deg: 0.00034034252166748047

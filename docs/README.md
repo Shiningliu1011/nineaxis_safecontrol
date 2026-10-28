@@ -13,6 +13,8 @@
 - [跟踪执行与过渡结果](tracking_execution.md)：公开入口、状态归属、报告生命周期和验证入口。
 - [真机操作手册](real_robot_runbook.md)与[笔记本连接检查](hardware_laptop_quickstart.md)：硬件操作入口。
 - [三路九个电机通信记录](drempower_communication_20261016.md)：500 kbps 设置、实际验证与参数恢复方法。
+- [电机方向配置与恢复记录](motor_direction_change_20261021.md)：关节方向符号、生效条件和手动恢复步骤。
+- [单关节低速执行与异常处理](single_joint_execution.md)：反馈、限位、到位判定、异常保持和现场验证范围。
 
 ## 模块与领域
 

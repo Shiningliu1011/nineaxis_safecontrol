@@ -32,6 +32,7 @@ MAX_NODE_ID = 63
 BROADCAST_NODE_ID = 0
 
 CMD_POSITION_ANGLE_MODE0 = 0x19  # 位置模式 0：轨迹跟踪
+CMD_POSITION_ANGLE_MODE1 = 0x1A  # 位置模式 1：梯形轨迹
 CMD_PRESET_ANGLE = 0x0C          # 多机同步预置角
 CMD_SYSTEM = 0x08                 # 系统命令
 CMD_PROPERTY_READ = 0x1E
@@ -133,6 +134,16 @@ def encode_system(node_id: int, order_num: int) -> bytes:
     if not 0 <= int(order_num) <= 0xFFFFFFFF:
         raise ValueError(f"order_num 必须为 u32，got {order_num}")
     return struct.pack("<I", int(order_num)) + b"\x00" * 4
+
+
+def encode_trapezoid_position(node_id: int, target_deg: float, *, speed: float, accel: float) -> bytes:
+    if not 1 <= node_id <= MAX_NODE_ID:
+        raise ValueError("位置命令必须使用单节点")
+    if not math.isfinite(target_deg):
+        raise ValueError("位置目标必须为有限数值")
+    if not all(math.isfinite(value) and 0.01 <= value < 300 for value in (speed, accel)):
+        raise ValueError("梯形轨迹速度与加速度必须在 [0.01, 300) 内")
+    return struct.pack("<fhh", target_deg, _int16_scaled(speed, "speed"), _int16_scaled(accel, "accel"))
 
 
 def _as_u16(value: int, name: str) -> int:
