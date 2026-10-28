@@ -1,6 +1,39 @@
 # 当前执行与验收
 
-## 2026-10-28 路径参考修复
+## 2026-10-28 参数检查与显式参考来源修复
+
+本次基点为 `8089998d9c937694b39ef5a0653a9d58ccb6ef33`，开始时工作区干净。用户授权修复本次审查的两项 P2，补充真实数据回归和相关文档，并将本次改动提交到 `main`、推送到 `origin/main`，完成同步后停止。其余地图任务保持原状态。
+
+测试继续使用既有公开接口 `load_repository_trajectory()`、`set_surface_normal_orientation()`、`set_orientation_mode()`、`attach_continuous_reference()`、`path_geometry(require_continuous=True)` 和全部原始任务参考。期望值采用成功加载后的真实 S0 参考及正式生成器产生的版本身份。
+
+- [x] 输入参数检查和圆柱拟合在更新当前轨迹前完成；无效参数调用后，14992 个原始运动样本、连续身份及几何保持一致。
+- [x] 保存显式连接的参考目录，重复设置或经过 `fixed` 恢复后重新验证并采用匹配版本。
+- [x] 核验配置改变、恢复原配置及选定产物损坏时的行为，保持自动发现、production/S0 和安装资源验证。
+- [x] 完成相关 NumPy/JAX 与公共消费者回归，更新 `docs/butterfly_reference.md` 及当前审查记录。
+
+实现仅涉及 `portable_oscbf/work/ik_data_loader.py`，测试放在 `tests/test_butterfly_reference_assets.py`。候选版本采用同一完整加载检查，显式来源在自动发现其他配置时保留。当前环境、失败测试、通过测试及最终日志独立保存在已忽略的 `.scratch/reference-state-fix-20261028/`，保留已有审查与验证证据。
+
+以下命令均在仓库根目录加载 `.scratch/reference-state-fix-20261028/env.sh` 后执行。TDD 两个行为的命令及结果：
+
+- `python -m pytest -q tests/test_butterfly_reference_assets.py::test_invalid_cylinder_parameters_preserve_the_loaded_reference`：`--basetemp` 分别使用本轮目录的 `red-parameters-data` / `green-parameters-data`；结果为 1 failed（退出 1，7.79 s）及 1 passed（退出 0，7.02 s），日志为 `red-parameters.log` / `green-parameters.log`。
+- `python -m pytest -q tests/test_butterfly_reference_assets.py -k explicit_reference_remains_available`：`--basetemp` 分别使用 `red-explicit-data` / `green-explicit-data`；结果为 2 failed（退出 1，16.72 s）及 2 passed（退出 0，18.41 s），均有 17 deselected，日志为 `red-explicit.log` / `green-explicit.log`。
+
+最终相关回归命令：
+
+```bash
+python -m pytest -q tests/test_butterfly_reference_assets.py portable_oscbf/tests/test_continuous_path_reference.py --basetemp=.scratch/reference-state-fix-20261028/reference-regression-data --junitxml=.scratch/reference-state-fix-20261028/reference-regression.xml
+python -m pytest -q tests/test_trajectory_transform_unity.py tests/test_static_experiment.py::test_s0_uses_declared_geometry_and_complete_path portable_oscbf/tests/test_trajectory_loading.py portable_oscbf/tests/test_jax_path_following.py portable_oscbf/tests/test_path_posture_reference.py portable_oscbf/tests/test_path_precision_initialization.py --basetemp=.scratch/reference-state-fix-20261028/consumer-regression-data --junitxml=.scratch/reference-state-fix-20261028/consumer-regression.xml
+```
+
+两组分别为 61 passed（219.59 s）和 26 passed（29.01 s），均退出 0，无失败、错误、跳过或未选中用例。检查包括十种无效输入后的完整样本保持、显式来源重复设置与 `fixed` 恢复、其他圆柱版本的自动选择及原显式版本恢复、来源 SHA256 损坏与 manifest 缺失拒绝。真实生成的默认与非默认变换版本各核验 14992 个来源点，全部运动样本及连续身份采用公开接口检查。
+
+Standards 独立静态复核通过。Spec 独立真实探针执行 `source .scratch/reference-state-fix-20261028/review-spec/env.sh && python .scratch/reference-state-fix-20261028/review-spec/check_state_fix.py`，退出 0，八项检查通过，结果为 `review-spec/state-fix-results.json`。两方面未发现新的确认问题。
+
+Python 编译、AST 与 `git diff --check` 通过。`python .scratch/reference-state-fix-20261028/verify_results.py` 退出 0，核对两份 JUnit、生成版本的来源验证和既有连续资产未改动，保存代码及测试 SHA256 至 `verification.json`。使用说明已核对当前接口与行为；规范沿用既有输入检查及身份规则，本次没有新增规范决定。
+
+两项 P2 的修复、真实数据回归、文档与独立复核完成。本次没有运行全量测试、性能矩阵或设备测试。修复、测试和相关文档共同纳入 `main` 提交与 `origin/main` 同步范围，完成同步并核验分支身份后停止。
+
+## 8089998 路径参考修复与同步
 
 本次在 `main` 的 `930b582a447d29af8e289bdd24c6ae5ed255abe6` 上继续处理审查记录的两项 P2。开始时工作区干净。用户已明确授权将本次修复、测试和相关文档提交到 `main`，并推送到 `origin/main`；完成同步后停止。
 
@@ -79,6 +112,6 @@ controller四个P-core条件通过原门槛：303步、p95=14.342699509870727ms�
 
 ## 审查与跨设备接手
 
-2026-10-28在设备`lsn`完成两项路径参考 P2 的本地修复。自动发现与连接共用配置身份检查；姿态设置维护首次投影和当前圆柱投影。当前实际通过 81 项相关回归，命令、JUnit、来源身份与验证范围见上方专节及`research/review.md`。
+2026-10-28在设备`lsn`完成参数检查与显式参考来源的两项 P2 本地修复。参数检查与拟合在状态更新前完成；显式目录在姿态切换和其他版本自动选择期间保留，恢复后重新验证。当前实际通过 87 项相关回归及八项独立真实检查，命令、JUnit、来源身份与验证范围见上方专节及`research/review.md`。
 
-本地原始审查数据保留在`/home/lsn/robot/robot_safecontrol/.scratch/pr-review-20261028/`，完整报告为`review.md`，冻结范围为`scope.json`。本次修复证据独立保存在`.scratch/reference-p2-fix-20261028/`。两个目录均按现有规则保留本地；跨设备接手使用仓库内本记录与`research/review.md`，需要原始证据时从该设备获取。修复基点为`930b582a447d29af8e289bdd24c6ae5ed255abe6`，本次修复、测试和相关文档共同纳入 `main` 提交与 `origin/main` 同步范围。
+原始审查与前次修复证据分别保留在`.scratch/pr-review-20261028/`、`.scratch/reference-p2-fix-20261028/`及`.scratch/review-8089998/`。本次修复证据独立保存在`.scratch/reference-state-fix-20261028/`。各目录按现有规则保留在设备`lsn`；跨设备接手使用仓库内本记录与`research/review.md`，需要原始证据时从该设备获取。本次基点为`8089998d9c937694b39ef5a0653a9d58ccb6ef33`，修复、真实数据回归测试和相关文档共同纳入 `main` 提交与 `origin/main` 同步范围，完成同步并核验分支身份后停止。

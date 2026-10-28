@@ -257,3 +257,115 @@ def test_changing_cylinder_rebuilds_the_reference_from_the_loaded_path(bundle_na
         np.testing.assert_array_equal([getattr(trajectory, accessor)(time) for time in times],
                                       [getattr(fresh, accessor)(time) for time in times])
     np.testing.assert_array_equal(geometry.rotations, fresh.path_geometry(require_continuous=True).rotations)
+
+
+def test_invalid_cylinder_parameters_preserve_the_loaded_reference():
+    trajectory = load_repository_trajectory(
+        str(SOURCE / "ik_input.mat"), str(ROOT / "portable_oscbf/config/nineaxis.yaml"), 3.5,
+    )
+    trajectory.set_surface_normal_orientation([0., 1., 0.], radius_m=.2706)
+    geometry = trajectory.path_geometry(require_continuous=True)
+    original = trajectory.task_reference_sequence()
+    times = np.arange(trajectory.num_points) * trajectory.Ts
+    original_jerk = np.array([trajectory.jerk_world_at(time).copy() for time in times])
+    invalid_parameters = (
+        {"axis_direction": [0., 1., 0., 0.]},
+        {"axis_direction": [0., 1.]},
+        {"axis_direction": [0., 0., 0.]},
+        {"axis_direction": [0., np.nan, 0.]},
+        {"axis_direction": [0., np.inf, 0.]},
+        {"axis_direction": [0., 1., 0.], "axis_point": [0., 1.]},
+        {"axis_direction": [0., 1., 0.], "axis_point": [0., np.nan, 0.]},
+        {"axis_direction": [0., 1., 0.], "axis_point": [0., np.inf, 0.]},
+        {"axis_direction": [0., 1., 0.], "radius_m": 0.},
+        {"axis_direction": [0., 1., 0.], "radius_m": np.nan},
+    )
+    for parameters in invalid_parameters:
+        with pytest.raises(ValueError):
+            trajectory.set_surface_normal_orientation(**parameters)
+        current = trajectory.path_geometry(require_continuous=True)
+        assert current.reference_identity == geometry.reference_identity
+        np.testing.assert_array_equal(current.positions_m, geometry.positions_m)
+        restored = trajectory.task_reference_sequence()
+        assert len(restored) == len(original) == 14992
+        for field in ("pos", "vel", "accel", "R_des", "omega"):
+            np.testing.assert_array_equal([getattr(sample, field) for sample in restored],
+                                          [getattr(sample, field) for sample in original])
+        np.testing.assert_array_equal([trajectory.jerk_world_at(time) for time in times], original_jerk)
+    trajectory.set_surface_normal_orientation([0., 1., 0.], radius_m=.2706)
+    assert trajectory.path_geometry(require_continuous=True).reference_identity == geometry.reference_identity
+
+
+@pytest.mark.parametrize("via_fixed", [False, True], ids=["repeat", "fixed"])
+def test_explicit_reference_remains_available_after_orientation_reset(reference_variants, tmp_path, via_fixed):
+    inputs, shifted_config, manifests = reference_variants
+    shutil.copyfile(inputs / "ik_input.mat", tmp_path / "ik_input.mat")
+    trajectory = load_repository_trajectory(str(tmp_path / "ik_input.mat"), str(shifted_config), 3.5)
+    trajectory.set_surface_normal_orientation([0., 1., 0.])
+    centre, radius = trajectory.surface_centre.copy(), trajectory.surface_radius
+    trajectory.attach_continuous_reference(inputs / "butterfly_reference_v1/b-shifted")
+    original_geometry = trajectory.path_geometry(require_continuous=True)
+    assert original_geometry.reference_identity == manifests["b-shifted"]["identity"]
+    original = trajectory.task_reference_sequence()
+    times = np.arange(trajectory.num_points) * trajectory.Ts
+    original_jerk = np.array([trajectory.jerk_world_at(time).copy() for time in times])
+    if via_fixed:
+        trajectory.set_orientation_mode("fixed", fixed_R=np.eye(3))
+        assert trajectory.path_geometry().continuous_reference is None
+    trajectory.set_surface_normal_orientation([0., 1., 0.], axis_point=centre, radius_m=radius)
+    geometry = trajectory.path_geometry(require_continuous=True)
+    assert geometry.reference_identity == original_geometry.reference_identity
+    for field in ("positions_m", "rotations", "arc_length_m", "feedrate_m_s", "source_time_s"):
+        np.testing.assert_array_equal(getattr(geometry, field), getattr(original_geometry, field))
+    restored = trajectory.task_reference_sequence()
+    assert len(restored) == len(original) == 14992
+    for field in ("pos", "vel", "accel", "R_des", "omega"):
+        np.testing.assert_array_equal([getattr(sample, field) for sample in restored],
+                                      [getattr(sample, field) for sample in original])
+    np.testing.assert_array_equal([trajectory.jerk_world_at(time) for time in times], original_jerk)
+
+
+def test_explicit_reference_is_preserved_across_other_cylinder_versions(reference_variants, tmp_path):
+    inputs, shifted_config, manifests = reference_variants
+    shutil.copyfile(inputs / "ik_input.mat", tmp_path / "ik_input.mat")
+    s0_manifest = generate_reference(
+        SOURCE, shifted_config, ROOT / "config/oscbf_controller.yaml",
+        tmp_path / "butterfly_reference_v1/s0", scenario_config=ROOT / "config/static_experiment_s0.yaml",
+    )
+    trajectory = load_repository_trajectory(str(tmp_path / "ik_input.mat"), str(shifted_config), 3.5)
+    trajectory.set_surface_normal_orientation([0., 1., 0.])
+    trajectory.attach_continuous_reference(inputs / "butterfly_reference_v1/b-shifted")
+    original = trajectory.path_geometry(require_continuous=True)
+    trajectory.set_surface_normal_orientation([0., 1., 0.], radius_m=.31)
+    with pytest.raises(ValueError, match="缺少匹配的 continuous reference"):
+        trajectory.path_geometry(require_continuous=True)
+    trajectory.set_surface_normal_orientation([0., 1., 0.], radius_m=.2706)
+    assert trajectory.path_geometry(require_continuous=True).reference_identity == s0_manifest["identity"]
+    trajectory.set_orientation_mode("fixed", fixed_R=np.eye(3))
+    assert trajectory.path_geometry().continuous_reference is None
+    trajectory.set_surface_normal_orientation([0., 1., 0.])
+    restored = trajectory.path_geometry(require_continuous=True)
+    assert restored.reference_identity == original.reference_identity == manifests["b-shifted"]["identity"]
+    for field in ("positions_m", "rotations", "arc_length_m", "feedrate_m_s", "source_time_s"):
+        np.testing.assert_array_equal(getattr(restored, field), getattr(original, field))
+
+
+@pytest.mark.parametrize("damage", ["source_hash", "missing_manifest"])
+def test_explicit_reference_is_revalidated_after_orientation_reset(reference_variants, tmp_path, damage):
+    inputs, shifted_config, _ = reference_variants
+    shutil.copyfile(inputs / "ik_input.mat", tmp_path / "ik_input.mat")
+    bundle = tmp_path / "external-reference"
+    shutil.copytree(inputs / "butterfly_reference_v1/b-shifted", bundle)
+    trajectory = load_repository_trajectory(str(tmp_path / "ik_input.mat"), str(shifted_config), 3.5)
+    trajectory.set_surface_normal_orientation([0., 1., 0.])
+    trajectory.attach_continuous_reference(bundle)
+    assert trajectory.path_geometry(require_continuous=True).continuous_reference is not None
+    if damage == "source_hash":
+        (bundle / "source/control_points.txt").write_text("invalid\n")
+        expected_error, message = ValueError, "SHA256"
+    else:
+        (bundle / "manifest.json").rename(bundle / "saved-manifest.json")
+        expected_error, message = FileNotFoundError, "manifest.json"
+    trajectory.set_surface_normal_orientation([0., 1., 0.])
+    with pytest.raises(expected_error, match=message):
+        trajectory.path_geometry(require_continuous=True)

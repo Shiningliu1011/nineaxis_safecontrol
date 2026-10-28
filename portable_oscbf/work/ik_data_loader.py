@@ -156,6 +156,7 @@ class IKTrajectoryData:
         self.feedrate_scale = float(feedrate_scale)
         self.projection_stages: list[dict[str, np.ndarray | float]] = []
         self._continuous_reference_bundle = None
+        self._explicit_reference_path: Optional[Path] = None
 
         self.Ts = float(data['Ts'][0, 0])           # 采样周期 (s)
         self.num_points = int(data['num_points'][0, 0])
@@ -440,27 +441,33 @@ class IKTrajectoryData:
         roughly +0.27 m in Z), so callers should normally leave it unset.
         """
         axis = np.asarray(axis_direction, dtype=float).ravel()
+        if axis.shape != (3,) or not np.isfinite(axis).all():
+            raise ValueError("axis_direction must be a finite non-zero 3-vector")
         axis_len = float(np.linalg.norm(axis))
-        if axis_len < 1e-12:
-            raise ValueError("axis_direction must be a non-zero 3-vector")
+        if not np.isfinite(axis_len) or axis_len < 1e-12:
+            raise ValueError("axis_direction must be a finite non-zero 3-vector")
         axis = axis / axis_len
         if axis_point is not None:
             centre = np.asarray(axis_point, dtype=float).ravel()
-            if centre.shape != (3,):
-                raise ValueError("axis_point must be a 3-vector")
+            if centre.shape != (3,) or not np.isfinite(centre).all():
+                raise ValueError("axis_point must be a finite 3-vector")
         if radius_m is not None:
             if not np.isfinite(radius_m) or radius_m <= 0.0:
                 raise ValueError("radius_m must be finite and positive")
 
-        # 每次从首次投影结果构建当前圆柱，位置与运动参考使用相同来源。
-        for attr, values in self._surface_projection_base.items():
-            setattr(self, attr, values.copy())
-        self.projection_stages[1:] = []
-        fitted_centre, radius = self._fit_surface_with_radius(axis)
+        fitted_centre, radius = self._fit_surface_with_radius(
+            axis, points=self._surface_projection_base["_pos_world"])
         if axis_point is None:
             centre = fitted_centre
         if radius_m is not None:
             radius = float(radius_m)
+        if not np.isfinite(centre).all() or not np.isfinite(radius) or radius <= 0.0:
+            raise ValueError("cylinder fit must produce a finite centre and positive radius")
+
+        # 参数检查及拟合成功后，从首次投影结果构建当前圆柱。
+        for attr, values in self._surface_projection_base.items():
+            setattr(self, attr, values.copy())
+        self.projection_stages[1:] = []
 
         # 吸附到拟合圆柱表面 (镜像 cylinder_geometry.snap_path_to_cylindrical_surface):
         # 生成的原始轨迹相对拟合圆柱有毫米级径向起伏, 直接把每个点的径向分量
@@ -503,14 +510,16 @@ class IKTrajectoryData:
         """
         return self._fit_surface_with_radius(axis)[0]
 
-    def _fit_surface_with_radius(self, axis: np.ndarray) -> tuple[np.ndarray, float]:
+    def _fit_surface_with_radius(
+        self, axis: np.ndarray, *, points: Optional[np.ndarray] = None
+    ) -> tuple[np.ndarray, float]:
         """Fit the cylinder axis point and the surface radius in one pass.
 
         ``c + t * axis`` is the fitted axis line and the return value is the
         least-squares surface radius, used for snapping the path onto the
         cylindrical surface.
         """
-        points = np.asarray(self._pos_world, dtype=float)
+        points = np.asarray(self._pos_world if points is None else points, dtype=float)
         helper = np.array([1.0, 0.0, 0.0])
         if abs(float(np.dot(helper, axis))) > 0.9:
             helper = np.array([0.0, 0.0, 1.0])
@@ -745,7 +754,7 @@ class IKTrajectoryData:
             return "continuous reference 的变换或圆柱身份不匹配"
         return None
 
-    def attach_continuous_reference(self, bundle_path) -> None:
+    def _load_continuous_reference(self, bundle_path):
         from hashlib import sha256
         from work.continuous_path_reference import load_reference_bundle
 
@@ -753,6 +762,12 @@ class IKTrajectoryData:
         mismatch = self._continuous_reference_mismatch(bundle.manifest["description"])
         if mismatch is not None:
             raise ValueError(mismatch)
+        return bundle
+
+    def attach_continuous_reference(self, bundle_path) -> None:
+        path = Path(bundle_path).resolve()
+        bundle = self._load_continuous_reference(path)
+        self._explicit_reference_path = path
         self._continuous_reference_bundle = bundle
         self._path_geometry = None
 
@@ -771,16 +786,20 @@ class IKTrajectoryData:
         digest = sha256(self.mat_path.read_bytes()).hexdigest()
         matches_source = False
         found_manifest = False
+        manifests = []
+        if self._explicit_reference_path is not None:
+            manifests.append(self._explicit_reference_path / "manifest.json")
         for root in dict.fromkeys(roots):
-            for manifest_path in sorted(root.glob("*/manifest.json")):
-                found_manifest = True
-                description = json.loads(manifest_path.read_text())["description"]
-                if description["source_sha256"]["ik_input.mat"] != digest:
-                    continue
-                matches_source = True
-                if self._continuous_reference_mismatch(description) is None:
-                    self.attach_continuous_reference(manifest_path.parent)
-                    return
+            manifests.extend(sorted(root.glob("*/manifest.json")))
+        for manifest_path in dict.fromkeys(manifests):
+            found_manifest = True
+            description = json.loads(manifest_path.read_text())["description"]
+            if description["source_sha256"]["ik_input.mat"] != digest:
+                continue
+            matches_source = True
+            if self._continuous_reference_mismatch(description) is None:
+                self._continuous_reference_bundle = self._load_continuous_reference(manifest_path.parent)
+                return
         if matches_source:
             raise ValueError("当前蝴蝶配置缺少匹配的 continuous reference，请生成相应版本文件")
         if required:
