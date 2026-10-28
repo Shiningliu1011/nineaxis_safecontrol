@@ -18,6 +18,8 @@ class JointFeedback:
 
 
 class DrEmpowerJointControl:
+    axis_type = "revolute"
+
     # 本接口转换坐标；执行保护由调用程序负责。构造时不打开串口。
     def __init__(self, calibration_path: Path, node_map: JointNodeMap):
         with Path(calibration_path).open(encoding="utf-8") as stream:

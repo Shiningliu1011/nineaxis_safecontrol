@@ -13,6 +13,7 @@
 - [基线核验](baseline-audit.md)：当前 M01–M12 能力、实际运行与待补充输入。
 - [原始资产与 Python 运行核验](asset-inventory.md)：来源身份、资料包、真实样本与完整生成证据；[Python 使用说明](../../pipe_assets.md)。
 - [电机与 NURBS 约束数值依据](motor-nurbs-constraint-limits-research.md)：厂家能力条件、源程序限制、独立数值核验及尚待确定的研究参数。
+- [J1 直线运动规格说明书](j1-motion-spec.md)：已确认的现场零位、前进正方向、500 mm 行程、角度与位移换算，以及设备限位与执行验收要求。
 - [MPC求解研究](mpc-solver-research.md)：九轴连续参考、导数接口、真实候选测量及完整约束/预算的待测条件。
 - [地图维护验证](verification-20261027.md)：原生关系、取消状态、文档与本地远程同步检查。
 - [前期工作证据](../../static_obstacle_experiments_handoff.md)：已完成基础能力、原始记录和复用范围。

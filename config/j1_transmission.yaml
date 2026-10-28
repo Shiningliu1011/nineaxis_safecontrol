@@ -1,0 +1,5 @@
+lead_mm_per_rev: 5.0
+ratio_motor_rev_per_lead_rev: 1.0
+lower_mm: 0.0
+upper_mm: 500.0
+max_step_mm: 50.0

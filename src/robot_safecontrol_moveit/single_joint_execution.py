@@ -13,6 +13,9 @@ from .drempower_can import (
     decode_feedback, decode_property_reply, encode_property_read,
 )
 from .drempower_joint_control import DrEmpowerJointControl, JointFeedback
+from .motor_motion_limits import (
+    MAX_SINGLE_JOINT_SPEED_RPM, feedback_speed_limit, validate_motion_parameters,
+)
 
 
 _EXECUTION_LOCK = Lock()
@@ -22,7 +25,7 @@ _EXECUTION_LOCK = Lock()
 class ExecutionLimits:
     lower_deg: float
     upper_deg: float
-    max_step_deg: float = 5.0
+    max_step_deg: float | None = None
     speed_rpm: float = 0.05
     accel_rpm_s: float = 0.05
     feedback_timeout_s: float = 0.2
@@ -30,9 +33,10 @@ class ExecutionLimits:
     settle_s: float = 0.5
     tolerance_deg: float = 0.1
     stopped_rpm: float = 0.02
-    max_feedback_rpm: float = 0.2
+    max_feedback_rpm: float = MAX_SINGLE_JOINT_SPEED_RPM
     velocity_window_s: float = 1.0
     position_noise_deg: float = 0.01
+    axis_type: str = "revolute"
 
     @property
     def hold_timeout_s(self) -> float:
@@ -40,21 +44,20 @@ class ExecutionLimits:
                 + self.settle_s + 2 * self.feedback_timeout_s)
 
     def __post_init__(self):
-        if not all(isfinite(value) for value in asdict(self).values()):
+        values = asdict(self)
+        del values["axis_type"]
+        if self.max_step_deg is None:
+            del values["max_step_deg"]
+        if not all(isfinite(value) for value in values.values()):
             raise ValueError("执行限制必须为有限数值")
         if self.lower_deg >= self.upper_deg:
             raise ValueError("关节下限必须小于上限")
-        for name, value in asdict(self).items():
+        for name, value in values.items():
             if name not in ("lower_deg", "upper_deg") and value <= 0:
                 raise ValueError(f"{name} 必须为正数")
-        if not 0.01 <= self.speed_rpm <= 0.1 or not 0.01 <= self.accel_rpm_s <= 0.1:
-            raise ValueError("单关节检查速度和加速度必须在 [0.01, 0.1] 内")
-        for name in ("speed_rpm", "accel_rpm_s"):
-            value = getattr(self, name)
-            if value != int(value * 100) / 100:
-                raise ValueError(f"{name} 必须为 0.01 的整数倍")
-        if self.max_step_deg > 5 or self.max_feedback_rpm > 0.2:
-            raise ValueError("单关节检查最大增量为 5°，反馈速度上限为 0.2 rpm")
+        validate_motion_parameters(self.speed_rpm, self.accel_rpm_s, axis_type=self.axis_type)
+        if self.max_feedback_rpm > feedback_speed_limit(self.axis_type):
+            raise ValueError("单关节检查反馈速度超过对应轴的保护上限")
         if not self.stopped_rpm < self.speed_rpm <= self.max_feedback_rpm:
             raise ValueError("静止、指令及反馈速度阈值顺序无效")
         if self.feedback_timeout_s > 0.2 or self.settle_s < 0.5:
@@ -63,6 +66,12 @@ class ExecutionLimits:
             raise ValueError("到位误差或运动超时无效")
         if not 0.5 <= self.velocity_window_s <= 1.0 or self.position_noise_deg > 0.01:
             raise ValueError("速度窗口必须在 0.5–1 秒，位置测量裕量最多 0.01°")
+
+    def for_motion(self, delta_deg: float):
+        if not isfinite(delta_deg) or delta_deg == 0:
+            raise ValueError("运动角度增量必须为有限非零数值")
+        travel_s = abs(delta_deg) / (6 * self.speed_rpm) + self.speed_rpm / self.accel_rpm_s
+        return replace(self, motion_timeout_s=max(self.motion_timeout_s, travel_s + 2))
 
     @classmethod
     def from_urdf(cls, path: Path, joint: str):
@@ -222,7 +231,9 @@ class SingleJointMonitor:
         if self.phase != "ready":
             self.reject("execution_not_ready")
         self.validate_feedback(sample, now_s)
-        if not isfinite(delta_deg) or not 0 < abs(delta_deg) <= self.limits.max_step_deg:
+        if (not isfinite(delta_deg) or delta_deg == 0
+                or (self.limits.max_step_deg is not None
+                    and abs(delta_deg) > self.limits.max_step_deg)):
             self.reject("step_limit")
         if checked_speed(sample) > self.limits.stopped_rpm:
             self.reject("initial_joint_moving")
@@ -327,11 +338,15 @@ def run_single_joint(
 
 
 def _run_single_joint(vendor, control, joint, delta_deg, limits, log_path, target_deg):
+    if limits.axis_type != control.axis_type:
+        raise ValueError("执行限制与关节类型不符")
     node = control._node(joint)
     if (delta_deg is None) == (target_deg is None):
         raise ValueError("相对增量和绝对目标必须选择一项")
-    if delta_deg is not None and (not isfinite(delta_deg) or not 0 < abs(delta_deg) <= limits.max_step_deg):
-        raise ValueError("相对增量必须为非零且不超过最大步长")
+    if delta_deg is not None and (not isfinite(delta_deg) or delta_deg == 0
+                                  or (limits.max_step_deg is not None
+                                      and abs(delta_deg) > limits.max_step_deg)):
+        raise ValueError("相对增量必须为有限非零数值，并满足配置范围")
     if target_deg is not None and (not isfinite(target_deg) or not limits.lower_deg <= target_deg <= limits.upper_deg):
         raise ValueError("绝对目标必须位于关节范围内")
     monitor = SingleJointMonitor(node, limits)
@@ -346,6 +361,8 @@ def _run_single_joint(vendor, control, joint, delta_deg, limits, log_path, targe
 
         record("start", joint=joint, node_id=node, delta_deg=delta_deg, requested_target_deg=target_deg,
                limits=asdict(limits),
+               coordinate_basis=("forward_output_shaft_deg" if limits.axis_type == "prismatic"
+                                 else "joint_angle_deg"),
                calibration=asdict(control.converter.calibration.for_joint(joint)))
         command_attempted = False
         try:
@@ -363,12 +380,14 @@ def _run_single_joint(vendor, control, joint, delta_deg, limits, log_path, targe
                     raise MotionRejected("initial_joint_not_stationary")
                 time.sleep(0.02)
             actual_delta = delta_deg if target_deg is None else target_deg - initial.state.angle_deg
+            limits = limits.for_motion(actual_delta)
+            monitor = SingleJointMonitor(node, limits)
             target = monitor.start(initial, actual_delta, time.monotonic())
             reader.require_closed_loop(joint)
             arguments = control.position_arguments(
                 joint, target, speed_rpm=limits.speed_rpm, accel_rpm_s=limits.accel_rpm_s,
             )
-            record("command_requested", arguments=arguments)
+            record("command_requested", arguments=arguments, motion_timeout_s=limits.motion_timeout_s)
             # 日志写入也可能耗时，发送前再次检查时效。
             if time.monotonic() - initial.request_s > limits.feedback_timeout_s:
                 raise MotionRejected("feedback_timeout_before_send")

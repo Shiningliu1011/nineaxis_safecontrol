@@ -33,7 +33,7 @@ def test_urdf_limits_and_linear_joint_rejected():
         ExecutionLimits.from_urdf(URDF, "J1")
 
 
-@pytest.mark.parametrize("delta", [5.01, -5.01, 0, nan])
+@pytest.mark.parametrize("delta", [0, nan, float("inf"), -float("inf")])
 def test_invalid_delta_latches(delta):
     guard = monitor()
     with pytest.raises(MotionRejected, match="step_limit"):
@@ -47,7 +47,7 @@ def test_invalid_delta_latches(delta):
     (replace(sample(), node_id=3), 1.002, "feedback_node_mismatch"),
     (replace(sample(), axis_error=True), 1.002, "axis_error"),
     (sample(angle=91), 1.002, "joint_limit"),
-    (sample(speed=0.21), 1.002, "velocity_limit"),
+    (sample(speed=0.42), 1.002, "velocity_limit"),
     (sample(speed=0.03), 1.002, "initial_joint_moving"),
     (sample(angle=nan), 1.002, "nonfinite_feedback"),
     (sample(), 1.3, "feedback_timeout"),
@@ -62,6 +62,42 @@ def test_feedback_admission(feedback, now, reason):
 def test_target_limit_checked_before_motion():
     with pytest.raises(MotionRejected, match="target_joint_limit"):
         monitor().start(sample(angle=89), 5, 1.002)
+
+
+@pytest.mark.parametrize("delta", [-10, 10])
+def test_larger_motion_uses_joint_limits(delta):
+    guard = monitor()
+    assert guard.limits.max_step_deg is None
+    assert guard.start(sample(), delta, 1.002) == delta
+    with pytest.raises(MotionRejected, match="target_joint_limit"):
+        monitor().start(sample(angle=89 if delta > 0 else -89), delta, 1.002)
+
+
+def test_explicit_step_limit_is_enforced():
+    with pytest.raises(MotionRejected, match="step_limit"):
+        monitor(max_step_deg=5).start(sample(), 10, 1.002)
+
+
+def test_feedback_speed_limit_is_2_5_degrees_per_second():
+    guard = monitor()
+    assert guard.limits.max_feedback_rpm * 6 == pytest.approx(2.5)
+    guard.validate_feedback(sample(speed=2.5 / 6), 1.002)
+    with pytest.raises(MotionRejected, match="velocity_limit"):
+        monitor().validate_feedback(sample(speed=2.501 / 6), 1.002)
+
+
+def test_longer_motion_timeout_allows_complete_travel():
+    limits = ExecutionLimits(-90, 90).for_motion(10)
+    assert limits.motion_timeout_s == pytest.approx(10 / 0.3 + 1 + 2)
+    assert limits.for_motion(-10).motion_timeout_s == limits.motion_timeout_s
+    guard = SingleJointMonitor(2, limits)
+    guard.start(sample(), 10, 1.002)
+    for index in range(1, 361):
+        t = 1 + index * 0.1
+        angle = min(10, index * 0.03)
+        if guard.observe(sample(t, angle, 0.03 if angle < 10 else 0, angle == 10), t + 0.002):
+            break
+    assert guard.phase == "completed"
 
 
 def test_repeated_feedback_rejected():
@@ -112,7 +148,7 @@ def test_settling_still_has_a_deadline():
     guard = monitor()
     guard.start(sample(), 5, 1.002)
     with pytest.raises(MotionRejected, match="settling_timeout"):
-        for index in range(1, 251):
+        for index in range(1, 351):
             t = 1 + index * 0.1
             angle = min(5, index * 0.03)
             guard.observe(sample(t, angle, 0.03, angle == 5), t + 0.002)
@@ -126,7 +162,7 @@ def test_velocity_limit_remains_active_during_settling():
         angle = min(5, index * 0.03)
         guard.observe(sample(t, angle, 0.03, angle == 5), t + 0.002)
     with pytest.raises(MotionRejected, match="velocity_limit"):
-        guard.observe(sample(18, 5, 0.21), 18.002)
+        guard.observe(sample(18, 5, 0.42), 18.002)
 
 
 def test_fresh_sample_after_polling_gap_does_not_resume_motion():
@@ -154,9 +190,10 @@ def test_continuous_arrival_required(direction):
 
 
 @pytest.mark.parametrize("kwargs", [
-    {"speed_rpm": 1}, {"max_step_deg": 6}, {"feedback_timeout_s": 1},
+    {"speed_rpm": 1}, {"max_step_deg": 0}, {"feedback_timeout_s": 1},
     {"settle_s": 0.01}, {"tolerance_deg": 2}, {"max_feedback_rpm": nan},
-    {"accel_rpm_s": 0}, {"stopped_rpm": 0.15},
+    {"accel_rpm_s": 0}, {"stopped_rpm": 0.15}, {"max_feedback_rpm": 0.42},
+    {"max_step_deg": nan},
 ])
 def test_invalid_limits(kwargs):
     with pytest.raises(ValueError):

@@ -1,0 +1,6600 @@
+{
+  "source": ".scratch/j1-motion/forward50_20261028T193051.jsonl",
+  "sha256": "1dcbf39d406c8da20a19c08276b68ace4d54989bfec0c01764e6db3b3ba587f4",
+  "frames_source": ".scratch/j1-motion/forward50_20261028T193051.frames.json",
+  "frames_sha256": "c8680c5a42ed3f5c3f0cc85825ee1e358dba4baa900c9bfcf28a1d786062381f",
+  "limits": {
+    "lower_deg": -0.01,
+    "upper_deg": 36000.01,
+    "max_step_deg": 3600.0,
+    "speed_rpm": 3.0,
+    "accel_rpm_s": 0.6,
+    "feedback_timeout_s": 0.2,
+    "motion_timeout_s": 20.0,
+    "settle_s": 0.5,
+    "tolerance_deg": 0.1,
+    "stopped_rpm": 0.02,
+    "max_feedback_rpm": 3.6,
+    "velocity_window_s": 1.0,
+    "position_noise_deg": 0.01,
+    "axis_type": "prismatic"
+  },
+  "trigger_pair": [
+    {
+      "event": "feedback",
+      "monotonic_s": 11735.611727888,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1992.7655029296875,
+          "speed_rpm": 3.47
+        },
+        "request_s": 11735.605609797,
+        "received_s": 11735.611644557,
+        "traj_done": false,
+        "axis_error": false,
+        "mean_speed_rpm": 3.1180477733820275,
+        "position_speed_rpm": 3.1084754235458134,
+        "window_duration_s": 1.0169153140013805
+      }
+    },
+    {
+      "event": "feedback",
+      "monotonic_s": 11735.633582076,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.291748046875,
+          "speed_rpm": 3.15
+        },
+        "request_s": 11735.632750584,
+        "received_s": 11735.633499034,
+        "traj_done": false,
+        "axis_error": false,
+        "mean_speed_rpm": 3.1138912789733513,
+        "position_speed_rpm": 3.216848792688834,
+        "window_duration_s": 1.0167224870001519
+      }
+    }
+  ],
+  "trigger_raw_frames": [
+    {
+      "direction": "rx",
+      "monotonic_s": 11735.611608854,
+      "raw_hex": "aa000008000000217f18f9c4a5fe0700",
+      "decoded": {
+        "node_id": 1,
+        "pos_deg": -1992.7655029296875,
+        "vel_rpm": -3.47,
+        "torque_nm": 0.07,
+        "traj_done": false,
+        "axis_error": false
+      }
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 11735.633471247,
+      "raw_hex": "aa000008000000215629f9c4c5fec9ff",
+      "decoded": {
+        "node_id": 1,
+        "pos_deg": -1993.291748046875,
+        "vel_rpm": -3.15,
+        "torque_nm": -0.55,
+        "traj_done": false,
+        "axis_error": false
+      }
+    }
+  ],
+  "hold_requested": {
+    "event": "hold_requested",
+    "monotonic_s": 11735.635188391,
+    "sample": {
+      "node_id": 1,
+      "state": {
+        "angle_deg": 1993.32275390625,
+        "speed_rpm": 3.02
+      },
+      "request_s": 11735.634423244,
+      "received_s": 11735.635134081,
+      "traj_done": false,
+      "axis_error": false,
+      "mean_speed_rpm": 3.1138448919261483,
+      "position_speed_rpm": 3.216344423466619,
+      "window_duration_s": 1.0183575339997333
+    }
+  },
+  "hold_observation_started": {
+    "event": "hold_observation_started",
+    "monotonic_s": 11735.635302118,
+    "timeout_s": 7.9
+  },
+  "hold_feedback": [
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11735.657169133,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.4185791015625,
+          "speed_rpm": -0.13
+        },
+        "request_s": 11735.656252617,
+        "received_s": 11735.657065542,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 3.0710627747627717,
+        "position_speed_rpm": 2.9065827020600525,
+        "window_duration_s": 1.0182640879993414
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11735.679042188,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3885498046877,
+          "speed_rpm": -0.04
+        },
+        "request_s": 11735.678163454,
+        "received_s": 11735.678939677,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 2.9960545873773805,
+        "position_speed_rpm": 2.500379622520857,
+        "window_duration_s": 1.0181726030004938
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11735.700946034,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.36376953125,
+          "speed_rpm": 0.18
+        },
+        "request_s": 11735.700039172,
+        "received_s": 11735.700872676,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 2.920159815662649,
+        "position_speed_rpm": 2.086375565207306,
+        "window_duration_s": 1.018068367999149
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11735.722908951,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.350341796875,
+          "speed_rpm": 0.09
+        },
+        "request_s": 11735.721962064,
+        "received_s": 11735.722823057,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 2.854482141658521,
+        "position_speed_rpm": 1.688891430929245,
+        "window_duration_s": 1.0179901779993088
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11735.744798628,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3410644531252,
+          "speed_rpm": -0.09
+        },
+        "request_s": 11735.743916303,
+        "received_s": 11735.744730727,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 2.790017037081263,
+        "position_speed_rpm": 1.2992112178586568,
+        "window_duration_s": 1.0179347020002751
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11735.766865227,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.336181640625,
+          "speed_rpm": -0.09
+        },
+        "request_s": 11735.765902286,
+        "received_s": 11735.76677875,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 2.7153127455795616,
+        "position_speed_rpm": 0.8991959106547408,
+        "window_duration_s": 1.0179681890003849
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11735.788818493,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.331787109375,
+          "speed_rpm": -0.0
+        },
+        "request_s": 11735.787912197,
+        "received_s": 11735.788730689,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 2.647242240415873,
+        "position_speed_rpm": 0.5329649224848564,
+        "window_duration_s": 1.017892034000397
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11735.810637658,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3298339843752,
+          "speed_rpm": -0.0
+        },
+        "request_s": 11735.809833514,
+        "received_s": 11735.810570564,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 2.581998739588223,
+        "position_speed_rpm": 0.47281487825749413,
+        "window_duration_s": 1.0178535629984253
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11735.832471574,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.325439453125,
+          "speed_rpm": -0.13
+        },
+        "request_s": 11735.831571264,
+        "received_s": 11735.83240348,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 2.5183616293988527,
+        "position_speed_rpm": 0.028230813779713818,
+        "window_duration_s": 1.017752254001607
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11735.854414427,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3258056640625,
+          "speed_rpm": -0.22
+        },
+        "request_s": 11735.853501928,
+        "received_s": 11735.854329737,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 2.454024781750893,
+        "position_speed_rpm": -0.07838340649381341,
+        "window_duration_s": 1.0176705220001168
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11735.876282738,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3240966796875,
+          "speed_rpm": -0.22
+        },
+        "request_s": 11735.875422372,
+        "received_s": 11735.876217552,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 2.384872111580519,
+        "position_speed_rpm": -0.05445206412533679,
+        "window_duration_s": 1.017661821000729
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11735.898112947,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32568359375,
+          "speed_rpm": 0.27
+        },
+        "request_s": 11735.897245135,
+        "received_s": 11735.898029809,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 2.3220760939088336,
+        "position_speed_rpm": -0.032195924912410016,
+        "window_duration_s": 1.0174957849994826
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11735.92009451,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.322021484375,
+          "speed_rpm": 0.22
+        },
+        "request_s": 11735.919193363,
+        "received_s": 11735.919996307,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 2.2597480364630753,
+        "position_speed_rpm": -0.023938602641686568,
+        "window_duration_s": 1.0175696420010354
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11735.942029517,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3226318359375,
+          "speed_rpm": 0.36
+        },
+        "request_s": 11735.941181854,
+        "received_s": 11735.941933772,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 2.193647859210692,
+        "position_speed_rpm": -0.01557837438375233,
+        "window_duration_s": 1.0176437909995002
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11735.963927434,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3240966796875,
+          "speed_rpm": 0.36
+        },
+        "request_s": 11735.963029806,
+        "received_s": 11735.963850863,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 2.1349260027112824,
+        "position_speed_rpm": -0.010220421984560234,
+        "window_duration_s": 1.0176081520003208
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11735.985893311,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.322509765625,
+          "speed_rpm": 0.13
+        },
+        "request_s": 11735.984942432,
+        "received_s": 11735.985807747,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 2.081938760643296,
+        "position_speed_rpm": -0.007845783644383658,
+        "window_duration_s": 1.0175821039993025
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11736.007720057,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32275390625,
+          "speed_rpm": 0.13
+        },
+        "request_s": 11736.006866877,
+        "received_s": 11736.007652858,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 2.0153003781857146,
+        "position_speed_rpm": -0.00598741265346732,
+        "window_duration_s": 1.0174172639999597
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11736.029641322,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.322021484375,
+          "speed_rpm": 0.04
+        },
+        "request_s": 11736.028739262,
+        "received_s": 11736.029558504,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 1.9382661438868918,
+        "position_speed_rpm": -0.002889408784908938,
+        "window_duration_s": 1.0173805129998073
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11736.051488282,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.321533203125,
+          "speed_rpm": -0.13
+        },
+        "request_s": 11736.050593036,
+        "received_s": 11736.051404776,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 1.867024885351595,
+        "position_speed_rpm": -0.003613226852707006,
+        "window_duration_s": 1.0173384050012828
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11736.073334304,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3226318359375,
+          "speed_rpm": -0.09
+        },
+        "request_s": 11736.072511276,
+        "received_s": 11736.073265221,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 1.8045676966642652,
+        "position_speed_rpm": -0.001238992707899594,
+        "window_duration_s": 1.0170792250009981
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11736.095148024,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.322509765625,
+          "speed_rpm": 0.04
+        },
+        "request_s": 11736.094270279,
+        "received_s": 11736.095036169,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 1.7501472479680953,
+        "position_speed_rpm": -0.0026850470927245115,
+        "window_duration_s": 1.0168679279995558
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11736.117203486,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3221435546877,
+          "speed_rpm": -0.04
+        },
+        "request_s": 11736.116248205,
+        "received_s": 11736.117102556,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 1.6908447083986475,
+        "position_speed_rpm": 0.00010321870678643545,
+        "window_duration_s": 1.0170195259997854
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11736.139015183,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3216552734375,
+          "speed_rpm": 0.04
+        },
+        "request_s": 11736.138187514,
+        "received_s": 11736.138945699,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 1.6234998889957737,
+        "position_speed_rpm": -0.0008261449910388305,
+        "window_duration_s": 1.0169385709996277
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11736.161031139,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3226318359375,
+          "speed_rpm": 0.32
+        },
+        "request_s": 11736.160114029,
+        "received_s": 11736.160946479,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 1.5582826920166817,
+        "position_speed_rpm": -0.0012386913009756245,
+        "window_duration_s": 1.0170119529993826
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11736.182930631,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3226318359375,
+          "speed_rpm": 0.22
+        },
+        "request_s": 11736.182072338,
+        "received_s": 11736.182844053,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 1.4935219816670862,
+        "position_speed_rpm": 0.00010325534667322805,
+        "window_duration_s": 1.0169164300004923
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11736.20490228,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3216552734375,
+          "speed_rpm": 0.09
+        },
+        "request_s": 11736.203989299,
+        "received_s": 11736.204829219,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 1.4286210318468073,
+        "position_speed_rpm": -0.0009286380366358883,
+        "window_duration_s": 1.0168913229990721
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11736.226927287,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.319580078125,
+          "speed_rpm": -0.54
+        },
+        "request_s": 11736.226012871,
+        "received_s": 11736.226828857,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 1.3563996253116024,
+        "position_speed_rpm": -0.0020626568335308745,
+        "window_duration_s": 1.0168499629999133
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11736.24901122,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3212890625002,
+          "speed_rpm": -0.13
+        },
+        "request_s": 11736.248069058,
+        "received_s": 11736.248880004,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 1.281156251855641,
+        "position_speed_rpm": -0.00020605168831147155,
+        "window_duration_s": 1.0168533389987715
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11736.270955022,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.322509765625,
+          "speed_rpm": -0.0
+        },
+        "request_s": 11736.270088994,
+        "received_s": 11736.270892035,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 1.2090127069252603,
+        "position_speed_rpm": -0.00010294682017925652,
+        "window_duration_s": 1.0168779479990917
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11736.292780799,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3214111328127,
+          "speed_rpm": -0.18
+        },
+        "request_s": 11736.291922169,
+        "received_s": 11736.292698459,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 1.1337782647789438,
+        "position_speed_rpm": -0.0009263550913629639,
+        "window_duration_s": 1.0165550469992013
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11736.314907213,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32373046875,
+          "speed_rpm": 0.36
+        },
+        "request_s": 11736.313962507,
+        "received_s": 11736.314814002,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 1.0681322591975964,
+        "position_speed_rpm": 0.001337735788168359,
+        "window_duration_s": 1.016582551999818
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11736.336874824,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3226318359375,
+          "speed_rpm": 0.04
+        },
+        "request_s": 11736.335996653,
+        "received_s": 11736.336797979,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 1.006109005288901,
+        "position_speed_rpm": 0.000822636042741895,
+        "window_duration_s": 1.016496090000146
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11736.358903483,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3245849609375,
+          "speed_rpm": 0.22
+        },
+        "request_s": 11736.357954109,
+        "received_s": 11736.358815803,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.9395524490966991,
+        "position_speed_rpm": 0.001645130365602289,
+        "window_duration_s": 1.0164696529991488
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11736.380816555,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.320556640625,
+          "speed_rpm": -0.32
+        },
+        "request_s": 11736.379919324,
+        "received_s": 11736.38075223,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.8731791165070205,
+        "position_speed_rpm": -0.001747607858663528,
+        "window_duration_s": 1.0164129889999458
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11736.402734304,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3240966796875,
+          "speed_rpm": 0.36
+        },
+        "request_s": 11736.401845001,
+        "received_s": 11736.402657031,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.813975316678341,
+        "position_speed_rpm": 0.0020568444727362316,
+        "window_duration_s": 1.0163889849991392
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11736.424722631,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.324951171875,
+          "speed_rpm": 0.59
+        },
+        "request_s": 11736.423808322,
+        "received_s": 11736.424636497,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.7629647125688868,
+        "position_speed_rpm": 0.004525519295727195,
+        "window_duration_s": 1.016132730001118
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11736.446726986,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32373046875,
+          "speed_rpm": 0.04
+        },
+        "request_s": 11736.44584831,
+        "received_s": 11736.446650685,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.6994227343294455,
+        "position_speed_rpm": 0.0020574386434271184,
+        "window_duration_s": 1.0161069940004381
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11736.468683077,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3216552734375,
+          "speed_rpm": -0.04
+        },
+        "request_s": 11736.467821297,
+        "received_s": 11736.468615234,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.6280185810458947,
+        "position_speed_rpm": -0.000720276453665158,
+        "window_duration_s": 1.0159977170005732
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11736.490552867,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3216552734375,
+          "speed_rpm": -0.09
+        },
+        "request_s": 11736.489669019,
+        "received_s": 11736.49046803,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.5619541317218358,
+        "position_speed_rpm": 0.00020574501892680505,
+        "window_duration_s": 1.0156662890003645
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11736.512467985,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3214111328127,
+          "speed_rpm": -0.13
+        },
+        "request_s": 11736.511570358,
+        "received_s": 11736.512406872,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.49208560103943655,
+        "position_speed_rpm": -0.001956325597915357,
+        "window_duration_s": 1.0155440389989963
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11736.534373571,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3250732421877,
+          "speed_rpm": 0.77
+        },
+        "request_s": 11736.53348946,
+        "received_s": 11736.534296341,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.4345170270128145,
+        "position_speed_rpm": 0.002060275526254875,
+        "window_duration_s": 1.015579543000058
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11736.556292589,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.322509765625,
+          "speed_rpm": 0.18
+        },
+        "request_s": 11736.555384675,
+        "received_s": 11736.556207122,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.3836076563284481,
+        "position_speed_rpm": -0.0017521838709509301,
+        "window_duration_s": 1.0155375929989532
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11736.578268107,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.325439453125,
+          "speed_rpm": 0.73
+        },
+        "request_s": 11736.577375374,
+        "received_s": 11736.57818439,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.326316085380378,
+        "position_speed_rpm": 0.004121932735423288,
+        "window_duration_s": 1.0155584719996114
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11736.600161027,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3222656250002,
+          "speed_rpm": -0.32
+        },
+        "request_s": 11736.599258188,
+        "received_s": 11736.600093174,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.26179023945911745,
+        "position_speed_rpm": -0.0015456935927468257,
+        "window_duration_s": 1.0155880950005667
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11736.622087451,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.322998046875,
+          "speed_rpm": 0.13
+        },
+        "request_s": 11736.621150009,
+        "received_s": 11736.621997679,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.1727131199813208,
+        "position_speed_rpm": -0.001649366050788328,
+        "window_duration_s": 1.0103531219992874
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11736.643974046,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3233642578127,
+          "speed_rpm": 0.18
+        },
+        "request_s": 11736.643113184,
+        "received_s": 11736.643906952,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.099640604268448,
+        "position_speed_rpm": -0.00030942061887522735,
+        "window_duration_s": 1.008772871000474
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11736.665993511,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32373046875,
+          "speed_rpm": 0.41000000000000003
+        },
+        "request_s": 11736.665083432,
+        "received_s": 11736.665882276,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.07464834328428296,
+        "position_speed_rpm": 0.0017532877358024624,
+        "window_duration_s": 1.0088167339999927
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11736.688029916,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3251953125,
+          "speed_rpm": 0.59
+        },
+        "request_s": 11736.687106463,
+        "received_s": 11736.687930072,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.08740390174402209,
+        "position_speed_rpm": 0.0029879489974101044,
+        "window_duration_s": 1.0089903949992731
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11736.710090242,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3228759765625,
+          "speed_rpm": -0.04
+        },
+        "request_s": 11736.709169858,
+        "received_s": 11736.710000072,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.09188496693572987,
+        "position_speed_rpm": 0.0012355719982342884,
+        "window_duration_s": 1.009127396000622
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11736.731978703,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.322998046875,
+          "speed_rpm": 0.18
+        },
+        "request_s": 11736.731077499,
+        "received_s": 11736.731908927,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.0904719395489899,
+        "position_speed_rpm": -0.0017502219491949713,
+        "window_duration_s": 1.00908587000049
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11736.753892519,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32275390625,
+          "speed_rpm": -0.13
+        },
+        "request_s": 11736.752999695,
+        "received_s": 11736.753809894,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.0910151383646019,
+        "position_speed_rpm": 0.0002059186910922296,
+        "window_duration_s": 1.0090791670008912
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11736.775909557,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32275390625,
+          "speed_rpm": 0.27
+        },
+        "request_s": 11736.774970946,
+        "received_s": 11736.775844372,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.09451141081027278,
+        "position_speed_rpm": -0.002264449997953467,
+        "window_duration_s": 1.00906562199998
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11736.79771029,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3232421875002,
+          "speed_rpm": 0.27
+        },
+        "request_s": 11736.79679402,
+        "received_s": 11736.79762659,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.10133577859642107,
+        "position_speed_rpm": 0.0008239639649977085,
+        "window_duration_s": 1.0088959009990504
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11736.819612861,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32373046875,
+          "speed_rpm": 0.22
+        },
+        "request_s": 11736.818684361,
+        "received_s": 11736.819502567,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.10664431864132025,
+        "position_speed_rpm": 0.00061806223499813,
+        "window_duration_s": 1.0089320030001545
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11736.841556598,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3221435546877,
+          "speed_rpm": 0.18
+        },
+        "request_s": 11736.840669561,
+        "received_s": 11736.841486924,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.11239197078308533,
+        "position_speed_rpm": -0.0010297122667524805,
+        "window_duration_s": 1.0090834439997707
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11736.863473842,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3226318359375,
+          "speed_rpm": -0.0
+        },
+        "request_s": 11736.862578396,
+        "received_s": 11736.863390393,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.11815076074123852,
+        "position_speed_rpm": -0.0009270781957265011,
+        "window_duration_s": 1.0090606560006563
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11736.885353226,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.324462890625,
+          "speed_rpm": 0.04
+        },
+        "request_s": 11736.884473516,
+        "received_s": 11736.885265093,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.123358010780523,
+        "position_speed_rpm": -0.0006185942661408947,
+        "window_duration_s": 1.0090475409997453
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11736.907309245,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3240966796875,
+          "speed_rpm": 0.13
+        },
+        "request_s": 11736.906299663,
+        "received_s": 11736.907244085,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.12464846002201006,
+        "position_speed_rpm": 0.0010314661405413127,
+        "window_duration_s": 1.0092142760004208
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11736.929277731,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.321533203125,
+          "speed_rpm": -0.32
+        },
+        "request_s": 11736.928335152,
+        "received_s": 11736.929195454,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.11725122204278414,
+        "position_speed_rpm": -0.0012374926393227514,
+        "window_duration_s": 1.0091991469998902
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11736.951248498,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32275390625,
+          "speed_rpm": 0.13
+        },
+        "request_s": 11736.950323035,
+        "received_s": 11736.951146214,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.10887959922774745,
+        "position_speed_rpm": 0.0,
+        "window_duration_s": 1.0092124420007167
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11736.9730385,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3228759765625,
+          "speed_rpm": -0.13
+        },
+        "request_s": 11736.972207029,
+        "received_s": 11736.97297166,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.1010706485920798,
+        "position_speed_rpm": 0.00010320769026827218,
+        "window_duration_s": 1.0091207969999232
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11736.994962253,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.321533203125,
+          "speed_rpm": -0.22
+        },
+        "request_s": 11736.994056819,
+        "received_s": 11736.994881552,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.09194453896297712,
+        "position_speed_rpm": -0.0014439724421427874,
+        "window_duration_s": 1.0090738050002983
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11737.016895671,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3222656250002,
+          "speed_rpm": 0.04
+        },
+        "request_s": 11737.015964914,
+        "received_s": 11737.016811309,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.08716696880768957,
+        "position_speed_rpm": -0.0012373533097728413,
+        "window_duration_s": 1.0091584510009852
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11737.038806992,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32080078125,
+          "speed_rpm": -0.36
+        },
+        "request_s": 11737.03791471,
+        "received_s": 11737.038743211,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.08184249961131163,
+        "position_speed_rpm": -0.0011345421550746084,
+        "window_duration_s": 1.009184706999804
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11737.060732854,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3221435546877,
+          "speed_rpm": -0.32
+        },
+        "request_s": 11737.059832818,
+        "received_s": 11737.060647886,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.07543246119373243,
+        "position_speed_rpm": -0.0004125582610706134,
+        "window_duration_s": 1.0092431100001704
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11737.082646318,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3253173828127,
+          "speed_rpm": 0.45
+        },
+        "request_s": 11737.08176137,
+        "received_s": 11737.082543234,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.0792225108149099,
+        "position_speed_rpm": 0.0007219013921107584,
+        "window_duration_s": 1.0092780129998573
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11737.104582331,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3209228515625,
+          "speed_rpm": -0.27
+        },
+        "request_s": 11737.103710148,
+        "received_s": 11737.104517481,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.08170482528950182,
+        "position_speed_rpm": -0.002681412521351258,
+        "window_duration_s": 1.0094813120012986
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11737.126536196,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3210449218752,
+          "speed_rpm": -0.32
+        },
+        "request_s": 11737.125604088,
+        "received_s": 11737.126453757,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.0753041089511263,
+        "position_speed_rpm": -0.0004125565669871231,
+        "window_duration_s": 1.0093512010007544
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11737.148493146,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3228759765625,
+          "speed_rpm": 0.22
+        },
+        "request_s": 11737.147610791,
+        "received_s": 11737.148430932,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.07420557687355095,
+        "position_speed_rpm": 0.00010312533220787681,
+        "window_duration_s": 1.009485233000305
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11737.17058597,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3232421875002,
+          "speed_rpm": -0.0
+        },
+        "request_s": 11737.16960688,
+        "received_s": 11737.170507541,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.07268279593182644,
+        "position_speed_rpm": 0.0003089826313024591,
+        "window_duration_s": 1.009561061999193
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11737.192696898,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3238525390625,
+          "speed_rpm": 0.04
+        },
+        "request_s": 11737.191732967,
+        "received_s": 11737.192607543,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.06725077345571537,
+        "position_speed_rpm": 0.0019550084823365056,
+        "window_duration_s": 1.0097634899993864
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11737.214756562,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3222656250002,
+          "speed_rpm": 0.04
+        },
+        "request_s": 11737.213760011,
+        "received_s": 11737.214649646,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.06474553034561628,
+        "position_speed_rpm": 0.0,
+        "window_duration_s": 1.009820427001614
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11737.236837969,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3222656250002,
+          "speed_rpm": -0.09
+        },
+        "request_s": 11737.235915723,
+        "received_s": 11737.236773375,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.06909110667115839,
+        "position_speed_rpm": 0.0012328456438501507,
+        "window_duration_s": 1.0099445180003386
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11737.258986773,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3214111328127,
+          "speed_rpm": -0.45
+        },
+        "request_s": 11737.258102361,
+        "received_s": 11737.258911693,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.07048093003951685,
+        "position_speed_rpm": -0.0006156964014159,
+        "window_duration_s": 1.0100316890002432
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11737.281041525,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3232421875002,
+          "speed_rpm": 0.27
+        },
+        "request_s": 11737.280068191,
+        "received_s": 11737.280958289,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.0699306217837536,
+        "position_speed_rpm": -0.0017431433588402118,
+        "window_duration_s": 1.010066254000776
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11737.303081286,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32275390625,
+          "speed_rpm": -0.0
+        },
+        "request_s": 11737.302145264,
+        "received_s": 11737.303010265,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.07480280410074938,
+        "position_speed_rpm": 0.001537465368273938,
+        "window_duration_s": 1.0103118059996632
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11737.325290515,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3188476562502,
+          "speed_rpm": -0.73
+        },
+        "request_s": 11737.324307172,
+        "received_s": 11737.325203414,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.06480992087956275,
+        "position_speed_rpm": -0.0018425739346055127,
+        "window_duration_s": 1.0103894120002224
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11737.347355489,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3221435546877,
+          "speed_rpm": -0.22
+        },
+        "request_s": 11737.346321648,
+        "received_s": 11737.347269684,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.05008055539725832,
+        "position_speed_rpm": -0.0006139161065664198,
+        "window_duration_s": 1.0104717049998726
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11737.369395185,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32177734375,
+          "speed_rpm": -0.13
+        },
+        "request_s": 11737.368439957,
+        "received_s": 11737.369329257,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.04342568783304396,
+        "position_speed_rpm": -0.0012279374202568683,
+        "window_duration_s": 1.0105134540008294
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11737.391467719,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.322509765625,
+          "speed_rpm": 0.09
+        },
+        "request_s": 11737.390521802,
+        "received_s": 11737.391383927,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.04406943685484852,
+        "position_speed_rpm": -0.0011258660028543247,
+        "window_duration_s": 1.0106316970013722
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11737.413565471,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3216552734375,
+          "speed_rpm": 0.04
+        },
+        "request_s": 11737.412578946,
+        "received_s": 11737.413485686,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.04504867154705134,
+        "position_speed_rpm": -0.0005116037336842798,
+        "window_duration_s": 1.0108286550002958
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11737.435622774,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3253173828127,
+          "speed_rpm": 0.59
+        },
+        "request_s": 11737.434687143,
+        "received_s": 11737.435553005,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.04159339260100949,
+        "position_speed_rpm": 0.0025587445860693015,
+        "window_duration_s": 1.0109165079993545
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11737.457594643,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3226318359375,
+          "speed_rpm": -0.09
+        },
+        "request_s": 11737.456695905,
+        "received_s": 11737.457488801,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.04016165035865808,
+        "position_speed_rpm": 0.0010245416646694208,
+        "window_duration_s": 1.0108381159989221
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11737.479625832,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3222656250002,
+          "speed_rpm": 0.09
+        },
+        "request_s": 11737.478735759,
+        "received_s": 11737.479562617,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.04015730953621877,
+        "position_speed_rpm": -0.0008195209958724699,
+        "window_duration_s": 1.0109473829998024
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11737.501694062,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.322998046875,
+          "speed_rpm": 0.36
+        },
+        "request_s": 11737.500751463,
+        "received_s": 11737.501610318,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.046460416112224685,
+        "position_speed_rpm": 0.00020488465915149623,
+        "window_duration_s": 1.0111422879999736
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11737.523738684,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3222656250002,
+          "speed_rpm": -0.13
+        },
+        "request_s": 11737.52278756,
+        "received_s": 11737.523653352,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.05134881950736908,
+        "position_speed_rpm": 0.00287055498265989,
+        "window_duration_s": 1.011246480000409
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11737.545862869,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.324462890625,
+          "speed_rpm": 0.45
+        },
+        "request_s": 11737.544878029,
+        "received_s": 11737.545783343,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.04791211489904154,
+        "position_speed_rpm": 0.0019472513452938793,
+        "window_duration_s": 1.0114870019988302
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11737.567807127,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.322021484375,
+          "speed_rpm": -0.36
+        },
+        "request_s": 11737.566881812,
+        "received_s": 11737.567739814,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.03859776553733107,
+        "position_speed_rpm": 0.00020508033837562172,
+        "window_duration_s": 1.0115326920004009
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11737.589911105,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3239746093752,
+          "speed_rpm": 0.32
+        },
+        "request_s": 11737.588904815,
+        "received_s": 11737.589818675,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.028272734468128804,
+        "position_speed_rpm": 0.0012303320234961631,
+        "window_duration_s": 1.0116342849996727
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11737.611994421,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3222656250002,
+          "speed_rpm": 0.04
+        },
+        "request_s": 11737.610987343,
+        "received_s": 11737.611923774,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.027760857023675537,
+        "position_speed_rpm": 0.0005126297147873804,
+        "window_duration_s": 1.011830600000394
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11737.634055817,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.321533203125,
+          "speed_rpm": -0.09
+        },
+        "request_s": 11737.633089519,
+        "received_s": 11737.633962078,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.029269068183674307,
+        "position_speed_rpm": -0.003178769020409299,
+        "window_duration_s": 1.011964399000135
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11737.656028646,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32275390625,
+          "speed_rpm": -0.09
+        },
+        "request_s": 11737.655119394,
+        "received_s": 11737.655914557,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.023959893630082458,
+        "position_speed_rpm": 0.00010253231482292816,
+        "window_duration_s": 1.01200760500069
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11737.678203998,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3221435546877,
+          "speed_rpm": -0.04
+        },
+        "request_s": 11737.677216759,
+        "received_s": 11737.678104122,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.01612546926174035,
+        "position_speed_rpm": -0.00010247253884421003,
+        "window_duration_s": 1.0122218460001022
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11737.700225107,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3242187500002,
+          "speed_rpm": 0.45
+        },
+        "request_s": 11737.699262193,
+        "received_s": 11737.700152093,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.009699935503793512,
+        "position_speed_rpm": 0.001024723995093878,
+        "window_duration_s": 1.0122220210014348
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11737.722447912,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3221435546877,
+          "speed_rpm": -0.04
+        },
+        "request_s": 11737.721335246,
+        "received_s": 11737.722313351,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.008191432811164604,
+        "position_speed_rpm": -0.00010241141742569411,
+        "window_duration_s": 1.0123132789994997
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11737.744443342,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3232421875002,
+          "speed_rpm": 0.18
+        },
+        "request_s": 11737.743542639,
+        "received_s": 11737.744377192,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.008200894305389837,
+        "position_speed_rpm": -0.0010244552981791774,
+        "window_duration_s": 1.0124682650002796
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11737.766480188,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32275390625,
+          "speed_rpm": 0.04
+        },
+        "request_s": 11737.765515246,
+        "received_s": 11737.766399497,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.010051529833684104,
+        "position_speed_rpm": 0.0006144694819598907,
+        "window_duration_s": 1.0125896030003787
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11737.78850317,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.322509765625,
+          "speed_rpm": -0.09
+        },
+        "request_s": 11737.787561254,
+        "received_s": 11737.788416518,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.00798484893233794,
+        "position_speed_rpm": -0.0012293216348658756,
+        "window_duration_s": 1.0125721460008208
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11737.81056606,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3216552734375,
+          "speed_rpm": -0.36
+        },
+        "request_s": 11737.809578311,
+        "received_s": 11737.810483429,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.002725970847920393,
+        "position_speed_rpm": -0.0005123158602104656,
+        "window_duration_s": 1.0128568390009605
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11737.832532977,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3221435546877,
+          "speed_rpm": -0.22
+        },
+        "request_s": 11737.831618087,
+        "received_s": 11737.832464799,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.014309743663521318,
+        "position_speed_rpm": 0.000512462801227178,
+        "window_duration_s": 1.0129622320000635
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11737.854604265,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3238525390625,
+          "speed_rpm": 0.09
+        },
+        "request_s": 11737.853620882,
+        "received_s": 11737.854518375,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.020064119135636587,
+        "position_speed_rpm": 0.0009219634878894048,
+        "window_duration_s": 1.0130314509988239
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11737.876612991,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32177734375,
+          "speed_rpm": -0.04
+        },
+        "request_s": 11737.875666159,
+        "received_s": 11737.876548792,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.02146370747889873,
+        "position_speed_rpm": -0.00030756762722659045,
+        "window_duration_s": 1.013158399000531
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11737.898686814,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32275390625,
+          "speed_rpm": -0.0
+        },
+        "request_s": 11737.897719034,
+        "received_s": 11737.898606085,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.022326912208760447,
+        "position_speed_rpm": -0.0012302127187168302,
+        "window_duration_s": 1.0133409919999394
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11737.920883038,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.324462890625,
+          "speed_rpm": 0.32
+        },
+        "request_s": 11737.919900729,
+        "received_s": 11737.920795051,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.020662754837466123,
+        "position_speed_rpm": 0.0019475648865523599,
+        "window_duration_s": 1.0135509660012758
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11737.942926826,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3222656250002,
+          "speed_rpm": -0.09
+        },
+        "request_s": 11737.941946239,
+        "received_s": 11737.942865125,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.016099245175878265,
+        "position_speed_rpm": -0.0008200015699050397,
+        "window_duration_s": 1.0136696709996613
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11737.964977962,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3216552734375,
+          "speed_rpm": -0.18
+        },
+        "request_s": 11737.964074642,
+        "received_s": 11737.964896483,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.016974819358339804,
+        "position_speed_rpm": -0.0009224596929207277,
+        "window_duration_s": 1.0137502689995017
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11737.987011947,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3228759765625,
+          "speed_rpm": 0.04
+        },
+        "request_s": 11737.986031379,
+        "received_s": 11737.986914428,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.018491658930372114,
+        "position_speed_rpm": 0.00030748513296722076,
+        "window_duration_s": 1.013942768000561
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11738.009154755,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32275390625,
+          "speed_rpm": 0.09
+        },
+        "request_s": 11738.00816832,
+        "received_s": 11738.009068036,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.013286775591280924,
+        "position_speed_rpm": 0.000922052678281631,
+        "window_duration_s": 1.0141864840006747
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11738.031340586,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3221435546877,
+          "speed_rpm": 0.09
+        },
+        "request_s": 11738.030338286,
+        "received_s": 11738.031242414,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.009370666991485855,
+        "position_speed_rpm": 0.0,
+        "window_duration_s": 1.0144311049989483
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11738.053352948,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32275390625,
+          "speed_rpm": -0.0
+        },
+        "request_s": 11738.052453741,
+        "received_s": 11738.053258959,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.004934420422365095,
+        "position_speed_rpm": -0.0009213290263309082,
+        "window_duration_s": 1.0145157480001217
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11738.075354206,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.320556640625,
+          "speed_rpm": -0.59
+        },
+        "request_s": 11738.074432818,
+        "received_s": 11738.075287753,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.003998415681463053,
+        "position_speed_rpm": -0.0010237072781860955,
+        "window_duration_s": 1.0146398669985501
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11738.097381863,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.324951171875,
+          "speed_rpm": 0.32
+        },
+        "request_s": 11738.096399016,
+        "received_s": 11738.097298824,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.008328748561225738,
+        "position_speed_rpm": 0.0018431017627772884,
+        "window_duration_s": 1.0147555899984582
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11738.119418203,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.322021484375,
+          "speed_rpm": -0.0
+        },
+        "request_s": 11738.118502244,
+        "received_s": 11738.119334896,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.006802755616850556,
+        "position_speed_rpm": -0.0020494679124349537,
+        "window_duration_s": 1.014817414999925
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11738.141436978,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.322509765625,
+          "speed_rpm": -0.0
+        },
+        "request_s": 11738.140488361,
+        "received_s": 11738.141367024,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.00042600039240253874,
+        "position_speed_rpm": 0.00020498596907021476,
+        "window_duration_s": 1.0149132669994287
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11738.163467133,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3222656250002,
+          "speed_rpm": 0.04
+        },
+        "request_s": 11738.162555867,
+        "received_s": 11738.163376352,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.0010903954421553927,
+        "position_speed_rpm": 0.0005125218036801315,
+        "window_duration_s": 1.0149454200000037
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11738.185491504,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.323486328125,
+          "speed_rpm": 0.09
+        },
+        "request_s": 11738.184596731,
+        "received_s": 11738.185382342,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.0001070616986944374,
+        "position_speed_rpm": 0.0005125526759776845,
+        "window_duration_s": 1.014874801001497
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11738.207441873,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3233642578127,
+          "speed_rpm": 0.04
+        },
+        "request_s": 11738.20642705,
+        "received_s": 11738.20736905,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.0010798499869648787,
+        "position_speed_rpm": 0.000512984066006451,
+        "window_duration_s": 1.014761507000003
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11738.229311304,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3222656250002,
+          "speed_rpm": 0.09
+        },
+        "request_s": 11738.22846749,
+        "received_s": 11738.229218923,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.001610878490087283,
+        "position_speed_rpm": 0.00010276498048227189,
+        "window_duration_s": 1.0145692769983725
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11738.251106619,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.324462890625,
+          "speed_rpm": 0.22
+        },
+        "request_s": 11738.250207532,
+        "received_s": 11738.250985606,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.005483346330480591,
+        "position_speed_rpm": 0.0014405277866580215,
+        "window_duration_s": 1.0142122310007835
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11738.273073578,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3238525390625,
+          "speed_rpm": 0.09
+        },
+        "request_s": 11738.272023866,
+        "received_s": 11738.272933234,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.01473391295053151,
+        "position_speed_rpm": 0.002779301623633733,
+        "window_duration_s": 1.014021541001057
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11738.295209408,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3232421875002,
+          "speed_rpm": 0.32
+        },
+        "request_s": 11738.294220643,
+        "received_s": 11738.295014732,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.02115405507582022,
+        "position_speed_rpm": -0.0014406060291644839,
+        "window_duration_s": 1.0140564430002996
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11738.317309131,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3221435546877,
+          "speed_rpm": -0.22
+        },
+        "request_s": 11738.316357078,
+        "received_s": 11738.317214822,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.01931010213883837,
+        "position_speed_rpm": 0.00010281513912265885,
+        "window_duration_s": 1.014204557000994
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11738.339168298,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32373046875,
+          "speed_rpm": 0.13
+        },
+        "request_s": 11738.338329004,
+        "received_s": 11738.339077614,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.02633568082791902,
+        "position_speed_rpm": 0.0010290319847450849,
+        "window_duration_s": 1.0138741999999183
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11738.361044638,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3261718750002,
+          "speed_rpm": 0.5
+        },
+        "request_s": 11738.360174659,
+        "received_s": 11738.360942489,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.04347554850844406,
+        "position_speed_rpm": 0.003295309998734877,
+        "window_duration_s": 1.0136728050001693
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11738.383011996,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3251953125,
+          "speed_rpm": 0.32
+        },
+        "request_s": 11738.382090318,
+        "received_s": 11738.382913341,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.05617536492470397,
+        "position_speed_rpm": 0.0014419545823670798,
+        "window_duration_s": 1.0135840839993762
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11738.404990332,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3212890625002,
+          "speed_rpm": -0.45
+        },
+        "request_s": 11738.404053766,
+        "received_s": 11738.404894695,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.05520490058622308,
+        "position_speed_rpm": -0.0017509923099646007,
+        "window_duration_s": 1.0135107679998328
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11738.426929345,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32177734375,
+          "speed_rpm": -0.09
+        },
+        "request_s": 11738.426031793,
+        "received_s": 11738.426834596,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.047950289486616005,
+        "position_speed_rpm": -0.000411810496278727,
+        "window_duration_s": 1.0133489100007864
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11738.448885503,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32275390625,
+          "speed_rpm": 0.13
+        },
+        "request_s": 11738.44803943,
+        "received_s": 11738.448788705,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.04152859031768796,
+        "position_speed_rpm": -0.0014399710146476936,
+        "window_duration_s": 1.013235700000223
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11738.47081459,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3216552734375,
+          "speed_rpm": -0.36
+        },
+        "request_s": 11738.469867042,
+        "received_s": 11738.470718074,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.03362755573048315,
+        "position_speed_rpm": -0.0018515622203384733,
+        "window_duration_s": 1.0132292730013432
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11738.492702111,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.31982421875,
+          "speed_rpm": -0.45
+        },
+        "request_s": 11738.491836533,
+        "received_s": 11738.492609627,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.024881712923870772,
+        "position_speed_rpm": -0.002882976599044364,
+        "window_duration_s": 1.0130470099993545
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11738.514753115,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3240966796875,
+          "speed_rpm": 0.18
+        },
+        "request_s": 11738.513850357,
+        "received_s": 11738.514656733,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.01704685253343343,
+        "position_speed_rpm": 0.0016486916665664692,
+        "window_duration_s": 1.0130464149988256
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11738.536654057,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.322509765625,
+          "speed_rpm": 0.13
+        },
+        "request_s": 11738.535817741,
+        "received_s": 11738.536560733,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.0178984024366776,
+        "position_speed_rpm": -0.001030217275600689,
+        "window_duration_s": 1.012907381000332
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11738.558586651,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32177734375,
+          "speed_rpm": -0.09
+        },
+        "request_s": 11738.557686541,
+        "received_s": 11738.558485393,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.014838637461391167,
+        "position_speed_rpm": -0.003707659754966685,
+        "window_duration_s": 1.012702050000371
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11738.580535834,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.323486328125,
+          "speed_rpm": 0.27
+        },
+        "request_s": 11738.579581775,
+        "received_s": 11738.580433447,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.015813669326524043,
+        "position_speed_rpm": -0.0014420341044540826,
+        "window_duration_s": 1.0126936329997989
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11738.602482353,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3233642578127,
+          "speed_rpm": 0.09
+        },
+        "request_s": 11738.601539211,
+        "received_s": 11738.602363493,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.020150602105545555,
+        "position_speed_rpm": 0.0017514963828188553,
+        "window_duration_s": 1.012544818000606
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11738.624443488,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32568359375,
+          "speed_rpm": 0.54
+        },
+        "request_s": 11738.623585203,
+        "received_s": 11738.624342882,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.023061573286954115,
+        "position_speed_rpm": 0.0032962752087777607,
+        "window_duration_s": 1.012419107999449
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11738.646370836,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.322509765625,
+          "speed_rpm": -0.18
+        },
+        "request_s": 11738.645462322,
+        "received_s": 11738.646273066,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.027507720953767537,
+        "position_speed_rpm": -0.00020604215929056127,
+        "window_duration_s": 1.0123109880005359
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11738.6683249,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3214111328127,
+          "speed_rpm": 0.04
+        },
+        "request_s": 11738.667414549,
+        "received_s": 11738.668214355,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.027942513781311032,
+        "position_speed_rpm": -0.00020602972330792453,
+        "window_duration_s": 1.0122997979997308
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11738.690266055,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3242187500002,
+          "speed_rpm": 0.22
+        },
+        "request_s": 11738.689324652,
+        "received_s": 11738.690093683,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.03218692828133948,
+        "position_speed_rpm": 0.0037087645953169327,
+        "window_duration_s": 1.0119895610005187
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11738.712332503,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32177734375,
+          "speed_rpm": -0.0
+        },
+        "request_s": 11738.711353712,
+        "received_s": 11738.712214589,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.030122943145080405,
+        "position_speed_rpm": -0.0019566723258054486,
+        "window_duration_s": 1.0120624959999986
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11738.734175431,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32275390625,
+          "speed_rpm": -0.09
+        },
+        "request_s": 11738.733294878,
+        "received_s": 11738.73408316,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.024668810256571912,
+        "position_speed_rpm": 0.00020600245139181482,
+        "window_duration_s": 1.0117698089998157
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11738.756141526,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.324462890625,
+          "speed_rpm": 0.27
+        },
+        "request_s": 11738.755249051,
+        "received_s": 11738.756017112,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.025096621584049846,
+        "position_speed_rpm": 0.002265920370142885,
+        "window_duration_s": 1.0116399199996522
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11738.777927889,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3239746093752,
+          "speed_rpm": 0.09
+        },
+        "request_s": 11738.776996348,
+        "received_s": 11738.777845893,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.026591099032003344,
+        "position_speed_rpm": 0.000412234436175023,
+        "window_duration_s": 1.011446395999883
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11738.799826898,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.322998046875,
+          "speed_rpm": -0.0
+        },
+        "request_s": 11738.798922113,
+        "received_s": 11738.79975661,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.028113074223472166,
+        "position_speed_rpm": -0.0003092061020953518,
+        "window_duration_s": 1.011340091999955
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11738.821722858,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.322509765625,
+          "speed_rpm": 0.09
+        },
+        "request_s": 11738.820921892,
+        "received_s": 11738.821638485,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.03400232063089609,
+        "position_speed_rpm": -0.002681110709627099,
+        "window_duration_s": 1.0111550559995521
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11738.843555437,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32177734375,
+          "speed_rpm": -0.04
+        },
+        "request_s": 11738.842678724,
+        "received_s": 11738.843489306,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.04085211185314104,
+        "position_speed_rpm": -0.000618966838127264,
+        "window_duration_s": 1.0110245070009114
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11738.865483953,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3222656250002,
+          "speed_rpm": 0.04
+        },
+        "request_s": 11738.864617854,
+        "received_s": 11738.865401963,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.04227585569057888,
+        "position_speed_rpm": 0.0007222328321169694,
+        "window_duration_s": 1.0108835880000697
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11738.887436389,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3222656250002,
+          "speed_rpm": 0.04
+        },
+        "request_s": 11738.886564817,
+        "received_s": 11738.887347766,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.04260297199439882,
+        "position_speed_rpm": -0.0016502615732142912,
+        "window_duration_s": 1.0107989739990444
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11738.909314197,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3233642578127,
+          "speed_rpm": -0.27
+        },
+        "request_s": 11738.908382802,
+        "received_s": 11738.909236481,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.04055585917305519,
+        "position_speed_rpm": 0.0013424177102194848,
+        "window_duration_s": 1.0106303960001242
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11738.931338276,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32177734375,
+          "speed_rpm": -0.04
+        },
+        "request_s": 11738.930366225,
+        "received_s": 11738.931273074,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.03366830031603763,
+        "position_speed_rpm": -0.0008253992983942787,
+        "window_duration_s": 1.0104780229994503
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11738.953354103,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.324462890625,
+          "speed_rpm": 0.32
+        },
+        "request_s": 11738.952390346,
+        "received_s": 11738.953268241,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.03420648834503876,
+        "position_speed_rpm": 0.0,
+        "window_duration_s": 1.0104031160008162
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11738.975286168,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3233642578127,
+          "speed_rpm": -0.04
+        },
+        "request_s": 11738.974382452,
+        "received_s": 11738.975220871,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.04019495562351439,
+        "position_speed_rpm": -0.0005153908638670019,
+        "window_duration_s": 1.0103243880002992
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11738.997335541,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3226318359375,
+          "speed_rpm": 0.09
+        },
+        "request_s": 11738.996410385,
+        "received_s": 11738.997245315,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.04226517444980489,
+        "position_speed_rpm": -0.0003090564407214008,
+        "window_duration_s": 1.0103308870002365
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11739.019333878,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3242187500002,
+          "speed_rpm": 0.18
+        },
+        "request_s": 11739.018343291,
+        "received_s": 11739.019178127,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.04378013514081375,
+        "position_speed_rpm": 0.0014418914923627318,
+        "window_duration_s": 1.0101100909996603
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11739.041344953,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3204345703127,
+          "speed_rpm": -0.36
+        },
+        "request_s": 11739.040367546,
+        "received_s": 11739.041280059,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.03983800860332592,
+        "position_speed_rpm": -0.0011314764188133904,
+        "window_duration_s": 1.0100376450009207
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11739.063432654,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.322021484375,
+          "speed_rpm": -0.09
+        },
+        "request_s": 11739.06247557,
+        "received_s": 11739.063346701,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.033939773735435004,
+        "position_speed_rpm": -0.00020556294961766592,
+        "window_duration_s": 1.0100877419990866
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11739.085465065,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3216552734375,
+          "speed_rpm": -0.32
+        },
+        "request_s": 11739.084462158,
+        "received_s": 11739.085376839,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.03590224452323828,
+        "position_speed_rpm": -0.0005136885150908605,
+        "window_duration_s": 1.0100890860012441
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11739.107399721,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.322021484375,
+          "speed_rpm": -0.09
+        },
+        "request_s": 11739.106541749,
+        "received_s": 11739.107333935,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.034389651292848634,
+        "position_speed_rpm": -0.0011297246301528875,
+        "window_duration_s": 1.0100351110013435
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11739.129442087,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3221435546877,
+          "speed_rpm": 0.18
+        },
+        "request_s": 11739.128508829,
+        "received_s": 11739.129359623,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.03188054593108599,
+        "position_speed_rpm": 0.0003081236792497264,
+        "window_duration_s": 1.0100247270002
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11739.151201856,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.322998046875,
+          "speed_rpm": -0.09
+        },
+        "request_s": 11739.15027676,
+        "received_s": 11739.151091826,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.03285854598193563,
+        "position_speed_rpm": -0.0012341330534580012,
+        "window_duration_s": 1.0097248019992549
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11739.173369382,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3233642578127,
+          "speed_rpm": 0.13
+        },
+        "request_s": 11739.172407461,
+        "received_s": 11739.173306071,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.03285593695418377,
+        "position_speed_rpm": 0.0,
+        "window_duration_s": 1.0099297189990466
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11739.195357542,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.323486328125,
+          "speed_rpm": 0.13
+        },
+        "request_s": 11739.194498159,
+        "received_s": 11739.19527177,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.03426844339212639,
+        "position_speed_rpm": 0.0007191734285359846,
+        "window_duration_s": 1.0098894279999513
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11739.217383082,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.324951171875,
+          "speed_rpm": 0.32
+        },
+        "request_s": 11739.216391253,
+        "received_s": 11739.217274237,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.03775478950054541,
+        "position_speed_rpm": 0.0006162176150870043,
+        "window_duration_s": 1.0099051870001858
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11739.239339699,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3226318359375,
+          "speed_rpm": -0.0
+        },
+        "request_s": 11739.238416459,
+        "received_s": 11739.239251553,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.039825333727655836,
+        "position_speed_rpm": 0.0018498165067345543,
+        "window_duration_s": 1.0100326299998414
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11739.261208675,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3222656250002,
+          "speed_rpm": -0.18
+        },
+        "request_s": 11739.260320087,
+        "received_s": 11739.261077254,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.03453819035082613,
+        "position_speed_rpm": 0.00020578561879901785,
+        "window_duration_s": 1.0100916479987063
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11739.283457365,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3210449218752,
+          "speed_rpm": -0.32
+        },
+        "request_s": 11739.282351484,
+        "received_s": 11739.283287417,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.025666558278829608,
+        "position_speed_rpm": -0.0005139960754355297,
+        "window_duration_s": 1.0103541829994356
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11739.305557919,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.324462890625,
+          "speed_rpm": 0.18
+        },
+        "request_s": 11739.304601944,
+        "received_s": 11739.305491325,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.019645515796903264,
+        "position_speed_rpm": 0.002053423501732918,
+        "window_duration_s": 1.0104765929991117
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11739.327613525,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.322998046875,
+          "speed_rpm": -0.0
+        },
+        "request_s": 11739.326653885,
+        "received_s": 11739.327526525,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.020512973677963973,
+        "position_speed_rpm": 0.0007186637279434191,
+        "window_duration_s": 1.0103117029993882
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11739.349554609,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3221435546877,
+          "speed_rpm": 0.04
+        },
+        "request_s": 11739.34866279,
+        "received_s": 11739.349472786,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.021919392376312467,
+        "position_speed_rpm": -0.0007178882718635068,
+        "window_duration_s": 1.0103951719993347
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11739.371537067,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3245849609375,
+          "speed_rpm": 0.41000000000000003
+        },
+        "request_s": 11739.370638478,
+        "received_s": 11739.371463868,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.019997405770103335,
+        "position_speed_rpm": 0.001026709641889163,
+        "window_duration_s": 1.0105213789993286
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11739.393419968,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3216552734375,
+          "speed_rpm": -0.0
+        },
+        "request_s": 11739.392538973,
+        "received_s": 11739.393335288,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.015521632207065806,
+        "position_speed_rpm": -0.0015407975397655571,
+        "window_duration_s": 1.010421946999486
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11739.415294625,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3222656250002,
+          "speed_rpm": -0.22
+        },
+        "request_s": 11739.41437243,
+        "received_s": 11739.415172285,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.014560469638097005,
+        "position_speed_rpm": -0.002261725925643256,
+        "window_duration_s": 1.0102775899995322
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11739.437359881,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3216552734375,
+          "speed_rpm": -0.18
+        },
+        "request_s": 11739.436389265,
+        "received_s": 11739.437290759,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.016042452150636096,
+        "position_speed_rpm": -0.000821859569895293,
+        "window_duration_s": 1.010456162999617
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11739.459286182,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3226318359375,
+          "speed_rpm": 0.04
+        },
+        "request_s": 11739.458327883,
+        "received_s": 11739.459197324,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.014090985218780348,
+        "position_speed_rpm": 0.00030807154576397425,
+        "window_duration_s": 1.0104086190003727
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11739.481233352,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3216552734375,
+          "speed_rpm": 0.04
+        },
+        "request_s": 11739.480321069,
+        "received_s": 11739.481150545,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.017455554622935736,
+        "position_speed_rpm": 0.0005141193379841459,
+        "window_duration_s": 1.0104324709991488
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11739.503183508,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32373046875,
+          "speed_rpm": 0.45
+        },
+        "request_s": 11739.502277095,
+        "received_s": 11739.503113089,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.03155314418388818,
+        "position_speed_rpm": -0.0006176967052058994,
+        "window_duration_s": 1.0105034620009974
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11739.525299512,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3201904296877,
+          "speed_rpm": -0.5
+        },
+        "request_s": 11739.524340663,
+        "received_s": 11739.525217345,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.03394978385007098,
+        "position_speed_rpm": -0.002367010253059284,
+        "window_duration_s": 1.0105606120014272
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11739.547175337,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3221435546877,
+          "speed_rpm": -0.09
+        },
+        "request_s": 11739.5462928,
+        "received_s": 11739.547085876,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.024207193526428385,
+        "position_speed_rpm": 0.0,
+        "window_duration_s": 1.0105251429995405
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11739.569299488,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3226318359375,
+          "speed_rpm": 0.22
+        },
+        "request_s": 11739.568328629,
+        "received_s": 11739.569209526,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.025191366188467016,
+        "position_speed_rpm": -0.0016461591957288885,
+        "window_duration_s": 1.0107241330006218
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11739.591413923,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3228759765625,
+          "speed_rpm": 0.09
+        },
+        "request_s": 11739.590392392,
+        "received_s": 11739.591320439,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.0266235381579603,
+        "position_speed_rpm": 0.0010276049481754014,
+        "window_duration_s": 1.0108869920004508
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11739.61344063,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3228759765625,
+          "speed_rpm": 0.22
+        },
+        "request_s": 11739.612507238,
+        "received_s": 11739.613357399,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.02609482487287406,
+        "position_speed_rpm": 0.0005132840621888999,
+        "window_duration_s": 1.0109939059984754
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11739.635454478,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3228759765625,
+          "speed_rpm": 0.45
+        },
+        "request_s": 11739.634568806,
+        "received_s": 11739.635380685,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.026543025513536853,
+        "position_speed_rpm": 0.0010270614207488866,
+        "window_duration_s": 1.011037803000363
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11739.657581236,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3239746093752,
+          "speed_rpm": 0.18
+        },
+        "request_s": 11739.656590416,
+        "received_s": 11739.657417703,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.02950144683400591,
+        "position_speed_rpm": 0.001129024039224775,
+        "window_duration_s": 1.0111446369992336
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11739.679494106,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.321533203125,
+          "speed_rpm": -0.13
+        },
+        "request_s": 11739.67864137,
+        "received_s": 11739.679397644,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.03156264433178653,
+        "position_speed_rpm": -0.00010262471524626739,
+        "window_duration_s": 1.0111832889997459
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11739.701493564,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3222656250002,
+          "speed_rpm": 0.04
+        },
+        "request_s": 11739.700550091,
+        "received_s": 11739.701401947,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.02776711437010379,
+        "position_speed_rpm": -0.0012312372335184839,
+        "window_duration_s": 1.0113082640000357
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11739.723468601,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3242187500002,
+          "speed_rpm": 0.27
+        },
+        "request_s": 11739.722558735,
+        "received_s": 11739.723377793,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.028733312866648927,
+        "position_speed_rpm": 0.003388096492161797,
+        "window_duration_s": 1.0111632039988763
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11739.745376031,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3228759765625,
+          "speed_rpm": 0.09
+        },
+        "request_s": 11739.744479116,
+        "received_s": 11739.745295112,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.03360647760091057,
+        "position_speed_rpm": 0.0006158659148579684,
+        "window_duration_s": 1.0112119519999396
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11739.767326951,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.322021484375,
+          "speed_rpm": -0.22
+        },
+        "request_s": 11739.766421411,
+        "received_s": 11739.767260337,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.030241464915257747,
+        "position_speed_rpm": -0.0005136321326001456,
+        "window_duration_s": 1.011243224998907
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11739.789291022,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.320556640625,
+          "speed_rpm": -0.32
+        },
+        "request_s": 11739.788371608,
+        "received_s": 11739.789205947,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.020494166392571483,
+        "position_speed_rpm": -0.0019534325352616225,
+        "window_duration_s": 1.011360053998942
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11739.811121693,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3216552734375,
+          "speed_rpm": -0.18
+        },
+        "request_s": 11739.810306586,
+        "received_s": 11739.811059221,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.014118108970723112,
+        "position_speed_rpm": -0.0010290776219192674,
+        "window_duration_s": 1.011302610999337
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11739.833170392,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3212890625002,
+          "speed_rpm": -0.13
+        },
+        "request_s": 11739.832195252,
+        "received_s": 11739.833086369,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.009766976930355465,
+        "position_speed_rpm": -0.0013377747755836742,
+        "window_duration_s": 1.0114478840005177
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11739.855120726,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.324462890625,
+          "speed_rpm": 0.36
+        },
+        "request_s": 11739.854147245,
+        "received_s": 11739.85503148,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.011720920485474353,
+        "position_speed_rpm": 0.0004118144470034858,
+        "window_duration_s": 1.0115421739992598
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11739.877056507,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32177734375,
+          "speed_rpm": -0.0
+        },
+        "request_s": 11739.87615309,
+        "received_s": 11739.876974736,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.015625164981834496,
+        "position_speed_rpm": 0.00020594545528941296,
+        "window_duration_s": 1.0115727730008075
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11739.899161143,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3204345703127,
+          "speed_rpm": -0.36
+        },
+        "request_s": 11739.898185767,
+        "received_s": 11739.899092456,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.010819893454766583,
+        "position_speed_rpm": -0.0015437047675902346,
+        "window_duration_s": 1.0117446900003415
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11739.921198419,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3233642578127,
+          "speed_rpm": 0.13
+        },
+        "request_s": 11739.92023979,
+        "received_s": 11739.921115365,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.010803207391946618,
+        "position_speed_rpm": -0.0007202240987537787,
+        "window_duration_s": 1.0118788839990884
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11739.943277354,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3221435546877,
+          "speed_rpm": 0.13
+        },
+        "request_s": 11739.942316331,
+        "received_s": 11739.943208015,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.017016166906368136,
+        "position_speed_rpm": -0.0006167880446974689,
+        "window_duration_s": 1.0119349409997085
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11739.965233358,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.321533203125,
+          "speed_rpm": 0.04
+        },
+        "request_s": 11739.964308412,
+        "received_s": 11739.965148982,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.015816995047862423,
+        "position_speed_rpm": -0.00041124243552585516,
+        "window_duration_s": 1.0118807409999135
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11739.987185949,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.31982421875,
+          "speed_rpm": -0.41000000000000003
+        },
+        "request_s": 11739.986202437,
+        "received_s": 11739.98704188,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.00877759827153427,
+        "position_speed_rpm": -0.0006170280122957792,
+        "window_duration_s": 1.011821009000414
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11740.009125405,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32275390625,
+          "speed_rpm": 0.22
+        },
+        "request_s": 11740.008205008,
+        "received_s": 11740.009040044,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.006168169768814958,
+        "position_speed_rpm": 0.0009248646711065306,
+        "window_duration_s": 1.0117947290000302
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11740.031049682,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.324462890625,
+          "speed_rpm": 0.22
+        },
+        "request_s": 11740.03016279,
+        "received_s": 11740.030973801,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.008010924327774368,
+        "position_speed_rpm": 0.002673092216035993,
+        "window_duration_s": 1.0117956739995861
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11740.053123804,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3238525390625,
+          "speed_rpm": 0.09
+        },
+        "request_s": 11740.052202348,
+        "received_s": 11740.053036807,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.01335731974724325,
+        "position_speed_rpm": -0.0005137501195445531,
+        "window_duration_s": 1.011756747999243
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11740.075071692,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3228759765625,
+          "speed_rpm": 0.09
+        },
+        "request_s": 11740.074170955,
+        "received_s": 11740.075005635,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.02022079445140745,
+        "position_speed_rpm": 0.0009246308009212469,
+        "window_duration_s": 1.0116589340013888
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11740.096938087,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3239746093752,
+          "speed_rpm": 0.45
+        },
+        "request_s": 11740.096067413,
+        "received_s": 11740.096858796,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.030522619712331632,
+        "position_speed_rpm": 0.002983351516838361,
+        "window_duration_s": 1.0114819569989777
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11740.118879427,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3216552734375,
+          "speed_rpm": 0.13
+        },
+        "request_s": 11740.117893544,
+        "received_s": 11740.118797821,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.04126356029824794,
+        "position_speed_rpm": -0.0014408498101807674,
+        "window_duration_s": 1.0114638859995466
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11740.140735219,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32275390625,
+          "speed_rpm": -0.04
+        },
+        "request_s": 11740.139867234,
+        "received_s": 11740.140674524,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.04126300985301186,
+        "position_speed_rpm": 0.0005151519662440245,
+        "window_duration_s": 1.0113149009994231
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11740.162642053,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3204345703127,
+          "speed_rpm": -0.77
+        },
+        "request_s": 11740.161761357,
+        "received_s": 11740.162558405,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.031527463632212815,
+        "position_speed_rpm": -0.0009275416843348504,
+        "window_duration_s": 1.0114665790006256
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11740.184678771,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.321533203125,
+          "speed_rpm": -0.18
+        },
+        "request_s": 11740.18373417,
+        "received_s": 11740.184578996,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.020750985851991456,
+        "position_speed_rpm": 0.0014419099303130281,
+        "window_duration_s": 1.0112729250013217
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11740.206553312,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3212890625002,
+          "speed_rpm": -0.5
+        },
+        "request_s": 11740.205657147,
+        "received_s": 11740.206482007,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.01056392148548858,
+        "position_speed_rpm": -0.0012365184242087927,
+        "window_duration_s": 1.0112102370003413
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11740.228514118,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3228759765625,
+          "speed_rpm": 0.09
+        },
+        "request_s": 11740.227567344,
+        "received_s": 11740.228414589,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.001221997679778281,
+        "position_speed_rpm": -0.0013395695983670155,
+        "window_duration_s": 1.0111403520004387
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11740.250420624,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3221435546877,
+          "speed_rpm": -0.22
+        },
+        "request_s": 11740.249547206,
+        "received_s": 11740.250298684,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.0036627625529923537,
+        "position_speed_rpm": -0.0014439218234078496,
+        "window_duration_s": 1.0110471310017601
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11740.272335239,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3233642578127,
+          "speed_rpm": 0.04
+        },
+        "request_s": 11740.271465325,
+        "received_s": 11740.272267777,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.003675005615764356,
+        "position_speed_rpm": 0.0004125485384398002,
+        "window_duration_s": 1.0111905230005505
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11740.294373931,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3222656250002,
+          "speed_rpm": -0.04
+        },
+        "request_s": 11740.293402924,
+        "received_s": 11740.294290565,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.0018164235226739468,
+        "position_speed_rpm": -0.0014426793145256986,
+        "window_duration_s": 1.0110031479998725
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11740.316307184,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3238525390625,
+          "speed_rpm": 0.41000000000000003
+        },
+        "request_s": 11740.315413202,
+        "received_s": 11740.31622702,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.007369807627512183,
+        "position_speed_rpm": 0.0018548975498892143,
+        "window_duration_s": 1.0107356949993118
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11740.338240674,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3222656250002,
+          "speed_rpm": 0.04
+        },
+        "request_s": 11740.337344502,
+        "received_s": 11740.338175149,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.010294466753808606,
+        "position_speed_rpm": -0.000412050383615927,
+        "window_duration_s": 1.0106486240001686
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11740.360197617,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3216552734375,
+          "speed_rpm": -0.18
+        },
+        "request_s": 11740.359290377,
+        "received_s": 11740.360110295,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.008340976012147094,
+        "position_speed_rpm": 0.001029858640155531,
+        "window_duration_s": 1.0106375089999347
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11740.382170484,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3228759765625,
+          "speed_rpm": 0.27
+        },
+        "request_s": 11740.381224364,
+        "received_s": 11740.382082772,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.004423498528383161,
+        "position_speed_rpm": 0.0011331204772428458,
+        "window_duration_s": 1.0106189039997844
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11740.404064086,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.321533203125,
+          "speed_rpm": -0.5
+        },
+        "request_s": 11740.403160097,
+        "received_s": 11740.403988846,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.0025056740317877576,
+        "position_speed_rpm": 0.0002060187097070852,
+        "window_duration_s": 1.0106535579998308
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11740.425932188,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.323486328125,
+          "speed_rpm": 0.5
+        },
+        "request_s": 11740.425013388,
+        "received_s": 11740.425847766,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.0001289223967381112,
+        "position_speed_rpm": 0.0005152389378649728,
+        "window_duration_s": 1.0106754810003622
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11740.447748087,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3221435546877,
+          "speed_rpm": -0.22
+        },
+        "request_s": 11740.446870324,
+        "received_s": 11740.447671765,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.007273252279048548,
+        "position_speed_rpm": 0.0,
+        "window_duration_s": 1.0103810059990792
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11740.469637706,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32080078125,
+          "speed_rpm": -0.54
+        },
+        "request_s": 11740.468765551,
+        "received_s": 11740.469565594,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.0005567875608325723,
+        "position_speed_rpm": -0.002165488195890827,
+        "window_duration_s": 1.0103682699991623
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11740.491549316,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.322021484375,
+          "speed_rpm": -0.36
+        },
+        "request_s": 11740.490671595,
+        "received_s": 11740.491468857,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.010068150388914074,
+        "position_speed_rpm": -0.00020636198737524687,
+        "window_duration_s": 1.0103183120008907
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11740.513492518,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3232421875002,
+          "speed_rpm": -0.09
+        },
+        "request_s": 11740.512581628,
+        "received_s": 11740.513409268,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.020280639367699502,
+        "position_speed_rpm": -0.0005158946173405376,
+        "window_duration_s": 1.0102961789998517
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11740.535414753,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.324462890625,
+          "speed_rpm": 0.32
+        },
+        "request_s": 11740.534551695,
+        "received_s": 11740.535351227,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.01723882456201083,
+        "position_speed_rpm": 0.0018572787387654416,
+        "window_duration_s": 1.0101338819986267
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11740.557299585,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3214111328127,
+          "speed_rpm": -0.36
+        },
+        "request_s": 11740.556343862,
+        "received_s": 11740.557172855,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.011284906080516577,
+        "position_speed_rpm": -0.0002064831804105288,
+        "window_duration_s": 1.0100869790003344
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11740.579166482,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.322998046875,
+          "speed_rpm": 0.04
+        },
+        "request_s": 11740.578290478,
+        "received_s": 11740.579097058,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.016184620468359695,
+        "position_speed_rpm": 0.00010326688737302094,
+        "window_duration_s": 1.0098875319999934
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11740.601161334,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3242187500002,
+          "speed_rpm": 0.09
+        },
+        "request_s": 11740.600286314,
+        "received_s": 11740.601080952,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.018165579451778636,
+        "position_speed_rpm": 0.0022709744948939746,
+        "window_duration_s": 1.0097605129994918
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11740.623133497,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3228759765625,
+          "speed_rpm": 0.27
+        },
+        "request_s": 11740.622194719,
+        "received_s": 11740.62301753,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.017639628464036106,
+        "position_speed_rpm": -0.000515927281916289,
+        "window_duration_s": 1.0096601310015103
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11740.644976316,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.323486328125,
+          "speed_rpm": 0.32
+        },
+        "request_s": 11740.644120829,
+        "received_s": 11740.644894379,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.01855760853238495,
+        "position_speed_rpm": 0.0011347358618729638,
+        "window_duration_s": 1.0095136939999065
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11740.66701122,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.322021484375,
+          "speed_rpm": -0.09
+        },
+        "request_s": 11740.666105879,
+        "received_s": 11740.666900707,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.022927669707710766,
+        "position_speed_rpm": 0.0010309899629131123,
+        "window_duration_s": 1.009483003999776
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11740.688984377,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32080078125,
+          "speed_rpm": -0.5
+        },
+        "request_s": 11740.6880572,
+        "received_s": 11740.688888576,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.02989725991061354,
+        "position_speed_rpm": -0.001030548122875484,
+        "window_duration_s": 1.0094909319996077
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11740.710864044,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3209228515625,
+          "speed_rpm": -0.13
+        },
+        "request_s": 11740.709971182,
+        "received_s": 11740.710792872,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.035754900784696154,
+        "position_speed_rpm": -0.0019583996937345555,
+        "window_duration_s": 1.0093909249990247
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11740.732824257,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3250732421877,
+          "speed_rpm": 0.45
+        },
+        "request_s": 11740.731893469,
+        "received_s": 11740.732746806,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.03565029102613526,
+        "position_speed_rpm": 0.0005153370757842449,
+        "window_duration_s": 1.0093690129997412
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11740.754784042,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32275390625,
+          "speed_rpm": 0.09
+        },
+        "request_s": 11740.753926181,
+        "received_s": 11740.754695987,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.033686455459120065,
+        "position_speed_rpm": 0.0011330094385073194,
+        "window_duration_s": 1.0094008750002104
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11740.776728616,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32373046875,
+          "speed_rpm": 0.22
+        },
+        "request_s": 11740.775861304,
+        "received_s": 11740.776664369,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.028898536023644002,
+        "position_speed_rpm": 0.0006178669532052632,
+        "window_duration_s": 1.0094040320000204
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11740.798618111,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32275390625,
+          "speed_rpm": -0.04
+        },
+        "request_s": 11740.797730475,
+        "received_s": 11740.798531848,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.0210803180121154,
+        "position_speed_rpm": -0.0012364624824824017,
+        "window_duration_s": 1.0093259010009206
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11740.820602199,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32177734375,
+          "speed_rpm": -0.54
+        },
+        "request_s": 11740.819669272,
+        "received_s": 11740.820513115,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.021980359908344755,
+        "position_speed_rpm": -0.0009271370230880624,
+        "window_duration_s": 1.0094538940011262
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11740.842532876,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.322509765625,
+          "speed_rpm": -0.0
+        },
+        "request_s": 11740.84159446,
+        "received_s": 11740.842452719,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.02446846483506134,
+        "position_speed_rpm": -0.0008238600135370642,
+        "window_duration_s": 1.0093663499992545
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11740.864490727,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32177734375,
+          "speed_rpm": -0.04
+        },
+        "request_s": 11740.86357638,
+        "received_s": 11740.864412379,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.027403456943659234,
+        "position_speed_rpm": -0.00020601366873431725,
+        "window_duration_s": 1.0093808990004618
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11740.886370183,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3251953125,
+          "speed_rpm": 0.41000000000000003
+        },
+        "request_s": 11740.885462216,
+        "received_s": 11740.886285029,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.027309611352092922,
+        "position_speed_rpm": 0.0037104105158233557,
+        "window_duration_s": 1.0093102930004534
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11740.908170856,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3238525390625,
+          "speed_rpm": 0.04
+        },
+        "request_s": 11740.907295397,
+        "received_s": 11740.9081059,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.018506181827088204,
+        "position_speed_rpm": 0.002474652864783493,
+        "window_duration_s": 1.00901344399972
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11740.93006553,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3209228515625,
+          "speed_rpm": -0.59
+        },
+        "request_s": 11740.929203273,
+        "received_s": 11740.929977187,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.021960346964649977,
+        "position_speed_rpm": -0.0035072272707916997,
+        "window_duration_s": 1.0088618219997443
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11740.951893136,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3216552734375,
+          "speed_rpm": -0.32
+        },
+        "request_s": 11740.951017195,
+        "received_s": 11740.951813594,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.03466425931385118,
+        "position_speed_rpm": -0.0009289148317932781,
+        "window_duration_s": 1.0086055789997772
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11740.973846271,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3238525390625,
+          "speed_rpm": 0.27
+        },
+        "request_s": 11740.972935872,
+        "received_s": 11740.973778687,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.03705688487129717,
+        "position_speed_rpm": 0.00010321448127043775,
+        "window_duration_s": 1.0086297049983841
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11740.995825623,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3222656250002,
+          "speed_rpm": -0.04
+        },
+        "request_s": 11740.994904583,
+        "received_s": 11740.995738931,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.030535491935215438,
+        "position_speed_rpm": -0.0004126637190589414,
+        "window_duration_s": 1.0086970510001265
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11741.017748836,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.320556640625,
+          "speed_rpm": -0.32
+        },
+        "request_s": 11741.016856305,
+        "received_s": 11741.017658684,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.0323777385533349,
+        "position_speed_rpm": -0.001031981199807479,
+        "window_duration_s": 1.0086186400003498
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11741.039558754,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3240966796875,
+          "speed_rpm": 0.45
+        },
+        "request_s": 11741.038682687,
+        "received_s": 11741.039488433,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.0357588103698941,
+        "position_speed_rpm": 0.0013423235398000591,
+        "window_duration_s": 1.0085146319997875
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11741.061523341,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32373046875,
+          "speed_rpm": -0.0
+        },
+        "request_s": 11741.060592379,
+        "received_s": 11741.061436694,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.03425693629177046,
+        "position_speed_rpm": 0.0016521860935386733,
+        "window_duration_s": 1.0083998870013602
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11741.083560285,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3212890625002,
+          "speed_rpm": -0.54
+        },
+        "request_s": 11741.082676573,
+        "received_s": 11741.083488874,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.042118671052468276,
+        "position_speed_rpm": -0.003301363959884673,
+        "window_duration_s": 1.0084832389984513
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11741.105516309,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32275390625,
+          "speed_rpm": 0.09
+        },
+        "request_s": 11741.104637473,
+        "received_s": 11741.105440957,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.05286187681272539,
+        "position_speed_rpm": -0.0009278912299371256,
+        "window_duration_s": 1.0085821610009589
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11741.127435849,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3214111328127,
+          "speed_rpm": -0.27
+        },
+        "request_s": 11741.126539163,
+        "received_s": 11741.127349838,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.06112690416680455,
+        "position_speed_rpm": 0.0004123175524000629,
+        "window_duration_s": 1.0085520169996016
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11741.149422587,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3216552734375,
+          "speed_rpm": -0.09
+        },
+        "request_s": 11741.148421474,
+        "received_s": 11741.149311891,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.06601707000359172,
+        "position_speed_rpm": 0.0,
+        "window_duration_s": 1.0086373670001194
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11741.17136129,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.322509765625,
+          "speed_rpm": 0.13
+        },
+        "request_s": 11741.170469988,
+        "received_s": 11741.171298677,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.05678823155047392,
+        "position_speed_rpm": -0.0011330274617563595,
+        "window_duration_s": 1.0087402720000682
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11741.193238926,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.324951171875,
+          "speed_rpm": 0.41000000000000003
+        },
+        "request_s": 11741.192352566,
+        "received_s": 11741.193157741,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.0405747675510597,
+        "position_speed_rpm": 0.0022672163093115745,
+        "window_duration_s": 1.0085787449988857
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11741.215188663,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3245849609375,
+          "speed_rpm": 0.27
+        },
+        "request_s": 11741.214287577,
+        "received_s": 11741.215110952,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.025789199074673395,
+        "position_speed_rpm": 0.003400248199490409,
+        "window_duration_s": 1.0086289449991455
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11741.236957719,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32080078125,
+          "speed_rpm": -0.0
+        },
+        "request_s": 11741.236155722,
+        "received_s": 11741.236890406,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.018419209208511936,
+        "position_speed_rpm": -0.0027827300705274218,
+        "window_duration_s": 1.0084758169996348
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11741.258951022,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3228759765625,
+          "speed_rpm": 0.09
+        },
+        "request_s": 11741.2580224,
+        "received_s": 11741.258852649,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.016027461599509685,
+        "position_speed_rpm": -0.0007213974401612664,
+        "window_duration_s": 1.0085539649990096
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11741.28099096,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32275390625,
+          "speed_rpm": 0.32
+        },
+        "request_s": 11741.280053727,
+        "received_s": 11741.280898981,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.0095851124541597,
+        "position_speed_rpm": 0.001236717960752559,
+        "window_duration_s": 1.0086312040002667
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11741.303017502,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.322021484375,
+          "speed_rpm": -0.27
+        },
+        "request_s": 11741.302048218,
+        "received_s": 11741.302944699,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.009038480345041709,
+        "position_speed_rpm": -0.000618065821254933,
+        "window_duration_s": 1.0086541340006079
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11741.325021383,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3212890625002,
+          "speed_rpm": -0.27
+        },
+        "request_s": 11741.324092325,
+        "received_s": 11741.324933515,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.01894696341747706,
+        "position_speed_rpm": -0.00010296929580552125,
+        "window_duration_s": 1.0087064950002969
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11741.34698725,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3222656250002,
+          "speed_rpm": -0.13
+        },
+        "request_s": 11741.34607187,
+        "received_s": 11741.346907487,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.028198806971440407,
+        "position_speed_rpm": 0.000514815423589947,
+        "window_duration_s": 1.0087323380012094
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11741.369012888,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.323486328125,
+          "speed_rpm": 0.09
+        },
+        "request_s": 11741.36808168,
+        "received_s": 11741.368938528,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.027110868025361327,
+        "position_speed_rpm": 0.0008235202356379956,
+        "window_duration_s": 1.0088282329998037
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11741.390918015,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3240966796875,
+          "speed_rpm": 0.13
+        },
+        "request_s": 11741.390013411,
+        "received_s": 11741.390833023,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.02570564525186549,
+        "position_speed_rpm": -0.0007204510505396039,
+        "window_duration_s": 1.008750251001402
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11741.412776575,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3216552734375,
+          "speed_rpm": -0.04
+        },
+        "request_s": 11741.411900125,
+        "received_s": 11741.412708916,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.022233088318571112,
+        "position_speed_rpm": -0.0024710844186731627,
+        "window_duration_s": 1.0087200699999812
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11741.434670478,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3232421875002,
+          "speed_rpm": -0.04
+        },
+        "request_s": 11741.433803474,
+        "received_s": 11741.434588083,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.023100225788909728,
+        "position_speed_rpm": 0.00205819839604992,
+        "window_duration_s": 1.008740317000047
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11741.456572704,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3226318359375,
+          "speed_rpm": -0.22
+        },
+        "request_s": 11741.455718533,
+        "received_s": 11741.456479495,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.028948402789173145,
+        "position_speed_rpm": -0.00020589360701840024,
+        "window_duration_s": 1.0088077300006262
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11741.478529003,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3240966796875,
+          "speed_rpm": 0.32
+        },
+        "request_s": 11741.477614527,
+        "received_s": 11741.478448271,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.0196110797974288,
+        "position_speed_rpm": 0.001132859414055887,
+        "window_duration_s": 1.0088826770006563
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11741.50052759,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3226318359375,
+          "speed_rpm": 0.22
+        },
+        "request_s": 11741.499594146,
+        "received_s": 11741.500460511,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": -0.003949988603411709,
+        "position_speed_rpm": 0.0005150233765410534,
+        "window_duration_s": 1.0089916540000559
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11741.522530069,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32275390625,
+          "speed_rpm": -0.09
+        },
+        "request_s": 11741.521599582,
+        "received_s": 11741.522442974,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.002358639777218963,
+        "position_speed_rpm": 0.0012360958619322745,
+        "window_duration_s": 1.0090337059991725
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11741.544361866,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3251953125,
+          "speed_rpm": 0.5
+        },
+        "request_s": 11741.543514657,
+        "received_s": 11741.544295171,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.004297882118618028,
+        "position_speed_rpm": 0.0024737169010306498,
+        "window_duration_s": 1.0089439439998387
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11741.566340278,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.323486328125,
+          "speed_rpm": 0.09
+        },
+        "request_s": 11741.565407218,
+        "received_s": 11741.566253037,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.011149089404668239,
+        "position_speed_rpm": 0.0,
+        "window_duration_s": 1.0090801819987973
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11741.588413716,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3226318359375,
+          "speed_rpm": 0.32
+        },
+        "request_s": 11741.587473093,
+        "received_s": 11741.588310252,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.01910391861242744,
+        "position_speed_rpm": -0.0012362976037128012,
+        "window_duration_s": 1.00921319400004
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11741.610406997,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32177734375,
+          "speed_rpm": -0.0
+        },
+        "request_s": 11741.609458969,
+        "received_s": 11741.61030754,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.021175165166034994,
+        "position_speed_rpm": 0.00010296150687363292,
+        "window_duration_s": 1.0092265880011837
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11741.632287374,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32177734375,
+          "speed_rpm": -0.04
+        },
+        "request_s": 11741.631441479,
+        "received_s": 11741.632215843,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.016828991261599997,
+        "position_speed_rpm": -0.001235355928941278,
+        "window_duration_s": 1.0091983129987057
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11741.654484696,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.322509765625,
+          "speed_rpm": 0.13
+        },
+        "request_s": 11741.653361006,
+        "received_s": 11741.654364001,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.01141865589084778,
+        "position_speed_rpm": -0.00010281275929357592,
+        "window_duration_s": 1.0094696220003243
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11741.676337526,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.323486328125,
+          "speed_rpm": 0.27
+        },
+        "request_s": 11741.675495392,
+        "received_s": 11741.676226001,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.013244945514926767,
+        "position_speed_rpm": -0.0005143413286052641,
+        "window_duration_s": 1.0093252940005186
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11741.698156736,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3232421875002,
+          "speed_rpm": 0.09
+        },
+        "request_s": 11741.697231464,
+        "received_s": 11741.698056596,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.02356831222320678,
+        "position_speed_rpm": 0.0005148141495556622,
+        "window_duration_s": 1.0091680200002884
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11741.720374533,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3238525390625,
+          "speed_rpm": 0.22
+        },
+        "request_s": 11741.719360802,
+        "received_s": 11741.72023185,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.0338023450001616,
+        "position_speed_rpm": 0.0009257622190488795,
+        "window_duration_s": 1.0094389780006168
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11741.742270173,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3203125000002,
+          "speed_rpm": -0.32
+        },
+        "request_s": 11741.741312685,
+        "received_s": 11741.742177927,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.029235745448142305,
+        "position_speed_rpm": -0.004112546741007121,
+        "window_duration_s": 1.0094311210013984
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11741.764168227,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.323486328125,
+          "speed_rpm": 0.22
+        },
+        "request_s": 11741.763297567,
+        "received_s": 11741.764090631,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.02228024228640841,
+        "position_speed_rpm": 0.0,
+        "window_duration_s": 1.0093946440010768
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11741.786168353,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.322998046875,
+          "speed_rpm": 0.09
+        },
+        "request_s": 11741.785198638,
+        "received_s": 11741.786077312,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.022282648277642366,
+        "position_speed_rpm": 0.0003086214471221922,
+        "window_duration_s": 1.0094129429999157
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11741.807942401,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3216552734375,
+          "speed_rpm": -0.13
+        },
+        "request_s": 11741.8070824,
+        "received_s": 11741.807870221,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.01990260434260764,
+        "position_speed_rpm": -0.00010298023888095929,
+        "window_duration_s": 1.0093383729999914
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11741.829862202,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.321533203125,
+          "speed_rpm": -0.04
+        },
+        "request_s": 11741.828963614,
+        "received_s": 11741.829791078,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.02437361933239148,
+        "position_speed_rpm": -0.00020594739095966931,
+        "window_duration_s": 1.0092779629994766
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11741.85192844,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3221435546877,
+          "speed_rpm": -0.04
+        },
+        "request_s": 11741.850967793,
+        "received_s": 11741.851820375,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.029367176463666624,
+        "position_speed_rpm": -0.0003091070446374148,
+        "window_duration_s": 1.0093676560009044
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11741.873781804,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3238525390625,
+          "speed_rpm": 0.13
+        },
+        "request_s": 11741.872950719,
+        "received_s": 11741.873717859,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.030780431362023807,
+        "position_speed_rpm": 0.00030905150656906753,
+        "window_duration_s": 1.0093054799999663
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11741.89572565,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.322509765625,
+          "speed_rpm": -0.32
+        },
+        "request_s": 11741.894816122,
+        "received_s": 11741.895641659,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.024706487339607147,
+        "position_speed_rpm": -0.000617811441229909,
+        "window_duration_s": 1.009356630000184
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11741.917739844,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3226318359375,
+          "speed_rpm": 0.13
+        },
+        "request_s": 11741.91679987,
+        "received_s": 11741.917653288,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.017767225475264655,
+        "position_speed_rpm": -0.0010305391496262582,
+        "window_duration_s": 1.0095473879991914
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11741.939583976,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3226318359375,
+          "speed_rpm": 0.41000000000000003
+        },
+        "request_s": 11741.938731075,
+        "received_s": 11741.939517487,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.029572661661589613,
+        "position_speed_rpm": 0.001958836786429408,
+        "window_duration_s": 1.0095403000013903
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11741.96155442,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3226318359375,
+          "speed_rpm": -0.18
+        },
+        "request_s": 11741.960661347,
+        "received_s": 11741.961470672,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.04191024468398978,
+        "position_speed_rpm": -0.0007215287009875441,
+        "window_duration_s": 1.0096570780006004
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11741.98351663,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3233642578127,
+          "speed_rpm": 0.04
+        },
+        "request_s": 11741.982600364,
+        "received_s": 11741.98342517,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.040932433625840974,
+        "position_speed_rpm": 0.00030927701423446685,
+        "window_duration_s": 1.0096464830003242
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11742.005369811,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3242187500002,
+          "speed_rpm": 0.54
+        },
+        "request_s": 11742.004454277,
+        "received_s": 11742.005280012,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.04471315196616251,
+        "position_speed_rpm": 0.0021642598962607353,
+        "window_duration_s": 1.0095410809990426
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11742.027448182,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3253173828127,
+          "speed_rpm": 0.59
+        },
+        "request_s": 11742.026376271,
+        "received_s": 11742.027335889,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.06095699646576405,
+        "position_speed_rpm": 0.003192676190412473,
+        "window_duration_s": 1.0096772050001164
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11742.049401509,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3221435546877,
+          "speed_rpm": -0.0
+        },
+        "request_s": 11742.048404906,
+        "received_s": 11742.049315211,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.0659636460159368,
+        "position_speed_rpm": 0.0,
+        "window_duration_s": 1.0098267779994785
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11742.071269547,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3232421875002,
+          "speed_rpm": 0.04
+        },
+        "request_s": 11742.070387287,
+        "received_s": 11742.071200168,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.061510639011494936,
+        "position_speed_rpm": -0.0005151107503941614,
+        "window_duration_s": 1.0097634739995556
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11742.093100331,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3238525390625,
+          "speed_rpm": 0.27
+        },
+        "request_s": 11742.092195943,
+        "received_s": 11742.093015362,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.07077242752402083,
+        "position_speed_rpm": 0.0011338672250498678,
+        "window_duration_s": 1.0095264880001196
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11742.114871644,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.323486328125,
+          "speed_rpm": -0.0
+        },
+        "request_s": 11742.113972975,
+        "received_s": 11742.114788905,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.07859062610001179,
+        "position_speed_rpm": 0.0007224233081240403,
+        "window_duration_s": 1.0093479480001406
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11742.136773311,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3226318359375,
+          "speed_rpm": 0.18
+        },
+        "request_s": 11742.13593582,
+        "received_s": 11742.136707525,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.08249777392928273,
+        "position_speed_rpm": 0.0,
+        "window_duration_s": 1.0093576870003744
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11742.158623303,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3245849609375,
+          "speed_rpm": 0.27
+        },
+        "request_s": 11742.157761348,
+        "received_s": 11742.15853859,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.09129259217214053,
+        "position_speed_rpm": 0.0016518205329304066,
+        "window_duration_s": 1.009226698999555
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11742.18043875,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3221435546877,
+          "speed_rpm": 0.22
+        },
+        "request_s": 11742.179582046,
+        "received_s": 11742.180353287,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.09616901357403013,
+        "position_speed_rpm": -0.001033120734267185,
+        "window_duration_s": 1.009054610000021
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11742.202397498,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3216552734375,
+          "speed_rpm": -0.36
+        },
+        "request_s": 11742.201489561,
+        "received_s": 11742.202312352,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.08878788609742803,
+        "position_speed_rpm": -0.0021684059265992908,
+        "window_duration_s": 1.009154610999758
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11742.224351934,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.322509765625,
+          "speed_rpm": -0.04
+        },
+        "request_s": 11742.22343144,
+        "received_s": 11742.224256762,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.07704310927671099,
+        "position_speed_rpm": -0.002376265099928609,
+        "window_duration_s": 1.009145809999609
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11742.246301398,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.321533203125,
+          "speed_rpm": -0.41000000000000003
+        },
+        "request_s": 11742.24536636,
+        "received_s": 11742.246217554,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.06922069476101789,
+        "position_speed_rpm": -0.0005166279837209272,
+        "window_duration_s": 1.0093271480000112
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11742.268695856,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32080078125,
+          "speed_rpm": -0.04
+        },
+        "request_s": 11742.267573613,
+        "received_s": 11742.268461501,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.06326523117265881,
+        "position_speed_rpm": -0.0020627511510567446,
+        "window_duration_s": 1.0096088520003832
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11742.29083853,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32470703125,
+          "speed_rpm": 0.27
+        },
+        "request_s": 11742.289813338,
+        "received_s": 11742.290686772,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.061309461326881004,
+        "position_speed_rpm": 0.0007204651627832916,
+        "window_duration_s": 1.0097877909993258
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11742.31291772,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32275390625,
+          "speed_rpm": -0.09
+        },
+        "request_s": 11742.311975272,
+        "received_s": 11742.312812669,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.0627307085506645,
+        "position_speed_rpm": -0.0006164427442152015,
+        "window_duration_s": 1.009867970000414
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11742.335000127,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3226318359375,
+          "speed_rpm": -0.13
+        },
+        "request_s": 11742.334064674,
+        "received_s": 11742.334907611,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.0661960244972576,
+        "position_speed_rpm": 0.0,
+        "window_duration_s": 1.009974096001315
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11742.357038577,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3221435546877,
+          "speed_rpm": -0.09
+        },
+        "request_s": 11742.356094155,
+        "received_s": 11742.356936022,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.06814454919412921,
+        "position_speed_rpm": -0.002050939054628066,
+        "window_duration_s": 1.0100285349999467
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11742.379055412,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3238525390625,
+          "speed_rpm": 0.22
+        },
+        "request_s": 11742.378100544,
+        "received_s": 11742.378954878,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.06999865462639268,
+        "position_speed_rpm": 0.001434181507276422,
+        "window_duration_s": 1.010016350001024
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11742.401107701,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3264160156252,
+          "speed_rpm": 0.64
+        },
+        "request_s": 11742.400158667,
+        "received_s": 11742.400993582,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.07698581500473985,
+        "position_speed_rpm": 0.003993618477635289,
+        "window_duration_s": 1.010160558998905
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11742.423278747,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3210449218752,
+          "speed_rpm": -0.36
+        },
+        "request_s": 11742.422407582,
+        "received_s": 11742.423184151,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.07906210427344115,
+        "position_speed_rpm": -0.0012272851224150111,
+        "window_duration_s": 1.0104752350016497
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11742.445413781,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.321533203125,
+          "speed_rpm": -0.45
+        },
+        "request_s": 11742.444491276,
+        "received_s": 11742.44531577,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.0710400638114338,
+        "position_speed_rpm": 0.0,
+        "window_duration_s": 1.0107276870003261
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11742.467454373,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3250732421877,
+          "speed_rpm": 0.54
+        },
+        "request_s": 11742.466527112,
+        "received_s": 11742.46735934,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.0748259092952827,
+        "position_speed_rpm": 0.003580113421718088,
+        "window_duration_s": 1.0108798450000904
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11742.489412955,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3203125000002,
+          "speed_rpm": -0.36
+        },
+        "request_s": 11742.488498929,
+        "received_s": 11742.489320396,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.07569509331399961,
+        "position_speed_rpm": -0.0036873005698154597,
+        "window_duration_s": 1.010872124999878
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11742.511442236,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3233642578127,
+          "speed_rpm": 0.13
+        },
+        "request_s": 11742.51045322,
+        "received_s": 11742.511350122,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.06730837452462174,
+        "position_speed_rpm": 0.0005123731513509936,
+        "window_duration_s": 1.010889610999584
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11742.533421268,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32177734375,
+          "speed_rpm": -0.27
+        },
+        "request_s": 11742.532476764,
+        "received_s": 11742.533324157,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.06437383056441258,
+        "position_speed_rpm": -0.0007177595188227513,
+        "window_duration_s": 1.010881183001402
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11742.555331333,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3216552734375,
+          "speed_rpm": -0.09
+        },
+        "request_s": 11742.554473646,
+        "received_s": 11742.55523658,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.056037231204630215,
+        "position_speed_rpm": -0.00041038819654646294,
+        "window_duration_s": 1.0109414090002247
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11742.577470057,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3214111328127,
+          "speed_rpm": -0.41000000000000003
+        },
+        "request_s": 11742.576529598,
+        "received_s": 11742.577349577,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.04415457474525248,
+        "position_speed_rpm": -0.0020509673074887015,
+        "window_duration_s": 1.0110965400017449
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11742.59951383,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.324951171875,
+          "speed_rpm": 0.54
+        },
+        "request_s": 11742.59858445,
+        "received_s": 11742.599419581,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.04110075710211129,
+        "position_speed_rpm": -0.001230386271294082,
+        "window_duration_s": 1.011109328999737
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11742.621577516,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32275390625,
+          "speed_rpm": -0.0
+        },
+        "request_s": 11742.620642568,
+        "received_s": 11742.621481898,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.04350843956530417,
+        "position_speed_rpm": 0.0014363790483668043,
+        "window_duration_s": 1.011174358000062
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11742.643564662,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.322509765625,
+          "speed_rpm": -0.04
+        },
+        "request_s": 11742.64264399,
+        "received_s": 11742.643448777,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.04350476081802214,
+        "position_speed_rpm": 0.0008214704815296489,
+        "window_duration_s": 1.0112329340008728
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11742.665726141,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3226318359375,
+          "speed_rpm": 0.04
+        },
+        "request_s": 11742.664695813,
+        "received_s": 11742.665610871,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.04251857888569623,
+        "position_speed_rpm": -0.002052448420719794,
+        "window_duration_s": 1.0112468699990131
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11742.687854771,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3228759765625,
+          "speed_rpm": -0.09
+        },
+        "request_s": 11742.686877942,
+        "received_s": 11742.687724116,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.03763877374109779,
+        "position_speed_rpm": 0.0021534177570467494,
+        "window_duration_s": 1.0114981149999949
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11742.709883515,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3216552734375,
+          "speed_rpm": -0.13
+        },
+        "request_s": 11742.708961449,
+        "received_s": 11742.709782965,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.031347970332589514,
+        "position_speed_rpm": -0.0014354011407580493,
+        "window_duration_s": 1.0117263689990068
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11742.73184153,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3221435546877,
+          "speed_rpm": -0.0
+        },
+        "request_s": 11742.730971833,
+        "received_s": 11742.731761674,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.026543743059235396,
+        "position_speed_rpm": 0.00030757871399910146,
+        "window_duration_s": 1.0115298239998083
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11742.753710763,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32275390625,
+          "speed_rpm": 0.04
+        },
+        "request_s": 11742.752829669,
+        "received_s": 11742.753625473,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.028063113789036333,
+        "position_speed_rpm": 0.0009229622988483121,
+        "window_duration_s": 1.0114475459995447
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11742.775676308,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32275390625,
+          "speed_rpm": 0.22
+        },
+        "request_s": 11742.774726274,
+        "received_s": 11742.77561109,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.031969825916393135,
+        "position_speed_rpm": 0.0011287897963268981,
+        "window_duration_s": 1.0115204590001667
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11742.797635988,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3226318359375,
+          "speed_rpm": -0.04
+        },
+        "request_s": 11742.796726894,
+        "received_s": 11742.797549083,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.0305541070806692,
+        "position_speed_rpm": -0.00195102690756354,
+        "window_duration_s": 1.0114717710002878
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11742.819469803,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3240966796875,
+          "speed_rpm": 0.22
+        },
+        "request_s": 11742.818500085,
+        "received_s": 11742.819304667,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.032922032339331136,
+        "position_speed_rpm": 0.001131293298786159,
+        "window_duration_s": 1.0114344459998392
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11742.8413323,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.322021484375,
+          "speed_rpm": -0.09
+        },
+        "request_s": 11742.840446472,
+        "received_s": 11742.841246512,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.036173586181239364,
+        "position_speed_rpm": -0.0004114314470457869,
+        "window_duration_s": 1.0114554339997994
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11742.863083087,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.31982421875,
+          "speed_rpm": -0.22
+        },
+        "request_s": 11742.862250772,
+        "received_s": 11742.862993849,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.033721518445851535,
+        "position_speed_rpm": -0.0023707018845200724,
+        "window_duration_s": 1.0111734739984968
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11742.884783547,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.322998046875,
+          "speed_rpm": 0.18
+        },
+        "request_s": 11742.883966979,
+        "received_s": 11742.884699903,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.03232381553105311,
+        "position_speed_rpm": 0.00010328707093025183,
+        "window_duration_s": 1.01098204399932
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11742.906641742,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3226318359375,
+          "speed_rpm": -0.22
+        },
+        "request_s": 11742.905762396,
+        "received_s": 11742.906576618,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.03395275184620389,
+        "position_speed_rpm": 0.0008270613111017263,
+        "window_duration_s": 1.010934958998405
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11742.928592967,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3240966796875,
+          "speed_rpm": 0.32
+        },
+        "request_s": 11742.927663306,
+        "received_s": 11742.928501714,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.03710881115856618,
+        "position_speed_rpm": 0.001654573381692492,
+        "window_duration_s": 1.0108484259999386
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11742.950575786,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3232421875002,
+          "speed_rpm": 0.32
+        },
+        "request_s": 11742.949604367,
+        "received_s": 11742.950490374,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.038224982407718294,
+        "position_speed_rpm": 0.0004133809935545903,
+        "window_duration_s": 1.0109728869992978
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11742.972547346,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3221435546877,
+          "speed_rpm": -0.13
+        },
+        "request_s": 11742.971606018,
+        "received_s": 11742.972478737,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.03779267480943059,
+        "position_speed_rpm": -0.000516719033978343,
+        "window_duration_s": 1.0110080649992597
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11742.994539953,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3203125000002,
+          "speed_rpm": -0.36
+        },
+        "request_s": 11742.993653678,
+        "received_s": 11742.994457883,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.03398566898799815,
+        "position_speed_rpm": -0.0019631219607473107,
+        "window_duration_s": 1.0110327130005317
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11743.016349625,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3251953125,
+          "speed_rpm": 0.41000000000000003
+        },
+        "request_s": 11743.015468769,
+        "received_s": 11743.016259743,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.028257505629562012,
+        "position_speed_rpm": 0.0009296813896260389,
+        "window_duration_s": 1.0109797310014983
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11743.038270794,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3226318359375,
+          "speed_rpm": 0.22
+        },
+        "request_s": 11743.037371348,
+        "received_s": 11743.038205401,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.022771561443849488,
+        "position_speed_rpm": 0.0005164796619885373,
+        "window_duration_s": 1.010869511999772
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11743.060090601,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32275390625,
+          "speed_rpm": 0.13
+        },
+        "request_s": 11743.059212187,
+        "received_s": 11743.05999885,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.02013392717986897,
+        "position_speed_rpm": 0.002478522106141476,
+        "window_duration_s": 1.01068363900049
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11743.082031228,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3226318359375,
+          "speed_rpm": -0.27
+        },
+        "request_s": 11743.081115477,
+        "received_s": 11743.081948031,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.018179498223171428,
+        "position_speed_rpm": -0.00030943338661106235,
+        "window_duration_s": 1.0107478629997786
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11743.103902321,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3210449218752,
+          "speed_rpm": -0.22
+        },
+        "request_s": 11743.102972998,
+        "received_s": 11743.10382874,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.009529711828288196,
+        "position_speed_rpm": -0.0013408508580891032,
+        "window_duration_s": 1.0108133780013304
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11743.125714581,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32470703125,
+          "speed_rpm": 0.41000000000000003
+        },
+        "request_s": 11743.124794441,
+        "received_s": 11743.125629254,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.008670390668482207,
+        "position_speed_rpm": 0.0005160377916557997,
+        "window_duration_s": 1.0108403489994089
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11743.147586537,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3240966796875,
+          "speed_rpm": 0.18
+        },
+        "request_s": 11743.146720047,
+        "received_s": 11743.147519273,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.013107545060076432,
+        "position_speed_rpm": 0.0007228145986122712,
+        "window_duration_s": 1.010811747999469
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11743.16950353,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3240966796875,
+          "speed_rpm": 0.5
+        },
+        "request_s": 11743.168583845,
+        "received_s": 11743.169428705,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.01561641325300724,
+        "position_speed_rpm": 0.0016528097800737127,
+        "window_duration_s": 1.010890114999711
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11743.191392407,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3201904296877,
+          "speed_rpm": -0.32
+        },
+        "request_s": 11743.190565003,
+        "received_s": 11743.191278468,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.012274257212607201,
+        "position_speed_rpm": -0.00010336851749147952,
+        "window_duration_s": 1.0109251810008573
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11743.21332264,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3228759765625,
+          "speed_rpm": 0.36
+        },
+        "request_s": 11743.212456214,
+        "received_s": 11743.213223099,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.01422913240058718,
+        "position_speed_rpm": -0.0019625782045799285,
+        "window_duration_s": 1.010910746999798
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11743.235157775,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3226318359375,
+          "speed_rpm": -0.09
+        },
+        "request_s": 11743.234250438,
+        "received_s": 11743.235070582,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.021490283017199747,
+        "position_speed_rpm": 0.0,
+        "window_duration_s": 1.0108138200012036
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11743.257214636,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3210449218752,
+          "speed_rpm": -0.45
+        },
+        "request_s": 11743.256255526,
+        "received_s": 11743.25708587,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.020496958092318465,
+        "position_speed_rpm": -0.0014452028810847332,
+        "window_duration_s": 1.0108683159996872
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11743.279128164,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.324462890625,
+          "speed_rpm": 0.18
+        },
+        "request_s": 11743.278245461,
+        "received_s": 11743.279029896,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.02252412621192583,
+        "position_speed_rpm": 0.001548472160282154,
+        "window_duration_s": 1.0105683950005186
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11743.301087213,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3233642578127,
+          "speed_rpm": -0.04
+        },
+        "request_s": 11743.300173182,
+        "received_s": 11743.300994802,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.02152195833764305,
+        "position_speed_rpm": 0.0019605604821735668,
+        "window_duration_s": 1.0103080300013971
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11743.322970514,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3250732421877,
+          "speed_rpm": 0.36
+        },
+        "request_s": 11743.322023831,
+        "received_s": 11743.322880002,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.023022335085977726,
+        "position_speed_rpm": 0.00030942927672831296,
+        "window_duration_s": 1.0100673329998244
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11743.344885329,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.324462890625,
+          "speed_rpm": 0.41000000000000003
+        },
+        "request_s": 11743.343998108,
+        "received_s": 11743.344800526,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.03378967557111915,
+        "position_speed_rpm": 0.0003093814304287742,
+        "window_duration_s": 1.009892914999
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11743.366849294,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32275390625,
+          "speed_rpm": -0.09
+        },
+        "request_s": 11743.365934086,
+        "received_s": 11743.366780622,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.03967332649942139,
+        "position_speed_rpm": -0.0011339923944900488,
+        "window_duration_s": 1.0098445999992691
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11743.388872368,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.322998046875,
+          "speed_rpm": 0.04
+        },
+        "request_s": 11743.387953199,
+        "received_s": 11743.388786921,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.03771172808242008,
+        "position_speed_rpm": 0.0023691958028860165,
+        "window_duration_s": 1.0098320429988235
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11743.41087553,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3251953125,
+          "speed_rpm": 0.45
+        },
+        "request_s": 11743.409911911,
+        "received_s": 11743.410808666,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.03367071532082522,
+        "position_speed_rpm": 0.00195639790623945,
+        "window_duration_s": 1.0098150840003655
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11743.433029524,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.324462890625,
+          "speed_rpm": 0.36
+        },
+        "request_s": 11743.432081853,
+        "received_s": 11743.432943167,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.03947376436668934,
+        "position_speed_rpm": 0.0015422843000319484,
+        "window_duration_s": 1.0097590159984975
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11743.455035492,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3221435546877,
+          "speed_rpm": -0.04
+        },
+        "request_s": 11743.454079343,
+        "received_s": 11743.454934069,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.051842205644998376,
+        "position_speed_rpm": 0.000925484637597714,
+        "window_duration_s": 1.009618298998248
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11743.477141752,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.32373046875,
+          "speed_rpm": 0.22
+        },
+        "request_s": 11743.476114314,
+        "received_s": 11743.47706811,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.052828047160307694,
+        "position_speed_rpm": -0.0006163977650321368,
+        "window_duration_s": 1.0097087699996337
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11743.499180026,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.322998046875,
+          "speed_rpm": 0.18
+        },
+        "request_s": 11743.498237645,
+        "received_s": 11743.499092376,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.055229598151172954,
+        "position_speed_rpm": -0.0003081065308161549,
+        "window_duration_s": 1.0097719799996412
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11743.521202017,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.3204345703127,
+          "speed_rpm": -0.54
+        },
+        "request_s": 11743.520254204,
+        "received_s": 11743.521113019,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.05381362653659938,
+        "position_speed_rpm": -0.003900016207536492,
+        "window_duration_s": 1.0097628969997459
+      }
+    },
+    {
+      "event": "hold_feedback",
+      "monotonic_s": 11743.54313801,
+      "sample": {
+        "node_id": 1,
+        "state": {
+          "angle_deg": 1993.322509765625,
+          "speed_rpm": 0.09
+        },
+        "request_s": 11743.542201501,
+        "received_s": 11743.543073186,
+        "traj_done": true,
+        "axis_error": false,
+        "mean_speed_rpm": 0.05044436473016932,
+        "position_speed_rpm": -0.0016417837604713072,
+        "window_duration_s": 1.0097490289990674
+      }
+    }
+  ],
+  "result": {
+    "event": "aborted",
+    "monotonic_s": 11743.543182785,
+    "reason": "feedback_position_jump",
+    "stop_result": "external_stop_required",
+    "stop_error": "hold_observation_timeout"
+  }
+}

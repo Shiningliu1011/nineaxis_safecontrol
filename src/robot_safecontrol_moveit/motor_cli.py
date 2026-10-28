@@ -105,17 +105,20 @@ def main():
     if args.action == "move":
         limits = ExecutionLimits.from_urdf(args.root / "models/ninezzhou/urdf/ninezzhou.urdf", args.joint)
         limits = replace(limits, speed_rpm=args.speed_rpm, accel_rpm_s=args.accel_rpm_s)
-        # 按最长允许行程及梯形加减速时间计算观察时限。
-        travel_s = limits.max_step_deg / (6 * limits.speed_rpm) + limits.speed_rpm / limits.accel_rpm_s
-        limits = replace(limits, motion_timeout_s=max(limits.motion_timeout_s, travel_s + 2))
-        if args.delta_deg is not None and not 0 < abs(args.delta_deg) <= limits.max_step_deg:
-            parser.error("单次增量必须非零且不超过 5°")
+        if args.delta_deg is not None:
+            if not isfinite(args.delta_deg) or args.delta_deg == 0:
+                parser.error("相对增量必须为有限非零数值")
+            if abs(args.delta_deg) > limits.upper_deg - limits.lower_deg:
+                parser.error("相对增量超过 URDF 关节总行程")
+            limits = limits.for_motion(args.delta_deg)
         if args.target_deg is not None and (not isfinite(args.target_deg)
                                              or not limits.lower_deg <= args.target_deg <= limits.upper_deg):
             parser.error("绝对目标必须位于 URDF 关节范围内")
         if not args.execute:
             print(json.dumps(dict(joint=args.joint, delta_deg=args.delta_deg, target_deg=args.target_deg,
                                   node=control._node(args.joint), limits=asdict(limits),
+                                  motion_timeout_basis=("delta_deg" if args.delta_deg is not None
+                                                        else "feedback_distance"),
                                   status="plan_only"), ensure_ascii=False, indent=2))
             return
         latch = MotorStopLatch(args.root / ".scratch/motor_control/stop.json")

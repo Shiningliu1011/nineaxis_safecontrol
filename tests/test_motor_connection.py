@@ -16,6 +16,7 @@ from robot_safecontrol_moveit.single_joint_execution import (
     VelocityWindow, checked_speed,
 )
 from robot_safecontrol_moveit.motor_stop_latch import MotorStopLatch
+from robot_safecontrol_moveit.motor_motion_limits import validate_motion_parameters
 
 
 TRACE = Path(__file__).with_name("data") / "motor_static_feedback_20261021.json"
@@ -52,7 +53,7 @@ def test_recorded_stationary_motor_trace(joint):
     report = json.loads(TRACE.read_text())
     assert report["motion_commands_sent"] == 0
     node = int(joint[1:])
-    limits = ExecutionLimits(-90, 90)
+    limits = ExecutionLimits(-90, 90, max_feedback_rpm=0.2)
     guard = SingleJointMonitor(node, limits)
     window = VelocityWindow(limits.velocity_window_s)
     admitted = False
@@ -173,17 +174,19 @@ def test_cli_latch_rejects_before_opening_port(tmp_path):
     assert not (tmp_path / "motion.jsonl").exists()
 
 
-def test_absolute_target_preview_does_not_open_serial_port(tmp_path):
+@pytest.mark.parametrize("joint,target", [("J2", 10), ("J2", -10), ("J7", 4.380497336387634)])
+def test_absolute_target_preview_does_not_open_serial_port(tmp_path, joint, target):
     root = Path(__file__).resolve().parents[1]
     result = subprocess.run([
         sys.executable, "-m", "robot_safecontrol_moveit.motor_cli", "--root", str(root),
         "--port", str(tmp_path / "absent_serial_port"), "--output", str(tmp_path / "unused.jsonl"),
-        "move", "--joint", "J7", "--target-deg", "4.380497336387634",
+        "move", "--joint", joint, "--target-deg", str(target),
     ], capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
     report = json.loads(result.stdout)
     assert report["delta_deg"] is None
-    assert report["target_deg"] == pytest.approx(4.380497336387634)
+    assert report["target_deg"] == pytest.approx(target)
+    assert report["motion_timeout_basis"] == "feedback_distance"
     assert report["status"] == "plan_only"
     assert not (tmp_path / "unused.jsonl").exists()
 
@@ -193,14 +196,14 @@ def test_slower_motion_preview_preserves_protection_and_scales_travel_time(tmp_p
     result = subprocess.run([
         sys.executable, "-m", "robot_safecontrol_moveit.motor_cli", "--root", str(root),
         "--port", str(tmp_path / "absent_serial_port"), "--output", str(tmp_path / "unused.jsonl"),
-        "move", "--joint", "J4", "--target-deg", "9", "--speed-rpm", "0.03",
+        "move", "--joint", "J4", "--delta-deg", "10", "--speed-rpm", "0.03",
         "--accel-rpm-s", "0.02",
     ], capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
     limits = json.loads(result.stdout)["limits"]
     assert limits["speed_rpm"] == 0.03
     assert limits["accel_rpm_s"] == 0.02
-    assert limits["motion_timeout_s"] == pytest.approx(5 / (6 * 0.03) + 0.03 / 0.02 + 2)
+    assert limits["motion_timeout_s"] == pytest.approx(10 / (6 * 0.03) + 0.03 / 0.02 + 2)
     defaults = ExecutionLimits(-90, 90)
     for name in ("max_step_deg", "feedback_timeout_s", "max_feedback_rpm", "position_noise_deg",
                  "tolerance_deg", "stopped_rpm", "settle_s"):
@@ -208,10 +211,49 @@ def test_slower_motion_preview_preserves_protection_and_scales_travel_time(tmp_p
     assert not (tmp_path / "unused.jsonl").exists()
 
 
+@pytest.mark.parametrize("delta", [-10, 10])
+def test_larger_relative_motion_preview_does_not_open_serial_port(tmp_path, delta):
+    root = Path(__file__).resolve().parents[1]
+    output = tmp_path / "unused.jsonl"
+    result = subprocess.run([
+        sys.executable, "-m", "robot_safecontrol_moveit.motor_cli", "--root", str(root),
+        "--port", str(tmp_path / "absent_serial_port"), "--output", str(output),
+        "move", "--joint", "J2", "--delta-deg", str(delta),
+    ], capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    report = json.loads(result.stdout)
+    assert report["limits"]["max_step_deg"] is None
+    assert report["limits"]["max_feedback_rpm"] * 6 == pytest.approx(2.5)
+    assert report["limits"]["motion_timeout_s"] == pytest.approx(abs(delta) / 0.3 + 3)
+    assert report["motion_timeout_basis"] == "delta_deg"
+    assert not output.exists()
+
+
+@pytest.mark.parametrize("option,value,message", [
+    ("--delta-deg", "0", "相对增量必须为有限非零数值"),
+    ("--delta-deg", "nan", "相对增量必须为有限非零数值"),
+    ("--delta-deg", "181", "相对增量超过 URDF 关节总行程"),
+    ("--target-deg", "91", "绝对目标必须位于 URDF 关节范围内"),
+])
+def test_invalid_motion_rejected_before_connection(tmp_path, option, value, message):
+    root = Path(__file__).resolve().parents[1]
+    output = tmp_path / "unused.jsonl"
+    result = subprocess.run([
+        sys.executable, "-m", "robot_safecontrol_moveit.motor_cli", "--root", str(root),
+        "--port", str(tmp_path / "absent_serial_port"), "--output", str(output),
+        "move", "--joint", "J2", option, value, "--execute",
+    ], capture_output=True, text=True)
+    assert result.returncode != 0
+    assert message in result.stderr
+    assert "FileNotFoundError" not in result.stderr
+    assert not output.exists()
+
+
 @pytest.mark.parametrize("option,value,field", [
     ("--speed-rpm", "0.029", "speed_rpm"),
     ("--speed-rpm", "0.039", "speed_rpm"),
     ("--speed-rpm", "0.029999999999999995", "speed_rpm"),
+    ("--speed-rpm", str(2.5 / 6), "speed_rpm"),
     ("--accel-rpm-s", "0.019", "accel_rpm_s"),
     ("--accel-rpm-s", "0.049999999999999996", "accel_rpm_s"),
 ])
@@ -228,7 +270,9 @@ def test_unrepresentable_motion_parameters_rejected_before_connection(tmp_path, 
     assert not (tmp_path / "unused.jsonl").exists()
 
 
-@pytest.mark.parametrize("speed,accel", [(0.03, 0.01), (0.05, 0.05), (0.07, 0.07), (0.1, 0.1)])
+@pytest.mark.parametrize("speed,accel", [
+    (0.03, 0.01), (0.05, 0.05), (0.07, 0.07), (0.1, 0.1), (0.41, 0.05),
+])
 def test_motion_preview_limits_match_wire_parameters(tmp_path, speed, accel):
     root = Path(__file__).resolve().parents[1]
     result = subprocess.run([
@@ -246,3 +290,28 @@ def test_motion_preview_limits_match_wire_parameters(tmp_path, speed, accel):
     travel_s = 5 / (6 * (encoded_speed / 100)) + encoded_speed / encoded_accel
     assert limits["motion_timeout_s"] >= travel_s + 2
     assert not (tmp_path / "unused.jsonl").exists()
+
+
+def test_maximum_representable_speed_uses_same_parameter_validation():
+    validate_motion_parameters(0.41, 0.05)
+    limits = ExecutionLimits(-180, 180, speed_rpm=0.41)
+    payload = encode_trapezoid_position(5, 90, speed=limits.speed_rpm, accel=limits.accel_rpm_s)
+    _, speed, _ = struct.unpack("<fhh", payload)
+    assert speed == 41
+    assert speed / 100 * 6 == pytest.approx(2.46)
+    with pytest.raises(ValueError, match="speed_rpm"):
+        validate_motion_parameters(0.42, 0.05)
+    with pytest.raises(ValueError, match="0.01 的整数倍"):
+        validate_motion_parameters(2.5 / 6, 0.05)
+
+
+def test_speed_above_feedback_limit_is_rejected_before_connection(tmp_path):
+    root = Path(__file__).resolve().parents[1]
+    result = subprocess.run([
+        sys.executable, "-m", "robot_safecontrol_moveit.motor_cli", "--root", str(root),
+        "--port", str(tmp_path / "absent_serial_port"), "--output", str(tmp_path / "unused.jsonl"),
+        "move", "--joint", "J5", "--target-deg", "90", "--speed-rpm", "0.42", "--execute",
+    ], capture_output=True, text=True)
+    assert result.returncode != 0
+    assert "speed_rpm 必须在" in result.stderr
+    assert "FileNotFoundError" not in result.stderr

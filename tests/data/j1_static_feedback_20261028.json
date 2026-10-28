@@ -1,0 +1,3073 @@
+{
+  "motion_commands_sent": 0,
+  "properties": {
+    "node_id": 1,
+    "axis_state": 8,
+    "axis_error": 0,
+    "can_error": 0,
+    "motor_error": 0,
+    "encoder_error": 0,
+    "controller_error": 0,
+    "vbus_voltage": 24.313411712646484,
+    "auto_reply": 0,
+    "multi_circle": 0,
+    "limit_enabled": 1,
+    "limit_min_deg": -1000.0,
+    "limit_max_deg": 360.0,
+    "velocity_limit_rpm": 50.0,
+    "input_position_deg": -0.0,
+    "position_setpoint_deg": 0.0,
+    "output_position_deg": -0.00037536025047302246,
+    "output_velocity_rpm": -0.4119873046875
+  },
+  "samples": [
+    {
+      "request_s": 10975.552902651,
+      "received_s": 10975.553658187,
+      "node_id": 1,
+      "pos_deg": 0.0007919967174530029,
+      "vel_rpm": 0.45,
+      "torque_nm": 0.04,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10975.573832819,
+      "received_s": 10975.574725853,
+      "node_id": 1,
+      "pos_deg": -0.0016677379608154297,
+      "vel_rpm": -0.59,
+      "torque_nm": 0.5,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10975.594875709,
+      "received_s": 10975.597153922,
+      "node_id": 1,
+      "pos_deg": -0.0014343857765197754,
+      "vel_rpm": -0.41000000000000003,
+      "torque_nm": 0.15,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10975.617352899,
+      "received_s": 10975.618264216,
+      "node_id": 1,
+      "pos_deg": 0.0006179511547088623,
+      "vel_rpm": 0.04,
+      "torque_nm": -0.16,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10975.638430434,
+      "received_s": 10975.639287462,
+      "node_id": 1,
+      "pos_deg": -0.002621561288833618,
+      "vel_rpm": -0.45,
+      "torque_nm": 0.6,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10975.659480922,
+      "received_s": 10975.660389597,
+      "node_id": 1,
+      "pos_deg": 0.0005249679088592529,
+      "vel_rpm": 0.09,
+      "torque_nm": 0.66,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10975.680550498,
+      "received_s": 10975.68139199,
+      "node_id": 1,
+      "pos_deg": 0.00029280781745910645,
+      "vel_rpm": 0.09,
+      "torque_nm": 0.5,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10975.701569035,
+      "received_s": 10975.702496545,
+      "node_id": 1,
+      "pos_deg": 0.0007280707359313965,
+      "vel_rpm": 0.22,
+      "torque_nm": 0.21,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10975.72268152,
+      "received_s": 10975.723646007,
+      "node_id": 1,
+      "pos_deg": 0.0010132789611816406,
+      "vel_rpm": 0.04,
+      "torque_nm": 0.12,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10975.743759758,
+      "received_s": 10975.744632848,
+      "node_id": 1,
+      "pos_deg": 0.0015416741371154785,
+      "vel_rpm": 0.54,
+      "torque_nm": 0.59,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10975.764827871,
+      "received_s": 10975.765754196,
+      "node_id": 1,
+      "pos_deg": 0.0010119378566741943,
+      "vel_rpm": 0.22,
+      "torque_nm": 0.75,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10975.785903794,
+      "received_s": 10975.786856749,
+      "node_id": 1,
+      "pos_deg": -0.0006367266178131104,
+      "vel_rpm": -0.18,
+      "torque_nm": 0.04,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10975.806979559,
+      "received_s": 10975.807926995,
+      "node_id": 1,
+      "pos_deg": 0.0014100968837738037,
+      "vel_rpm": 0.32,
+      "torque_nm": 0.35000000000000003,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10975.828121283,
+      "received_s": 10975.829078849,
+      "node_id": 1,
+      "pos_deg": -0.0012128055095672607,
+      "vel_rpm": 0.0,
+      "torque_nm": 0.32,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10975.849260255,
+      "received_s": 10975.850242684,
+      "node_id": 1,
+      "pos_deg": 0.0006319582462310791,
+      "vel_rpm": 0.09,
+      "torque_nm": 0.53,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10975.870332646,
+      "received_s": 10975.872138264,
+      "node_id": 1,
+      "pos_deg": -0.0012455880641937256,
+      "vel_rpm": -0.5,
+      "torque_nm": 0.06,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10975.892239604,
+      "received_s": 10975.89327668,
+      "node_id": 1,
+      "pos_deg": -0.00015884637832641602,
+      "vel_rpm": -0.09,
+      "torque_nm": -0.17,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10975.913411637,
+      "received_s": 10975.914452545,
+      "node_id": 1,
+      "pos_deg": 0.0008842349052429199,
+      "vel_rpm": 0.32,
+      "torque_nm": 0.31,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10975.934578634,
+      "received_s": 10975.935532792,
+      "node_id": 1,
+      "pos_deg": 0.0015456974506378174,
+      "vel_rpm": 0.32,
+      "torque_nm": 0.28,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10975.955669175,
+      "received_s": 10975.956624113,
+      "node_id": 1,
+      "pos_deg": 0.0013087689876556396,
+      "vel_rpm": 0.13,
+      "torque_nm": 0.27,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10975.97676929,
+      "received_s": 10975.977727447,
+      "node_id": 1,
+      "pos_deg": 0.0014202296733856201,
+      "vel_rpm": 0.32,
+      "torque_nm": -0.24,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10975.997891561,
+      "received_s": 10975.998790139,
+      "node_id": 1,
+      "pos_deg": -0.00041112303733825684,
+      "vel_rpm": -0.13,
+      "torque_nm": -0.02,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.018953956,
+      "received_s": 10976.019889552,
+      "node_id": 1,
+      "pos_deg": -0.001376718282699585,
+      "vel_rpm": -0.22,
+      "torque_nm": -0.11,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.040067122,
+      "received_s": 10976.040993885,
+      "node_id": 1,
+      "pos_deg": -0.0005717575550079346,
+      "vel_rpm": 0.0,
+      "torque_nm": 0.35000000000000003,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.061105648,
+      "received_s": 10976.062053333,
+      "node_id": 1,
+      "pos_deg": 0.0011870265007019043,
+      "vel_rpm": 0.18,
+      "torque_nm": 0.08,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.082149079,
+      "received_s": 10976.083141128,
+      "node_id": 1,
+      "pos_deg": -0.0007794797420501709,
+      "vel_rpm": -0.13,
+      "torque_nm": 0.1,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.103314269,
+      "received_s": 10976.104218416,
+      "node_id": 1,
+      "pos_deg": 0.00031694769859313965,
+      "vel_rpm": 0.0,
+      "torque_nm": 0.05,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.124313504,
+      "received_s": 10976.125269468,
+      "node_id": 1,
+      "pos_deg": 0.003035515546798706,
+      "vel_rpm": 0.45,
+      "torque_nm": -0.1,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.145402511,
+      "received_s": 10976.146460478,
+      "node_id": 1,
+      "pos_deg": 0.0028944015502929688,
+      "vel_rpm": 0.36,
+      "torque_nm": 0.13,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.166637279,
+      "received_s": 10976.167610755,
+      "node_id": 1,
+      "pos_deg": 0.0013372302055358887,
+      "vel_rpm": 0.13,
+      "torque_nm": 0.42,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.187733704,
+      "received_s": 10976.188706054,
+      "node_id": 1,
+      "pos_deg": 0.000810474157333374,
+      "vel_rpm": 0.13,
+      "torque_nm": 0.47000000000000003,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.20889269,
+      "received_s": 10976.209814634,
+      "node_id": 1,
+      "pos_deg": -0.00029727816581726074,
+      "vel_rpm": -0.22,
+      "torque_nm": 0.32,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.22998011,
+      "received_s": 10976.230895361,
+      "node_id": 1,
+      "pos_deg": 0.0008928775787353516,
+      "vel_rpm": 0.18,
+      "torque_nm": 0.1,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.25102864,
+      "received_s": 10976.252035508,
+      "node_id": 1,
+      "pos_deg": 0.0005260109901428223,
+      "vel_rpm": 0.04,
+      "torque_nm": 0.47000000000000003,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.272233066,
+      "received_s": 10976.273251951,
+      "node_id": 1,
+      "pos_deg": -0.00015735626220703125,
+      "vel_rpm": -0.22,
+      "torque_nm": 0.16,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.293436711,
+      "received_s": 10976.294407229,
+      "node_id": 1,
+      "pos_deg": -4.857778549194336e-05,
+      "vel_rpm": -0.04,
+      "torque_nm": -0.07,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.314510622,
+      "received_s": 10976.315585367,
+      "node_id": 1,
+      "pos_deg": -0.0014317035675048828,
+      "vel_rpm": -0.13,
+      "torque_nm": 0.18,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.335706466,
+      "received_s": 10976.336657277,
+      "node_id": 1,
+      "pos_deg": -0.0004766881465911865,
+      "vel_rpm": 0.04,
+      "torque_nm": 0.6,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.35676065,
+      "received_s": 10976.357639303,
+      "node_id": 1,
+      "pos_deg": -0.0010514259338378906,
+      "vel_rpm": -0.13,
+      "torque_nm": 0.41000000000000003,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.377756947,
+      "received_s": 10976.378713601,
+      "node_id": 1,
+      "pos_deg": -0.0017471611499786377,
+      "vel_rpm": -0.54,
+      "torque_nm": 0.47000000000000003,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.398833701,
+      "received_s": 10976.399736109,
+      "node_id": 1,
+      "pos_deg": -0.0007969141006469727,
+      "vel_rpm": 0.0,
+      "torque_nm": 0.08,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.419848141,
+      "received_s": 10976.420846694,
+      "node_id": 1,
+      "pos_deg": 5.4389238357543945e-05,
+      "vel_rpm": 0.13,
+      "torque_nm": 0.02,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.440966181,
+      "received_s": 10976.441936642,
+      "node_id": 1,
+      "pos_deg": -0.000972449779510498,
+      "vel_rpm": -0.22,
+      "torque_nm": 0.63,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.462039615,
+      "received_s": 10976.463034456,
+      "node_id": 1,
+      "pos_deg": -0.0009363889694213867,
+      "vel_rpm": -0.13,
+      "torque_nm": 0.31,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.48315247,
+      "received_s": 10976.484091984,
+      "node_id": 1,
+      "pos_deg": 7.748603820800781e-06,
+      "vel_rpm": 0.04,
+      "torque_nm": 0.45,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.504222146,
+      "received_s": 10976.505289084,
+      "node_id": 1,
+      "pos_deg": 0.0003293156623840332,
+      "vel_rpm": 0.04,
+      "torque_nm": -0.1,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.525434305,
+      "received_s": 10976.529212132,
+      "node_id": 1,
+      "pos_deg": 0.00044599175453186035,
+      "vel_rpm": 0.0,
+      "torque_nm": 0.02,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.549332595,
+      "received_s": 10976.550316973,
+      "node_id": 1,
+      "pos_deg": -0.0030934810638427734,
+      "vel_rpm": -0.41000000000000003,
+      "torque_nm": 0.53,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.570439176,
+      "received_s": 10976.571325481,
+      "node_id": 1,
+      "pos_deg": -0.0006674230098724365,
+      "vel_rpm": -0.13,
+      "torque_nm": 0.09,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.59146814,
+      "received_s": 10976.592383277,
+      "node_id": 1,
+      "pos_deg": -0.0006404519081115723,
+      "vel_rpm": -0.04,
+      "torque_nm": 0.55,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.612511093,
+      "received_s": 10976.613557412,
+      "node_id": 1,
+      "pos_deg": 0.0001621246337890625,
+      "vel_rpm": 0.13,
+      "torque_nm": 0.23,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.633692642,
+      "received_s": 10976.634737003,
+      "node_id": 1,
+      "pos_deg": 0.001503676176071167,
+      "vel_rpm": 0.22,
+      "torque_nm": -0.12,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.654892848,
+      "received_s": 10976.655861544,
+      "node_id": 1,
+      "pos_deg": -0.0015680491924285889,
+      "vel_rpm": -0.36,
+      "torque_nm": 0.46,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.676033539,
+      "received_s": 10976.67707965,
+      "node_id": 1,
+      "pos_deg": -0.000302046537399292,
+      "vel_rpm": -0.22,
+      "torque_nm": 0.47000000000000003,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.697310958,
+      "received_s": 10976.698261991,
+      "node_id": 1,
+      "pos_deg": -0.0008612871170043945,
+      "vel_rpm": -0.04,
+      "torque_nm": 0.53,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.718354386,
+      "received_s": 10976.719267154,
+      "node_id": 1,
+      "pos_deg": -0.001677870750427246,
+      "vel_rpm": -0.13,
+      "torque_nm": 0.52,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.739419178,
+      "received_s": 10976.740452914,
+      "node_id": 1,
+      "pos_deg": 0.0005413591861724854,
+      "vel_rpm": 0.13,
+      "torque_nm": 0.36,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.760632342,
+      "received_s": 10976.761666111,
+      "node_id": 1,
+      "pos_deg": 0.0016163289546966553,
+      "vel_rpm": 0.18,
+      "torque_nm": 0.45,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.781873135,
+      "received_s": 10976.78285103,
+      "node_id": 1,
+      "pos_deg": -0.0017470121383666992,
+      "vel_rpm": -0.22,
+      "torque_nm": 0.15,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.803012543,
+      "received_s": 10976.803938784,
+      "node_id": 1,
+      "pos_deg": -0.003937780857086182,
+      "vel_rpm": -0.68,
+      "torque_nm": 0.39,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.824029043,
+      "received_s": 10976.825079359,
+      "node_id": 1,
+      "pos_deg": 0.0012655556201934814,
+      "vel_rpm": 0.59,
+      "torque_nm": 0.04,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.845248783,
+      "received_s": 10976.846200076,
+      "node_id": 1,
+      "pos_deg": -0.0016096234321594238,
+      "vel_rpm": -0.27,
+      "torque_nm": 0.6,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.866307764,
+      "received_s": 10976.86717167,
+      "node_id": 1,
+      "pos_deg": -0.0012575089931488037,
+      "vel_rpm": -0.32,
+      "torque_nm": 0.16,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.887322954,
+      "received_s": 10976.888269709,
+      "node_id": 1,
+      "pos_deg": -0.0002785027027130127,
+      "vel_rpm": 0.0,
+      "torque_nm": -0.09,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.908438556,
+      "received_s": 10976.909336316,
+      "node_id": 1,
+      "pos_deg": -0.0009740889072418213,
+      "vel_rpm": 0.09,
+      "torque_nm": 0.3,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.929491995,
+      "received_s": 10976.930353027,
+      "node_id": 1,
+      "pos_deg": 0.0016532838344573975,
+      "vel_rpm": 0.18,
+      "torque_nm": 0.11,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.95052932,
+      "received_s": 10976.951348188,
+      "node_id": 1,
+      "pos_deg": 0.00055655837059021,
+      "vel_rpm": 0.22,
+      "torque_nm": -0.09,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.971528604,
+      "received_s": 10976.972487903,
+      "node_id": 1,
+      "pos_deg": -0.0009070336818695068,
+      "vel_rpm": -0.13,
+      "torque_nm": 0.13,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10976.992643154,
+      "received_s": 10976.993548886,
+      "node_id": 1,
+      "pos_deg": 0.0010915100574493408,
+      "vel_rpm": 0.22,
+      "torque_nm": 0.46,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.013659649,
+      "received_s": 10977.01445518,
+      "node_id": 1,
+      "pos_deg": 0.000912100076675415,
+      "vel_rpm": -0.04,
+      "torque_nm": 0.28,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.034626839,
+      "received_s": 10977.035550482,
+      "node_id": 1,
+      "pos_deg": -0.00118255615234375,
+      "vel_rpm": -0.04,
+      "torque_nm": 0.18,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.055724808,
+      "received_s": 10977.056641339,
+      "node_id": 1,
+      "pos_deg": -0.0004526972770690918,
+      "vel_rpm": -0.13,
+      "torque_nm": -0.24,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.076753617,
+      "received_s": 10977.077684012,
+      "node_id": 1,
+      "pos_deg": 0.001637488603591919,
+      "vel_rpm": 0.22,
+      "torque_nm": 0.29,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.097791103,
+      "received_s": 10977.09870044,
+      "node_id": 1,
+      "pos_deg": 0.0009775161743164062,
+      "vel_rpm": 0.0,
+      "torque_nm": 0.41000000000000003,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.118884957,
+      "received_s": 10977.119841273,
+      "node_id": 1,
+      "pos_deg": 0.0008724629878997803,
+      "vel_rpm": 0.13,
+      "torque_nm": -0.03,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.139998922,
+      "received_s": 10977.140910787,
+      "node_id": 1,
+      "pos_deg": 0.0002531707286834717,
+      "vel_rpm": -0.13,
+      "torque_nm": 0.4,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.161068498,
+      "received_s": 10977.162040834,
+      "node_id": 1,
+      "pos_deg": 0.002405494451522827,
+      "vel_rpm": 0.27,
+      "torque_nm": 0.38,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.182118822,
+      "received_s": 10977.183061684,
+      "node_id": 1,
+      "pos_deg": -0.001847296953201294,
+      "vel_rpm": -0.41000000000000003,
+      "torque_nm": 0.22,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.203249885,
+      "received_s": 10977.204155992,
+      "node_id": 1,
+      "pos_deg": 0.0009328126907348633,
+      "vel_rpm": 0.32,
+      "torque_nm": 0.43,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.224336806,
+      "received_s": 10977.225256907,
+      "node_id": 1,
+      "pos_deg": 0.001386404037475586,
+      "vel_rpm": 0.18,
+      "torque_nm": 0.36,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.245419102,
+      "received_s": 10977.246371535,
+      "node_id": 1,
+      "pos_deg": 0.001185685396194458,
+      "vel_rpm": 0.04,
+      "torque_nm": 0.31,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.266521409,
+      "received_s": 10977.267419097,
+      "node_id": 1,
+      "pos_deg": -0.0018957257270812988,
+      "vel_rpm": -0.64,
+      "torque_nm": 0.34,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.287576849,
+      "received_s": 10977.28856903,
+      "node_id": 1,
+      "pos_deg": 0.0004756450653076172,
+      "vel_rpm": 0.13,
+      "torque_nm": 0.43,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.308742258,
+      "received_s": 10977.309616505,
+      "node_id": 1,
+      "pos_deg": -0.002457946538925171,
+      "vel_rpm": -0.45,
+      "torque_nm": 0.33,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.329779263,
+      "received_s": 10977.330696866,
+      "node_id": 1,
+      "pos_deg": -0.0030140578746795654,
+      "vel_rpm": -0.8200000000000001,
+      "torque_nm": 0.26,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.350862431,
+      "received_s": 10977.351762716,
+      "node_id": 1,
+      "pos_deg": -0.0008183717727661133,
+      "vel_rpm": -0.13,
+      "torque_nm": 0.6,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.371948107,
+      "received_s": 10977.372847344,
+      "node_id": 1,
+      "pos_deg": -9.268522262573242e-05,
+      "vel_rpm": 0.09,
+      "torque_nm": -0.19,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.393020044,
+      "received_s": 10977.393954754,
+      "node_id": 1,
+      "pos_deg": 0.001306980848312378,
+      "vel_rpm": 0.04,
+      "torque_nm": 0.19,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.414157708,
+      "received_s": 10977.41513253,
+      "node_id": 1,
+      "pos_deg": 0.0007908046245574951,
+      "vel_rpm": 0.0,
+      "torque_nm": 0.0,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.43529295,
+      "received_s": 10977.436204245,
+      "node_id": 1,
+      "pos_deg": 0.0009240210056304932,
+      "vel_rpm": 0.36,
+      "torque_nm": 0.0,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.456370497,
+      "received_s": 10977.457293526,
+      "node_id": 1,
+      "pos_deg": -0.0006219744682312012,
+      "vel_rpm": 0.0,
+      "torque_nm": -0.12,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.477466676,
+      "received_s": 10977.478362647,
+      "node_id": 1,
+      "pos_deg": 0.00037163496017456055,
+      "vel_rpm": -0.09,
+      "torque_nm": 0.4,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.498528455,
+      "received_s": 10977.499483477,
+      "node_id": 1,
+      "pos_deg": 0.001306086778640747,
+      "vel_rpm": 0.32,
+      "torque_nm": 0.52,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.519593677,
+      "received_s": 10977.52061655,
+      "node_id": 1,
+      "pos_deg": 0.0006967782974243164,
+      "vel_rpm": 0.0,
+      "torque_nm": 0.47000000000000003,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.540735298,
+      "received_s": 10977.541703686,
+      "node_id": 1,
+      "pos_deg": -0.00047475099563598633,
+      "vel_rpm": -0.27,
+      "torque_nm": 0.39,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.561815286,
+      "received_s": 10977.56270487,
+      "node_id": 1,
+      "pos_deg": 0.0017973780632019043,
+      "vel_rpm": 0.41000000000000003,
+      "torque_nm": 0.18,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.582839423,
+      "received_s": 10977.583746182,
+      "node_id": 1,
+      "pos_deg": 0.0012077391147613525,
+      "vel_rpm": 0.13,
+      "torque_nm": 0.37,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.603862707,
+      "received_s": 10977.604767182,
+      "node_id": 1,
+      "pos_deg": 0.0007463991641998291,
+      "vel_rpm": 0.13,
+      "torque_nm": -0.06,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.624924385,
+      "received_s": 10977.625875526,
+      "node_id": 1,
+      "pos_deg": -0.000902712345123291,
+      "vel_rpm": -0.09,
+      "torque_nm": -0.04,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.645978246,
+      "received_s": 10977.646869724,
+      "node_id": 1,
+      "pos_deg": -0.002359449863433838,
+      "vel_rpm": -0.5,
+      "torque_nm": 0.14,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.666987763,
+      "received_s": 10977.667839093,
+      "node_id": 1,
+      "pos_deg": 0.0015263259410858154,
+      "vel_rpm": 0.18,
+      "torque_nm": -0.04,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.687945848,
+      "received_s": 10977.688899573,
+      "node_id": 1,
+      "pos_deg": 0.002449899911880493,
+      "vel_rpm": 0.5,
+      "torque_nm": 0.32,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.709010614,
+      "received_s": 10977.709910382,
+      "node_id": 1,
+      "pos_deg": 0.0004069507122039795,
+      "vel_rpm": -0.22,
+      "torque_nm": 0.49,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.730070543,
+      "received_s": 10977.731008612,
+      "node_id": 1,
+      "pos_deg": 0.002230405807495117,
+      "vel_rpm": 0.5,
+      "torque_nm": 0.2,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.751209975,
+      "received_s": 10977.752246387,
+      "node_id": 1,
+      "pos_deg": -0.0017586350440979004,
+      "vel_rpm": -0.22,
+      "torque_nm": 0.58,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.772341006,
+      "received_s": 10977.773251036,
+      "node_id": 1,
+      "pos_deg": 0.0016605854034423828,
+      "vel_rpm": 0.22,
+      "torque_nm": 0.43,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.793341627,
+      "received_s": 10977.794272674,
+      "node_id": 1,
+      "pos_deg": -4.2319297790527344e-05,
+      "vel_rpm": -0.13,
+      "torque_nm": 0.48,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.814362136,
+      "received_s": 10977.815318278,
+      "node_id": 1,
+      "pos_deg": 0.0005133450031280518,
+      "vel_rpm": 0.18,
+      "torque_nm": 0.03,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.835478749,
+      "received_s": 10977.836359407,
+      "node_id": 1,
+      "pos_deg": -0.0015886127948760986,
+      "vel_rpm": -0.36,
+      "torque_nm": 0.4,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.856521437,
+      "received_s": 10977.857426071,
+      "node_id": 1,
+      "pos_deg": 4.500150680541992e-05,
+      "vel_rpm": -0.04,
+      "torque_nm": 0.31,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.877533882,
+      "received_s": 10977.87842459,
+      "node_id": 1,
+      "pos_deg": -0.0002598762512207031,
+      "vel_rpm": 0.04,
+      "torque_nm": 0.52,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.89854644,
+      "received_s": 10977.899334332,
+      "node_id": 1,
+      "pos_deg": -0.0002722442150115967,
+      "vel_rpm": -0.09,
+      "torque_nm": 0.52,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.919440415,
+      "received_s": 10977.920366777,
+      "node_id": 1,
+      "pos_deg": -0.0012634694576263428,
+      "vel_rpm": -0.27,
+      "torque_nm": 0.52,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.94053029,
+      "received_s": 10977.941458112,
+      "node_id": 1,
+      "pos_deg": 0.0007925927639007568,
+      "vel_rpm": 0.04,
+      "torque_nm": -0.09,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.961629729,
+      "received_s": 10977.962518025,
+      "node_id": 1,
+      "pos_deg": -0.0011578202247619629,
+      "vel_rpm": -0.32,
+      "torque_nm": 0.3,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10977.982669771,
+      "received_s": 10977.983603017,
+      "node_id": 1,
+      "pos_deg": -0.00010728836059570312,
+      "vel_rpm": -0.13,
+      "torque_nm": -0.07,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10978.003720074,
+      "received_s": 10978.004649687,
+      "node_id": 1,
+      "pos_deg": 0.00039950013160705566,
+      "vel_rpm": 0.0,
+      "torque_nm": 0.35000000000000003,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10978.024776071,
+      "received_s": 10978.025663346,
+      "node_id": 1,
+      "pos_deg": -0.0022920966148376465,
+      "vel_rpm": -0.27,
+      "torque_nm": 0.24,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10978.045790563,
+      "received_s": 10978.046715813,
+      "node_id": 1,
+      "pos_deg": 4.5746564865112305e-05,
+      "vel_rpm": -0.32,
+      "torque_nm": 0.3,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10978.066901376,
+      "received_s": 10978.067797775,
+      "node_id": 1,
+      "pos_deg": -0.00029399991035461426,
+      "vel_rpm": -0.04,
+      "torque_nm": -0.13,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10978.087906098,
+      "received_s": 10978.088863867,
+      "node_id": 1,
+      "pos_deg": -0.0015491247177124023,
+      "vel_rpm": -0.09,
+      "torque_nm": 0.02,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10978.108947597,
+      "received_s": 10978.109862711,
+      "node_id": 1,
+      "pos_deg": -0.00019565224647521973,
+      "vel_rpm": 0.04,
+      "torque_nm": 0.37,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10978.130023365,
+      "received_s": 10978.130974311,
+      "node_id": 1,
+      "pos_deg": -0.0006906688213348389,
+      "vel_rpm": -0.13,
+      "torque_nm": 0.24,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10978.151143138,
+      "received_s": 10978.152145356,
+      "node_id": 1,
+      "pos_deg": -0.0006909668445587158,
+      "vel_rpm": -0.27,
+      "torque_nm": 0.2,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10978.172231424,
+      "received_s": 10978.17310285,
+      "node_id": 1,
+      "pos_deg": 0.0009059906005859375,
+      "vel_rpm": 0.22,
+      "torque_nm": 0.52,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10978.193276393,
+      "received_s": 10978.194223871,
+      "node_id": 1,
+      "pos_deg": -0.0010569393634796143,
+      "vel_rpm": -0.22,
+      "torque_nm": 0.19,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10978.214403092,
+      "received_s": 10978.215319358,
+      "node_id": 1,
+      "pos_deg": -0.00044226646423339844,
+      "vel_rpm": -0.13,
+      "torque_nm": 0.32,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10978.235491606,
+      "received_s": 10978.236410835,
+      "node_id": 1,
+      "pos_deg": 0.0019194185733795166,
+      "vel_rpm": 0.32,
+      "torque_nm": -0.08,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10978.256571005,
+      "received_s": 10978.257515558,
+      "node_id": 1,
+      "pos_deg": 0.00041857361793518066,
+      "vel_rpm": -0.04,
+      "torque_nm": 0.46,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10978.277673311,
+      "received_s": 10978.278579588,
+      "node_id": 1,
+      "pos_deg": 0.000734478235244751,
+      "vel_rpm": -0.13,
+      "torque_nm": 0.5,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10978.298661751,
+      "received_s": 10978.299573209,
+      "node_id": 1,
+      "pos_deg": 0.0008891522884368896,
+      "vel_rpm": 0.13,
+      "torque_nm": 0.49,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10978.319724463,
+      "received_s": 10978.320712208,
+      "node_id": 1,
+      "pos_deg": -0.00011608004570007324,
+      "vel_rpm": 0.22,
+      "torque_nm": 0.14,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10978.340889694,
+      "received_s": 10978.341816779,
+      "node_id": 1,
+      "pos_deg": 0.0005801022052764893,
+      "vel_rpm": 0.18,
+      "torque_nm": 0.26,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10978.361933549,
+      "received_s": 10978.362844415,
+      "node_id": 1,
+      "pos_deg": -0.0008802115917205811,
+      "vel_rpm": 0.0,
+      "torque_nm": 0.07,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10978.382992855,
+      "received_s": 10978.383966959,
+      "node_id": 1,
+      "pos_deg": -0.0008599460124969482,
+      "vel_rpm": 0.0,
+      "torque_nm": -0.13,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10978.404129106,
+      "received_s": 10978.405052373,
+      "node_id": 1,
+      "pos_deg": -0.00023424625396728516,
+      "vel_rpm": -0.22,
+      "torque_nm": 0.38,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10978.425137501,
+      "received_s": 10978.426129116,
+      "node_id": 1,
+      "pos_deg": -0.0003457069396972656,
+      "vel_rpm": -0.13,
+      "torque_nm": 0.45,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10978.44629973,
+      "received_s": 10978.447254898,
+      "node_id": 1,
+      "pos_deg": 0.0009141862392425537,
+      "vel_rpm": 0.5,
+      "torque_nm": 0.2,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10978.467406574,
+      "received_s": 10978.468332378,
+      "node_id": 1,
+      "pos_deg": -0.00011682510375976562,
+      "vel_rpm": -0.09,
+      "torque_nm": 0.01,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10978.488452695,
+      "received_s": 10978.489438271,
+      "node_id": 1,
+      "pos_deg": -0.001560300588607788,
+      "vel_rpm": -0.32,
+      "torque_nm": 0.25,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10978.509621418,
+      "received_s": 10978.510524127,
+      "node_id": 1,
+      "pos_deg": -0.0001576542854309082,
+      "vel_rpm": 0.09,
+      "torque_nm": 0.38,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10978.530697029,
+      "received_s": 10978.531604187,
+      "node_id": 1,
+      "pos_deg": 0.0007058680057525635,
+      "vel_rpm": 0.13,
+      "torque_nm": 0.19,
+      "traj_done": true,
+      "axis_error": false
+    },
+    {
+      "request_s": 10978.551755841,
+      "received_s": 10978.552706426,
+      "node_id": 1,
+      "pos_deg": 0.0014771521091461182,
+      "vel_rpm": 0.54,
+      "torque_nm": 0.46,
+      "traj_done": true,
+      "axis_error": false
+    }
+  ],
+  "port": "/dev/serial/by-id/usb-Dr-Tech_DR-USB_CAN_87949380174B-if00",
+  "frames": [
+    {
+      "direction": "tx",
+      "monotonic_s": 10975.539313507,
+      "raw_hex": "aa0000080000003e1979030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10975.540058744,
+      "raw_hex": "aa0000080000003e1979030001000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10975.540140011,
+      "raw_hex": "aa0000080000003e3275030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10975.540935016,
+      "raw_hex": "aa0000080000003e3275030008000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10975.540966502,
+      "raw_hex": "aa0000080000003e3175030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10975.541805718,
+      "raw_hex": "aa0000080000003e3175030000000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10975.541837448,
+      "raw_hex": "aa0000080000003e214e030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10975.542550235,
+      "raw_hex": "aa0000080000003e214e030000000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10975.542580203,
+      "raw_hex": "aa0000080000003ee980030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10975.543243835,
+      "raw_hex": "aa0000080000003ee980030000000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10975.543271741,
+      "raw_hex": "aa0000080000003ed184030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10975.543970521,
+      "raw_hex": "aa0000080000003ed184030000000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10975.543998015,
+      "raw_hex": "aa0000080000003e017d030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10975.544718184,
+      "raw_hex": "aa0000080000003e017d030000000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10975.544745213,
+      "raw_hex": "aa0000080000003e0100000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10975.545484835,
+      "raw_hex": "aa0000080000003e01000000de81c241"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10975.545519729,
+      "raw_hex": "aa0000080000003eee79030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10975.546201201,
+      "raw_hex": "aa0000080000003eee79030000000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10975.54622884,
+      "raw_hex": "aa0000080000003ee779030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10975.546941378,
+      "raw_hex": "aa0000080000003ee779030000000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10975.546975502,
+      "raw_hex": "aa0000080000003ee279030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10975.547690171,
+      "raw_hex": "aa0000080000003ee279030001000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10975.547723572,
+      "raw_hex": "aa0000080000003e7a94000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10975.548483481,
+      "raw_hex": "aa0000080000003e7a94000000007ac4"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10975.548512918,
+      "raw_hex": "aa0000080000003e7b94000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10975.549202056,
+      "raw_hex": "aa0000080000003e7b9400000000b443"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10975.549230536,
+      "raw_hex": "aa0000080000003e7c94000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10975.549913661,
+      "raw_hex": "aa0000080000003e7c94000000004842"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10975.549962147,
+      "raw_hex": "aa0000080000003e7194000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10975.550660069,
+      "raw_hex": "aa0000080000003e7194000000000080"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10975.550689555,
+      "raw_hex": "aa0000080000003e7494000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10975.551403946,
+      "raw_hex": "aa0000080000003e7494000000000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10975.551431767,
+      "raw_hex": "aa0000080000003e7794000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10975.552172383,
+      "raw_hex": "aa0000080000003e7794000000ccc4b9"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10975.552205809,
+      "raw_hex": "aa0000080000003e7894000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10975.552878673,
+      "raw_hex": "aa0000080000003e7894000000f0d2be"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10975.552920833,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10975.55362554,
+      "raw_hex": "aa00000800000023009e4f3a2d000400"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10975.573874524,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10975.57469002,
+      "raw_hex": "aa000008000000230098dabac5ff3200"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10975.594938498,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10975.597116876,
+      "raw_hex": "aa000008000000230002bcbad7ff0f00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10975.617405129,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10975.618223044,
+      "raw_hex": "aa0000080000002300fe213a0400f0ff"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10975.638462588,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10975.639258356,
+      "raw_hex": "aa0000080000002380ce2bbbd3ff3c00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10975.659534359,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10975.660353983,
+      "raw_hex": "aa00000800000023009e093a09004200"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10975.680600225,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10975.681354101,
+      "raw_hex": "aa000008000000230084993909003200"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10975.701613483,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10975.702465964,
+      "raw_hex": "aa0000080000002300dc3e3a16001500"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10975.72273976,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10975.723603765,
+      "raw_hex": "aa0000080000002300d0843a04000c00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10975.743854201,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10975.744572755,
+      "raw_hex": "aa000008000000230012ca3a36003b00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10975.764888598,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10975.765718765,
+      "raw_hex": "aa0000080000002300a3843a16004b00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10975.785951156,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10975.786820269,
+      "raw_hex": "aa0000080000002300ea26baeeff0400"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10975.807019578,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10975.807898217,
+      "raw_hex": "aa0000080000002300d3b83a20002300"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10975.828182044,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10975.829042077,
+      "raw_hex": "aa0000080000002300f79eba00002000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10975.849368444,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10975.850206045,
+      "raw_hex": "aa0000080000002300aa253a09003500"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10975.870379321,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10975.872103449,
+      "raw_hex": "aa000008000000230043a3baceff0600"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10975.892354176,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10975.893196293,
+      "raw_hex": "aa00000800000023009026b9f7ffefff"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10975.913582076,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10975.914395157,
+      "raw_hex": "aa0000080000002300cc673a20001f00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10975.934663514,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10975.935485628,
+      "raw_hex": "aa000008000000230099ca3a20001c00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10975.955756374,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10975.956577901,
+      "raw_hex": "aa00000800000023008bab3a0d001b00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10975.976844802,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10975.977687849,
+      "raw_hex": "aa000008000000230027ba3a2000e8ff"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10975.997954188,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10975.998753011,
+      "raw_hex": "aa00000800000023008cd7b9f3fffeff"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.019024849,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.0198514,
+      "raw_hex": "aa000008000000230073b4baeafff5ff"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.040151334,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.040955622,
+      "raw_hex": "aa0000080000002300e215ba00002300"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.061164622,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.061995696,
+      "raw_hex": "aa0000080000002300969b3a12000800"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.082218656,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.083087515,
+      "raw_hex": "aa0000080000002300564cbaf3ff0a00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.103382625,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.104181517,
+      "raw_hex": "aa00000800000023002ca63900000500"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.124381606,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.125227267,
+      "raw_hex": "aa0000080000002380ef463b2d00f6ff"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.145492961,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.146407625,
+      "raw_hex": "aa0000080000002300b03d3b24000d00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.166742925,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.167565042,
+      "raw_hex": "aa000008000000230046af3a0d002a00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.187826941,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.188649699,
+      "raw_hex": "aa000008000000230076543a0d002f00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.208957726,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.209767853,
+      "raw_hex": "aa0000080000002300dc9bb9eaff2000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.230046631,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.230854937,
+      "raw_hex": "aa0000080000002300106a3a12000a00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.251137247,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.251983645,
+      "raw_hex": "aa0000080000002300e4093a04002f00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.272286474,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.273127891,
+      "raw_hex": "aa00000800000023000025b9eaff1000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.293499277,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.294369146,
+      "raw_hex": "aa0000080000002300c04bb8fcfff9ff"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.314676781,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.315516511,
+      "raw_hex": "aa0000080000002300a8bbbaf3ff1200"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.335790987,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.336612466,
+      "raw_hex": "aa0000080000002300ecf9b904003c00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.356866956,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.357598913,
+      "raw_hex": "aa0000080000002300d089baf3ff2900"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.377808807,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.37867029,
+      "raw_hex": "aa000008000000230001e5bacaff2f00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.398889495,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.399701523,
+      "raw_hex": "aa0000080000002300e850ba00000800"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.419912128,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.420801482,
+      "raw_hex": "aa00000800000023002064380d000200"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.441054726,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.441900705,
+      "raw_hex": "aa0000080000002300ec7ebaeaff3f00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.462126461,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.462984463,
+      "raw_hex": "aa00000800000023007875baf3ff1f00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.483251832,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.48405169,
+      "raw_hex": "aa000008000000230000023704002d00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.504430899,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.505226157,
+      "raw_hex": "aa0000080000002300a8ac390400f6ff"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.525545977,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.529148055,
+      "raw_hex": "aa0000080000002300d4e93900000200"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.549474514,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.550266468,
+      "raw_hex": "aa0000080000002300bc4abbd7ff3500"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.570530463,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.571250865,
+      "raw_hex": "aa0000080000002300f62ebaf3ff0900"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.59156328,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.592327836,
+      "raw_hex": "aa0000080000002300e427bafcff3700"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.612647964,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.613497023,
+      "raw_hex": "aa0000080000002300002a390d001700"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.633791955,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.634659258,
+      "raw_hex": "aa000008000000230017c53a1600f4ff"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.654984095,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.655810603,
+      "raw_hex": "aa000008000000230087cdbadcff2e00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.67612478,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.677025728,
+      "raw_hex": "aa00000800000023005c9eb9eaff2f00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.697392639,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.698222128,
+      "raw_hex": "aa0000080000002300c861bafcff3500"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.718416929,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.719231531,
+      "raw_hex": "aa0000080000002300ecdbbaf3ff3400"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.739506719,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.740413458,
+      "raw_hex": "aa0000080000002300ea0d3a0d002400"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.760708664,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.761600615,
+      "raw_hex": "aa0000080000002300dbd33a12002d00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.781943536,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.782814288,
+      "raw_hex": "aa0000080000002300fce4baeaff0f00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.803065881,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.803901513,
+      "raw_hex": "aa00000800000023800881bbbcff2700"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.824160727,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.825042941,
+      "raw_hex": "aa0000080000002300e1a53a3b000400"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.845360781,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.846161832,
+      "raw_hex": "aa0000080000002300fad2bae5ff3c00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.866348702,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.86713215,
+      "raw_hex": "aa0000080000002300d3a4bae0ff1000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.88737476,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.888233609,
+      "raw_hex": "aa00000800000023000492b90000f7ff"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.90847628,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.909305094,
+      "raw_hex": "aa00000800000023005a7fba09001e00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.929554992,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.930315834,
+      "raw_hex": "aa0000080000002300b3d83a12000b00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.950596907,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.951305795,
+      "raw_hex": "aa0000080000002300e6113a1600f7ff"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.971586593,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.972449328,
+      "raw_hex": "aa0000080000002300c66dbaf3ff0d00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10976.992697479,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10976.993504888,
+      "raw_hex": "aa0000080000002300118f3a16002e00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.013700192,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.014425134,
+      "raw_hex": "aa00000800000023001a6f3afcff1c00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.034672654,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.035517535,
+      "raw_hex": "aa0000080000002300009bbafcff1200"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.055780769,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.05660536,
+      "raw_hex": "aa000008000000230058edb9f3ffe8ff"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.076798127,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.07765116,
+      "raw_hex": "aa0000080000002300a1d63a16001d00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.097824729,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.098670603,
+      "raw_hex": "aa000008000000230020803a00002900"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.118937554,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.119799652,
+      "raw_hex": "aa0000080000002300b6643a0d00fdff"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.140035709,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.140881459,
+      "raw_hex": "aa0000080000002300bc8439f3ff2800"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.161121986,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.162004433,
+      "raw_hex": "aa0000080000002380a51d3b1b002600"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.182196745,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.183012292,
+      "raw_hex": "aa000008000000230021f2bad7ff1600"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.203284404,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.204124906,
+      "raw_hex": "aa000008000000230088743a20002b00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.224389436,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.225221124,
+      "raw_hex": "aa0000080000002300b8b53a12002400"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.245463006,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.246330768,
+      "raw_hex": "aa0000080000002300699b3a04001f00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.266554403,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.267389421,
+      "raw_hex": "aa00000800000023007af8bac0ff2200"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.287628628,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.288527264,
+      "raw_hex": "aa000008000000230060f9390d002b00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.308774999,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.309587112,
+      "raw_hex": "aa00000800000023801521bbd3ff2100"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.329830497,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.330662392,
+      "raw_hex": "aa00000800000023808745bbaeff1a00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.350908663,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.351726156,
+      "raw_hex": "aa00000800000023008856baf3ff3c00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.371980524,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.372810489,
+      "raw_hex": "aa000008000000230060c2b80900edff"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.393072545,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.393912354,
+      "raw_hex": "aa00000800000023004fab3a04001300"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.414205874,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.415086205,
+      "raw_hex": "aa00000800000023004e4f3a00000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.43532463,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.436176436,
+      "raw_hex": "aa00000800000023003a723a24000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.456425637,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.457258489,
+      "raw_hex": "aa00000800000023000c23ba0000f4ff"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.477499543,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.478332314,
+      "raw_hex": "aa0000080000002300d8c239f7ff2800"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.498573599,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.499444051,
+      "raw_hex": "aa000008000000230031ab3a20003400"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.519644399,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.520568659,
+      "raw_hex": "aa0000080000002300a8363a00002f00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.540799814,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.541656956,
+      "raw_hex": "aa0000080000002300e8f8b9e5ff2700"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.56187425,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.562668422,
+      "raw_hex": "aa000008000000230096eb3a29001200"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.582894276,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.583698031,
+      "raw_hex": "aa00000800000023004d9e3a0d002500"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.603897307,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.60473769,
+      "raw_hex": "aa0000080000002300aa433a0d00faff"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.624975031,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.625839891,
+      "raw_hex": "aa0000080000002300a46cbaf7fffcff"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.646028941,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.646837077,
+      "raw_hex": "aa0000080000002300a11abbceff0e00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.667026124,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.667803129,
+      "raw_hex": "aa00000800000023000fc83a1200fcff"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.688005195,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.68886202,
+      "raw_hex": "aa00000800000023808e203b32002000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.709054078,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.70987606,
+      "raw_hex": "aa00000800000023005cd539eaff3100"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.730111554,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.730969717,
+      "raw_hex": "aa00000800000023002c123b32001400"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.751379995,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.752204936,
+      "raw_hex": "aa000008000000230082e6baeaff3a00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.772382905,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.773204463,
+      "raw_hex": "aa0000080000002300a8d93a16002b00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.793404875,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.794234236,
+      "raw_hex": "aa00000800000023008031b8f3ff3000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.814422564,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.815283193,
+      "raw_hex": "aa000008000000230092063a12000300"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.83551661,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.836326824,
+      "raw_hex": "aa000008000000230039d0badcff2800"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.856575815,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.85738974,
+      "raw_hex": "aa0000080000002300c03c38fcff1f00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.87757856,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.878382343,
+      "raw_hex": "aa00000800000023004088b904003400"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.898591582,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.899290779,
+      "raw_hex": "aa0000080000002300bc8eb9f7ff3400"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.919497796,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.920329772,
+      "raw_hex": "aa00000800000023009ba5bae5ff3400"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.940569173,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.941429348,
+      "raw_hex": "aa0000080000002300c64f3a0400f7ff"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.961684764,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.962483347,
+      "raw_hex": "aa0000080000002300c297bae0ff1e00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10977.982710172,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10977.983569791,
+      "raw_hex": "aa000008000000230000e1b8f3fff9ff"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10978.003796002,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10978.004612976,
+      "raw_hex": "aa000008000000230074d13900002300"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10978.024837721,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10978.0256284,
+      "raw_hex": "aa00000800000023003716bbe5ff1800"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10978.045847378,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10978.046678072,
+      "raw_hex": "aa0000080000002300e03f38e0ff1e00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10978.066934515,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10978.067768297,
+      "raw_hex": "aa0000080000002300249ab9fcfff3ff"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10978.087959365,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10978.088828312,
+      "raw_hex": "aa00000800000023000ccbbaf7ff0200"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10978.108980051,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10978.10983207,
+      "raw_hex": "aa0000080000002300284db904002500"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10978.13007818,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10978.130939347,
+      "raw_hex": "aa00000800000023000e35baf3ff1800"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10978.15118833,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10978.152109499,
+      "raw_hex": "aa00000800000023002235bae5ff1400"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10978.172268151,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10978.173071569,
+      "raw_hex": "aa0000080000002300806d3a16003400"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10978.193353736,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10978.194186456,
+      "raw_hex": "aa0000080000002300898abaeaff1300"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10978.21449006,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10978.215262327,
+      "raw_hex": "aa0000080000002300e0e7b9f3ff2000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10978.235533961,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10978.236379374,
+      "raw_hex": "aa000008000000230095fb3a2000f8ff"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10978.256639639,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10978.257480065,
+      "raw_hex": "aa000008000000230074db39fcff2e00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10978.27770579,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10978.278550029,
+      "raw_hex": "aa00000800000023008a403af3ff3200"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10978.2987069,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10978.299540609,
+      "raw_hex": "aa000008000000230016693a0d003100"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10978.319781981,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10978.32067617,
+      "raw_hex": "aa000008000000230070f3b816000e00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10978.340935508,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10978.341780504,
+      "raw_hex": "aa000008000000230012183a12001a00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10978.361972721,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10978.362813235,
+      "raw_hex": "aa0000080000002300be66ba00000700"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10978.383070907,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10978.383931112,
+      "raw_hex": "aa00000800000023006e61ba0000f3ff"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10978.404161988,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10978.405024041,
+      "raw_hex": "aa0000080000002300a075b9eaff2600"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10978.425198093,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10978.426092202,
+      "raw_hex": "aa000008000000230040b5b9f3ff2d00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10978.446334041,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10978.447223735,
+      "raw_hex": "aa0000080000002300a66f3a32001400"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10978.467448285,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10978.468299975,
+      "raw_hex": "aa000008000000230000f5b8f7ff0100"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10978.488515907,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10978.489402107,
+      "raw_hex": "aa000008000000230083ccbae0ff1900"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10978.50967121,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10978.510483232,
+      "raw_hex": "aa00000800000023005025b909002600"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10978.530729956,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10978.531574344,
+      "raw_hex": "aa00000800000023000a393a0d001300"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 10978.551810284,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 10978.552671813,
+      "raw_hex": "aa00000800000023009dc13a36002e00"
+    }
+  ],
+  "summary": {
+    "median_position_deg": 7.748603820800781e-06,
+    "position_range_deg": 0.006973296403884888,
+    "samples": 143
+  }
+}

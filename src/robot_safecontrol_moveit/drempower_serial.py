@@ -6,9 +6,11 @@ from construct import Bytes, Const, Int16ub, Struct, Terminated
 import serial
 
 from .drempower_can import (
-    CMD_POSITION_ANGLE_MODE1, CMD_PROPERTY_READ, can_id, decode_feedback,
-    decode_property_reply, encode_property_read, encode_trapezoid_position,
+    CMD_POSITION_ANGLE_MODE1, CMD_PROPERTY_READ, CMD_PROPERTY_WRITE, CMD_SYSTEM,
+    SYSTEM_ORDER_SAVE, can_id, decode_feedback, decode_property_reply,
+    encode_property_read, encode_property_write, encode_system, encode_trapezoid_position,
 )
+from .motor_motion_limits import feedback_speed_limit, validate_motion_parameters
 
 
 # 厂家 DrEmpower_can.py 的 can_to_uart/uart_to_can 标准模式布局。
@@ -21,12 +23,19 @@ SERIAL_CAN_FRAME = Struct(
 
 
 class DrEmpowerSerial:
-    def __init__(self, port: str, *, command_node: int | None = None):
+    def __init__(
+        self, port: str, *, command_node: int | None = None, axis_type: str = "revolute",
+    ):
         if not Path(port).exists():
             raise FileNotFoundError(port)
-        if command_node is not None and (type(command_node) is not int or not 2 <= command_node <= 9):
-            raise ValueError("运动连接必须明确指定单个 ID 2–9")
+        feedback_speed_limit(axis_type)
+        if command_node is not None:
+            valid_node = (command_node == 1 if axis_type == "prismatic"
+                          else type(command_node) is int and 2 <= command_node <= 9)
+            if type(command_node) is not int or not valid_node:
+                raise ValueError("直线运动必须指定 ID 1；旋转运动必须指定 ID 2–9")
         self.command_node = command_node
+        self.axis_type = axis_type
         self.READ_FLAG = 0
         self.enable_replay_state = 0
         self._pending = None
@@ -43,8 +52,16 @@ class DrEmpowerSerial:
     def _write_frame(self, node, cmd, data):
         if self._failed or self._pending is not None or self.uart.in_waiting:
             raise RuntimeError("串口会话无效或存在未处理数据")
-        if type(node) is not int or not 2 <= node <= 9:
-            raise ValueError("仅支持单节点 ID 2–9")
+        if type(node) is not int or not 1 <= node <= 9:
+            raise ValueError("仅支持单节点 ID 1–9")
+        if cmd != CMD_PROPERTY_READ:
+            if node != self.command_node:
+                raise ValueError("连接没有该节点的写入权限")
+            allowed = {CMD_POSITION_ANGLE_MODE1}
+            if self.axis_type == "prismatic":
+                allowed.update((CMD_PROPERTY_WRITE, CMD_SYSTEM))
+            if cmd not in allowed:
+                raise ValueError("不支持该写入命令")
         request = SERIAL_CAN_FRAME.build(dict(frame_id=can_id(node, cmd), data=bytes(data)))
         self.frames.append(dict(direction="tx", monotonic_s=time.monotonic(), raw_hex=request.hex()))
         self._failed = True
@@ -87,15 +104,12 @@ class DrEmpowerSerial:
             raise ValueError("连接没有该节点的梯形位置命令权限")
         if not all(isfinite(value) for value in (angle, speed, param)):
             raise ValueError("运动参数必须为有限数值")
-        if not 0.01 <= speed <= 0.1 or not 0.01 <= param <= 0.1:
-            raise ValueError("单关节检查速度及加速度上限为 0.1")
+        validate_motion_parameters(speed, param, axis_type=self.axis_type)
         if id_num not in self._latest:
             raise RuntimeError("发送前缺少实际反馈")
         feedback, stamp = self._latest[id_num]
         if time.monotonic() - stamp > 0.2 or feedback.axis_error:
             raise RuntimeError("发送前反馈超时或存在驱动故障")
-        if abs(angle - feedback.pos_deg) > 5.00001:
-            raise ValueError("电机目标与当前反馈相差超过 5°")
         if self.reply_state_enabled is None:
             raise RuntimeError("发送前必须核对设备自动反馈设置")
         payload = encode_trapezoid_position(id_num, angle, speed=speed, accel=param)
@@ -107,6 +121,37 @@ class DrEmpowerSerial:
             if acknowledgement.axis_error:
                 raise RuntimeError("位置命令回复报告驱动故障")
         return True
+
+    def read_property(self, node: int, address: int, kind: str = "u32"):
+        self.send_command(node, CMD_PROPERTY_READ, encode_property_read(node, address, kind))
+        raw = self.receive_data(return_id=True)
+        return decode_property_reply((raw[1] << 8) | raw[2], bytes(raw[3:]),
+                                     node_id=node, address=address, value_kind=kind)
+
+    def configure_j1_limits(self, angle_min: float, angle_max: float):
+        if self.command_node != 1 or self.axis_type != "prismatic":
+            raise ValueError("配置 J1 限位需要明确的直线轴连接")
+        if (not all(isfinite(value) for value in (angle_min, angle_max))
+                or abs(angle_max - angle_min - 36000) > 1e-6):
+            raise ValueError("J1 限位必须对应已确认的 500 mm 行程")
+        if 1 not in self._latest:
+            raise RuntimeError("限位配置前缺少实际反馈")
+        feedback, stamp = self._latest[1]
+        if (time.monotonic() - stamp > 0.2 or feedback.axis_error or not feedback.traj_done
+                or not angle_min - 0.01 <= feedback.pos_deg <= angle_max + 0.01):
+            raise RuntimeError("限位配置前反馈或当前位置无效")
+        for address, value, kind in ((38010, angle_min, "f32"), (38011, angle_max, "f32"),
+                                     (31202, 1, "u32")):
+            self._write_frame(1, CMD_PROPERTY_WRITE, encode_property_write(1, address, value, kind))
+            time.sleep(0.02)
+            actual = self.read_property(1, address, kind)
+            if actual != value:
+                raise RuntimeError(f"J1 参数 {address} 回读不符：{actual}，目标 {value}")
+        self._write_frame(1, CMD_SYSTEM, encode_system(1, SYSTEM_ORDER_SAVE))
+        time.sleep(0.02)
+        return {"min_deg": self.read_property(1, 38010, "f32"),
+                "max_deg": self.read_property(1, 38011, "f32"),
+                "enabled": self.read_property(1, 31202)}
 
     def prepare_motion(self):
         if self.command_node is None:
