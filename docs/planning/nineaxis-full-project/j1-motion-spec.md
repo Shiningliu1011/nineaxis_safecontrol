@@ -21,6 +21,16 @@
 
 以上现场观察来自本次用户说明。导程依据见[零位配置](../../../config/hardware_joint_zero.yaml)与既有用户记录；模型轴向和当前范围见[URDF](../../../models/ninezzhou/urdf/ninezzhou.urdf)。
 
+## 模型起点与行程
+
+用户确认：从原 URDF 的 `585 mm` 位置沿 J1 轴向返回 `500 mm`，得到新的 J1 起点。因此，新起点对应原 URDF 的 `85 mm`，新行程 `0–500 mm` 对应原坐标 `85–585 mm`。
+
+沿现有 `base_link` 的 `+Z` 轴，坐标关系为 `q_old_m = 0.085 + q_new_m`。新坐标 `q_new_m = 0` 对应原坐标 `0.085 m`，新坐标 `q_new_m = 0.5` 对应原坐标 `0.585 m`。
+
+按当前 J1 的轴向和旋转定义，模型修改目标为 `origin xyz="0 0 0.085"`、`rpy="0 0 0"`、`axis xyz="0 0 1"`，位置限位为 `lower="0"`、`upper="0.5"`。该固定位置修正属于模型定义；电机角度与位移继续按现场零位、`sign = -1` 和 `5 mm/rev` 换算。
+
+实现验收需要核对新坐标 `0`、`250`、`500 mm` 分别与原坐标 `85`、`335`、`585 mm` 的 Link1、TCP 及下游碰撞几何位置一致，并检查 URDF、MuJoCo、JAX、规划、共同限制及模型身份的全部消费者。当前 URDF 仍使用 `origin xyz="0 0 0"` 和 `upper="0.585"`，模型修改由下一台设备接续，见[动作实验交接记录](../../joint_motion_handoff_20261028.md)。
+
 ## 位置换算
 
 定义 `theta_deg` 为设备输出轴角度，`theta_zero_deg` 为现场零位对应的设备角度，`theta_rel_deg = theta_deg - theta_zero_deg` 为相对零位的角度。输出轴与丝杠直连，电机输出轴转数除以丝杠转数为 `1`。
