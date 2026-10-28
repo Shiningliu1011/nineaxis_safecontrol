@@ -3,6 +3,7 @@ import os
 import shutil
 import subprocess
 import sys
+from copy import deepcopy
 from hashlib import sha256
 from pathlib import Path
 
@@ -294,6 +295,88 @@ def test_invalid_cylinder_parameters_preserve_the_loaded_reference():
         np.testing.assert_array_equal([trajectory.jerk_world_at(time) for time in times], original_jerk)
     trajectory.set_surface_normal_orientation([0., 1., 0.], radius_m=.2706)
     assert trajectory.path_geometry(require_continuous=True).reference_identity == geometry.reference_identity
+
+
+@pytest.mark.parametrize("bundle_name", ["production", "s0"])
+@pytest.mark.parametrize("fit_failure,expected_error,message", [
+    pytest.param("empty_points", ValueError, "zero-size array", id="empty-points"),
+    pytest.param("overflow", FloatingPointError, "overflow", id="overflow"),
+    pytest.param("zero_radius", ValueError, "cylinder fit", id="zero-radius"),
+])
+def test_cylinder_fit_failure_preserves_loaded_state(bundle_name, fit_failure, expected_error, message):
+    bundle_path = ROOT / "data/nurbs/butterfly_reference_v1" / bundle_name
+    manifest = json.loads((bundle_path / "manifest.json").read_text())
+    radius = None if bundle_name == "production" else manifest["description"]["projection_radii_m"][-1]
+    trajectory = load_repository_trajectory(
+        str(SOURCE / "ik_input.mat"), str(ROOT / "portable_oscbf/config/nineaxis.yaml"), 3.5,
+    )
+    trajectory.set_surface_normal_orientation([0., 1., 0.], radius_m=radius)
+    trajectory.attach_continuous_reference(bundle_path)
+    geometry = trajectory.path_geometry(require_continuous=True)
+    bundle = trajectory._continuous_reference_bundle
+    assert bundle is not None
+    assert geometry.reference_identity == manifest["identity"]
+    geometry_arrays = {field: getattr(geometry, field).copy() for field in
+                       ("positions_m", "rotations", "arc_length_m", "feedrate_m_s", "source_time_s")}
+    array_objects = {name: getattr(trajectory, name) for name in (
+        "_pos_world", "_vel_world", "_acc_world", "_jerk_world", "_R_des_series", "_omega_series",
+        "surface_axis", "surface_centre",
+    )}
+    array_values = {name: array.copy() for name, array in array_objects.items()}
+    original_radius = trajectory.surface_radius
+    explicit_path = trajectory._explicit_reference_path
+    stages = trajectory.projection_stages
+    original_stages = deepcopy(stages)
+    original = trajectory.task_reference_sequence()
+    times = np.arange(trajectory.num_points) * trajectory.Ts
+    original_jerk = np.array([trajectory.jerk_world_at(time).copy() for time in times])
+
+    # 从真实首次投影点构造拟合失败条件，调用真实 NumPy 拟合。
+    source_points = trajectory._surface_projection_base["_pos_world"]
+    if fit_failure == "empty_points":
+        fit_points = source_points[:0].copy()
+    elif fit_failure == "overflow":
+        fit_points = source_points * 1e160
+    else:
+        axis = np.array([0., 1., 0.])
+        fit_points = np.outer(source_points @ axis, axis)
+    assert np.isfinite(fit_points).all()
+    trajectory._surface_projection_base["_pos_world"] = fit_points
+    with pytest.raises(expected_error, match=message), np.errstate(over="raise", invalid="raise"):
+        trajectory.set_surface_normal_orientation([0., 1., 0.])
+
+    assert trajectory.orientation_mode == "surface_normal"
+    assert trajectory.surface_radius == original_radius
+    assert trajectory._explicit_reference_path == explicit_path
+    for name, array in array_objects.items():
+        assert getattr(trajectory, name) is array
+        np.testing.assert_array_equal(getattr(trajectory, name), array_values[name])
+    assert trajectory.projection_stages is stages
+    assert len(stages) == len(original_stages) == 2
+    for current, previous in zip(stages, original_stages):
+        assert current.keys() == previous.keys()
+        for key in previous:
+            np.testing.assert_array_equal(current[key], previous[key])
+    assert trajectory._continuous_reference_bundle is bundle
+    assert trajectory._path_geometry is geometry
+    assert trajectory.path_geometry(require_continuous=True) is geometry
+    assert geometry.reference_identity == manifest["identity"]
+    for field, values in geometry_arrays.items():
+        np.testing.assert_array_equal(getattr(geometry, field), values)
+    restored = trajectory.task_reference_sequence()
+    assert len(restored) == len(original) == 14992
+    for field in ("pos", "vel", "accel", "R_des", "omega"):
+        np.testing.assert_array_equal([getattr(sample, field) for sample in restored],
+                                      [getattr(sample, field) for sample in original])
+    np.testing.assert_array_equal([trajectory.jerk_world_at(time) for time in times], original_jerk)
+
+    assert trajectory._surface_projection_base["_pos_world"] is fit_points
+    trajectory._surface_projection_base["_pos_world"] = source_points
+    trajectory.set_surface_normal_orientation([0., 1., 0.], radius_m=radius)
+    recovered = trajectory.path_geometry(require_continuous=True)
+    assert recovered.reference_identity == manifest["identity"]
+    for field, values in geometry_arrays.items():
+        np.testing.assert_array_equal(getattr(recovered, field), values)
 
 
 @pytest.mark.parametrize("via_fixed", [False, True], ids=["repeat", "fixed"])

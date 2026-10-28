@@ -1,5 +1,34 @@
 # 当前执行与验收
 
+## 2026-10-28 圆柱拟合异常真实数据回归
+
+本次基点为 `b77e83718f6f7baaf0f0ce030bc0bd812b26538f`，开始时工作区干净。用户授权补充圆柱拟合异常分支的真实数据回归，验证失败后轨迹、投影记录和连续缓存保持不变，并将本次测试及相关文档提交到 `main`、推送到 `origin/main`，完成同步后停止。本次范围为测试及对应说明和验收记录。
+
+`test_cylinder_fit_failure_preserves_loaded_state` 在真实 MAT 的 `production` / `s0` 两种当前圆柱上建立显式连续参考及 geometry。只改变首次投影点集的重新拟合输入，构造空点集、有限坐标放大后的平方溢出、保留轴向数据的零半径退化，分别执行实际 NumPy 拟合或拟合结果检查。六种组合使用公开 `set_surface_normal_orientation()` 触发失败，检查全部14992个位置、速度、加速度、旋转、角速度和 jerk，以及圆柱字段、投影记录、显式目录、bundle 与 geometry。恢复原拟合点集后，检查合法重设的连续身份及几何。
+
+- [x] 添加三种真实拟合失败条件和两种圆柱的回归用例。
+- [x] 运行真实资产测试文件并核对全部结果。
+- [x] 完成文档及工作区差异检查，保留本轮证据。
+
+环境及本轮验证证据使用已忽略的 `.scratch/cylinder-fit-regression-20261028/`，既有审查与修复证据继续保留。实现与参考资产沿用当前版本，规范沿用既有失败状态保持要求。
+
+在设备 `lsn` 的 Python 3.10.12 / NumPy 1.26.4 环境执行：
+
+```bash
+source .scratch/cylinder-fit-regression-20261028/env.sh
+python -m pytest -q tests/test_butterfly_reference_assets.py --basetemp=.scratch/cylinder-fit-regression-20261028/regression-data --junitxml=.scratch/cylinder-fit-regression-20261028/regression.xml
+python -m py_compile tests/test_butterfly_reference_assets.py .scratch/cylinder-fit-regression-20261028/verify_results.py
+bash -n .scratch/cylinder-fit-regression-20261028/env.sh
+python .scratch/cylinder-fit-regression-20261028/verify_results.py
+git diff --check
+```
+
+真实资产测试为 28 passed（209.03 s），退出 0。JUnit 确认其中六项为新增拟合异常组合，全部28项无失败、错误或跳过。空点集在实际拟合运算中触发 `ValueError`；有限坐标乘 `1e160` 后，在 `np.errstate(over="raise", invalid="raise")` 下触发平方溢出的 `FloatingPointError`；保留真实轴向坐标的退化点集正常完成最小二乘计算，零半径结果由现有检查拒绝。六项均通过完整样本、数组对象、投影记录、连续身份与缓存保持检查，以及原拟合输入恢复后的合法重设检查。
+
+编译、shell 语法、AST 和差异检查通过。验证脚本退出 0，核对两种真实资产各14992个来源点、MAT SHA256、28项JUnit与六项新增场景，并将代码及测试SHA256记录在 `verification.json`；完整测试日志为 `regression.log`。`git diff --exit-code HEAD -- portable_oscbf/work/ik_data_loader.py data/nurbs/butterfly_reference_v1` 退出 0。
+
+本轮验证范围为真实资产模块及上述静态检查，未运行全量测试、性能矩阵或设备测试。规范沿用既有要求，没有新增规范决定。本次测试、说明与验收记录共同纳入 `main` 提交与 `origin/main` 同步范围，完成同步并核验分支身份后停止。
+
 ## 2026-10-28 参数检查与显式参考来源修复
 
 本次基点为 `8089998d9c937694b39ef5a0653a9d58ccb6ef33`，开始时工作区干净。用户授权修复本次审查的两项 P2，补充真实数据回归和相关文档，并将本次改动提交到 `main`、推送到 `origin/main`，完成同步后停止。其余地图任务保持原状态。
@@ -112,6 +141,6 @@ controller四个P-core条件通过原门槛：303步、p95=14.342699509870727ms�
 
 ## 审查与跨设备接手
 
-2026-10-28在设备`lsn`完成参数检查与显式参考来源的两项 P2 本地修复。参数检查与拟合在状态更新前完成；显式目录在姿态切换和其他版本自动选择期间保留，恢复后重新验证。当前实际通过 87 项相关回归及八项独立真实检查，命令、JUnit、来源身份与验证范围见上方专节及`research/review.md`。
+2026-10-28在设备`lsn`完成圆柱拟合异常分支的真实数据回归。三种失败条件与 `production` / `s0` 组成六项新增回归，检查失败后全部14992个运动样本、投影记录和连续缓存保持不变，并验证原拟合输入恢复后的合法重设。当前真实资产模块28项通过，命令、JUnit、来源身份与验证范围见上方专节及`research/review.md`。
 
-原始审查与前次修复证据分别保留在`.scratch/pr-review-20261028/`、`.scratch/reference-p2-fix-20261028/`及`.scratch/review-8089998/`。本次修复证据独立保存在`.scratch/reference-state-fix-20261028/`。各目录按现有规则保留在设备`lsn`；跨设备接手使用仓库内本记录与`research/review.md`，需要原始证据时从该设备获取。本次基点为`8089998d9c937694b39ef5a0653a9d58ccb6ef33`，修复、真实数据回归测试和相关文档共同纳入 `main` 提交与 `origin/main` 同步范围，完成同步并核验分支身份后停止。
+既有审查、修复及验证证据继续保留，本轮证据独立保存在`.scratch/cylinder-fit-regression-20261028/`。各目录按现有规则保留在设备`lsn`；跨设备接手使用仓库内本记录与`research/review.md`，需要原始证据时从该设备获取。本次基点为`b77e83718f6f7baaf0f0ce030bc0bd812b26538f`，新增测试、说明与验收记录共同纳入 `main` 提交与 `origin/main` 同步范围，完成同步并核验分支身份后停止。

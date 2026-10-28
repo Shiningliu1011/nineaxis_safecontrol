@@ -47,3 +47,15 @@ Standards 独立静态复核通过，未发现新的明确规范违反。Spec �
 主会话真实资产与连续 NumPy/JAX 回归61项通过（219.59 s），公共路径消费者26项通过（29.01 s），均退出0，无失败、错误、跳过或未选中用例。Python编译、AST、JUnit、来源验证及`git diff --check`通过，既有连续资产保持未改动。完整命令及TDD记录见`../implement.md`，全部新证据保存在`.scratch/reference-state-fix-20261028/`，代码及测试身份保存在`verification.json`。
 
 使用说明已更新`docs/butterfly_reference.md`。本次没有运行全量测试、性能矩阵或设备测试。两项修复与相关验收完成，修复、真实数据回归测试和相关文档共同纳入 `main` 提交与 `origin/main` 同步范围，完成同步并核验分支身份后停止。
+
+## 2026-10-28 圆柱拟合异常回归验收
+
+本次基点为`b77e83718f6f7baaf0f0ce030bc0bd812b26538f`，开始时工作区干净。用户授权补充圆柱拟合异常分支的真实数据回归，检查失败后轨迹、投影记录和连续缓存保持不变，并将本次测试及相关文档提交到 `main`、推送到 `origin/main`，完成同步后停止。
+
+新增 `test_cylinder_fit_failure_preserves_loaded_state` 使用真实 MAT 建立 `production` / `s0` 两种圆柱、显式连续参考及 geometry，再只改变重新拟合点集：空点集触发实际拟合中的 `ValueError`，有限坐标乘`1e160`后在 NumPy 浮点异常检查中触发 `FloatingPointError`，保留真实轴向坐标的退化点集得到零半径并由拟合结果检查拒绝。两种圆柱与三种条件共六项回归。
+
+每项均验证全部14992个位置、速度、加速度、旋转、角速度与 jerk 保持一致，当前数组、圆柱字段、投影记录和显式目录保持不变，bundle 与 geometry 仍为原对象，连续身份及几何数组一致。恢复原拟合点集后，合法重设的连续身份及几何验证通过。
+
+真实资产测试文件28项通过（209.03 s），退出0，无失败、错误或跳过，含全部六项新增用例。Python编译、shell语法、AST、JUnit、MAT来源SHA256及差异检查通过；生产实现与既有参考资产相对`HEAD`没有修改。完整命令见`../implement.md`，本轮证据保存在`.scratch/cylinder-fit-regression-20261028/`，包括`regression.log`、`regression.xml`和`verification.json`。
+
+使用说明的数值验证章节已更新。本轮验证范围为真实资产模块及上述静态检查，未运行全量测试、性能矩阵或设备测试。新增测试及对应说明与验收记录共同纳入 `main` 提交与 `origin/main` 同步范围，完成同步并核验分支身份后停止。
