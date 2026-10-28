@@ -1,5 +1,5 @@
 from copy import deepcopy
-from dataclasses import asdict, fields
+from dataclasses import asdict
 import json
 from pathlib import Path
 import shutil
@@ -107,7 +107,7 @@ def test_actual_processed_motion_and_rejected_admission_have_reconstructable_pro
     changed[-1]["values"]["reference_progress_m"] += .001
     assert evaluate_execution(tmp_path, manifest, changed, commands)["reference_settlement"]["status"] == "fail"
     assert evaluate_execution(tmp_path, manifest, feedback, [])["reference_settlement"]["status"] == "insufficient_evidence"
-    np.savez_compressed(tmp_path / "path.npz", **{field.name: getattr(path, field.name) for field in fields(path)})
+    np.savez_compressed(tmp_path / "path.npz", **path.to_arrays())
     manifest.update(source_sha256={}, path_sha256=content_hash(tmp_path / "path.npz"))
     write_json(tmp_path / "manifest.json", manifest)
     write_json(tmp_path / "result.json", {

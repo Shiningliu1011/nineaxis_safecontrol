@@ -1,0 +1,5 @@
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"代码、测试与工作区验收"}
+{"file":".trellis/spec/backend/safety-guidelines.md","reason":"碰撞证据与真实设备边界"}
+{"file":"docs/adr/0015-asymmetric-occupancy-evidence.md","reason":"清除条件及未知空间检查"}
+{"file":"docs/adr/0018-conservative-support-capacity.md","reason":"逐个原 support 的完整覆盖证明"}
+{"file":"docs/adr/0045-versioned-collision-parameter-artifact.md","reason":"安全阈值的来源、身份与消费"}

@@ -1,0 +1,38 @@
+{
+  "id": "map147-implementation",
+  "name": "map147-implementation",
+  "title": "实现完整项目地图147的未阻塞任务",
+  "description": "依据当前原生依赖推进决定、独立实现、双线审查、主分支集成与验收",
+  "status": "in_progress",
+  "priority": "P1",
+  "creator": "Lsn",
+  "assignee": "Lsn",
+  "createdAt": "2026-10-27",
+  "completedAt": null,
+  "branch": "main",
+  "base_branch": "main",
+  "worktree_path": "/home/lsn/robot/robot_safecontrol",
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [
+    "docs/specs/predictive-coordination-control.md",
+    "docs/planning/nineaxis-full-project/README.md",
+    "docs/planning/nineaxis-full-project/dependencies.md"
+  ],
+  "meta": {
+    "map": 147,
+    "overall_spec": 145,
+    "workflow_owner": "trellis",
+    "method": "implement-spec",
+    "spec_promotion": false,
+    "current_batch_completed": true,
+    "stop_after_current_parallel": true,
+    "current_batch_closed_issues": [101, 105, 152],
+    "research_issue_open": 150,
+    "remaining_map_open_issues": 41,
+    "next_ticket_started": false
+  }
+}

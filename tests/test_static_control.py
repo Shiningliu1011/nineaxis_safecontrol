@@ -279,13 +279,13 @@ def test_last_reference_interval_is_executed_before_endpoint_hold(method):
         profile.acceleration_limits, jerk_time=.08, minimum_duration_s=.08,
     )
     control = StaticControl(path, StaticGeometry(config.scene()), planner, config.values["control"])
-    # 来自 s4-joint-development-10 的停止位置和已结算参考进度。
+    # 关节位置来自 s4-joint-development-10；测试当前连续路径的最后可表示区间。
     state = ActuatorState(np.array([
         .1306941177379043, -.7060779958979104, .19350705137335877,
         .7804435751336972, 1.0790893334269591, .05484058431642864,
         .4397736851681241, -.22787388223368704, -.6662958160755214,
     ]), np.zeros(9), np.zeros(9))
-    progress, feed = 1.8167597440584302, 0.
+    progress, feed = np.nextafter(path.total_length_m, 0.), 0.
     assert 0. < path.total_length_m - progress < 1e-12
     for index in range(6):
         candidate = control.propose(state, progress, time_s=index * .1, executed_feed=feed)

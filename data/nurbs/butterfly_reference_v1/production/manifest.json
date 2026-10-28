@@ -1,0 +1,709 @@
+{
+  "schema_version": 1,
+  "format": "nineaxis-butterfly-continuous",
+  "identity": "62049d74d7f44e85b7d70715105a7821dabca29bc0687c0b06c852739e4d9972",
+  "description": {
+    "source_sha256": {
+      "ik_input.mat": "79868b03afd68f9d4cca1cba568320f0f48efd355d020a9372f2037549c3293f",
+      "control_points.txt": "e34c363f1da3a6de51781fe5836d632290354481bcd8b2b5532e97e2c5e29bd7",
+      "knot_vector.txt": "94c975c90fed33f2106af9c2db161cdd962bdf97c6ffdf59ac4377f0647246d6",
+      "nurbs_blocks.mat": "fc39b7639799291b63ae84c720ab068d4ebb998adfff93c8a586a205a06d415a"
+    },
+    "frame": "base_link",
+    "length_unit": "m",
+    "angle_unit": "rad",
+    "time_unit": "s",
+    "source_length_unit": "mm",
+    "parameter": "normalized_final_arc_length",
+    "derivatives_wrt": "s",
+    "position_derivative_unit": "m",
+    "axis_derivative_unit": "dimensionless",
+    "source_parameter": "u",
+    "source_arc_unit": "mm",
+    "final_arc_unit": "m",
+    "dtype": "float64",
+    "transform_kind": "nominal_simulation_similarity",
+    "transform": [
+      [
+        0.967379812532678,
+        0.0,
+        0.0,
+        -4.538030229213852e-05
+      ],
+      [
+        0.0,
+        0.967379812532678,
+        0.0,
+        0.33200184706543157
+      ],
+      [
+        0.0,
+        0.0,
+        0.967379812532678,
+        1.3668826946321033
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "projection_axes": [
+      [
+        0.0,
+        1.0,
+        0.0
+      ],
+      [
+        0.0,
+        1.0,
+        0.0
+      ]
+    ],
+    "projection_centres_m": [
+      [
+        -7.246874682720339e-05,
+        0.3466393505935161,
+        1.6372593390674273
+      ],
+      [
+        -7.246874682720339e-05,
+        0.3466393505935161,
+        1.6372593390674266
+      ]
+    ],
+    "projection_radii_m": [
+      0.2706009973196956,
+      0.2706009973196956
+    ],
+    "tool_frame": "tool0",
+    "tool_axis": "+X",
+    "axis_definition": "inward_cylinder_radial",
+    "normal_definition": "generated_final_cylinder_outward_radial",
+    "original_normal_status": "not_available",
+    "model_identity": {
+      "name": "nineaxis",
+      "controlled_joints": [
+        "J1",
+        "J2",
+        "J3",
+        "J4",
+        "J5",
+        "J6",
+        "J7",
+        "J8",
+        "J9"
+      ],
+      "joint_types": [
+        "prismatic",
+        "revolute",
+        "revolute",
+        "revolute",
+        "revolute",
+        "revolute",
+        "revolute",
+        "revolute",
+        "revolute"
+      ],
+      "kinematics_data_sha256": "aaed3e29d965bb3b4bd00dd4e20f2c96090dee0464f428da7b3c5a9761882a3f",
+      "geometry_config_sha256": "c9e54de9f3de95e1733a1e4e60de24289eb3363d50d8789d243f0be5c64e6286"
+    },
+    "C_source_tcp": [
+      [
+        0.0,
+        0.0,
+        -1.0
+      ],
+      [
+        0.0,
+        1.0,
+        0.0
+      ],
+      [
+        1.0,
+        0.0,
+        0.0
+      ]
+    ],
+    "roll": "free_about_tool_axis",
+    "nominal_rotation": "X_inward_Y_cylinder_axis",
+    "side": "right_at_internal_nodes_left_at_endpoint",
+    "source_degree": 3,
+    "source_weights": "unit",
+    "continuity": "C2_with_piecewise_third_derivatives",
+    "calibration_status": "nominal_simulation_not_measured",
+    "original_surface_association": "not_available",
+    "nominal_feed_multiplier": 3.5,
+    "work_distance": {
+      "status": "not_provided",
+      "applied": true,
+      "application": "existing_path_radius"
+    },
+    "nominal_time": "source_samples_with_linear_interpolation_and_duplicate_u_intervals",
+    "nominal_plan_units": {
+      "F": "mm/s",
+      "At": "mm/s^2",
+      "An": "mm/s^2",
+      "Jt": "mm/s^3",
+      "Jn": "mm/s^3"
+    }
+  },
+  "config_inputs": {
+    "kinematics": {
+      "path": "/home/lsn/robot/robot_safecontrol/portable_oscbf/config/nineaxis.yaml",
+      "sha256": "c9e54de9f3de95e1733a1e4e60de24289eb3363d50d8789d243f0be5c64e6286"
+    },
+    "controller": {
+      "path": "/home/lsn/robot/robot_safecontrol/config/oscbf_controller.yaml",
+      "sha256": "5f45e74285921208d8d5904f24232e1cdb87922db85020dc9640abc4930f35ac"
+    }
+  },
+  "events": [
+    {
+      "kind": "source_cubic_node",
+      "u": 0.0416666666666667,
+      "s": 0.06359644719436663,
+      "continuity": "C2",
+      "third_derivative": "left_and_right"
+    },
+    {
+      "kind": "source_cubic_node",
+      "u": 0.0625,
+      "s": 0.09452868497783233,
+      "continuity": "C2",
+      "third_derivative": "left_and_right"
+    },
+    {
+      "kind": "source_cubic_node",
+      "u": 0.0833333333333333,
+      "s": 0.12064264886794179,
+      "continuity": "C2",
+      "third_derivative": "left_and_right"
+    },
+    {
+      "kind": "source_cubic_node",
+      "u": 0.104166666666667,
+      "s": 0.13899522760560581,
+      "continuity": "C2",
+      "third_derivative": "left_and_right"
+    },
+    {
+      "kind": "source_cubic_node",
+      "u": 0.125,
+      "s": 0.15774177006853776,
+      "continuity": "C2",
+      "third_derivative": "left_and_right"
+    },
+    {
+      "kind": "source_cubic_node",
+      "u": 0.145833333333333,
+      "s": 0.1754839542843846,
+      "continuity": "C2",
+      "third_derivative": "left_and_right"
+    },
+    {
+      "kind": "source_cubic_node",
+      "u": 0.166666666666667,
+      "s": 0.19616008972782953,
+      "continuity": "C2",
+      "third_derivative": "left_and_right"
+    },
+    {
+      "kind": "source_cubic_node",
+      "u": 0.1875,
+      "s": 0.21849916281024623,
+      "continuity": "C2",
+      "third_derivative": "left_and_right"
+    },
+    {
+      "kind": "source_cubic_node",
+      "u": 0.208333333333333,
+      "s": 0.2404766453298053,
+      "continuity": "C2",
+      "third_derivative": "left_and_right"
+    },
+    {
+      "kind": "source_cubic_node",
+      "u": 0.229166666666667,
+      "s": 0.2625804907865696,
+      "continuity": "C2",
+      "third_derivative": "left_and_right"
+    },
+    {
+      "kind": "source_cubic_node",
+      "u": 0.25,
+      "s": 0.28506778033919045,
+      "continuity": "C2",
+      "third_derivative": "left_and_right"
+    },
+    {
+      "kind": "source_cubic_node",
+      "u": 0.270833333333333,
+      "s": 0.30297719496436215,
+      "continuity": "C2",
+      "third_derivative": "left_and_right"
+    },
+    {
+      "kind": "source_cubic_node",
+      "u": 0.291666666666667,
+      "s": 0.32609394284654863,
+      "continuity": "C2",
+      "third_derivative": "left_and_right"
+    },
+    {
+      "kind": "source_cubic_node",
+      "u": 0.3125,
+      "s": 0.3506574157767417,
+      "continuity": "C2",
+      "third_derivative": "left_and_right"
+    },
+    {
+      "kind": "source_cubic_node",
+      "u": 0.333333333333333,
+      "s": 0.372642507290905,
+      "continuity": "C2",
+      "third_derivative": "left_and_right"
+    },
+    {
+      "kind": "source_cubic_node",
+      "u": 0.354166666666667,
+      "s": 0.39288043700585684,
+      "continuity": "C2",
+      "third_derivative": "left_and_right"
+    },
+    {
+      "kind": "source_cubic_node",
+      "u": 0.375,
+      "s": 0.4176151907325208,
+      "continuity": "C2",
+      "third_derivative": "left_and_right"
+    },
+    {
+      "kind": "source_cubic_node",
+      "u": 0.395833333333333,
+      "s": 0.4380560254697263,
+      "continuity": "C2",
+      "third_derivative": "left_and_right"
+    },
+    {
+      "kind": "source_cubic_node",
+      "u": 0.416666666666667,
+      "s": 0.4487285688303772,
+      "continuity": "C2",
+      "third_derivative": "left_and_right"
+    },
+    {
+      "kind": "source_cubic_node",
+      "u": 0.4375,
+      "s": 0.4629038934375563,
+      "continuity": "C2",
+      "third_derivative": "left_and_right"
+    },
+    {
+      "kind": "source_cubic_node",
+      "u": 0.458333333333333,
+      "s": 0.4749025053532357,
+      "continuity": "C2",
+      "third_derivative": "left_and_right"
+    },
+    {
+      "kind": "source_cubic_node",
+      "u": 0.479166666666667,
+      "s": 0.4891946292731155,
+      "continuity": "C2",
+      "third_derivative": "left_and_right"
+    },
+    {
+      "kind": "source_cubic_node",
+      "u": 0.5,
+      "s": 0.5001428266074811,
+      "continuity": "C2",
+      "third_derivative": "left_and_right"
+    },
+    {
+      "kind": "source_cubic_node",
+      "u": 0.520833333333333,
+      "s": 0.5110910924521007,
+      "continuity": "C2",
+      "third_derivative": "left_and_right"
+    },
+    {
+      "kind": "source_cubic_node",
+      "u": 0.541666666666667,
+      "s": 0.525383232301398,
+      "continuity": "C2",
+      "third_derivative": "left_and_right"
+    },
+    {
+      "kind": "source_cubic_node",
+      "u": 0.5625,
+      "s": 0.5373818633818236,
+      "continuity": "C2",
+      "third_derivative": "left_and_right"
+    },
+    {
+      "kind": "source_cubic_node",
+      "u": 0.583333333333333,
+      "s": 0.551557266741961,
+      "continuity": "C2",
+      "third_derivative": "left_and_right"
+    },
+    {
+      "kind": "source_cubic_node",
+      "u": 0.604166666666667,
+      "s": 0.5622298739644049,
+      "continuity": "C2",
+      "third_derivative": "left_and_right"
+    },
+    {
+      "kind": "source_cubic_node",
+      "u": 0.625,
+      "s": 0.5826708281172773,
+      "continuity": "C2",
+      "third_derivative": "left_and_right"
+    },
+    {
+      "kind": "source_cubic_node",
+      "u": 0.645833333333333,
+      "s": 0.6074060225997149,
+      "continuity": "C2",
+      "third_derivative": "left_and_right"
+    },
+    {
+      "kind": "source_cubic_node",
+      "u": 0.666666666666667,
+      "s": 0.6276446046236036,
+      "continuity": "C2",
+      "third_derivative": "left_and_right"
+    },
+    {
+      "kind": "source_cubic_node",
+      "u": 0.6875,
+      "s": 0.6496318619193929,
+      "continuity": "C2",
+      "third_derivative": "left_and_right"
+    },
+    {
+      "kind": "source_cubic_node",
+      "u": 0.708333333333333,
+      "s": 0.6741972705722638,
+      "continuity": "C2",
+      "third_derivative": "left_and_right"
+    },
+    {
+      "kind": "source_cubic_node",
+      "u": 0.729166666666667,
+      "s": 0.6973162166670501,
+      "continuity": "C2",
+      "third_derivative": "left_and_right"
+    },
+    {
+      "kind": "source_cubic_node",
+      "u": 0.75,
+      "s": 0.7152273247348253,
+      "continuity": "C2",
+      "third_derivative": "left_and_right"
+    },
+    {
+      "kind": "source_cubic_node",
+      "u": 0.770833333333333,
+      "s": 0.7377158424852113,
+      "continuity": "C2",
+      "third_derivative": "left_and_right"
+    },
+    {
+      "kind": "source_cubic_node",
+      "u": 0.791666666666667,
+      "s": 0.7598201733505088,
+      "continuity": "C2",
+      "third_derivative": "left_and_right"
+    },
+    {
+      "kind": "source_cubic_node",
+      "u": 0.8125,
+      "s": 0.7817988998359126,
+      "continuity": "C2",
+      "third_derivative": "left_and_right"
+    },
+    {
+      "kind": "source_cubic_node",
+      "u": 0.833333333333333,
+      "s": 0.8041397674860304,
+      "continuity": "C2",
+      "third_derivative": "left_and_right"
+    },
+    {
+      "kind": "source_cubic_node",
+      "u": 0.854166666666667,
+      "s": 0.8248176468705934,
+      "continuity": "C2",
+      "third_derivative": "left_and_right"
+    },
+    {
+      "kind": "source_cubic_node",
+      "u": 0.875,
+      "s": 0.8425621811261662,
+      "continuity": "C2",
+      "third_derivative": "left_and_right"
+    },
+    {
+      "kind": "source_cubic_node",
+      "u": 0.895833333333333,
+      "s": 0.861310355902112,
+      "continuity": "C2",
+      "third_derivative": "left_and_right"
+    },
+    {
+      "kind": "source_cubic_node",
+      "u": 0.916666666666667,
+      "s": 0.8796639268292038,
+      "continuity": "C2",
+      "third_derivative": "left_and_right"
+    },
+    {
+      "kind": "source_cubic_node",
+      "u": 0.9375,
+      "s": 0.9057817324630061,
+      "continuity": "C2",
+      "third_derivative": "left_and_right"
+    },
+    {
+      "kind": "source_cubic_node",
+      "u": 0.958333333333333,
+      "s": 0.9367124348175888,
+      "continuity": "C2",
+      "third_derivative": "left_and_right"
+    },
+    {
+      "kind": "nominal_block_boundary",
+      "source_index": 0,
+      "u": 0.0,
+      "time_s": 0.0
+    },
+    {
+      "kind": "nominal_block_boundary",
+      "source_index": 492,
+      "u": 0.011062965184170277,
+      "time_s": 0.9840000000000008
+    },
+    {
+      "kind": "nominal_block_boundary",
+      "source_index": 2650,
+      "u": 0.14398916905858497,
+      "time_s": 5.299999999999638
+    },
+    {
+      "kind": "nominal_block_boundary",
+      "source_index": 3108,
+      "u": 0.16653254635064313,
+      "time_s": 6.2159999999995375
+    },
+    {
+      "kind": "nominal_block_boundary",
+      "source_index": 3389,
+      "u": 0.18726152485508565,
+      "time_s": 6.7779999999994756
+    },
+    {
+      "kind": "nominal_block_boundary",
+      "source_index": 3653,
+      "u": 0.20768628915546866,
+      "time_s": 7.305999999999417
+    },
+    {
+      "kind": "nominal_block_boundary",
+      "source_index": 3982,
+      "u": 0.2288361101750376,
+      "time_s": 7.963999999999345
+    },
+    {
+      "kind": "nominal_block_boundary",
+      "source_index": 4815,
+      "u": 0.2911854918378268,
+      "time_s": 9.629999999999885
+    },
+    {
+      "kind": "nominal_block_boundary",
+      "source_index": 5664,
+      "u": 0.3511997085564861,
+      "time_s": 11.328000000000452
+    },
+    {
+      "kind": "nominal_block_boundary",
+      "source_index": 6101,
+      "u": 0.37510512112833655,
+      "time_s": 12.202000000000744
+    },
+    {
+      "kind": "nominal_block_boundary",
+      "source_index": 6876,
+      "u": 0.4364626144767992,
+      "time_s": 13.752000000001262
+    },
+    {
+      "kind": "nominal_block_boundary",
+      "source_index": 7365,
+      "u": 0.47839020254907394,
+      "time_s": 14.730000000001588
+    },
+    {
+      "kind": "nominal_block_boundary",
+      "source_index": 7637,
+      "u": 0.5182417908104027,
+      "time_s": 15.27400000000177
+    },
+    {
+      "kind": "nominal_block_boundary",
+      "source_index": 8127,
+      "u": 0.5577651140373187,
+      "time_s": 16.25400000000187
+    },
+    {
+      "kind": "nominal_block_boundary",
+      "source_index": 8901,
+      "u": 0.6221966209508399,
+      "time_s": 17.802000000001012
+    },
+    {
+      "kind": "nominal_block_boundary",
+      "source_index": 9338,
+      "u": 0.6463391323391,
+      "time_s": 18.676000000000528
+    },
+    {
+      "kind": "nominal_block_boundary",
+      "source_index": 10188,
+      "u": 0.7070439776452667,
+      "time_s": 20.375999999999586
+    },
+    {
+      "kind": "nominal_block_boundary",
+      "source_index": 11020,
+      "u": 0.7686382910014321,
+      "time_s": 22.039999999998663
+    },
+    {
+      "kind": "nominal_block_boundary",
+      "source_index": 11349,
+      "u": 0.7904407701105557,
+      "time_s": 22.6979999999983
+    },
+    {
+      "kind": "nominal_block_boundary",
+      "source_index": 11614,
+      "u": 0.8111756997721694,
+      "time_s": 23.227999999998005
+    },
+    {
+      "kind": "nominal_block_boundary",
+      "source_index": 11895,
+      "u": 0.8317150648490167,
+      "time_s": 23.789999999997693
+    },
+    {
+      "kind": "nominal_block_boundary",
+      "source_index": 12354,
+      "u": 0.8520424038887064,
+      "time_s": 24.707999999997185
+    },
+    {
+      "kind": "nominal_block_boundary",
+      "source_index": 14515,
+      "u": 0.9868947871322904,
+      "time_s": 29.02999999999479
+    },
+    {
+      "kind": "nominal_block_boundary",
+      "source_index": 14991,
+      "u": 1.0,
+      "time_s": 29.98199999999426
+    },
+    {
+      "kind": "endpoint_hold",
+      "u": 1.0,
+      "s": 1.0,
+      "source_time_interval_s": [
+        29.979999999994263,
+        29.98199999999426
+      ]
+    }
+  ],
+  "validation": {
+    "source_points": 14992,
+    "source_blocks": 23,
+    "raw_position_max_error_mm": 8.526512829121202e-14,
+    "source_position_max_error_m": 2.498001805406602e-16,
+    "source_axis_max_error": 1.2212453270876722e-15,
+    "final_length_m": 1.8167657348637822,
+    "source_length_mm": 1900.119574583678,
+    "source_duration_s": 29.98199999999426,
+    "certified_minimum_parameter_speed_m_per_u": 0.00887839368908638,
+    "speed_certificate": "Bernstein_interval_bounds_axial_and_angular_polynomials",
+    "source_nonfinite": {
+      "speed_series": 1
+    },
+    "arc_error_estimate_m": 5.1549088032233105e-11,
+    "independent_arc_difference_m": 2.220446049250313e-16,
+    "inverse_max_u_error": 2.6867397195928788e-14,
+    "inverse_max_residual_m": 1.9984014443252818e-14
+  },
+  "nominal_plan_cells": {
+    "comp_dV_seq": {
+      "shape": [
+        23
+      ],
+      "arrays": [
+        "plan__comp_dV_seq__cell_0",
+        "plan__comp_dV_seq__cell_1",
+        "plan__comp_dV_seq__cell_2",
+        "plan__comp_dV_seq__cell_3",
+        "plan__comp_dV_seq__cell_4",
+        "plan__comp_dV_seq__cell_5",
+        "plan__comp_dV_seq__cell_6",
+        "plan__comp_dV_seq__cell_7",
+        "plan__comp_dV_seq__cell_8",
+        "plan__comp_dV_seq__cell_9",
+        "plan__comp_dV_seq__cell_10",
+        "plan__comp_dV_seq__cell_11",
+        "plan__comp_dV_seq__cell_12",
+        "plan__comp_dV_seq__cell_13",
+        "plan__comp_dV_seq__cell_14",
+        "plan__comp_dV_seq__cell_15",
+        "plan__comp_dV_seq__cell_16",
+        "plan__comp_dV_seq__cell_17",
+        "plan__comp_dV_seq__cell_18",
+        "plan__comp_dV_seq__cell_19",
+        "plan__comp_dV_seq__cell_20",
+        "plan__comp_dV_seq__cell_21",
+        "plan__comp_dV_seq__cell_22"
+      ]
+    }
+  },
+  "generator": {
+    "command": "/home/lsn/robot/robot_safecontrol/.scratch/host-recovery/venv/bin/python -m robot_safecontrol_moveit.pipe_assets.butterfly_reference generate --source-dir /home/lsn/robot/robot_safecontrol/data/nurbs --kinematics-config portable_oscbf/config/nineaxis.yaml --controller-profile config/oscbf_controller.yaml --output data/nurbs/butterfly_reference_v1/production",
+    "python": "3.10.12",
+    "packages": {
+      "numpy": "1.26.4",
+      "scipy": "1.15.3",
+      "PyYAML": "6.0.2"
+    },
+    "source_code_sha256": {
+      "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/pipe_assets/butterfly_reference.py": "ced8449b8b0ec89bf614c0ff762ee456fadc8ec67193653bd9849ea36a53a0fd",
+      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/continuous_path_reference.py": "6444f551dc7d44098687362446047fee900bf7a1c9c1ca06f58c55d8798765a2",
+      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/ik_data_loader.py": "cbc8eae6b853c0ea2206a9a129e1267715e3cb0628caa9c98883abfcc57ef401",
+      "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/pipe_assets/pipe_nurbs_geometry.py": "fcff0ea99af1a96155079bde713a5dec3cd7739674df2c29c665ac1ffd58e065",
+      "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/robot_spec.py": "22eff820ede1f3d740ddeac5eddc732aceec1041eca58745a7ec5ef350ac0260"
+    }
+  },
+  "loader_output": "[IKTrajectoryData] 加载完成: 14992 点, 23 块, Ts=0.002s, 总时长=29.982s\n",
+  "outputs": {
+    "reference.npz": "7dda36b857966242c6e215babb305ef0faa3e073ed5b5e1e9affbdf8aa1e5a72",
+    "samples.npz": "b581e6934e9361ef862980b7082f845080a251477660b32254288ff3ee4cfee6",
+    "source/control_points.txt": "e34c363f1da3a6de51781fe5836d632290354481bcd8b2b5532e97e2c5e29bd7",
+    "source/ik_input.mat": "79868b03afd68f9d4cca1cba568320f0f48efd355d020a9372f2037549c3293f",
+    "source/knot_vector.txt": "94c975c90fed33f2106af9c2db161cdd962bdf97c6ffdf59ac4377f0647246d6",
+    "source/nurbs_blocks.mat": "fc39b7639799291b63ae84c720ab068d4ebb998adfff93c8a586a205a06d415a",
+    "source_samples.npz": "0505806501eabcbd49ca092d9e5ed08b4cfa150d754894923d4deb40035d4e2d"
+  }
+}

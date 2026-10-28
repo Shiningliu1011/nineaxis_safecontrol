@@ -5,4 +5,6 @@ qpax==0.1.4
 jsonschema==4.23.0
 ruckig==0.12.2
 trimesh==5.1.0
+rtree==1.4.1
+urdf-parser-py==0.0.4
 pymoo==0.6.2

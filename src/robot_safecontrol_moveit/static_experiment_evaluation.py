@@ -49,14 +49,7 @@ def ordered_projection(geometry, positions: np.ndarray) -> tuple[np.ndarray, np.
         )
         progress[index] = value
         previous = value
-        segment = anchor
-        fraction = (value - geometry.arc_length_m[segment]) / (
-            geometry.arc_length_m[segment + 1] - geometry.arc_length_m[segment]
-        )
-        nearest = (
-            (1.0 - fraction) * geometry.positions_m[segment]
-            + fraction * geometry.positions_m[segment + 1]
-        )
+        nearest = geometry.sample(value).position_m
         distances[index] = np.linalg.norm(position - nearest)
     return progress, distances
 
@@ -100,7 +93,7 @@ def evaluate_run(directory: Path, *, resource_root: Path, save_samples: bool = F
 
     jax.config.update("jax_enable_x64", True)
     with np.load(directory / "path.npz", allow_pickle=False) as archive:
-        geometry = PathGeometry(**{key: archive[key] for key in archive.files})
+        geometry = PathGeometry.from_arrays({key: archive[key] for key in archive.files})
     if content_hash(directory / "path.npz") != manifest["path_sha256"]:
         raise ValueError("path.npz 身份不一致")
     feedback = (
@@ -145,13 +138,19 @@ def evaluate_run(directory: Path, *, resource_root: Path, save_samples: bool = F
                 or np.any(np.diff(reference_progress) < -1e-12)):
             raise ValueError("plant 结算的参考进度无效")
         reference_progress = np.minimum(reference_progress, geometry.total_length_m)
-        reference_positions = np.column_stack([
-            np.interp(reference_progress, geometry.arc_length_m, geometry.positions_m[:, axis])
-            for axis in range(3)
-        ])
-        reference_axes = Slerp(
-            geometry.arc_length_m, Rotation.from_matrix(geometry.rotations),
-        )(reference_progress).as_matrix()[:, :, 0]
+        if geometry.continuous_reference is not None:
+            chunks = [geometry.continuous_reference.query(values / geometry.total_length_m)
+                      for values in np.array_split(reference_progress, max(1, int(np.ceil(len(reference_progress) / 1024))))]
+            reference_positions = np.concatenate([sample.position_m for sample in chunks])
+            reference_axes = np.concatenate([sample.tool_axis for sample in chunks])
+        else:
+            reference_positions = np.column_stack([
+                np.interp(reference_progress, geometry.arc_length_m, geometry.positions_m[:, axis])
+                for axis in range(3)
+            ])
+            reference_axes = Slerp(
+                geometry.arc_length_m, Rotation.from_matrix(geometry.rotations),
+            )(reference_progress).as_matrix()[:, :, 0]
         phases = np.array([row["values"]["phase"] for row in feedback])
     else:
         reference_positions = np.array([commands[index]["values"]["reference_position_m"] for index in indices])

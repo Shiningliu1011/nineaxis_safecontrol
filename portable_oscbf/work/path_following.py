@@ -8,13 +8,68 @@ All distances are metres and all path speeds are metres per second.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+import json
+from dataclasses import dataclass, fields
+from hashlib import sha256
 
 import numpy as np
 from scipy.spatial.transform import Rotation
 
+from work.continuous_path_reference import ContinuousPathReference, ContinuousReferenceArrays, refine_projection
+
 
 _EPS = 1.0e-9
+_MIN_SEGMENT_M = 1.0e-7
+
+_SAMPLED_GEOMETRY_FIELDS = (
+    "positions_m", "rotations", "quaternions_xyzw", "arc_length_m", "tangents",
+    "omega_per_m", "feedrate_m_s", "source_time_s",
+)
+_GEOMETRY_RECORD_FIELDS = {"geometry_record_version", "reference_representation", "reference_geometry_sha256"}
+
+
+def _record_text(value, name):
+    array = np.asarray(value)
+    if array.shape != () or array.dtype.kind != "U" or "\x00" in str(array):
+        raise ValueError(f"保存的 {name} 需要单个文本值")
+    return str(array)
+
+
+def _continuous_record_digest(values, identity):
+    result = sha256(b"path_geometry:continuous:v1")
+    result.update(json.dumps(identity, ensure_ascii=False).encode())
+    for name in ContinuousReferenceArrays._fields:
+        value = np.asarray(values[f"continuous_{name}"])
+        result.update(json.dumps([name, value.dtype.str, value.shape], separators=(",", ":")).encode())
+        result.update(np.ascontiguousarray(value).tobytes())
+    return result.hexdigest()
+
+
+def _validated_sampled_arrays(values):
+    result = {name: np.asarray(values[name]) for name in _SAMPLED_GEOMETRY_FIELDS}
+    positions = result["positions_m"]
+    if positions.ndim != 2 or positions.shape[1] != 3 or len(positions) < 2:
+        raise ValueError("保存的 positions_m 需要形状 (N, 3) 且 N >= 2")
+    count = len(positions)
+    shapes = {"positions_m": (count, 3), "rotations": (count, 3, 3),
+              "quaternions_xyzw": (count, 4), "arc_length_m": (count,), "tangents": (count, 3),
+              "omega_per_m": (count, 3), "feedrate_m_s": (count,), "source_time_s": (count,)}
+    for name, value in result.items():
+        if value.shape != shapes[name] or value.dtype.kind not in "fiu" or not np.isfinite(value).all():
+            raise ValueError(f"保存的 {name} 形状或数值无效")
+    arc = result["arc_length_m"]
+    if arc[0] != 0 or np.any(np.diff(arc) <= 0) or np.any(result["feedrate_m_s"] < 0):
+        raise ValueError("保存的路径需要递增正弧长及非负进给")
+    rotations, quaternions = result["rotations"], result["quaternions_xyzw"]
+    # 纯采样记录包含既有 float32 内核快照；连续记录随后采用 float64 规则逐项核验。
+    direction_tolerance = 16 * np.finfo(np.float32).eps
+    if (not np.allclose(np.swapaxes(rotations, 1, 2) @ rotations, np.eye(3), atol=direction_tolerance, rtol=0)
+            or np.any(np.linalg.det(rotations) <= 0)
+            or not np.allclose(np.linalg.norm(quaternions, axis=1), 1., atol=direction_tolerance, rtol=0)
+            or not np.allclose(Rotation.from_quat(quaternions).as_matrix(), rotations, atol=direction_tolerance, rtol=0)
+            or not np.allclose(np.linalg.norm(result["tangents"], axis=1), 1., atol=direction_tolerance, rtol=0)):
+        raise ValueError("保存的旋转、quaternion 或切向量无效")
+    return result
 
 
 # Numeric values are written to CSV so JAX and NumPy runs can use the same
@@ -119,6 +174,86 @@ class PathGeometry:
     omega_per_m: np.ndarray
     feedrate_m_s: np.ndarray
     source_time_s: np.ndarray
+    continuous_reference: ContinuousPathReference | None = None
+    reference_identity: str = ""
+
+    @classmethod
+    def from_continuous_reference(cls, reference: ContinuousPathReference, *, identity="") -> "PathGeometry":
+        sample = reference.query_u(reference.arrays.source_u)
+        sampled, indices = cls._from_samples_with_indices(sample.position_m, sample.rotation,
+                                                         np.asarray(reference.arrays.source_feedrate_m_s),
+                                                         np.asarray(reference.arrays.source_time_s))
+        # 保留既有点数组的分支索引，弧长及采样取自完整连续表达。
+        return cls(
+            sampled.positions_m, sampled.rotations, sampled.quaternions_xyzw,
+            sample.s[indices] * reference.total_length_m,
+            sample.position_d1[indices] / reference.total_length_m,
+            np.cross(sample.tool_axis[indices], sample.axis_d1[indices]) / reference.total_length_m,
+            sampled.feedrate_m_s, sampled.source_time_s, reference, identity,
+        )
+
+    def to_arrays(self) -> dict[str, np.ndarray]:
+        result = {field.name: np.asarray(getattr(self, field.name)) for field in fields(self)
+                  if field.name != "continuous_reference"}
+        if self.continuous_reference is not None:
+            result.update({f"continuous_{name}": value
+                           for name, value in self.continuous_reference.arrays._asdict().items()})
+        identity = _record_text(result["reference_identity"], "reference_identity")
+        if self.continuous_reference is None and identity:
+            raise ValueError("连续参考身份需要共同保存连续表达")
+        result.update(geometry_record_version=np.asarray(1),
+                      reference_representation=np.asarray("sampled" if self.continuous_reference is None else "continuous"),
+                      reference_geometry_sha256=np.asarray("" if self.continuous_reference is None else
+                                                          _continuous_record_digest(result, identity)))
+        return result
+
+    @classmethod
+    def from_arrays(cls, values) -> "PathGeometry":
+        identity = _record_text(values.get("reference_identity", ""), "reference_identity")
+        headers = set(values) & _GEOMETRY_RECORD_FIELDS
+        continuous = {name: np.asarray(values[f"continuous_{name}"])
+                      for name in ContinuousReferenceArrays._fields if f"continuous_{name}" in values}
+        if headers:
+            if headers != _GEOMETRY_RECORD_FIELDS or "reference_identity" not in values:
+                raise ValueError("保存的路径记录格式字段不完整")
+            version = np.asarray(values["geometry_record_version"])
+            if version.shape != () or version.dtype.kind not in "iu" or int(version) != 1:
+                raise ValueError("保存的路径记录版本无效")
+            representation = _record_text(values["reference_representation"], "reference_representation")
+            checksum = _record_text(values["reference_geometry_sha256"], "reference_geometry_sha256")
+            if representation not in ("sampled", "continuous"):
+                raise ValueError("保存的路径表示无效")
+            if representation == "continuous":
+                if len(continuous) != len(ContinuousReferenceArrays._fields):
+                    raise ValueError("保存的连续参考数组不完整")
+                if checksum != _continuous_record_digest(values, identity):
+                    raise ValueError("保存的连续表达与参考身份 SHA256 不匹配")
+            elif continuous or identity or checksum:
+                raise ValueError("采样路径记录不能携带连续参考身份或数组")
+        elif continuous or identity:
+            raise ValueError("连续路径记录需要明确的格式与身份字段")
+        expected_keys = set(_SAMPLED_GEOMETRY_FIELDS) | headers | ({"reference_identity"} if "reference_identity" in values else set())
+        expected_keys.update(f"continuous_{name}" for name in continuous)
+        if set(values) != expected_keys:
+            raise ValueError("保存的路径数组字段不匹配")
+        arguments = _validated_sampled_arrays(values)
+        reference = None
+        if continuous:
+            if any(value.dtype != np.float64 for value in continuous.values()):
+                raise ValueError("保存的连续参考需要 float64 数组")
+            data = ContinuousReferenceArrays(**continuous)
+            reference = ContinuousPathReference.build(
+                data.breaks_u, data.coefficients_m, data.projection_axes, data.projection_centres_m,
+                data.projection_radii_m, data.source_u, data.source_time_s, data.source_feedrate_m_s)
+            for name, actual, expected in zip(data._fields, data, reference.arrays):
+                if actual.shape != expected.shape or not np.allclose(actual, expected, atol=2e-13, rtol=2e-13):
+                    raise ValueError(f"保存的 {name} 与连续表达不一致")
+            expected_geometry = cls.from_continuous_reference(reference, identity=identity)
+            for name, actual in arguments.items():
+                expected = getattr(expected_geometry, name)
+                if actual.shape != expected.shape or not np.allclose(actual, expected, atol=2e-13, rtol=2e-13):
+                    raise ValueError(f"保存的 {name} 与连续参考不一致")
+        return cls(**arguments, continuous_reference=reference, reference_identity=identity)
 
     @classmethod
     def from_samples(
@@ -128,9 +263,23 @@ class PathGeometry:
         feedrate_m_s: np.ndarray,
         source_time_s: np.ndarray,
         *,
-        min_segment_m: float = 1.0e-7,
+        min_segment_m: float = _MIN_SEGMENT_M,
     ) -> "PathGeometry":
         """Build a path after removing numerically zero-length segments."""
+        geometry, _ = cls._from_samples_with_indices(positions_m, rotations, feedrate_m_s, source_time_s,
+                                                    min_segment_m=min_segment_m)
+        return geometry
+
+    @classmethod
+    def _from_samples_with_indices(
+        cls,
+        positions_m: np.ndarray,
+        rotations: np.ndarray,
+        feedrate_m_s: np.ndarray,
+        source_time_s: np.ndarray,
+        *,
+        min_segment_m: float = _MIN_SEGMENT_M,
+    ) -> tuple["PathGeometry", np.ndarray]:
         positions = np.asarray(positions_m, dtype=float)
         rotation_series = np.asarray(rotations, dtype=float)
         feedrate = np.asarray(feedrate_m_s, dtype=float).reshape(-1)
@@ -181,7 +330,7 @@ class PathGeometry:
             omega_per_m=omega_per_m,
             feedrate_m_s=feedrate,
             source_time_s=source_time,
-        )
+        ), indices
 
     @property
     def num_points(self) -> int:
@@ -197,6 +346,20 @@ class PathGeometry:
 
     def sample(self, progress_m: float) -> PathReference:
         """Interpolate one 6-D path reference at a clamped arc length."""
+        if self.continuous_reference is not None:
+            progress = float(progress_m)
+            if not np.isfinite(progress) or not 0 <= progress <= self.total_length_m:
+                raise ValueError("progress_m 必须位于连续路径内")
+            if progress >= self.total_length_m - _EPS:
+                progress = self.total_length_m
+            sample = self.continuous_reference.query(progress / self.total_length_m)
+            segment, _ = self._segment_fraction(progress)
+            return PathReference(
+                progress, sample.position_m, sample.position_d1 / self.total_length_m,
+                sample.rotation, np.cross(sample.tool_axis, sample.axis_d1) / self.total_length_m,
+                float(sample.nominal_feedrate_m_s), float(sample.source_time_interval_s[-1]),
+                segment, progress == self.total_length_m,
+            )
         progress = float(np.clip(progress_m, 0.0, self.total_length_m))
         if progress >= self.total_length_m - _EPS:
             progress = self.total_length_m
@@ -280,6 +443,15 @@ class PathGeometry:
         progress = self.arc_length_m[segment] + fractions[local] * (
             self.arc_length_m[segment + 1] - self.arc_length_m[segment]
         )
+        if self.continuous_reference is not None:
+            lower = self.arc_length_m[max(first, segment - 1)]
+            upper = self.arc_length_m[min(last, segment + 2)]
+            if half_window_m is not None:
+                lower = max(lower, centre - half_window_m, 0.)
+                upper = min(upper, centre + half_window_m, self.total_length_m)
+            progress, _, _ = refine_projection(self.continuous_reference.arrays, point,
+                                               np.clip(progress, lower, upper), lower, upper)
+            segment, _ = self._segment_fraction(float(progress))
         return float(progress), int(segment)
 
     def _segment_fraction(self, progress_m: float) -> tuple[int, float]:
@@ -695,4 +867,4 @@ def _limiting_reason(nominal: float, limits: dict[str, float], gamma: float) -> 
     if gamma <= _EPS:
         return "cross_track"
     candidates = {"nominal": nominal, **limits}
-    return min(candidates, key=candidates.get)
+    return min(candidates, key=candidates.__getitem__)

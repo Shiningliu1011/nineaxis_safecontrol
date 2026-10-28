@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-from dataclasses import fields
 import json
 import os
 from pathlib import Path
@@ -197,12 +196,11 @@ def run_experiment(args, config: ExperimentConfig) -> dict:
     source_configuration = directory / "source_configuration.yaml"
     shutil.copyfile(config.source, source_configuration)
     geometry, _ = config.load_path()
-    np.savez_compressed(directory / "path.npz", **{
-        field.name: getattr(geometry, field.name) for field in fields(geometry)
-    })
+    np.savez_compressed(directory / "path.npz", **geometry.to_arrays())
     manifest = {
         **config.manifest(), "source_sha256": _sources(config),
         "path_sha256": content_hash(directory / "path.npz"),
+        "continuous_reference_identity": geometry.reference_identity,
         "recording_format": FORMAT_VERSION,
         "cycle_timing_boundary": CYCLE_TIMING_BOUNDARY,
         "storage_budget": storage,

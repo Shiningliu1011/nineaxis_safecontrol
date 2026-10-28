@@ -115,6 +115,12 @@ class CollisionParameterArtifact:
             raise ValueError("support_merge_radius_limit_mm exceeds support_radius_limit_mm")
         if value("voxel_size_mm") * math.sqrt(3) / 2 > value("support_radius_limit_mm"):
             raise ValueError("support_radius_limit_mm cannot cover the voxel half diagonal")
+        if value("free_evidence_required_count") < 2:
+            raise ValueError("free_evidence_required_count must require independent observations")
+        if value("free_evidence_min_interval_ns") > value("free_evidence_max_gap_ns"):
+            raise ValueError("free_evidence_min_interval_ns exceeds free_evidence_max_gap_ns")
+        if value("free_evidence_max_gap_ns") > value("free_max_age_ns"):
+            raise ValueError("free_evidence_max_gap_ns exceeds free_max_age_ns")
 
         payload = {key: item for key, item in data.items() if key != "parameter_hash"}
         digest = _digest(payload)

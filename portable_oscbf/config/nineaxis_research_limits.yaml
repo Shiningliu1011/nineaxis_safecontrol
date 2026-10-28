@@ -1,0 +1,365 @@
+schema_version: 1
+revision: ninezzhou-m07-research-v1
+model_id: ninezzhou-1p8r
+joint_names: [J1, J2, J3, J4, J5, J6, J7, J8, J9]
+evidence_scope: research_simulation
+parameters:
+  joint_max_velocity:
+    quantity: joint_velocity
+    object: J1-J9
+    frame: joint_coordinates
+    value_or_bounds: [500, 120, 120, 120, 120, 120, 150, 150, 150]
+    unit: mm_deg/s
+    phases: &all_phases [initialization, entry, startup, tracking, deceleration, stopping, paused, recovery, endpoint_hold, exit, fault]
+    source: '#138 用户确认；J1 使用现有仿真，J2-J9 使用共同研究配置'
+    assumptions: [J1 传动与负载能力待现场验证, J2-J9 的整臂加减速能力待现场验证]
+    verification_state: confirmed_research
+    acquisition: ''
+  joint_max_acceleration:
+    quantity: joint_acceleration
+    object: J1-J9
+    frame: joint_coordinates
+    value_or_bounds: [5000, 120, 120, 120, 120, 120, 150, 150, 150]
+    unit: mm_deg/s^2
+    phases: *all_phases
+    source: '#138 用户确认逐轴加速度'
+    assumptions: [J1 为现有纯仿真能力假设, 全部关节需要现场加减速证据]
+    verification_state: confirmed_research
+    acquisition: ''
+  joint_max_jerk:
+    quantity: joint_jerk
+    object: J1-J9
+    frame: joint_coordinates
+    value_or_bounds: [62500, 600, 600, 600, 600, 600, 750, 750, 750]
+    unit: mm_deg/s^3
+    phases: *all_phases
+    source: '#138 用户确认逐轴 jerk；J1 保留既有仿真来源'
+    assumptions: [逐轴数组直接消费, 真实设备能力待现场测量]
+    verification_state: confirmed_research
+    acquisition: ''
+  joint_position: &model_parameter
+    quantity: joint_position
+    object: J1-J9
+    frame: joint_coordinates
+    value_or_bounds: null
+    unit: m_rad
+    phases: *all_phases
+    source: models/ninezzhou/urdf/ninezzhou.urdf
+    assumptions: [采用已验证共同模型的原始位置边界]
+    verification_state: model_derived
+    acquisition: ''
+  cbf_position_margin:
+    <<: *model_parameter
+    quantity: joint_position_cbf_margin
+    source: portable_oscbf/work/joint_limit_contract.py#JOINT_LIMIT_CBF_MARGIN
+    assumptions: [复用既有控制余量及其混合 SI 单位]
+  start_ik_position_margin:
+    <<: *model_parameter
+    quantity: start_ik_position_margin
+    source: portable_oscbf/work/joint_limit_contract.py#START_IK_MIN_JOINT_MARGIN
+    assumptions: [复用既有初始 IK 余量及其混合 SI 单位]
+  feed_max: &tcp_parameter
+    quantity: tcp_speed_and_reference_feed
+    object: TCP
+    frame: base_link
+    value_or_bounds: 60
+    unit: mm/s
+    phases: *all_phases
+    source: '#138 用户确认新 NURBS 程序共同研究上限'
+    assumptions: [最终蝴蝶及实际九轴运动需要重新验证]
+    verification_state: confirmed_research
+    acquisition: ''
+  feed_acceleration_max:
+    <<: *tcp_parameter
+    quantity: tangent_feed_time_derivative
+    value_or_bounds: 100
+    unit: mm/s^2
+  normal_acceleration_max:
+    <<: *tcp_parameter
+    quantity: path_normal_plane_acceleration
+    value_or_bounds: 300
+    unit: mm/s^2
+  feed_jerk_max:
+    <<: *tcp_parameter
+    quantity: tangent_feed_second_time_derivative
+    value_or_bounds: 16400
+    unit: mm/s^3
+  normal_jerk_max:
+    <<: *tcp_parameter
+    quantity: path_normal_plane_jerk_and_reference_curvature_proxy
+    value_or_bounds: 16400
+    unit: mm/s^3
+  source_chord_error:
+    <<: *tcp_parameter
+    quantity: source_interpolation_chord_error
+    value_or_bounds: .001
+    unit: mm
+    phases: [source_interpolation]
+  source_interpolation_period:
+    <<: *tcp_parameter
+    quantity: source_interpolation_period
+    value_or_bounds: .002
+    unit: s
+    phases: [source_interpolation]
+  source_nominal_feed:
+    <<: *tcp_parameter
+    quantity: original_butterfly_nominal_feed
+    value_or_bounds: 80
+    source: data/nurbs/ik_input.mat#original_F
+    phases: [source_nominal]
+    verification_state: source_only
+  source_nominal_normal_acceleration:
+    <<: *tcp_parameter
+    quantity: original_butterfly_nominal_normal_acceleration
+    value_or_bounds: 400
+    unit: mm/s^2
+    source: data/nurbs/ik_input.mat#original_An
+    phases: [source_nominal]
+    verification_state: source_only
+  source_geometry_scan_feed:
+    <<: *tcp_parameter
+    quantity: source_geometry_scan_feed
+    value_or_bounds: 10
+    phases: [source_geometry_scan]
+    verification_state: source_only
+  source_numeric_position_tolerance:
+    <<: *tcp_parameter
+    quantity: source_numeric_position_tolerance
+    value_or_bounds: .000001
+    unit: mm
+    phases: [source_numeric_check]
+    verification_state: source_only
+  cross_track_rms:
+    <<: *tcp_parameter
+    quantity: actual_cross_track_rms
+    value_or_bounds: .15
+    unit: mm
+    phases: [tracking]
+    source: '#138；docs/tracking_evaluation.md'
+  cross_track_p95:
+    <<: *tcp_parameter
+    quantity: actual_cross_track_p95
+    value_or_bounds: .5
+    unit: mm
+    phases: [tracking]
+    source: '#138；docs/tracking_evaluation.md'
+  cross_track_max:
+    <<: *tcp_parameter
+    quantity: actual_cross_track_max
+    value_or_bounds: 2
+    unit: mm
+    phases: [tracking]
+    source: '#138；docs/tracking_evaluation.md'
+  axis_rms:
+    <<: *tcp_parameter
+    quantity: actual_tool_axis_angle_rms
+    value_or_bounds: .05
+    unit: deg
+    phases: [tracking]
+  axis_max:
+    <<: *tcp_parameter
+    quantity: actual_tool_axis_angle_max
+    value_or_bounds: .5
+    unit: deg
+    phases: [tracking]
+  pause_position:
+    <<: *tcp_parameter
+    quantity: same_reference_position_error
+    value_or_bounds: 1
+    unit: mm
+    phases: [tracking]
+  pause_axis:
+    <<: *tcp_parameter
+    quantity: same_reference_tool_axis_angle
+    value_or_bounds: .2
+    unit: deg
+    phases: [tracking]
+  recovery_position:
+    <<: *tcp_parameter
+    quantity: recovery_position_error
+    value_or_bounds: .3
+    unit: mm
+    phases: [entry, recovery]
+  recovery_axis:
+    <<: *tcp_parameter
+    quantity: recovery_tool_axis_angle
+    value_or_bounds: .04
+    unit: deg
+    phases: [entry, recovery]
+  recovery_confirmation:
+    <<: *tcp_parameter
+    quantity: continuous_recovery_confirmation
+    value_or_bounds: .2
+    unit: s
+    phases: [recovery]
+  pause_timeout:
+    <<: *tcp_parameter
+    quantity: pause_and_recovery_wait_timeout
+    value_or_bounds: 30
+    unit: s
+    phases: [paused, recovery]
+  endpoint_position:
+    <<: *tcp_parameter
+    quantity: actual_endpoint_position_error
+    value_or_bounds: .5
+    unit: mm
+    phases: [endpoint_hold]
+  endpoint_axis:
+    <<: *tcp_parameter
+    quantity: actual_endpoint_tool_axis_angle
+    value_or_bounds: .5
+    unit: deg
+    phases: [endpoint_hold]
+  endpoint_hold:
+    <<: *tcp_parameter
+    quantity: continuous_endpoint_stopped_hold
+    value_or_bounds: .5
+    unit: s
+    phases: [endpoint_hold]
+  entry_observation:
+    <<: *tcp_parameter
+    quantity: entry_observation_duration
+    value_or_bounds: 2
+    unit: s
+    phases: [entry]
+  total_timeout:
+    <<: *tcp_parameter
+    quantity: full_run_duration_including_all_phases
+    value_or_bounds: 420
+    unit: s
+  external_clearance:
+    <<: *tcp_parameter
+    quantity: whole_robot_external_clearance
+    object: robot_links_and_tool_to_environment
+    value_or_bounds: 30
+    unit: mm
+  self_clearance:
+    <<: *tcp_parameter
+    quantity: self_collision_clearance
+    object: required_self_collision_pairs
+    value_or_bounds: 10
+    unit: mm
+  s0_path_radius:
+    <<: *tcp_parameter
+    quantity: s0_path_radius
+    object: s0_cylindrical_path
+    value_or_bounds: 270.6
+    unit: mm
+    phases: [scene_construction]
+  s0_workpiece_radius:
+    <<: *tcp_parameter
+    quantity: s0_workpiece_radius
+    object: s0_workpiece
+    value_or_bounds: 220.6
+    unit: mm
+    phases: [scene_construction]
+  s0_nominal_work_distance:
+    <<: *tcp_parameter
+    quantity: already_applied_s0_nominal_work_distance
+    object: TCP_to_s0_workpiece
+    value_or_bounds: 50
+    unit: mm
+    phases: [scene_construction]
+    assumptions: [路径已经包含工作距离, 路径资产保存已应用身份]
+  minimum_processing_feed: &missing_parameter
+    quantity: minimum_positive_processing_feed
+    object: TCP
+    frame: base_link
+    value_or_bounds: null
+    unit: mm/s
+    phases: [tracking]
+    source: '#138 工艺资料缺项'
+    assumptions: [未配置数值不参与物理比较, 请求该项验收时明确拒绝]
+    verification_state: unconfigured
+    acquisition: '#164/#165 依据工具工艺资料与现场作业试验取得'
+  tcp_acceleration_norm:
+    <<: *missing_parameter
+    quantity: full_xyz_acceleration_norm
+    unit: mm/s^2
+    phases: *all_phases
+  tcp_jerk_norm:
+    <<: *missing_parameter
+    quantity: full_xyz_jerk_norm
+    unit: mm/s^3
+    phases: *all_phases
+  workpiece_normal_speed:
+    <<: *missing_parameter
+    quantity: workpiece_normal_velocity
+    phases: *all_phases
+  tool_axis_speed:
+    <<: *missing_parameter
+    quantity: tool_axis_time_derivative_norm
+    unit: 1/s
+    phases: *all_phases
+  tool_axis_acceleration:
+    <<: *missing_parameter
+    quantity: tool_axis_second_time_derivative_norm
+    unit: 1/s^2
+    phases: *all_phases
+  tool_axis_jerk:
+    <<: *missing_parameter
+    quantity: tool_axis_third_time_derivative_norm
+    unit: 1/s^3
+    phases: *all_phases
+  angular_speed:
+    <<: *missing_parameter
+    quantity: full_rotation_angular_speed
+    unit: deg/s
+    phases: *all_phases
+  angular_acceleration:
+    <<: *missing_parameter
+    quantity: full_rotation_angular_acceleration
+    unit: deg/s^2
+    phases: *all_phases
+  angular_jerk:
+    <<: *missing_parameter
+    quantity: full_rotation_angular_jerk
+    unit: deg/s^3
+    phases: *all_phases
+  work_distance_tolerance:
+    <<: *missing_parameter
+    quantity: actual_work_distance_tolerance
+    unit: mm
+    phases: *all_phases
+  feedback_stopped:
+    <<: *missing_parameter
+    quantity: feedback_stopped_criterion
+    object: joint_feedback
+    unit: criterion
+    phases: [stopping, paused, endpoint_hold]
+    acquisition: '#142/#151/#164/#165 定义反馈停止判据并取得停车证据'
+  timing_qualification:
+    <<: *missing_parameter
+    quantity: measured_state_plan_command_and_cycle_timing
+    object: runtime
+    unit: s
+    phases: *all_phases
+    acquisition: '#142/#151/#144/#169 测量并固定状态年龄、计划与命令期限及正式周期'
+  singularity_qualification:
+    <<: *missing_parameter
+    quantity: scaled_five_dimensional_task_rank_and_singularity
+    object: five_dimensional_task
+    unit: criterion
+    phases: *all_phases
+    source: portable_oscbf/work/tool_axis_task.py；portable_oscbf/work/jax_control_facade.py
+    acquisition: '#155/#156 绑定五维任务缩放、秩条件和既有奇异性指标身份'
+  existing_position_manipulability_min:
+    <<: *tcp_parameter
+    quantity: product_of_position_jacobian_singular_values_minimum
+    object: position_jacobian
+    value_or_bounds: .005
+    unit: legacy_mixed_SI_metric
+    phases: [source_metric]
+    source: portable_oscbf/work/oscbf_velocity_config.py#singularity_tol
+    verification_state: source_only
+    assumptions: [保留既有三维位置指标的混合 SI 表达, 五维任务需要独立缩放与秩条件]
+  existing_position_manipulability_activation:
+    <<: *tcp_parameter
+    quantity: existing_position_manipulability_activation
+    object: position_jacobian
+    value_or_bounds: .05
+    unit: legacy_mixed_SI_metric
+    phases: [source_metric]
+    source: portable_oscbf/work/oscbf_velocity_config.py#singularity_activation
+    verification_state: source_only
+    assumptions: [保留既有激活阈值来源, 五维任务需要独立缩放与秩条件]

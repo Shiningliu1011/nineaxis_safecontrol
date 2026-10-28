@@ -18,6 +18,7 @@ JSON 顶层固定为 `schema_version=1`、`generator`、`input_data_hashes`、`p
 | 误差 | LiDAR 距离、入射方向、外参平移、移动关节插值使用 `mm`；LiDAR 角度、外参旋转、旋转关节插值使用 `rad` |
 | 时间 | 逐点时间误差、传输、场景准备和控制延迟使用整数 `ns` |
 | support | voxel 尺寸、support 半径上限、合并半径上限使用 `mm`；合并数量使用整数 |
+| 占据证据 | occupied/free 有效期、独立 free 最小间隔和最大连续间隔使用整数 `ns`；清除次数使用整数且至少两次，见 [射线场景](../lidar_occupancy.md) |
 | 运动范围 | 未跟踪障碍物速度和加速度上界分别使用 `mm/s` 与 `mm/s^2` |
 | 执行误差 | 命令位置误差、反馈误差和停车距离使用机器人空间包络的 `mm` 上界 |
 | 间距与响应 | environment 间距使用 `mm`；self/environment CBF 响应率使用 `s^-1` |

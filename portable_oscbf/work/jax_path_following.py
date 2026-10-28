@@ -14,10 +14,13 @@ from __future__ import annotations
 
 from typing import NamedTuple
 
+import jax
 import jax.numpy as jnp
 import numpy as np
 
 from work.path_following import PathFollowingConfig, PathGeometry
+from work.continuous_path_reference import ContinuousReferenceArrays, refine_projection
+from work.jax_continuous_reference import query_reference_jax
 
 
 _EPS = 1.0e-9
@@ -33,6 +36,7 @@ class JaxPathGeometry(NamedTuple):
     omega_per_m: jnp.ndarray
     feedrate_m_s: jnp.ndarray
     source_time_s: jnp.ndarray
+    continuous_reference: ContinuousReferenceArrays | None = None
 
 
 class JaxPathFollowingConfig(NamedTuple):
@@ -59,6 +63,7 @@ class JaxPathSample(NamedTuple):
     source_time_s: jnp.ndarray
     segment_index: jnp.ndarray
     at_endpoint: jnp.ndarray
+    valid: jnp.ndarray | bool = True
 
 
 class JaxPathAdvance(NamedTuple):
@@ -99,6 +104,8 @@ PATH_LIMIT_ENDPOINT_BRAKE = 6
 
 def as_jax_path_geometry(geometry: PathGeometry) -> JaxPathGeometry:
     """Convert validated host geometry once, before JIT warmup."""
+    if geometry.continuous_reference is not None and not jax.config.read("jax_enable_x64"):
+        raise ValueError("continuous reference 需要 jax_enable_x64=True")
     return JaxPathGeometry(
         positions_m=jnp.asarray(geometry.positions_m),
         quaternions_xyzw=jnp.asarray(geometry.quaternions_xyzw),
@@ -107,6 +114,9 @@ def as_jax_path_geometry(geometry: PathGeometry) -> JaxPathGeometry:
         omega_per_m=jnp.asarray(geometry.omega_per_m),
         feedrate_m_s=jnp.asarray(geometry.feedrate_m_s),
         source_time_s=jnp.asarray(geometry.source_time_s),
+        continuous_reference=(None if geometry.continuous_reference is None else
+                              ContinuousReferenceArrays(*(jnp.asarray(value)
+                                  for value in geometry.continuous_reference.arrays))),
     )
 
 
@@ -132,6 +142,18 @@ def initial_path_state_jax(dtype=None) -> jnp.ndarray:
 
 def sample_path_jax(geometry: JaxPathGeometry, progress_m: jnp.ndarray) -> JaxPathSample:
     """Interpolate a 6-D path reference at clamped arc-length progress."""
+    if geometry.continuous_reference is not None:
+        total = geometry.arc_length_m[-1]
+        progress = jnp.where(progress_m >= total - _EPS, total, progress_m)
+        sample = query_reference_jax(geometry.continuous_reference, progress / total)
+        segment = jnp.clip(jnp.searchsorted(geometry.arc_length_m, progress, side="right") - 1,
+                           0, geometry.positions_m.shape[0] - 2).astype(jnp.int32)
+        return JaxPathSample(
+            progress, sample.position_m, sample.position_d1 / total, sample.rotation,
+            jnp.cross(sample.tool_axis, sample.axis_d1) / total, sample.nominal_feedrate_m_s,
+            sample.source_time_interval_s[-1], segment, progress == total,
+            sample.valid & jnp.isfinite(progress_m) & (progress_m >= 0) & (progress_m <= total),
+        )
     n_segments = geometry.positions_m.shape[0] - 1
     total = geometry.arc_length_m[-1]
     progress = jnp.where(progress_m < 0.0, 0.0, progress_m)
@@ -206,6 +228,16 @@ def project_local_path_jax(geometry: JaxPathGeometry, position_m: jnp.ndarray,
     progress = geometry.arc_length_m[segment] + fractions[best] * (
         geometry.arc_length_m[segment + 1] - geometry.arc_length_m[segment]
     )
+    if geometry.continuous_reference is not None:
+        lower = geometry.arc_length_m[jnp.maximum(segments[0], segment - 1)]
+        upper = geometry.arc_length_m[jnp.minimum(segments[-1] + 1, segment + 2)]
+        if half_window_m is not None:
+            lower = jnp.maximum(lower, jnp.maximum(0., centre - half_window_m))
+            upper = jnp.minimum(upper, jnp.minimum(geometry.arc_length_m[-1], centre + half_window_m))
+        progress, _, _ = refine_projection(geometry.continuous_reference, position_m,
+                                           jnp.clip(progress, lower, upper), lower, upper, xp=jnp)
+        segment = jnp.clip(jnp.searchsorted(geometry.arc_length_m, progress, side="right") - 1,
+                           0, n_segments - 1).astype(jnp.int32)
     return progress, segment
 
 

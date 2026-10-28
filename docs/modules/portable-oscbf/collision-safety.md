@@ -4,8 +4,13 @@
 
 ## 公开操作
 
+LiDAR 原始点经[逐点时间 mesh ray self-filter](../lidar_self_filter.md) 和
+[射线占据场景](../lidar_occupancy.md) 进入同一个 `prepare_scene`。自体过滤无效、后方空间
+被遮挡或必要空间仍未知时，旧 free 覆盖同时撤销，公开准入结果保持无效。
+
 - `prepare_scene(scene, identities)` 在 host 核验完整场景副本，检查 checksum、frame、单位、固定 shape、身份、时间、覆盖、容量和 tracking。浮点输入可用 `float32` 或 `float64`；返回的不可变 `PreparedScene` 中，参与计算的数组统一为 `float64`。完整字段与失败规则见 [场景准入](scene-preparation.md)。
 - `query(query_batch, prepared_scene, query_mode)` 接受 `QueryMode.STATE_VALIDITY`、`QueryMode.OSCBF_BARRIER` 或 `QueryMode.DISTANCE_MM`。九轴状态批次形状由 `CollisionSafetyConfig.query_batch_size` 固定。
+- `QueryBatch.query_time_ns` 可提供逐行 int64 ns。带时间模型的 scene 在各行目标时间共用环境中心与范围，结果保存 `query_time_ns`；未来范围与失效规则见[动态 support](../dynamic_support.md)。
 - `certify(segment_batch, prepared_scene)` 接受固定数量的九轴区间及起止时间。
 
 `CollisionSafetyConfig.from_policy(policy)` 从已验证的 [CollisionParameterArtifact](collision-parameter-artifact.md) 读取 support、查询批次、primitive 行和区间批次容量，以及查询与证明的 deadline。配置必须绑定 policy，所有值都须与 artifact 一致。模块的 `config` 只读，artifact 与 policy 均深层不可变。
@@ -13,6 +18,16 @@
 配置包含 32 字节的 geometry、kernel 和 policy identity。`CollisionIdentities` 还包含 16 字节的 `scene_epoch`、整数 `scene_revision`、整数 `fixed_environment_revision` 和 32 字节的 `required_space_hash`。hash 与 epoch 在 JAX 边界使用 `uint8` 数组，revision 使用 `int64` 标量。场景采集、准备和有效期使用同一机器的 `time.monotonic_ns()`，运行时间使用进程内单调计时，单位均为纳秒。
 
 三个操作都核对当前 identity；已经准备的场景也必须符合当前 policy。有效 support 的 environment clearance 必须等于 artifact 中的数值，半径不能超过其上限。检查失败返回 `INVALID_SCENE` 并保持结果无效，超时仍由 `DEADLINE_MISSED` 表达。
+
+动态 source 的历史半径、增长系数和 occupied 期限还核对模块自身 policy 生成的固定数组依据。
+scene 与 `PreparedScene` 中的输入数据无法替换该依据。直接 `reachable_support_tube` 调用须显式
+提供相同的实际 policy；缺少 policy 时其有效 mask 全部为 `False`。
+
+可选 `fixed_environment_model` 保存实际固定模型的内容身份、policy、revision 和原始成员几何。
+准备与查询均验证固定 source 对模型的对应关系。固定模型属于 JAX static PyTree，成员时间和
+增长数组继续参加公共核验；零采集时间只对具有匹配模型来源的固定成员有效。
+实际固定模型的全部成员必须进入有效 source，并取得有效 group 的完整包围；旧静态布局也
+检查全部模型成员的几何覆盖。删除固定 source 或关闭其 group 会拒绝整个场景。
 
 ## 固定结果
 
@@ -52,7 +67,7 @@ python3 portable_oscbf/tests/reference/ellipsoid_dcol/generate.py --julia <julia
 
 support 的中心坐标使用米；`support_radii_mm` 表示 occupied 包络半径 `rho_mm`，`required_clearance_mm` 单独保存。Interface 集中转换为米。对局部坐标 `u = R.T @ (support - center)`，计算 `point_scale_sq = sum((u / radii)^2)` 和
 `barrier = point_scale_sq - (1 + (rho_m + required_clearance_m) / min(radii))^2`。
-`proximity_scale` 返回线性 point scale。`grad_h_q` 由共享九轴运动学求导；`partial_h_partial_t` 包含输入 support 名义速度的解析贡献。
+`proximity_scale` 返回线性 point scale。`grad_h_q` 由共享九轴运动学求导；`partial_h_partial_t` 包含 support 名义速度的解析贡献，以及半径增长产生的 `-2*beta*beta_dot`。带时间模型时，barrier 与毫米距离使用相同目标时间的中心与范围。
 
 每个有效 ellipsoid 与每个有效 support 都保留独立行。self 行之后按 geometry slot、support 输入位置排列环境行。`primitive_kind` 用 `PrimitiveKind.SELF` 与 `PrimitiveKind.ENVIRONMENT` 区分；环境 `primitive_pair_id` 保存机器人 primitive id 与 support id。未使用的 kind 为 `-1`，对应 mask 无效。活动 support id 必须非负且唯一。
 
@@ -66,6 +81,6 @@ support 的中心坐标使用米；`support_radii_mm` 表示 occupied 包络半�
 
 `nearest_pair_id` 保存 robot primitive id 与 support id；`nearest_link_index` 是 geometry artifact 的 link 顺序，`nearest_ellipsoid_slot` 是该 link 的槽位。`nearest_robot_point_m` 与 `nearest_support_point_m` 使用机器人规范坐标系和米，分别位于 ellipsoid 表面与 support sphere 表面。距离相等时按固定 primitive/support 顺序选择。
 
-`CollisionScene.support_track_status` 与 `PreparedScene.support_track_status` 为固定长度 `int32` 数组，取值 `SupportTrackStatus.UNTRACKED` 或 `SupportTrackStatus.TRACKED`。距离结果的 `track_status` 直接携带所选 support 的状态，独立于速度数值。
+`CollisionScene.support_track_status` 与 `PreparedScene.support_track_status` 为固定长度 `int32` 数组，取值 `SupportTrackStatus.UNTRACKED`、`SupportTrackStatus.TRACKED` 或 `SupportTrackStatus.MIXED`。异源合并保留逐成员 track id 与运动范围。距离结果的 `track_status` 直接携带所选 support 的状态，独立于速度数值。
 
 距离模式只启用 `distance_valid_mask`，`valid_mask`、`state_valid_mask`、`state_valid` 和 solver/barrier 命令字段保持无效。空 support 场景返回 `OK` 与无效距离 mask，数值槽位不表示已测量间距。距离模式不受 barrier 行容量限制。任一活动距离 pair 无效、scene 不健康或查询超时，距离 mask 同样无效。

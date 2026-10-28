@@ -1,0 +1,4 @@
+{"file":".trellis/spec/backend/index.md","reason":"完整质量检查入口"}
+{"file":".trellis/spec/backend/error-handling.md","reason":"数值及身份输入拒绝"}
+{"file":".trellis/spec/backend/safety-guidelines.md","reason":"仿真及物理证据边界"}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"独立验证和范围要求"}

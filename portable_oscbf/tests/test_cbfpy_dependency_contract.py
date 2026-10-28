@@ -4,10 +4,8 @@ from pathlib import Path
 
 from cbfpy import CBF, CBFConfig
 from packaging.requirements import Requirement
-
 from work.nineaxis_manipulator_jax import NineaxisManipulatorJAX
 from work.oscbf_velocity_config import NineaxisOSCBFVelocityConfig
-
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 PINNED_DEPENDENCIES = {
@@ -18,6 +16,8 @@ PINNED_DEPENDENCIES = {
     "jsonschema": "4.23.0",
     "ruckig": "0.12.2",
     "trimesh": "5.1.0",
+    "rtree": "1.4.1",
+    "urdf-parser-py": "0.0.4",
     "pymoo": "0.6.2",
 }
 CBFPY_MEMBERS = (

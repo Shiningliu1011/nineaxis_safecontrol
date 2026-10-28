@@ -1,18 +1,26 @@
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
-from enum import IntEnum
 import hashlib
 import io
 import json
 import time
-from typing import NamedTuple
+from dataclasses import asdict, dataclass, replace
+from enum import IntEnum
+from typing import NamedTuple, TypeAlias
 
 import jax
 import jax.numpy as jnp
 import numpy as np
 
 from work.collision_parameters import CollisionPolicy
+from work.dynamic_support import (
+    SupportMotionBounds,
+    SupportTimeModel,
+    run_clock_hash,
+    time_model_specs,
+    time_model_valid,
+)
+from work.fixed_environment import FixedEnvironmentModel
 
 
 class CollisionStatus(IntEnum):
@@ -30,16 +38,20 @@ class CollisionStatus(IntEnum):
 class SupportTrackStatus(IntEnum):
     UNTRACKED = 0
     TRACKED = 1
+    MIXED = 2
+
+
+SceneArray: TypeAlias = jax.Array | np.ndarray | np.generic
 
 
 class CollisionIdentities(NamedTuple):
-    scene_epoch: jax.Array
-    scene_revision: jax.Array
-    geometry_hash: jax.Array
-    kernel_version: jax.Array
-    collision_policy_hash: jax.Array
-    fixed_environment_revision: jax.Array
-    required_space_hash: jax.Array
+    scene_epoch: SceneArray
+    scene_revision: SceneArray
+    geometry_hash: SceneArray
+    kernel_version: SceneArray
+    collision_policy_hash: SceneArray
+    fixed_environment_revision: SceneArray
+    required_space_hash: SceneArray
 
 
 @dataclass(frozen=True, slots=True)
@@ -58,34 +70,36 @@ class SceneMetadata:
 
 
 class SceneTracks(NamedTuple):
-    ids: jax.Array
-    active_mask: jax.Array
-    valid_mask: jax.Array
-    velocity_m_s: jax.Array
-    acceleration_bound_m_s2: jax.Array
-    error_bound_mm: jax.Array
-    updated_stamp_ns: jax.Array
-    valid_until_ns: jax.Array
+    ids: SceneArray
+    active_mask: SceneArray
+    valid_mask: SceneArray
+    velocity_m_s: SceneArray
+    acceleration_bound_m_s2: SceneArray
+    error_bound_mm: SceneArray
+    updated_stamp_ns: SceneArray
+    valid_until_ns: SceneArray
 
 
 class CollisionScene(NamedTuple):
-    support_points_m: jax.Array
-    support_radii_mm: jax.Array
-    required_clearance_mm: jax.Array
-    support_velocity_m_s: jax.Array
-    support_ids: jax.Array
-    support_mask: jax.Array
-    source_stamp_ns: jax.Array
-    prepared_stamp_ns: jax.Array
-    status: jax.Array
-    support_track_status: jax.Array
-    support_valid_mask: jax.Array
-    support_track_ids: jax.Array
+    support_points_m: SceneArray
+    support_radii_mm: SceneArray
+    required_clearance_mm: SceneArray
+    support_velocity_m_s: SceneArray
+    support_ids: SceneArray
+    support_mask: SceneArray
+    source_stamp_ns: SceneArray
+    prepared_stamp_ns: SceneArray
+    status: SceneArray
+    support_track_status: SceneArray
+    support_valid_mask: SceneArray
+    support_track_ids: SceneArray
     tracks: SceneTracks
     identities: CollisionIdentities
-    coverage_space_hash: jax.Array
-    coverage_valid_until_ns: jax.Array
+    coverage_space_hash: SceneArray
+    coverage_valid_until_ns: SceneArray
     metadata: SceneMetadata
+    support_time_model: SupportTimeModel | None = None
+    fixed_environment_model: FixedEnvironmentModel | None = None
 
     def compute_checksum(self) -> bytes:
         # 发布者与读取者共用标准 JSON/NPY 编码，保留原始 dtype 和 shape。
@@ -95,9 +109,14 @@ class CollisionScene(NamedTuple):
             metadata, sort_keys=True, separators=(",", ":"), allow_nan=False
         ).encode("utf-8"))
         for name, value in self._asdict().items():
-            if name == "metadata":
+            if name == "metadata" or value is None:
                 continue
-            entries = value._asdict().items() if isinstance(value, tuple) else [("", value)]
+            if isinstance(value, FixedEnvironmentModel):
+                digest.update(json.dumps([name, "model_hash"]).encode("utf-8"))
+                digest.update(value.model_hash)
+                continue
+            entries = (value._asdict().items() if isinstance(value, (CollisionIdentities, SceneTracks, SupportTimeModel))
+                       else [("", value)])
             for field, array in entries:
                 digest.update(json.dumps([name, field], separators=(",", ":")).encode("utf-8"))
                 buffer = io.BytesIO()
@@ -124,6 +143,8 @@ class PreparedScene(NamedTuple):
     valid_until_ns: jax.Array
     coverage_valid_until_ns: jax.Array
     tracking_valid_until_ns: jax.Array
+    support_time_model: SupportTimeModel | None = None
+    fixed_environment_model: FixedEnvironmentModel | None = None
 
 
 def _identity_specs() -> dict:
@@ -190,10 +211,21 @@ def _snapshot(scene: CollisionScene, expected: CollisionIdentities, parameters) 
         scene.tracks, _track_specs(parameters["max_tracks"]["value"]), "scene.tracks"))
     values["identities"] = CollisionIdentities(**_copy_arrays(scene.identities, _identity_specs(), "scene.identities"))
     values["metadata"] = scene.metadata
+    if scene.fixed_environment_model is not None:
+        if not isinstance(scene.fixed_environment_model, FixedEnvironmentModel):
+            raise TypeError("scene.fixed_environment_model 必须是 FixedEnvironmentModel")
+        values["fixed_environment_model"] = replace(scene.fixed_environment_model)
+    if scene.support_time_model is not None:
+        if not isinstance(scene.support_time_model, SupportTimeModel):
+            raise TypeError("scene.support_time_model 必须是 SupportTimeModel")
+        values["support_time_model"] = SupportTimeModel(**_copy_arrays(
+            scene.support_time_model, time_model_specs(parameters["max_support_points"]["value"],
+                                                     parameters["support_merge_max_points"]["value"]),
+            "scene.support_time_model"))
     return CollisionScene(**values), CollisionIdentities(**_copy_arrays(expected, _identity_specs(), "identities"))
 
 
-def _tracks_valid(scene, now_ns, xp=np):
+def _tracks_valid(scene, now_ns, xp=np, motion_bounds=None):
     tracks = scene.tracks
     active = xp.asarray(tracks.active_mask)
     ids = xp.asarray(tracks.ids)
@@ -210,12 +242,18 @@ def _tracks_valid(scene, now_ns, xp=np):
         & (xp.asarray(scene.support_radii_mm) >= xp.asarray(tracks.error_bound_mm)[selected]),
         (association == -1) & xp.all(xp.asarray(scene.support_velocity_m_s) == 0, axis=1),
     )
+    if scene.support_time_model is not None:
+        mixed = xp.asarray(scene.support_track_status) == int(SupportTrackStatus.MIXED)
+        association_valid |= mixed & (association == -1)
+    else:
+        association_valid &= xp.asarray(scene.support_track_status) != int(SupportTrackStatus.MIXED)
+    update_limit = scene.source_stamp_ns if scene.support_time_model is None else scene.prepared_stamp_ns
     return (
         xp.all(~active | xp.asarray(tracks.valid_mask))
         & xp.all(~active | (ids >= 0))
         & ~xp.any((sorted_ids[1:] == sorted_ids[:-1]) & (sorted_ids[1:] >= 0))
         & xp.all(~active | ((xp.asarray(tracks.updated_stamp_ns) > 0)
-                            & (xp.asarray(tracks.updated_stamp_ns) <= scene.source_stamp_ns)
+                            & (xp.asarray(tracks.updated_stamp_ns) <= update_limit)
                             & (xp.asarray(tracks.valid_until_ns) >= now_ns)))
         & xp.all(xp.isfinite(tracks.velocity_m_s))
         & xp.all(xp.isfinite(tracks.acceleration_bound_m_s2))
@@ -223,6 +261,7 @@ def _tracks_valid(scene, now_ns, xp=np):
         & xp.all(xp.asarray(tracks.acceleration_bound_m_s2) >= 0)
         & xp.all(xp.asarray(tracks.error_bound_mm) >= 0)
         & xp.all(~support_active | association_valid)
+        & time_model_valid(scene, xp, motion_bounds)
     )
 
 
@@ -231,48 +270,56 @@ def _admission_status(scene: CollisionScene, expected: CollisionIdentities, poli
     metadata = scene.metadata
     parameters = policy.artifact.parameters
     identity = scene.identities
-    source, prepared = int(scene.source_stamp_ns), int(scene.prepared_stamp_ns)
+    source, prepared = int(np.asarray(scene.source_stamp_ns)), int(np.asarray(scene.prepared_stamp_ns))
+    status = int(np.asarray(scene.status))
     preparation_budget = parameters["transport_delay_ns"]["value"] + parameters["scene_preparation_delay_ns"]["value"]
     valid_until = source + preparation_budget + parameters["control_delay_ns"]["value"]
-    active = scene.support_mask
-    ids = scene.support_ids[active]
+    active = np.asarray(scene.support_mask)
+    ids = np.asarray(scene.support_ids)[active]
     valid = (
         (metadata.layout_version, metadata.frame_id, metadata.point_unit, metadata.radius_unit,
          metadata.velocity_unit, metadata.time_unit, metadata.clock_id)
         == (1, "base_link", "m", "mm", "m/s", "ns", "monotonic")
         and checksum_valid
         and all(np.array_equal(a, b) for a, b in zip(identity, expected))
-        and any(identity.scene_epoch) and int(identity.scene_revision) >= 0
-        and int(identity.fixed_environment_revision) >= 0 and any(identity.required_space_hash)
+        and np.any(identity.scene_epoch) and int(np.asarray(identity.scene_revision)) >= 0
+        and int(np.asarray(identity.fixed_environment_revision)) >= 0 and np.any(identity.required_space_hash)
         and all(np.asarray(getattr(identity, name)).tobytes() == getattr(policy, name)
                 for name in ("geometry_hash", "kernel_version", "collision_policy_hash"))
         and source > 0 and source <= prepared <= now_ns and prepared - source <= preparation_budget
         and now_ns <= valid_until <= np.iinfo(np.int64).max
-        and int(scene.status) in set(CollisionStatus)
+        and status in {int(item) for item in CollisionStatus}
         and metadata.support_count >= 0 and metadata.track_count >= 0
         and all(np.all(np.isfinite(value)) for value in (
             scene.support_points_m, scene.support_radii_mm, scene.required_clearance_mm, scene.support_velocity_m_s))
-        and np.all(scene.support_radii_mm >= 0) and np.all(scene.required_clearance_mm >= 0)
-        and np.all(scene.required_clearance_mm[active] == parameters["environment_clearance_mm"]["value"])
-        and np.all(scene.support_radii_mm[active] <= parameters["support_radius_limit_mm"]["value"])
+        and np.all(np.asarray(scene.support_radii_mm) >= 0) and np.all(np.asarray(scene.required_clearance_mm) >= 0)
+        and np.all(np.asarray(scene.required_clearance_mm)[active] == parameters["environment_clearance_mm"]["value"])
+        and np.all(np.asarray(scene.support_radii_mm)[active] <= parameters["support_radius_limit_mm"]["value"])
         and np.all(ids >= 0) and len(np.unique(ids)) == len(ids)
-        and np.all(~active | scene.support_valid_mask)
+        and np.all(~active | np.asarray(scene.support_valid_mask))
         and np.all(np.isin(scene.support_track_status, [int(item) for item in SupportTrackStatus]))
     )
     if not valid:
         return CollisionStatus.INVALID_SCENE, 0
+    if scene.support_time_model is not None:
+        model = scene.support_time_model
+        if (np.asarray(model.run_clock_hash).tobytes() != run_clock_hash(scene.identities.scene_epoch, metadata.clock_id)
+                or model.radius_limit_mm != parameters["support_radius_limit_mm"]["value"]):
+            return CollisionStatus.INVALID_SCENE, 0
     if (metadata.support_count > parameters["max_support_points"]["value"]
             or metadata.track_count > parameters["max_tracks"]["value"]):
         return CollisionStatus.CAPACITY_OVERFLOW, valid_until
     if (metadata.support_count != int(np.sum(active))
             or metadata.track_count != int(np.sum(scene.tracks.active_mask))
-            or not _tracks_valid(scene, now_ns)):
+            or not _tracks_valid(scene, now_ns, motion_bounds=SupportMotionBounds.from_policy(policy))):
         return CollisionStatus.INVALID_SCENE, valid_until
+    if status != int(CollisionStatus.OK):
+        return CollisionStatus(status), valid_until
     if (not metadata.required_space_covered
             or not np.array_equal(scene.coverage_space_hash, identity.required_space_hash)
-            or int(scene.coverage_valid_until_ns) < now_ns):
+            or int(np.asarray(scene.coverage_valid_until_ns)) < now_ns):
         return CollisionStatus.UNKNOWN_REQUIRED_SPACE, valid_until
-    return CollisionStatus(int(scene.status)), valid_until
+    return CollisionStatus(status), valid_until
 
 
 def _prepare_scene(scene: CollisionScene, identities: CollisionIdentities, policy: CollisionPolicy) -> PreparedScene:
@@ -290,6 +337,11 @@ def _prepare_scene(scene: CollisionScene, identities: CollisionIdentities, polic
         for name, (_, dtype) in _track_specs(parameters["max_tracks"]["value"]).items()
         if dtype == "float"
     }))
+    if snapshot.support_time_model is not None:
+        specs = time_model_specs(parameters["max_support_points"]["value"], parameters["support_merge_max_points"]["value"])
+        snapshot = snapshot._replace(support_time_model=snapshot.support_time_model._replace(**{
+            name: np.asarray(getattr(snapshot.support_time_model, name), dtype=np.float64)
+            for name, (_, dtype) in specs.items() if dtype == "float"}))
     status, valid_until = _admission_status(snapshot, expected, policy, time.monotonic_ns(), checksum_valid)
     tracking_until = int(np.min(np.where(snapshot.tracks.active_mask, snapshot.tracks.valid_until_ns,
                                         np.iinfo(np.int64).max)))
@@ -311,6 +363,9 @@ def _prepare_scene(scene: CollisionScene, identities: CollisionIdentities, polic
     values["valid_until_ns"] = jnp.int64(valid_until)
     values["coverage_valid_until_ns"] = device(snapshot.coverage_valid_until_ns)
     values["tracking_valid_until_ns"] = jnp.int64(tracking_until)
+    if snapshot.support_time_model is not None:
+        values["support_time_model"] = SupportTimeModel(*(device(value) for value in snapshot.support_time_model))
+    values["fixed_environment_model"] = snapshot.fixed_environment_model
     result = PreparedScene(**values)
     jax.block_until_ready(result)
     completed = time.monotonic_ns()

@@ -1,0 +1,4 @@
+{"file":".trellis/spec/backend/index.md","reason":"模块规范入口"}
+{"file":".trellis/spec/backend/safety-guidelines.md","reason":"感知覆盖与硬件边界"}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"真实接口验证"}
+{"file":".trellis/tasks/10-27-map147-mesh-self-filter/research/source-evidence.md","reason":"已有探针与依赖来源"}

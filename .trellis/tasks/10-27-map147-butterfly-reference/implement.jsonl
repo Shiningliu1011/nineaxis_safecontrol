@@ -1,0 +1,5 @@
+{"file":".trellis/spec/backend/index.md","reason":"项目规范入口"}
+{"file":".trellis/spec/backend/directory-structure.md","reason":"生成器与纯控制内核的依赖方向"}
+{"file":".trellis/spec/backend/configuration-and-generated-files.md","reason":"生成文件及安装资源"}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"真实测试及 JAX 固定形状"}
+{"file":".trellis/tasks/10-27-map147-butterfly-reference/design.md","reason":"已确认需求对应技术安排"}

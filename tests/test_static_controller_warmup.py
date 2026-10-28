@@ -5,6 +5,7 @@ import jax
 import numpy as np
 import pytest
 import rclpy
+from scipy.optimize import LinearConstraint, minimize
 
 from robot_safecontrol_moveit.static_experiment_config import ExperimentConfig
 from robot_safecontrol_moveit.static_experiment_nodes import StaticExperimentController
@@ -68,10 +69,28 @@ def test_controller_initialization_compiles_recorded_terminal_solver(tmp_path, c
                 assert candidate.solution.solution.shape == (9,)
                 assert controller.control.last_trials[0]["terminal_interval"]
                 assert "Compiling " not in capfd.readouterr().err
-                np.testing.assert_allclose(
-                    candidate.solution.solution, recorded["solution"], atol=1e-9, rtol=0.,
+                problem = candidate.solution.problem
+                matrix, vector = np.asarray(problem["P"]), np.asarray(problem["c"])
+                constraints, bounds = np.asarray(problem["G"]), np.asarray(problem["h"])
+                solution, dual = candidate.solution.solution, candidate.solution.dual
+                independent = minimize(
+                    lambda value: (.5 * value @ matrix @ value + vector @ value,
+                                   matrix @ value + vector),
+                    np.zeros_like(solution), jac=True, method="SLSQP",
+                    constraints=[LinearConstraint(constraints, -np.inf, bounds)],
+                    options={"ftol": 1e-13, "maxiter": 1000},
                 )
-                assert candidate.solution.feed_m_s == recorded["feed_m_s"]
+                assert independent.success
+                assert np.max(constraints @ solution - bounds) <= 1e-9
+                assert np.min(dual) >= -1e-8
+                assert np.max(abs(matrix @ solution + vector + constraints.T @ dual)) <= 1e-8
+                assert np.max(abs((bounds - constraints @ solution) * dual)) <= 1e-8
+                actual_cost = .5 * solution @ matrix @ solution + vector @ solution
+                assert actual_cost == pytest.approx(independent.fun, abs=1e-8)
+                remaining = controller.control.path.total_length_m - recorded["reference_progress_m"]
+                assert candidate.solution.feed_m_s == pytest.approx(
+                    remaining / config.values["control"]["period_s"], abs=1e-13,
+                )
             finally:
                 controller.destroy_node()
     finally:

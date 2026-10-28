@@ -1,0 +1,8 @@
+{"file":".trellis/spec/backend/index.md","reason":"控制内核修改的项目规范入口"}
+{"file":".trellis/spec/backend/safety-guidelines.md","reason":"感知与碰撞输入及设备边界"}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"真实测试、数据精度和文件编辑要求"}
+{"file":"docs/adr/0014-local-lidar-occupancy-scene.md","reason":"射线 occupied/free/unknown 与版本"}
+{"file":"docs/adr/0015-asymmetric-occupancy-evidence.md","reason":"独立连续 free 与证据过期"}
+{"file":"docs/adr/0017-support-point-metric-radius.md","reason":"support 误差范围与单位"}
+{"file":"docs/adr/0018-conservative-support-capacity.md","reason":"容量覆盖合并与拒绝"}
+{"file":"docs/adr/0006-continuous-obstacle-observation.md","reason":"固定模型并集及未知空间准入"}

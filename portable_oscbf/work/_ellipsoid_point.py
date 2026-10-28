@@ -93,7 +93,7 @@ def _build_environment_queries(geometry, max_iterations: int, tolerance_m: float
                            points[None, :, :] - centers[:, None, :])
         return local, centers, rotations
 
-    def barrier_state(q, points, rho_m, clearance_m, velocity):
+    def barrier_state(q, points, rho_m, clearance_m, velocity, radius_rate_m_s):
         def square(q):
             local, _, _ = local_points(q, points)
             return jnp.sum((local / radii[:, None, :]) ** 2, axis=-1)
@@ -104,6 +104,8 @@ def _build_environment_queries(geometry, max_iterations: int, tolerance_m: float
         local_velocity = jnp.einsum("gji,sj->gsi", rotations, velocity)
         time_derivative = 2.0 * jnp.sum(local * local_velocity / radii[:, None, :] ** 2, axis=-1)
         margin = 1.0 + (rho_m + clearance_m)[None, :] / jnp.min(radii, axis=-1)[:, None]
+        margin_rate = radius_rate_m_s[None, :] / jnp.min(radii, axis=-1)[:, None]
+        time_derivative -= 2.0 * margin * margin_rate
         barrier = scale_sq - margin ** 2
         healthy = (jnp.isfinite(barrier) & jnp.isfinite(scale_sq) & jnp.isfinite(time_derivative)
                    & jnp.all(jnp.isfinite(gradient), axis=-1))
@@ -124,5 +126,5 @@ def _build_environment_queries(geometry, max_iterations: int, tolerance_m: float
                     & jnp.all(jnp.isfinite(support_point), axis=-1))
         return _PointDistance(distance, robot_point, support_point, healthy)
 
-    return (jax.jit(jax.vmap(barrier_state, in_axes=(0, None, None, None, None))),
-            jax.jit(jax.vmap(distance_state, in_axes=(0, None, None))))
+    return (jax.jit(jax.vmap(barrier_state, in_axes=(0, 0, 0, None, None, 0))),
+            jax.jit(jax.vmap(distance_state, in_axes=(0, 0, 0))))

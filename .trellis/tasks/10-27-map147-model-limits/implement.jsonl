@@ -1,0 +1,7 @@
+{"file":".trellis/spec/backend/index.md","reason":"内核项目规范入口"}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"真实公开接口验证与精度"}
+{"file":".trellis/spec/backend/configuration-and-generated-files.md","reason":"版本配置、来源与生成链"}
+{"file":"docs/units.md","reason":"mm/degree 与 SI 计算边界"}
+{"file":"docs/domain/robot.md","reason":"九轴关节与 base_link 坐标"}
+{"file":".trellis/tasks/10-27-map147-model-limits/research/model-and-limits-sources.md","reason":"已确认需求、真实模型、工具导数和检查边界"}
+{"file":".trellis/tasks/10-27-map147-model-limits/research/parser-installation.md","reason":"成熟格式库与独立离线安装证据"}

@@ -34,7 +34,7 @@ def _resources(config):
     plant = config.plant_parameters()
     planner = MotionPlanner(
         limits["lower"], limits["upper"], limits["max_velocity"], limits["max_acceleration"],
-        jerk_time=plant["jerk_time"], minimum_duration_s=plant["minimum_duration_s"],
+        max_jerk=limits["max_jerk"], minimum_duration_s=plant["minimum_duration_s"],
     )
     return config.load_path()[0], StaticGeometry(config.scene()), planner
 

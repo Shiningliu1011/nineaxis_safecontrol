@@ -75,7 +75,7 @@ def moving_reference_terms_jax(
         error, jacobian.reshape(-1), reference_rate, jnp.atleast_1d(angle),
     ])))
     # 完全反向的球面方向没有唯一导数，交由执行边界报告任务无效。
-    valid = finite & (cosine > -1 + 1e-9) & (
+    valid = sample.valid & finite & (cosine > -1 + 1e-9) & (
         jnp.abs(jnp.dot(current_axis, current_axis) - 1) < 1e-8
     )
     return MovingReferenceTerms(

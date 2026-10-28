@@ -211,7 +211,7 @@ def test_wrong_shapes_and_dtypes_raise_before_scene_preparation(module, group):
     record = scene if group is None else getattr(scene, group)
     arrays = record._asdict()
     for field, original in arrays.items():
-        if field in ("tracks", "identities", "metadata"):
+        if field in ("tracks", "identities", "metadata", "support_time_model", "fixed_environment_model"):
             continue
         for value, error in [(np.zeros((5, 2), dtype=np.asarray(original).dtype), ValueError),
                              (np.asarray(original).astype(np.complex128), TypeError)]:
@@ -219,6 +219,13 @@ def test_wrong_shapes_and_dtypes_raise_before_scene_preparation(module, group):
             bad = changed if group is None else scene._replace(**{group: changed})
             with pytest.raises(error, match=field):
                 module.prepare_scene(bad, scene.identities)
+
+
+@pytest.mark.parametrize("value", [object(), np.zeros((5, 2)), "unverified-model"])
+def test_fixed_model_input_requires_verified_model_type(module, value):
+    scene = _input(module)
+    with pytest.raises(TypeError, match="fixed_environment_model"):
+        module.prepare_scene(scene._replace(fixed_environment_model=value), scene.identities)
 
 
 def test_float32_conversion_and_deep_immutability(module):

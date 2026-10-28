@@ -11,7 +11,6 @@ vendored ``dpax``) to ``sys.path`` before importing ``work``.
 from __future__ import annotations
 
 import time
-from dataclasses import replace
 from pathlib import Path
 from threading import Lock
 from typing import List, Optional, Sequence, TYPE_CHECKING
@@ -385,7 +384,7 @@ class OscbfController(Node):
         from work.jax_control_facade import JaxControlLoop
         from work.nineaxis_manipulator_jax import NineaxisManipulatorJAX
         from work.nullspace_policy import ManipulabilityGradientPolicy
-        from work.path_following import PathFollowingConfig
+        from work.path_following import PathFollowingConfig, PathGeometry
         import jax
 
         # Optional policy construction also creates JAX robot constants.
@@ -422,7 +421,7 @@ class OscbfController(Node):
                 "orientation_mode must be 'fixed' or 'surface_normal', "
                 f"got {orientation_mode!r}"
             )
-        geometry = trajectory.path_geometry()
+        geometry = trajectory.path_geometry(require_continuous=orientation_mode == "surface_normal")
 
         policy = None
         if bool(self._runtime_config["use_nullspace_policy"]):
@@ -457,9 +456,9 @@ class OscbfController(Node):
         self._evaluation_path_dtype = str(arrays["arc_length_m"].dtype)
         # Widen the actual kernel values losslessly for host projection. This
         # also binds explicit float32 runs to their real quantized path length.
-        self._evaluation_geometry = replace(geometry, **{
-            name: np.asarray(value, dtype=float) for name, value in arrays.items()
-        })
+        evaluation_arrays = geometry.to_arrays()
+        evaluation_arrays.update({name: np.asarray(value, dtype=float) for name, value in arrays.items()})
+        self._evaluation_geometry = PathGeometry.from_arrays(evaluation_arrays)
         self._evaluation_geometry_hash = sha256_bytes(b"".join(
             np.asarray(arrays[name], dtype="<f8").tobytes() for name in sorted(arrays)
         ))

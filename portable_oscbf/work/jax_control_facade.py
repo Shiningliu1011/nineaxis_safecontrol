@@ -290,8 +290,13 @@ class JaxControlLoop:
         """Startup snapshot of the exact arrays captured by the path kernel."""
         if self._path_geometry is None:
             raise RuntimeError('configure_path() must run before path_geometry_arrays()')
-        return {name: np.array(value, copy=True)
-                for name, value in self._path_geometry._asdict().items()}
+        arrays = {name: np.array(value, copy=True)
+                  for name, value in self._path_geometry._asdict().items()
+                  if name != "continuous_reference"}
+        if self._path_geometry.continuous_reference is not None:
+            arrays.update({f"continuous_{name}": np.array(value, copy=True)
+                           for name, value in self._path_geometry.continuous_reference._asdict().items()})
+        return arrays
 
     @property
     def path_is_configured(self) -> bool:

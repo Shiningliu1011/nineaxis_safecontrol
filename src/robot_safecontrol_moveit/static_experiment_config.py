@@ -285,7 +285,7 @@ class ExperimentConfig:
             axis_point=profile.get("cylinder_center") or None,
             radius_m=self.path_radius_m,
         )
-        geometry = trajectory.path_geometry()
+        geometry = trajectory.path_geometry(require_continuous=True)
         return geometry, {
             "center_m": trajectory.surface_centre.tolist(),
             "axis": trajectory.surface_axis.tolist(),

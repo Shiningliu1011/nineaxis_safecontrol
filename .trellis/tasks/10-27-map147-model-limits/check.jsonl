@@ -1,0 +1,6 @@
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"质量与真实测试检查"}
+{"file":".trellis/spec/backend/safety-guidelines.md","reason":"仿真与真实设备证据边界"}
+{"file":".trellis/spec/guides/code-reuse-thinking-guide.md","reason":"共同模型、单位和配置消费者"}
+{"file":"docs/units.md","reason":"一至三阶单位与展示换算"}
+{"file":".trellis/tasks/10-27-map147-model-limits/research/model-and-limits-sources.md","reason":"已确认边界和独立模型、导数、运动验证"}
+{"file":".trellis/tasks/10-27-map147-model-limits/research/parser-installation.md","reason":"独立解析库安装与导入证据"}

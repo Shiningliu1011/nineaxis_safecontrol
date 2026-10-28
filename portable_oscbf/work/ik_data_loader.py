@@ -12,11 +12,14 @@ import numpy as np
 from scipy.spatial.transform import Rotation as R, Slerp
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple
 
 import yaml
 
 from work.actuator_limits import JOINT_NAMES
+
+if TYPE_CHECKING:
+    from work.nineaxis_kinematics import NineaxisKinematics
 
 
 def load_kinematics_config(config_yaml_path: str | Path) -> dict:
@@ -148,6 +151,11 @@ class IKTrajectoryData:
         import scipy.io as sio
         mat = sio.loadmat(mat_path)
         data = mat['ik_input'][0, 0]
+
+        self.mat_path = Path(mat_path).resolve()
+        self.feedrate_scale = float(feedrate_scale)
+        self.projection_stages: list[dict[str, np.ndarray | float]] = []
+        self._continuous_reference_bundle = None
 
         self.Ts = float(data['Ts'][0, 0])           # 采样周期 (s)
         self.num_points = int(data['num_points'][0, 0])
@@ -402,6 +410,7 @@ class IKTrajectoryData:
         # Path geometry contains the orientation series and must be rebuilt
         # whenever the public orientation mode changes.
         self._path_geometry = None
+        self._continuous_reference_bundle = None
         return self
 
     def set_surface_normal_orientation(
@@ -473,6 +482,7 @@ class IKTrajectoryData:
         self._R_des_series = frames
         self._omega_series = self._compute_angular_velocity()
         self._path_geometry = None
+        self._continuous_reference_bundle = None
 
     def _fit_surface_axis_point(self, axis: np.ndarray) -> np.ndarray:
         """Fit one point on the cylinder axis from the loaded world points.
@@ -527,6 +537,11 @@ class IKTrajectoryData:
         vectors get their radial component projected off so they stay tangent
         to the surface.
         """
+        self.projection_stages.append({
+            "axis": np.asarray(axis, dtype=float).copy(),
+            "centre_m": np.asarray(centre, dtype=float).copy(),
+            "radius_m": float(radius),
+        })
         relative = self._pos_world - centre
         axial = np.outer(relative @ axis, axis)
         radial = relative - axial
@@ -703,15 +718,89 @@ class IKTrajectoryData:
     def angular_velocity_at(self, t: float) -> np.ndarray:
         return self._omega_series[self._time_to_idx(t)]
 
-    def path_geometry(self):
+    def attach_continuous_reference(self, bundle_path) -> None:
+        from hashlib import sha256
+        from work.continuous_path_reference import load_reference_bundle
+        from work import kinematics_data
+
+        bundle = load_reference_bundle(bundle_path, expected_source_sha256=sha256(self.mat_path.read_bytes()).hexdigest())
+        description = bundle.manifest["description"]
+        if description["model_identity"]["kinematics_data_sha256"] != sha256(Path(kinematics_data.__file__).read_bytes()).hexdigest():
+            raise ValueError("continuous reference 的 model 身份不匹配")
+        if self.orientation_mode != "surface_normal" or len(self.projection_stages) != 2:
+            raise ValueError("continuous reference 需要完整的两次圆柱投影和 surface_normal")
+        actual = (self.T_traj_to_base, np.array([stage["axis"] for stage in self.projection_stages]),
+                  np.array([stage["centre_m"] for stage in self.projection_stages]),
+                  np.array([stage["radius_m"] for stage in self.projection_stages]))
+        expected = tuple(np.asarray(description[key]) for key in
+                         ("transform", "projection_axes", "projection_centres_m", "projection_radii_m"))
+        if any(value.shape != target.shape or not np.allclose(value, target, atol=2e-14, rtol=0)
+               for value, target in zip(actual, expected)):
+            raise ValueError("continuous reference 的变换或圆柱身份不匹配")
+        self._continuous_reference_bundle = bundle
+        self._path_geometry = None
+
+    def _find_continuous_reference(self, *, required=False):
+        from hashlib import sha256
+        import json
+
+        if self.orientation_mode != "surface_normal":
+            if required:
+                raise ValueError("连续蝴蝶参考需要 surface_normal")
+            return
+        if self._continuous_reference_bundle is not None:
+            return
+        roots = (self.mat_path.parent / "butterfly_reference_v1",
+                 Path(__file__).resolve().parents[2] / "data/nurbs/butterfly_reference_v1")
+        digest = sha256(self.mat_path.read_bytes()).hexdigest()
+        matches_source = False
+        found_manifest = False
+        for root in dict.fromkeys(roots):
+            for manifest_path in sorted(root.glob("*/manifest.json")):
+                found_manifest = True
+                description = json.loads(manifest_path.read_text())["description"]
+                if description["source_sha256"]["ik_input.mat"] != digest:
+                    continue
+                matches_source = True
+                actual = np.array([stage["radius_m"] for stage in self.projection_stages])
+                expected = np.asarray(description["projection_radii_m"])
+                if actual.shape == expected.shape and np.allclose(actual, expected, atol=2e-14, rtol=0):
+                    self.attach_continuous_reference(manifest_path.parent)
+                    return
+        if matches_source:
+            raise ValueError("当前蝴蝶圆柱身份缺少匹配的 continuous reference，请生成相应版本文件")
+        if required:
+            if found_manifest:
+                raise ValueError("continuous reference source 身份无匹配版本")
+            raise FileNotFoundError(f"continuous reference 版本文件缺失：{roots[0]}")
+
+    def path_geometry(self, *, require_continuous=None):
         """Return the shared arc-length geometry for path-following control.
 
         The result is cached after orientation construction.  It uses the
         already transformed world-frame samples, so callers must not apply the
         trajectory-to-base transform a second time.
         """
+        required = self.orientation_mode == "surface_normal" if require_continuous is None else bool(require_continuous)
+        if required and self.orientation_mode != "surface_normal":
+            raise ValueError("连续蝴蝶参考需要 surface_normal")
+        if required and self._path_geometry is not None and self._path_geometry.continuous_reference is None:
+            self._path_geometry = None
         if self._path_geometry is None:
             from work.path_following import PathGeometry
+
+            self._find_continuous_reference(required=required)
+            if self._continuous_reference_bundle is not None:
+                from work.continuous_path_reference import ContinuousPathReference
+
+                reference = self._continuous_reference_bundle.reference
+                feedrate = self._feedrate.copy()
+                feedrate.flags.writeable = False
+                reference = ContinuousPathReference(reference.arrays._replace(source_feedrate_m_s=feedrate),
+                                                    reference.minimum_speed_m_per_u)
+                self._path_geometry = PathGeometry.from_continuous_reference(
+                    reference, identity=self._continuous_reference_bundle.manifest["identity"])
+                return self._path_geometry
 
             self._path_geometry = PathGeometry.from_samples(
                 self._pos_world,

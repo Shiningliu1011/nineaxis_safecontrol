@@ -1,24 +1,47 @@
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass
 from enum import IntEnum
 from functools import partial
-import time
 from typing import NamedTuple
 
 import jax
 import jax.numpy as jnp
 import numpy as np
 
-from work.kinematics_data import N_JOINTS
-from work.collision_parameters import CollisionPolicy
 from work._collision_geometry import _SelfGeometry
+from work._collision_scene import (
+    CollisionIdentities,
+    CollisionScene,
+    CollisionStatus,
+    PreparedScene,
+    SceneMetadata,
+    SceneTracks,
+    SupportTrackStatus,
+    _identity_specs,
+    _prepare_scene,
+    _track_specs,
+    _tracks_valid,
+)
 from work._ellipsoid_dcol import _build_self_query
 from work._ellipsoid_point import _build_environment_queries
-from work._collision_scene import (
-    CollisionIdentities, CollisionScene, CollisionStatus, PreparedScene, SceneMetadata,
-    SceneTracks, SupportTrackStatus, _identity_specs, _prepare_scene, _track_specs, _tracks_valid,
+from work.collision_parameters import CollisionPolicy
+from work.dynamic_support import (
+    SupportMotionBounds,
+    SupportTimeModel,
+    evaluate_support_time,
+    run_clock_hash,
+    time_model_specs,
 )
+from work.fixed_environment import FixedEnvironmentModel
+from work.kinematics_data import N_JOINTS
+
+__all__ = [
+    "CollisionIdentities", "CollisionSafety", "CollisionSafetyConfig", "CollisionScene", "CollisionStatus",
+    "PreparedScene", "PrimitiveKind", "QueryBatch", "QueryMode", "QueryResult", "ResultHeader",
+    "SceneMetadata", "SceneTracks", "SegmentBatch", "SegmentCertificateBatch", "SupportTrackStatus",
+]
 
 
 class QueryMode(IntEnum):
@@ -88,6 +111,7 @@ class CollisionSafetyConfig:
 class QueryBatch(NamedTuple):
     q: jax.Array
     active_mask: jax.Array
+    query_time_ns: jax.Array | None = None
 
 
 class SegmentBatch(NamedTuple):
@@ -141,6 +165,7 @@ class QueryResult(NamedTuple):
     nearest_robot_point_m: jax.Array
     nearest_support_point_m: jax.Array
     track_status: jax.Array
+    query_time_ns: jax.Array
 
 
 class SegmentCertificateBatch(NamedTuple):
@@ -170,6 +195,7 @@ class CollisionSafety:
         if not jax.config.jax_enable_x64:
             raise RuntimeError("CollisionSafety requires JAX x64")
         self._config = config
+        self._motion_bounds = SupportMotionBounds.from_policy(config.policy, jnp)
         self._geometry_hash = jnp.asarray(np.frombuffer(config.geometry_hash, dtype=np.uint8))
         self._kernel_version = jnp.asarray(np.frombuffer(config.kernel_version, dtype=np.uint8))
         self._collision_policy_hash = jnp.asarray(
@@ -216,43 +242,63 @@ class CollisionSafety:
         if not bool(np.all(np.isfinite(np.asarray(q)))):
             raise ValueError("query_batch.q must be finite")
         started_ns = time.monotonic_ns()
+        times = (jnp.full((count,), started_ns, dtype=jnp.int64) if query_batch.query_time_ns is None else
+                 _array(query_batch.query_time_ns, "query_batch.query_time_ns", (count,), (jnp.dtype("int64"),)))
+        if np.any(np.asarray(times) <= 0):
+            raise ValueError("query_batch.query_time_ns 必须使用正数 monotonic int64 ns")
         scene_status = self._scene_status(prepared_scene)
-        status = scene_status if scene_status is not CollisionStatus.OK else CollisionStatus.SOLVER_UNHEALTHY
+        if scene_status is CollisionStatus.OK:
+            model = prepared_scene.support_time_model
+            active_times = np.asarray(times)[np.asarray(active)]
+            if model is None:
+                if query_batch.query_time_ns is not None:
+                    scene_status = CollisionStatus.UNKNOWN_REQUIRED_SPACE
+            elif (np.any(active_times < int(np.asarray(model.reference_stamp_ns)))
+                  or np.any(active_times > int(prepared_scene.coverage_valid_until_ns))
+                  or np.any(active_times[:, None] > np.asarray(model.valid_until_ns)[np.asarray(prepared_scene.support_mask)])):
+                scene_status = CollisionStatus.UNKNOWN_REQUIRED_SPACE
+            else:
+                _, future_radii, _ = evaluate_support_time(prepared_scene, np.asarray(times), np)
+                if np.any((future_radii > self.config.policy.artifact.parameters["support_radius_limit_mm"]["value"])
+                          & np.asarray(active)[:, None] & np.asarray(prepared_scene.support_mask)[None, :]):
+                    scene_status = CollisionStatus.CAPACITY_OVERFLOW
+        status: CollisionStatus = scene_status if scene_status is not CollisionStatus.OK else CollisionStatus.SOLVER_UNHEALTHY
         rows = self.config.max_primitive_rows
         batch = count
-        result_fields = dict(
-            query_mode=jnp.asarray(int(query_mode), dtype=jnp.int32),
-            state_valid_mask=jnp.zeros((batch,), dtype=jnp.bool_),
-            state_valid=jnp.zeros((batch,), dtype=jnp.bool_),
-            valid_mask=jnp.zeros((batch, rows), dtype=jnp.bool_),
-            barrier=jnp.zeros((batch, rows), dtype=jnp.float64),
-            grad_h_q=jnp.zeros((batch, rows, N_JOINTS), dtype=jnp.float64),
-            partial_h_partial_t=jnp.zeros((batch, rows), dtype=jnp.float64),
-            proximity_scale=jnp.zeros((batch, rows), dtype=jnp.float64),
-            primitive_pair_id=jnp.zeros((batch, rows, 2), dtype=jnp.int32),
-            primitive_kind=jnp.full((batch, rows), -1, dtype=jnp.int32),
-            solver_primal_residual=jnp.zeros((batch, rows), dtype=jnp.float64),
-            solver_dual_residual=jnp.zeros((batch, rows), dtype=jnp.float64),
-            solver_iteration=jnp.zeros((batch, rows), dtype=jnp.int32),
-            solver_healthy=jnp.zeros((batch, rows), dtype=jnp.bool_),
-            distance_valid_mask=jnp.zeros((batch,), dtype=jnp.bool_),
-            distance_mm=jnp.zeros((batch,), dtype=jnp.float64),
-            required_clearance_mm=jnp.zeros((batch,), dtype=jnp.float64),
-            remaining_margin_mm=jnp.zeros((batch,), dtype=jnp.float64),
-            nearest_pair_id=jnp.zeros((batch, 2), dtype=jnp.int32),
-            nearest_link_index=jnp.zeros((batch,), dtype=jnp.int32),
-            nearest_ellipsoid_slot=jnp.zeros((batch,), dtype=jnp.int32),
-            nearest_robot_point_m=jnp.zeros((batch, 3), dtype=jnp.float64),
-            nearest_support_point_m=jnp.zeros((batch, 3), dtype=jnp.float64),
-            track_status=jnp.zeros((batch,), dtype=jnp.int32),
-        )
+        result_fields = {
+            "query_mode": jnp.asarray(int(query_mode), dtype=jnp.int32),
+            "state_valid_mask": jnp.zeros((batch,), dtype=jnp.bool_),
+            "state_valid": jnp.zeros((batch,), dtype=jnp.bool_),
+            "valid_mask": jnp.zeros((batch, rows), dtype=jnp.bool_),
+            "barrier": jnp.zeros((batch, rows), dtype=jnp.float64),
+            "grad_h_q": jnp.zeros((batch, rows, N_JOINTS), dtype=jnp.float64),
+            "partial_h_partial_t": jnp.zeros((batch, rows), dtype=jnp.float64),
+            "proximity_scale": jnp.zeros((batch, rows), dtype=jnp.float64),
+            "primitive_pair_id": jnp.zeros((batch, rows, 2), dtype=jnp.int32),
+            "primitive_kind": jnp.full((batch, rows), -1, dtype=jnp.int32),
+            "solver_primal_residual": jnp.zeros((batch, rows), dtype=jnp.float64),
+            "solver_dual_residual": jnp.zeros((batch, rows), dtype=jnp.float64),
+            "solver_iteration": jnp.zeros((batch, rows), dtype=jnp.int32),
+            "solver_healthy": jnp.zeros((batch, rows), dtype=jnp.bool_),
+            "distance_valid_mask": jnp.zeros((batch,), dtype=jnp.bool_),
+            "distance_mm": jnp.zeros((batch,), dtype=jnp.float64),
+            "required_clearance_mm": jnp.zeros((batch,), dtype=jnp.float64),
+            "remaining_margin_mm": jnp.zeros((batch,), dtype=jnp.float64),
+            "nearest_pair_id": jnp.zeros((batch, 2), dtype=jnp.int32),
+            "nearest_link_index": jnp.zeros((batch,), dtype=jnp.int32),
+            "nearest_ellipsoid_slot": jnp.zeros((batch,), dtype=jnp.int32),
+            "nearest_robot_point_m": jnp.zeros((batch, 3), dtype=jnp.float64),
+            "nearest_support_point_m": jnp.zeros((batch, 3), dtype=jnp.float64),
+            "track_status": jnp.zeros((batch,), dtype=jnp.int32),
+            "query_time_ns": times,
+        }
         if (scene_status is CollisionStatus.OK and self._self_query is not None
                 and query_mode is not QueryMode.DISTANCE_MM):
-            barrier_status, result_fields = self._barrier_payload(q, active, prepared_scene, result_fields)
+            barrier_status, result_fields = self._barrier_payload(q, active, prepared_scene, times, result_fields)
             status = CollisionStatus(int(barrier_status))
         elif (scene_status is CollisionStatus.OK and self._distance_query is not None
               and query_mode is QueryMode.DISTANCE_MM):
-            distance_status, result_fields = self._distance_payload(q, active, prepared_scene, result_fields)
+            distance_status, result_fields = self._distance_payload(q, active, prepared_scene, times, result_fields)
             status = CollisionStatus(int(distance_status))
         jax.block_until_ready(result_fields)
         if status is CollisionStatus.OK:
@@ -276,8 +322,9 @@ class CollisionSafety:
         return QueryResult(header=header, **result_fields)
 
     @partial(jax.jit, static_argnums=0)
-    def _barrier_payload(self, q, active, scene, fields):
+    def _barrier_payload(self, q, active, scene, query_times, fields):
         geometry = self._self_geometry
+        assert geometry is not None and self._self_query is not None
         batch = self.config.query_batch_size
         solved, gradient = self._self_query(q)
         n = geometry.pairs.shape[0]
@@ -294,7 +341,7 @@ class CollisionSafety:
             fields[name] = fields[name].at[:, :n].set(value)
         environment_complete, overflow, environment_safe, fields = jax.lax.cond(
             jnp.any(scene.support_mask),
-            lambda fields: self._environment_payload(q, active, scene, fields, n),
+            lambda fields: self._environment_payload(q, active, scene, query_times, fields, n),
             lambda fields: (jnp.bool_(True), jnp.bool_(False), jnp.ones(batch, dtype=jnp.bool_), fields),
             fields,
         )
@@ -306,19 +353,21 @@ class CollisionSafety:
         fields["state_valid"] = active & jnp.all(barrier >= 0.0, axis=1) & environment_safe
         return status, fields
 
-    @partial(jax.jit, static_argnums=(0, 5))
-    def _environment_payload(self, q, active, scene, fields, offset):
+    @partial(jax.jit, static_argnums=(0, 6))
+    def _environment_payload(self, q, active, scene, query_times, fields, offset):
         batch = self.config.query_batch_size
         geometry = self._self_geometry
+        assert geometry is not None and self._environment_query is not None
         support_count = self.config.max_support_points
         pair_mask = jnp.broadcast_to(scene.support_mask, (geometry.active_ids.size, support_count)).ravel()
         count = jnp.sum(pair_mask)
         capacity = self.config.max_primitive_rows - offset
         support_limit = self.config.policy.artifact.parameters["max_environment_pairs_per_ellipsoid"]["value"]
         overflow = (count > capacity) | (jnp.sum(scene.support_mask) > support_limit)
+        points, radii, radius_rates = evaluate_support_time(scene, query_times)
         solved = self._environment_query(
-            q, scene.support_points_m, scene.support_radii_mm * 1e-3,
-            scene.required_clearance_mm * 1e-3, scene.support_velocity_m_s,
+            q, points, radii * 1e-3,
+            scene.required_clearance_mm * 1e-3, scene.support_velocity_m_s, radius_rates * 1e-3,
         )
         healthy = solved.healthy.reshape((batch, -1))
         complete = jnp.all(~active[:, None] | ~pair_mask[None, :] | healthy)
@@ -343,8 +392,10 @@ class CollisionSafety:
         return complete, overflow, safe, fields
 
     @partial(jax.jit, static_argnums=0)
-    def _distance_payload(self, q, active, scene, fields):
-        solved = self._distance_query(q, scene.support_points_m, scene.support_radii_mm * 1e-3)
+    def _distance_payload(self, q, active, scene, query_times, fields):
+        assert self._distance_query is not None and self._self_geometry is not None
+        points, radii, _ = evaluate_support_time(scene, query_times)
+        solved = self._distance_query(q, points, radii * 1e-3)
         pair_mask = jnp.broadcast_to(scene.support_mask, solved.distance.shape)
         complete = jnp.all(~active[:, None, None] | ~pair_mask | solved.healthy)
         measured = jnp.any(scene.support_mask)
@@ -405,13 +456,13 @@ class CollisionSafety:
         started_ns = time.monotonic_ns()
         scene_status = self._scene_status(prepared_scene)
         status = scene_status if scene_status is not CollisionStatus.OK else CollisionStatus.CERTIFICATE_FAILED
-        result_fields = dict(
-            valid_mask=jnp.zeros((count,), dtype=jnp.bool_),
-            certified_mask=jnp.zeros((count,), dtype=jnp.bool_),
-            lower_bound=jnp.zeros((count,), dtype=jnp.float64),
-            bisection_depth=jnp.zeros((count,), dtype=jnp.int32),
-            failure_interval_s=jnp.zeros((count, 2), dtype=jnp.float64),
-        )
+        result_fields = {
+            "valid_mask": jnp.zeros((count,), dtype=jnp.bool_),
+            "certified_mask": jnp.zeros((count,), dtype=jnp.bool_),
+            "lower_bound": jnp.zeros((count,), dtype=jnp.float64),
+            "bisection_depth": jnp.zeros((count,), dtype=jnp.int32),
+            "failure_interval_s": jnp.zeros((count, 2), dtype=jnp.float64),
+        }
         completed_ns = time.monotonic_ns()
         header = self._header(
             status, prepared_scene.identities, prepared_scene.source_stamp_ns,
@@ -422,7 +473,18 @@ class CollisionSafety:
     def _validate_prepared_scene(self, prepared_scene: PreparedScene) -> None:
         if not isinstance(prepared_scene, PreparedScene):
             raise TypeError("prepared_scene must be PreparedScene")
+        if prepared_scene.fixed_environment_model is not None:
+            if not isinstance(prepared_scene.fixed_environment_model, FixedEnvironmentModel):
+                raise TypeError("prepared_scene.fixed_environment_model 必须是 FixedEnvironmentModel")
+            prepared_scene.fixed_environment_model.verify_identity()
         count = self.config.max_support_points
+        if prepared_scene.support_time_model is not None:
+            if not isinstance(prepared_scene.support_time_model, SupportTimeModel):
+                raise TypeError("prepared_scene.support_time_model 必须是 SupportTimeModel")
+            specs = time_model_specs(count, self.config.policy.artifact.parameters["support_merge_max_points"]["value"])
+            for name, (shape, dtype) in specs.items():
+                _array(getattr(prepared_scene.support_time_model, name), f"prepared_scene.support_time_model.{name}",
+                       shape, (jnp.dtype("float64" if dtype == "float" else dtype),))
         _array(
             prepared_scene.support_points_m,
             "prepared_scene.support_points_m",
@@ -533,8 +595,8 @@ class CollisionSafety:
             & (scene.source_stamp_ns > 0)
             & (scene.prepared_stamp_ns >= scene.source_stamp_ns)
             & jnp.any(identities.scene_epoch != 0)
-            & (identities.scene_revision >= 0)
-            & (identities.fixed_environment_revision >= 0)
+            & (jnp.asarray(identities.scene_revision) >= 0)
+            & (jnp.asarray(identities.fixed_environment_revision) >= 0)
             & jnp.any(identities.required_space_hash != 0)
             & jnp.array_equal(identities.geometry_hash, self._geometry_hash)
             & jnp.array_equal(identities.kernel_version, self._kernel_version)
@@ -549,11 +611,17 @@ class CollisionSafety:
                 | (scene.support_radii_mm <= parameters["support_radius_limit_mm"]["value"])
             )
             & ((scene.status != int(CollisionStatus.OK))
-               | (jnp.all(~scene.support_mask | scene.support_valid_mask) & _tracks_valid(scene, now_ns, jnp)))
+               | (jnp.all(~scene.support_mask | scene.support_valid_mask)
+                  & _tracks_valid(scene, now_ns, jnp, self._motion_bounds)))
         )
 
     def _scene_status(self, prepared_scene: PreparedScene) -> CollisionStatus:
         now_ns = time.monotonic_ns()
+        model = prepared_scene.support_time_model
+        if model is not None and (
+                np.asarray(model.run_clock_hash).tobytes() != run_clock_hash(prepared_scene.identities.scene_epoch, "monotonic")
+                or float(np.asarray(model.radius_limit_mm)) != self.config.policy.artifact.parameters["support_radius_limit_mm"]["value"]):
+            return CollisionStatus.INVALID_SCENE
         valid = self._scene_values_valid(prepared_scene, prepared_scene.identities, now_ns)
         if not bool(np.asarray(valid)):
             return CollisionStatus.INVALID_SCENE

@@ -1,0 +1,39 @@
+schema_version: 1
+numeric_dtype: float64
+revision: ninezzhou-m02-v1
+model_id: ninezzhou-1p8r
+base_frame: base_link
+base_convention: Y_up_J1_positive_Z
+tcp_frame: tool0
+tool_axis_local: [1.0, 0.0, 0.0]
+joint_names: [J1, J2, J3, J4, J5, J6, J7, J8, J9]
+joint_types: [prismatic, revolute, revolute, revolute, revolute, revolute, revolute, revolute, revolute]
+joint_units: [m, rad, rad, rad, rad, rad, rad, rad, rad]
+sources:
+  urdf:
+    path: models/ninezzhou/urdf/ninezzhou.urdf
+    sha256: 766ea5870c41f110d7d57b46e6b31153335f45358faf15e641d465b3b31587a3
+  srdf:
+    path: models/ninezzhou_moveit_config/config/ninezzhou.srdf
+    sha256: e685e444b0ded09a77833a5d9b8f1b38c1f1180b7cec83e042748fd20605b6cd
+  collision_mesh_manifest:
+    path: models/ninezzhou/collision_meshes/provenance.json
+    sha256: 9903874e0cc1c0bd2f852d57f9e4144450812f0b1e402b96fe3ded2403e9e087
+  generated_kinematics:
+    path: portable_oscbf/work/kinematics_data.py
+    sha256: aaed3e29d965bb3b4bd00dd4e20f2c96090dee0464f428da7b3c5a9761882a3f
+nominal_tcp:
+  translation_unit: m
+  revision: urdf-tool0-235mm-v1
+  source: models/ninezzhou/urdf/ninezzhou.urdf#tool0_fixed
+  verification_state: simulation
+  matrix:
+    - [1.0, 0.0, 0.0, 0.0]
+    - [0.0, 1.0, 0.0, 0.0]
+    - [0.0, 0.0, 1.0, 0.0]
+    - [0.0, 0.0, 0.0, 1.0]
+missing:
+  workpiece: '#165 独立测量 T_base_workpiece、验证残差和工件身份'
+  joint_mapping: '#164/#165 核验逐轴设备映射、正方向、零位和传动'
+  physical_tcp: '#165 独立测量 tool0 到实际 TCP 修正及工具轴'
+  tool_collision_geometry: '#165 提供实际附加工具几何并由 M04 验证覆盖'

@@ -1,0 +1,31 @@
+{
+  "id": "map147-mesh-self-filter",
+  "name": "map147-mesh-self-filter",
+  "title": "实现逐点时间 mesh ray self-filter",
+  "status": "in_progress",
+  "priority": "P1",
+  "creator": "Lsn",
+  "assignee": "Lsn",
+  "createdAt": "2026-10-27",
+  "branch": "main",
+  "base_branch": "main",
+  "worktree_path": "/home/lsn/robot/robot_safecontrol",
+  "commit": null,
+  "pr_url": null,
+  "children": [],
+  "subtasks": [],
+  "parent": null,
+  "description": "完成 #105 的原始 mesh ray、逐点反馈历史、明确时间映射及占据与准入接缝和 main 组合验收",
+  "notes": "独立 Spec、Standards 和处理链修订复核通过。main 311 项直接消费者、Ruff、mypy、组合安装及真实安装副本通过。主包854项和内核741项完整覆盖核验完成，记录40项既有跳过及独立计时的CPU条件。原九轴几何和标定继续不可准入。工程未提交，未关闭 issue。",
+  "meta": {
+    "map": 147,
+    "issue": 105,
+    "baseline_commit": "9c354d5505e26aa28b3e6fc323c661bd7542b105",
+    "source_worktree": "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/map147-mesh-self-filter",
+    "source_manifest": ".scratch/map147-105/frozen-source-manifest-review-fix.json",
+    "new_behavior_tests": 36,
+    "independent_review": "passed",
+    "main_integration": "verified_with_recorded_cpu_conditions",
+    "spec_promotion": false
+  }
+}

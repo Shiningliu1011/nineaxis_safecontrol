@@ -1,23 +1,26 @@
 from __future__ import annotations
 
+from collections import defaultdict
 from dataclasses import dataclass
 from functools import cached_property
-from collections import defaultdict
+from typing import TYPE_CHECKING
 
 import numpy as np
 from ruckig import ControlInterface, InputParameter, Result, Ruckig, Trajectory
 
+from work.obb_collision_model import OBB_LINK_NAMES
 from work.static_motion_bounds import MotionBounds
 from work.static_swept_geometry import transform_derivatives_batch
-from work.obb_collision_model import OBB_LINK_NAMES
+
+if TYPE_CHECKING:
+    from work.process_limits import BoundProcessLimits
 
 
 def _joint_vector(value, name):
     result = np.asarray(value, dtype=float).copy()
     if result.shape != (9,) or not np.all(np.isfinite(result)):
         raise ValueError(f"{name} 必须为九维有限数组")
-    result.setflags(write=False)
-    return result
+    return np.frombuffer(result.tobytes(), dtype=np.float64)
 
 
 @dataclass(frozen=True)
@@ -45,6 +48,7 @@ class CandidateMotion:
     period_s: float
     tracking: Trajectory
     stopping: Trajectory
+    limits_identity: str | None = None
 
     @property
     def duration_s(self):
@@ -79,7 +83,7 @@ class CandidateMotion:
     def to_record(self):
         return {
             "initial": self.initial.to_record(), "target_velocity": self.target_velocity.tolist(),
-            "period_s": self.period_s,
+            "period_s": self.period_s, "limits_identity": self.limits_identity,
         }
 
 
@@ -96,19 +100,38 @@ class MotionCertificate:
 class MotionPlanner:
     def __init__(
             self, lower, upper, max_velocity, max_acceleration, *,
-            jerk_time: float, minimum_duration_s: float):
+            minimum_duration_s: float, jerk_time: float | None = None, max_jerk=None,
+            limits_identity: str | None = None):
         self.lower = _joint_vector(lower, "lower")
         self.upper = _joint_vector(upper, "upper")
         self.max_velocity = _joint_vector(max_velocity, "max_velocity")
         self.max_acceleration = _joint_vector(max_acceleration, "max_acceleration")
         if (np.any(self.lower >= self.upper) or np.any(self.max_velocity <= 0)
                 or np.any(self.max_acceleration <= 0)
-                or not np.isfinite(jerk_time) or jerk_time <= 0
                 or not np.isfinite(minimum_duration_s) or minimum_duration_s <= 0):
             raise ValueError("Ruckig 执行器限制无效")
-        self.max_jerk = self.max_acceleration / jerk_time
+        if (jerk_time is None) == (max_jerk is None):
+            raise ValueError("需要明确 max_jerk 或 jerk_time，二者只能指定一项")
+        if jerk_time is not None:
+            if not np.isfinite(jerk_time) or jerk_time <= 0:
+                raise ValueError("jerk_time 需要有限正数")
+            max_jerk = self.max_acceleration / jerk_time
+        self.max_jerk = _joint_vector(max_jerk, "max_jerk")
+        if np.any(self.max_jerk <= 0):
+            raise ValueError("max_jerk 需要逐轴有限正数")
+        if limits_identity is not None and (
+                not isinstance(limits_identity, str) or len(limits_identity) != 64
+                or any(value not in "0123456789abcdef" for value in limits_identity)):
+            raise ValueError("limits_identity 需要 SHA-256 身份")
+        self.limits_identity = limits_identity
         self.minimum_duration_s = minimum_duration_s
         self._ruckig = Ruckig(9, .002)
+
+    @classmethod
+    def from_limits(cls, limits: BoundProcessLimits, *, minimum_duration_s: float) -> MotionPlanner:
+        return cls(limits.position_lower, limits.position_upper, limits.max_velocity,
+                   limits.max_acceleration, max_jerk=limits.max_jerk,
+                   minimum_duration_s=minimum_duration_s, limits_identity=limits.identity)
 
     def _calculate(self, state: ActuatorState, target_velocity) -> Trajectory:
         data = InputParameter(9)
@@ -138,9 +161,11 @@ class MotionPlanner:
         tracking = self._calculate(initial, target)
         next_state = ActuatorState(*tracking.at_time(period_s))
         stopping = self._calculate(next_state, np.zeros(9))
-        return CandidateMotion(initial, target, period_s, tracking, stopping)
+        return CandidateMotion(initial, target, period_s, tracking, stopping, self.limits_identity)
 
     def from_record(self, record) -> CandidateMotion:
+        if record.get("limits_identity") != self.limits_identity:
+            raise ValueError("limits_identity 与当前运动配置不符")
         return self.propose(
             ActuatorState.from_record(record["initial"]), record["target_velocity"],
             period_s=record["period_s"],
@@ -153,12 +178,15 @@ def certify_motion(
     if (not np.isfinite(minimum_interval_s) or minimum_interval_s <= 0
             or not isinstance(maximum_intervals, int) or maximum_intervals <= 0):
         raise ValueError("区间检查参数无效")
+    if motion.limits_identity != planner.limits_identity:
+        return MotionCertificate(False, "limits_identity", None, 0, None)
     intervals = [(0., motion.period_s, None), (motion.period_s, motion.duration_s, None)]
     checked, minimum_margin = 0, float("inf")
-    bounds, coefficients = None, None
-    third_bounds = {}
+    bounds = None
+    coefficients: np.ndarray
+    third_bounds: dict[tuple[str, str], float] = {}
     while intervals:
-        groups = defaultdict(list)
+        groups: defaultdict[tuple[int, ...] | None, list[tuple[float, float]]] = defaultdict(list)
         for start, end, indices in intervals:
             groups[None if indices is None else tuple(indices)].append((start, end))
         intervals = []

@@ -1,0 +1,42 @@
+{
+  "id": "map147-lidar-scene",
+  "name": "map147-lidar-scene",
+  "title": "建立 LiDAR 射线占据场景与固定模型并集",
+  "description": "完成地图 #147 的 #108：射线 occupied/free/unknown、版本化固定模型、保守 support 合并和真实 prepare_scene 验收",
+  "status": "in_progress",
+  "priority": "P1",
+  "creator": "Lsn",
+  "assignee": "Lsn",
+  "createdAt": "2026-10-27",
+  "completedAt": null,
+  "branch": "codex/map147-lidar-scene",
+  "base_branch": "main",
+  "worktree_path": "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/map147-lidar-scene",
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [
+    "portable_oscbf/work/lidar_occupancy.py",
+    "portable_oscbf/work/_collision_scene.py",
+    "portable_oscbf/work/collision_parameters.py",
+    "portable_oscbf/config/collision_parameter_schema.json",
+    "portable_oscbf/tests/test_lidar_occupancy.py",
+    "portable_oscbf/tests/collision_parameter_inputs.py",
+    "docs/modules/lidar_occupancy.md",
+    "docs/modules/portable_oscbf.md",
+    "docs/modules/portable-oscbf/collision-parameter-artifact.md"
+  ],
+  "notes": "本地实现、独立审查覆盖修正与 trellis-check 完成：43 项新场景行为，272 项受影响回归、Ruff、mypy、diff 检查通过。主会话复核最终证据并组织文件集成。全部修改未提交，没有 commit、push 或 PR 授权。",
+  "meta": {
+    "map": 147,
+    "issue": 108,
+    "baseline_commit": "9c354d5505e26aa28b3e6fc323c661bd7542b105",
+    "spec_promotion": false,
+    "new_behavior_tests": 43,
+    "affected_tests_passed": 272,
+    "high_risk_changes": ["occupied/free 清除证据", "unknown 覆盖准入", "support 包围范围与容量失败"],
+    "independent_review": "findings-covered-await-parent-verification"
+  }
+}

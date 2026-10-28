@@ -1,0 +1,4 @@
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"真实公开接口和固定形状精度"}
+{"file":".trellis/spec/backend/safety-guidelines.md","reason":"占据来源与准入失败"}
+{"file":"docs/adr/0039-dynamic-support-time-model.md","reason":"动态时间模型与 beta_dot"}
+{"file":"docs/adr/0040-class-specific-fixed-cbf-rates.md","reason":"时间变化 CBF"}

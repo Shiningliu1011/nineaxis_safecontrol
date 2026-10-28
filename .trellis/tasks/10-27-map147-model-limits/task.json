@@ -1,0 +1,49 @@
+{
+  "id": "map147-model-limits",
+  "name": "map147-model-limits",
+  "title": "实现九轴共同模型、工具导数与 M07 限制",
+  "description": "完成 #153 的模型身份、SI 接口、实际工具一至三阶运动、版本化研究限制和真实 Ruckig 消费",
+  "status": "in_progress",
+  "priority": "P1",
+  "creator": "Lsn",
+  "assignee": "Lsn",
+  "createdAt": "2026-10-27",
+  "completedAt": null,
+  "branch": "codex/map147-model-limits",
+  "base_branch": "main",
+  "worktree_path": "/home/lsn/robot/robot_safecontrol/.scratch/worktrees/map147-model-limits",
+  "commit": null,
+  "pr_url": null,
+  "children": [],
+  "subtasks": [],
+  "parent": null,
+  "relatedFiles": [
+    "portable_oscbf/work/nineaxis_model.py",
+    "portable_oscbf/work/process_limits.py",
+    "portable_oscbf/work/static_motion.py",
+    "src/robot_safecontrol_moveit/static_experiment_nodes.py",
+    "portable_oscbf/config/nineaxis_model.yaml",
+    "portable_oscbf/config/nineaxis_research_limits.yaml",
+    "portable_oscbf/tests/test_nineaxis_model.py",
+    "portable_oscbf/tests/test_process_limits.py",
+    "portable_oscbf/tests/test_research_motion.py",
+    "tests/test_model_limits_resources.py",
+    "tests/data/nineaxis_precision_entry.py",
+    "docs/modules/nineaxis_model_limits.md",
+    "docs/modules/portable_oscbf.md",
+    "package.xml"
+  ],
+  "notes": "用户已经确认 #136/#138/#141；当前任务仅采用现有九轴。主会话确认 #153 原生依赖清零并授权实现。",
+  "meta": {
+    "map": 147,
+    "issue": 153,
+    "baseline_commit": "9c354d5505e26aa28b3e6fc323c661bd7542b105",
+    "spec_promotion": false,
+    "high_risk_changes": [
+      "共同模型与标定身份",
+      "实际工具高阶导数",
+      "运动限制和阶段检查",
+      "逐轴 jerk 消费"
+    ]
+  }
+}

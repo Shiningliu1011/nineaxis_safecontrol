@@ -14,6 +14,8 @@ PORTABLE_OSCBF_RUNTIME_REQUIREMENTS = [
     "jsonschema==4.23.0",
     "ruckig==0.12.2",
     "trimesh==5.1.0",
+    "rtree==1.4.1",
+    "urdf-parser-py==0.0.4",
     "pymoo==0.6.2",
 ]
 
@@ -54,10 +56,13 @@ setup(
         (f"share/{package_name}/config", glob("config/*.yaml")),
         (f"share/{package_name}/config", ["config/lidar_crop_experiment.rviz"]),
         (f"share/{package_name}/data/nurbs", ["data/nurbs/ik_input.mat"]),
+        *[(f"share/{package_name}/{directory}", [str(path) for path in sorted(directory.iterdir()) if path.is_file()])
+          for directory in sorted(Path("data/nurbs/butterfly_reference_v1").rglob("*")) if directory.is_dir()],
         (f"share/{package_name}/launch", glob("launch/*.launch.py")),
         (f"share/{package_name}/tests", glob("tests/*.py")),
         (f"share/{package_name}/tests/data", glob("tests/data/*.npz")),
         (f"share/{package_name}/tests/data/pipe_assets", glob("tests/data/pipe_assets/*")),
+        (f"share/{package_name}/tests/data/lidar_self_filter", glob("tests/data/lidar_self_filter/*.json")),
         # Model files: URDF, meshes, and MoveIt configuration.
         (
             f"share/{package_name}/models/ninezzhou/urdf",
