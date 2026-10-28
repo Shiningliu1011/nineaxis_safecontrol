@@ -22,6 +22,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+from tracking_configurations import DISTANT, START
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 _SRC = REPO_ROOT / "src"
@@ -39,10 +40,7 @@ _DOMAIN_ID = 130 + (os.getpid() % 20)
 _STATE_TOPIC = "/mujoco_joint_states"
 _COMMAND_TOPIC = "/oscbf_command"
 _START_SERVICE = "/oscbf_controller/start_tracking"
-_START_Q = np.array([
-    0.2303562, 0.1112539, 1.0167209, -0.6810303, -1.8294025,
-    -0.4664294, 0.4743473, -1.0429228, 0.0289233,
-])
+_START_Q = DISTANT.copy()
 
 
 @pytest.fixture(scope="module")
@@ -214,17 +212,7 @@ def test_production_config_matches_direct_kernel_outputs(
             rclpy.parameter.Parameter("wait_for_start", value=True),
         ],
     )
-    q = np.array([
-        0.027276550053036794,
-        -0.03528867367370082,
-        0.5059981669275009,
-        -0.7240440926105509,
-        1.4877532069125114,
-        -0.2066365806668871,
-        0.3853811558742877,
-        0.22248106729961423,
-        -0.12343186955927415,
-    ])
+    q = START.copy()
     from work.ik_data_loader import load_repository_trajectory
     from work.jax_control_facade import JaxControlLoop
     from work.path_following import PathFollowingConfig

@@ -11,3 +11,6 @@
 # 原始数值样本保留 CRLF 行尾及逐字节身份。
 tests/data/pipe_assets/*.csv -text whitespace=cr-at-eol
 tests/data/pipe_assets/*.txt -text whitespace=cr-at-eol
+
+# CAD URDF 的原始行尾参与模型身份计算。
+models/ninezzhou/urdf/ninezzhou.urdf -text whitespace=trailing-space,space-before-tab,cr-at-eol

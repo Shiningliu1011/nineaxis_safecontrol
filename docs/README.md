@@ -4,6 +4,7 @@
 
 ## 项目与运行
 
+- [标定姿态表](calibration_joint_table.md)：相机与激光跟踪仪分别采集，完整关节目标输入、模型检查和离线逐组流程。
 - [项目入门与结构](ONBOARDING.md)：源码入口、闭环数据流和开发环境。
 - [Linux 主机迁移](project_migration.md)：完整资料包、skills、环境恢复与接手提示词。
 - [双设备工作流程](two_machine_workflow.md)：笔记本与台式机通过 GitHub 交替开发、同步进度和传输数据。

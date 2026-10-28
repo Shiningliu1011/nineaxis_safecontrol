@@ -1,7 +1,8 @@
 from copy import deepcopy
+from hashlib import sha256
 import json
 from pathlib import Path
-import shutil
+from zipfile import ZipFile
 
 import pytest
 
@@ -20,18 +21,19 @@ def relocated_resources(tmp_path):
     recorded = json.loads(RECORDED.read_text())
     original_root = Path(recorded["resource_root"])
     collision = recorded["scene"]["self_collision"]
-    for record in [collision["manifest"], *collision["auxiliary"], *collision["meshes"]]:
-        relative = Path(record["path"]).relative_to(original_root)
-        source, target = ROOT / relative, tmp_path / relative
-        assert content_hash(source) == record["sha256"]
-        target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source, target)
-    for name in ("trajectory_mat", "kinematics_config"):
-        relative = Path(recorded["config"][name])
-        source, target = ROOT / relative, tmp_path / relative
-        assert content_hash(source) == recorded["resources"][name]["sha256"]
-        target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source, target)
+    resources = [(Path(row["path"]).relative_to(original_root), row["sha256"])
+                 for row in [collision["manifest"], *collision["auxiliary"], *collision["meshes"]]]
+    resources += [(Path(recorded["config"][name]), recorded["resources"][name]["sha256"])
+                  for name in ("trajectory_mat", "kinematics_config")]
+    # 保存原始资源字节，历史 manifest 的模型身份保持原值。
+    with ZipFile(ROOT / "tests/data/static_s1_original_resources.zip") as archive:
+        for relative, expected in resources:
+            data = (archive.read(relative.as_posix()) if relative.as_posix() in archive.namelist()
+                    else (ROOT / relative).read_bytes())
+            assert sha256(data).hexdigest() == expected
+            target = tmp_path / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(data)
     return recorded, relocate_manifest(recorded, tmp_path), tmp_path
 
 
@@ -64,9 +66,15 @@ def test_relocated_physical_identity_rejects_changed_resource_content(relocated_
         _physical_identity(recorded, destination)
 
 
-def test_distinct_actual_obstacle_scenes_keep_distinct_physical_identity():
-    recorded = json.loads(RECORDED.read_text())
+def test_distinct_actual_obstacle_scenes_keep_distinct_physical_identity(relocated_resources):
+    recorded, _, destination = relocated_resources
     baseline = ExperimentConfig.load(
         ROOT / "config/static_experiment_s0.yaml", resource_root=ROOT, method="D",
     ).manifest()
-    assert _physical_identity(recorded, ROOT) != _physical_identity(baseline, ROOT)
+    assert _physical_identity(recorded, destination) != _physical_identity(baseline, ROOT)
+
+
+def test_recorded_model_identity_is_rejected_by_current_resources():
+    recorded = json.loads(RECORDED.read_text())
+    with pytest.raises(ValueError, match="资源身份变化"):
+        _physical_identity(recorded, ROOT)

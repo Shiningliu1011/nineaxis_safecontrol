@@ -88,7 +88,7 @@
     name="J1"
     type="prismatic">
     <origin
-      xyz="0 0 0"
+      xyz="0 0 0.085"
       rpy="0 0 0" />
     <parent
       link="base_link" />
@@ -98,7 +98,7 @@
       xyz="0 0 1" />
     <limit
       lower="0"
-      upper="0.585"
+      upper="0.5"
       effort="1000"
       velocity="0.2" />
   </joint>

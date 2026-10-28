@@ -32,7 +32,7 @@ struct JointLimit
 };
 
 constexpr std::array<JointLimit, NINEZZHOU_DIM> JOINT_LIMITS = {{
-    {0.0, 0.585},          // J1  prismatic  (m)
+    {0.0, 0.5},            // J1 行程，单位 m
     {-1.5708, 1.5708},     // J2  revolute   (rad)
     {-1.5708, 1.5708},     // J3  revolute   (rad)
     {-1.5708, 1.5708},     // J4  revolute   (rad)
@@ -93,7 +93,7 @@ inline std::vector<std::array<double, 3>> forwardKinematics(
     std::vector<std::array<double, 3>> pts;
     pts.reserve(11);
 
-    double p[3] = {0.0, 0.0, joints[0]};  // J1 prismatic Z
+    double p[3] = {0.0, 0.0, 0.085 + joints[0]};  // J1 沿 +Z 移动
     pts.push_back({p[0], p[1], p[2]});
 
     // Rotation matrix (starts as identity)

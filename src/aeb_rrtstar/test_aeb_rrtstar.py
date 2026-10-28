@@ -14,8 +14,9 @@ Tests cover the mandatory test cases from the evaluation document:
 
 import sys
 import unittest
+from pathlib import Path
 
-sys.path.insert(0, '/home/lsn/robot_safecontrol/src')
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import numpy as np
 import ompl.base as ob
@@ -134,9 +135,9 @@ class TestDistanceFunctions(unittest.TestCase):
         """J1 (prismatic) should be scaled to be comparable to rad joints."""
         a = np.zeros(DIMENSION)
         b = np.zeros(DIMENSION)
-        b[0] = 0.585  # Full range of J1 in meters
+        b[0] = JOINT_LIMITS[0][1] - JOINT_LIMITS[0][0]
         d = _euclidean_distance(a, b)
-        # Scaled: 0.585 * (pi/0.585) = pi ≈ 3.14
+        # 完整 J1 行程经缩放后为 π。
         self.assertAlmostEqual(d, np.pi, delta=0.01)
 
 

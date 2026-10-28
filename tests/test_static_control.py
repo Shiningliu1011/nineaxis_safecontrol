@@ -84,7 +84,7 @@ def test_s1_near_joint_limit_retains_a_certified_stopping_motion():
     control = StaticControl(config.load_path()[0], StaticGeometry(config.scene()), planner, config.values["control"])
     # 来自 S1 实际停止状态的关节位置及参考进度。
     state = ActuatorState(np.array([
-        .4708505282478995, -1.2838444178875443, .44274328581177236,
+        .4708505282478995 - .085, -1.2838444178875443, .44274328581177236,
         1.4206174701248417, 1.0995780313018346, .4412914091871797,
         .863354548132695, -1.4818299363328082, -.9465893568841603,
     ]), np.zeros(9), np.zeros(9))
@@ -139,7 +139,7 @@ def test_s4_recovers_control_clearance_reserve_from_recorded_boundary_position()
     control = StaticControl(config.load_path()[0], geometry, planner, config.values["control"])
     # 关节位置来自 s4-joint-development-08 的 sequence=5114，检查静止后的间距恢复。
     state = ActuatorState(np.array([
-        .11265206494784251, -.3676176768590687, .480671785341436,
+        .11265206494784251 - .085, -.3676176768590687, .480671785341436,
         .5931371775968358, -.020964420606434334, -.6403831043027763,
         -.22504548016947482, -.3747881652445478, .2276471440728936,
     ]), np.zeros(9), np.zeros(9))
@@ -180,7 +180,7 @@ def test_s5_repeated_velocity_trials_keep_independent_qp_and_motion_evidence():
     control = StaticControl(config.load_path()[0], geometry, planner, config.values["control"])
     # 来自本机 s5-current-01 的最终实际候选，已停止且正向运动受阻。
     state = ActuatorState(np.array([
-        .4546786057344995, -1.285951296455923, .4853365101649853,
+        .4546786057344995 - .085, -1.285951296455923, .4853365101649853,
         1.3546770709178174, 1.075906905721642, .4645223562096255,
         .8542537781206053, -1.4448177304276972, -.9157218150096683,
     ]), np.zeros(9), np.zeros(9))
@@ -251,6 +251,9 @@ def test_s5_repeated_velocity_trials_keep_independent_qp_and_motion_evidence():
         "feed_weight": settings["feed_weight"], "max_velocity": planner.max_velocity,
     }
     boundary = solve_velocity(control.last_terms, constraints, nominal_feed=.0001875, **arguments)
+    assert abs(boundary.feed_m_s) <= np.finfo(float).eps * .0001875
+    # 独立求解精确零进给，验证后续 QP 对该边界候选的 KKT 检查。
+    boundary = solve_velocity(control.last_terms, constraints, nominal_feed=0., **arguments)
     assert boundary.feed_m_s == 0.
     for nominal in (.00009375, .003):
         reused = solve_velocity(
@@ -281,7 +284,7 @@ def test_last_reference_interval_is_executed_before_endpoint_hold(method):
     control = StaticControl(path, StaticGeometry(config.scene()), planner, config.values["control"])
     # 关节位置来自 s4-joint-development-10；测试当前连续路径的最后可表示区间。
     state = ActuatorState(np.array([
-        .1306941177379043, -.7060779958979104, .19350705137335877,
+        .1306941177379043 - .085, -.7060779958979104, .19350705137335877,
         .7804435751336972, 1.0790893334269591, .05484058431642864,
         .4397736851681241, -.22787388223368704, -.6662958160755214,
     ]), np.zeros(9), np.zeros(9))

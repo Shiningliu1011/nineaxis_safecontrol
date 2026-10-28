@@ -54,7 +54,7 @@ def test_plant_starts_at_zero(plant_fixture):
     node = plant_fixture["node"]
     assert np.allclose(node.state, np.zeros(9))
     assert node._q_min[0] == pytest.approx(0.0)
-    assert node._q_max[0] == pytest.approx(0.585)
+    assert node._q_max[0] == pytest.approx(0.5)
 
 
 def test_plant_stream_endpoint_qos(plant_fixture):

@@ -14,7 +14,9 @@ from work.collision_safety import (
 
 
 def _environment(radii=(0.05, 0.05, 0.05), link="Link1", capacity=1, **limits):
-    doc = _geometry(["base_link", link], [[5.0, 0.0, 0.0], [0.0, 0.0, 0.0]],
+    # Link1 的解析球心保持在 base_link 原点，使用当前局部坐标表示。
+    local_center = [0.0, 0.0, -0.085] if link == "Link1" else [0.0, 0.0, 0.0]
+    doc = _geometry(["base_link", link], [[5.0, 0.0, 0.0], local_center],
                     [[0.1, 0.1, 0.1], list(radii)], capacity=capacity)
     return doc, _module(doc, **{
         "max_primitive_rows": 8, "max_environment_pairs_per_ellipsoid": 3,
@@ -174,7 +176,7 @@ def test_axis_aligned_interior_singular_and_surface_points(radii, point, witness
 def test_multiple_slots_supports_and_batch_choose_nearest_identity():
     doc, _ = _environment(capacity=2)
     doc["geometry"]["links"][1]["slots"][1] = {
-        "center_m": [0.0, 0.0, 0.2], "radii_m": [0.03]*3, "active_mask": True,
+        "center_m": [0.0, 0.0, 0.115], "radii_m": [0.03]*3, "active_mask": True,
     }
     _sign_geometry(doc)
     module = _module(doc, distance_max_iterations=100, distance_tolerance_mm=1e-7,

@@ -2,7 +2,7 @@
   "schema_version": 1,
   "generator_sha256": "c88b553012763f300bd127d44b442c2079e1c7a6a8bb92f776498b33ed341b1b",
   "source_urdf": "../urdf/ninezzhou.urdf",
-  "source_urdf_sha256": "766ea5870c41f110d7d57b46e6b31153335f45358faf15e641d465b3b31587a3",
+  "source_urdf_sha256": "0a1380d74d6d2942ae45e2897badd1af036135909fb916fb419daaf0f7e9597c",
   "links": [
     {
       "link": "base_link",
@@ -18,7 +18,7 @@
       "source_mesh_sha256": "1f22430ea24c38de90bf5446181a431a53737e4ea7c14f014938e67928091f37",
       "closed_mesh": "Link1.stl",
       "closed_mesh_sha256": "409ee10b0e5d10287a8f0d8f9fa27e4b5bcce0474fdc48c05c016b9074879728",
-      "maximum_source_vertex_excess_m": 4.388850394221322e-16
+      "maximum_source_vertex_excess_m": 4.40619762898109e-16
     },
     {
       "link": "Link2",
@@ -42,7 +42,7 @@
       "source_mesh_sha256": "c3e34e7bc222f57228ef591dd93721cd1910b58da34397bb2cfdc68edb7c6842",
       "closed_mesh": "Link4.stl",
       "closed_mesh_sha256": "b575b4be4248d07d396fd68ee5577e994c8f1cbbca8940f37958f46bff67290d",
-      "maximum_source_vertex_excess_m": 2.7755575615628914e-17
+      "maximum_source_vertex_excess_m": 5.551115123125783e-17
     },
     {
       "link": "Link5",
@@ -82,7 +82,7 @@
       "source_mesh_sha256": "7ebcf726b70288929d68b13c489b2b49ca52bab369109429a20f04850c5bb369",
       "closed_mesh": "Link9.stl",
       "closed_mesh_sha256": "df6faa44f60c4578a7a0b6c9916422d26bfed65b03a019d4bc69b306ee1441d7",
-      "maximum_source_vertex_excess_m": 4.5102810375396984e-17
+      "maximum_source_vertex_excess_m": 4.85722573273506e-17
     }
   ]
 }

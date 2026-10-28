@@ -31,7 +31,7 @@ self_clearance_m: 0.01
 workpiece_axial_margin_m: 0.10
 table_half_extents_m: [0.4, 0.025, 0.4]
 initial_position:
-  - 0.4660888592305836
+  - 0.3810888592305836
   - -1.3046859102762256
   - 0.4878612339833056
   - 1.383984286344668

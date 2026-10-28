@@ -3,6 +3,7 @@
  *********************************************************************/
 
 #include "aeb_rrtstar_ompl/AEBRRTstar.h"
+#include "aeb_rrtstar_ompl/ninezzhou_collision.h"
 
 #include <ompl/base/ProblemDefinition.h>
 #include <ompl/base/SpaceInformation.h>
@@ -20,12 +21,26 @@
 
 int main()
 {
+    const double current_j1[3] = {0.0, 0.25, 0.5};
+    const double reference_z[3] = {0.085, 0.335, 0.585};
+    for (unsigned int index = 0; index < 3; ++index)
+    {
+        double coordinates[9] = {};
+        coordinates[0] = current_j1[index];
+        const auto positions = aeb_rrtstar_ompl::forwardKinematics(coordinates);
+        if (std::abs(positions.front()[2] - reference_z[index]) > 1e-12)
+            return 1;
+    }
+    if (aeb_rrtstar_ompl::JOINT_LIMITS[0].lower != 0.0 ||
+        aeb_rrtstar_ompl::JOINT_LIMITS[0].upper != 0.5)
+        return 1;
+
     ompl::msg::setLogLevel(ompl::msg::LOG_INFO);
 
     const unsigned int dim = 9;
     // Joint limits for ninezzhou
     const double limits[9][2] = {
-        {0.0, 0.585},
+        {0.0, 0.5},
         {-1.5708, 1.5708},
         {-1.5708, 1.5708},
         {-1.5708, 1.5708},

@@ -446,8 +446,8 @@ class ContinuousIK:
             np.min(2.0 * (limits.q_max - np.abs(q - midpoints)) / ranges)
         )
         margin_penalty = (1.0 - min(margin, 1.0)) ** 2
-        # 优先利用导轨: 高位行程 (0.45 m 附近) 可显著减小肩/腕角度需求
-        rail_dev = abs(float(q[0]) - 0.45) / 0.585
+        # 导轨优选位置在当前 J1 坐标中为 0.365 m。
+        rail_dev = abs(float(q[0]) - 0.365) / ranges[0]
         manip = 0.0
         try:
             manip = float(kin.singularity_index(q)) / max(si_max, 1e-12)

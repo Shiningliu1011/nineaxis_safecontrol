@@ -1,8 +1,7 @@
 """Single source of truth for the butterfly trajectory placement.
 
 The OSCBF controller tracks ``data/nurbs/ik_input.mat`` through the reference
-runner's calibrated transform (rotate -> scale to fit the J1 prismatic stroke
--> align the centroid to ``ee_center``).  The MuJoCo viewer's displayed target
+runner's transform with explicit physical span and centre. The MuJoCo viewer's displayed target
 path and the transition server's first-task target use this same transform.
 """
 
@@ -74,6 +73,7 @@ def trajectory_to_base_transform(
             kinematics_config["trajectory_align_rotation"], dtype=float
         ),
         np.asarray(kinematics_config["ee_center"], dtype=float),
+        span_m=kinematics_config["trajectory_span_m"],
     )
 
 

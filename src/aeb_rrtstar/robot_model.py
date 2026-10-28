@@ -15,7 +15,7 @@ from typing import Sequence
 # ---------------------------------------------------------------------------
 
 JOINT_LIMITS: tuple[tuple[float, float], ...] = (
-    (0.0, 0.585),          # J1  – prismatic  (m)
+    (0.0, 0.5),            # J1 行程，单位 m
     (-1.5708, 1.5708),     # J2  – revolute   (rad)
     (-1.5708, 1.5708),     # J3  – revolute   (rad)
     (-1.5708, 1.5708),     # J4  – revolute   (rad)
@@ -104,7 +104,7 @@ OBSTACLES: tuple[Obstacle, ...] = (
 # in the standalone benchmark, not in the ROS pipeline.
 #
 # URDF joint origin translations (parent → child, in parent frame):
-#   J1:   (0, 0, 0)            prismatic along Z
+#   J1:   (0, 0, 0.085)        prismatic along Z
 #   J2:   (0, 0.343, 0)        revolute about Z
 #   J3:   (0.225, 0, 0)        revolute about Z
 #   J4:   (0.225, 0, 0)        revolute about Z
@@ -156,7 +156,7 @@ def forward_kinematics(
     """
     positions = []
     # J1: prismatic along Z
-    p = np.array([0.0, 0.0, float(joint_positions[0])])
+    p = np.array([0.0, 0.0, 0.085 + float(joint_positions[0])])
     positions.append(p.copy())
 
     R = np.eye(3)

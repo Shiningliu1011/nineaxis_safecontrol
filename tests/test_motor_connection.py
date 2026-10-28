@@ -99,7 +99,7 @@ def observed(data):
 
 
 @pytest.mark.parametrize("node,target_deg", [(2, None), (4, 9)])
-def test_real_motion_abort_remains_a_rejection(node, target_deg):
+def test_real_motion_transaction_ranges_do_not_claim_completion(node, target_deg):
     report = json.loads(TRACE.with_name(f"motor_J{node}_abort_20261021.json").read_text())
     events = report["events"]
     guard = SingleJointMonitor(node, ExecutionLimits(**events[0]["limits"]))
@@ -107,11 +107,11 @@ def test_real_motion_abort_remains_a_rejection(node, target_deg):
     initial = observed(events[command_index - 1]["sample"])
     delta = 5 if target_deg is None else target_deg - initial.state.angle_deg
     guard.start(initial, delta, events[command_index - 1]["monotonic_s"])
-    with pytest.raises(MotionRejected, match="feedback_position_jump"):
-        for event in events[command_index + 1:]:
-            if event["event"] == "feedback":
-                guard.observe(observed(event["sample"]), event["monotonic_s"])
-    assert guard.phase == "aborted"
+    for event in events[command_index + 1:]:
+        if event["event"] == "feedback":
+            assert not guard.observe(observed(event["sample"]), event["monotonic_s"])
+    assert guard.phase == "moving"
+    assert events[-1]["reason"] == "feedback_position_jump"
     assert guard.target_deg > 4.9
 
 

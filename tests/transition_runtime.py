@@ -18,14 +18,11 @@ from robot_safecontrol_moveit.moveit_runtime_config import build_moveit_params
 from robot_safecontrol_moveit.oscbf_plant import OscbfPlant
 from robot_safecontrol_moveit.ros_conventions import state_stream_qos
 from robot_safecontrol_moveit.transition_planning_server import TransitionPlanningServer
+from tracking_configurations import START as TRACKING_START
 
 
 ROOT = Path(__file__).resolve().parents[1]
-START = [
-    .027276550053036794, -.03528867367370082, .5059981669275009,
-    -.7240440926105509, 1.4877532069125114, -.2066365806668871,
-    .3853811558742877, .22248106729961423, -.12343186955927415,
-]
+START = TRACKING_START.tolist()
 DOMAINS = count(200 + os.getpid() % 5)
 
 

@@ -11,18 +11,10 @@ from robot_safecontrol_moveit.oscbf_trajectory import bootstrap_portable
 from robot_safecontrol_moveit.production_config import build_effective_configuration, load_production_profile
 from robot_safecontrol_moveit.tracking_contract import EvidenceContext, EvaluationScope
 from robot_safecontrol_moveit.tracking_run import TrackingRun
+from tracking_configurations import DISTANT, START
 
 
 ROOT = Path(__file__).resolve().parents[1]
-START = np.array([
-    .027276550053036794, -.03528867367370082, .5059981669275009,
-    -.7240440926105509, 1.4877532069125114, -.2066365806668871,
-    .3853811558742877, .22248106729961423, -.12343186955927415,
-])
-DISTANT = np.array([
-    .2303562, .1112539, 1.0167209, -.6810303, -1.8294025,
-    -.4664294, .4743473, -1.0429228, .0289233,
-])
 
 
 @pytest.fixture(scope="module")
@@ -139,7 +131,7 @@ def test_qp_position_command_reaches_publisher_without_additional_filter(run_fac
 def test_recorded_tangent_overshoot_commands_motion_toward_reference(kernel):
     loop, _, config, _ = kernel
     # 2026-10-14 末段沿切线超过参考点时的实际关节反馈。
-    q = np.array([0.25993225675347215, -0.5371482741377962,
+    q = np.array([0.25993225675347215 - .085, -0.5371482741377962,
                   0.8235447007148486, 0.6214674802637513,
                   0.34457702750093366, -0.5094945028714395,
                   -0.2231668921046781, -0.8789163171997676,
@@ -184,7 +176,17 @@ def test_real_obstacle_measurement_and_declared_scope(run_factory, kernel, enabl
         assert report.constraint_metrics["obstacle.residual"]["inactive_count"] == 1
 
 
-def test_cross_track_stall_holds_without_further_sampling(run_factory, capsys):
+@pytest.fixture
+def tracking_logs(caplog):
+    logger = logging.getLogger("tracking_run_test")
+    logger.addHandler(caplog.handler)
+    try:
+        yield caplog
+    finally:
+        logger.removeHandler(caplog.handler)
+
+
+def test_cross_track_stall_holds_without_further_sampling(run_factory, tracking_logs):
     run = run_factory(wait=False)
     commands = []
     run.receive_state(DISTANT)
@@ -196,7 +198,7 @@ def test_cross_track_stall_holds_without_further_sampling(run_factory, capsys):
     time.sleep(1.05)
     run.receive_state(DISTANT)
     run.tick(commands.append)
-    assert "reference feedrate=0" in capsys.readouterr().err
+    assert "reference feedrate=0" in tracking_logs.text
     assert run.execution_state == "holding"
     assert run.progress_snapshot()["termination"] == "held"
     count = len(commands)
@@ -215,7 +217,7 @@ def test_cross_track_stall_holds_without_further_sampling(run_factory, capsys):
     np.testing.assert_array_equal(commands[1], DISTANT)
 
 
-def test_frozen_progress_stops_even_with_positive_feedrate(run_factory, capsys):
+def test_frozen_progress_stops_even_with_positive_feedrate(run_factory, tracking_logs):
     run = run_factory(wait=False)
     commands = []
     deadline = time.monotonic() + 8.0
@@ -225,7 +227,7 @@ def test_frozen_progress_stops_even_with_positive_feedrate(run_factory, capsys):
         time.sleep(.01)
     assert run.execution_state == "holding"
     assert run.progress_snapshot()["feedrate_m_s"] > .05
-    assert "source-time frozen" in capsys.readouterr().err
+    assert "source-time frozen" in tracking_logs.text
     np.testing.assert_array_equal(commands[-1], START)
 
 

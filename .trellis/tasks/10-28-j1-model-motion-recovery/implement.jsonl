@@ -1,0 +1,3 @@
+{"file":".trellis/spec/backend/index.md","reason":"项目规范入口"}
+{"file":".trellis/spec/backend/safety-guidelines.md","reason":"反馈、停车及 live 边界"}
+{"file":"docs/planning/nineaxis-full-project/j1-motion-spec.md","reason":"用户确认坐标与传动"}

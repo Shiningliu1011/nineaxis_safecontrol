@@ -71,7 +71,7 @@ def test_original_nineaxis_collision_mesh_and_shared_fk_sources():
     )
     assert geometry.triangle_count == 696330
     assert len(geometry.parts) == 10
-    assert geometry.urdf_sha256 == "766ea5870c41f110d7d57b46e6b31153335f45358faf15e641d465b3b31587a3"
+    assert geometry.urdf_sha256 == "0a1380d74d6d2942ae45e2897badd1af036135909fb916fb419daaf0f7e9597c"
     assert not geometry.admission_ready
     assert geometry.validation_reason == "geometry_evidence_missing"
     original = trimesh.load_mesh(ROOT / "models/ninezzhou/meshes/Link9.STL", process=False)
@@ -279,7 +279,7 @@ def test_same_batch_occlusion_dominates_later_clear_ray():
     module, history = analytic_filter(link="Link1")
     stamp = time.monotonic_ns() - 1_200_000_000
     q = np.zeros((2, 9))
-    q[1, 0] = .585
+    q[1, 0] = .5
     history = replace(history, stamp_ns=np.array([stamp, stamp + 1_000_000_000]), q_si=q)
     scan = replace(scan_for([[4., 0., 0.], [4.5, 0., 0.]], [stamp, stamp + 1_000_000_000]),
                    received_monotonic_ns=stamp + 1_000_000_000)
@@ -394,7 +394,7 @@ def test_environment_return_before_body_still_revokes_old_free_behind_body():
     now = time.monotonic_ns()
     base = now - 900_000_000
     q = np.zeros((3, 9))
-    q[:2, 0] = .585
+    q[:2, 0] = .5
     history = replace(history, stamp_ns=np.array([base - 100_000_000, base, base + 700_000_000]),
                       q_si=q, timestamp_error_ns=np.zeros(3, dtype=np.int64))
     first = replace(scan_for([[4.5, 0., 0.]], [base]), received_monotonic_ns=now)

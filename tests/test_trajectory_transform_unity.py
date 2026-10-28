@@ -11,8 +11,10 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-import os
+from hashlib import sha256
+import json
 import numpy as np
+import pytest
 from scipy.spatial import cKDTree
 
 
@@ -26,6 +28,26 @@ for _entry in (_PORTABLE, _PORTABLE / "work", _PORTABLE / "vendor" / "dpax"):
         sys.path.insert(0, str(_entry))
 
 MAT_PATH = REPO_ROOT / "data" / "nurbs" / "ik_input.mat"
+
+
+def test_physical_path_transform_matches_recorded_model_baseline():
+    from robot_safecontrol_moveit.oscbf_trajectory import trajectory_to_base_transform
+    from work.ik_data_loader import load_repository_trajectory
+
+    recorded = json.loads((REPO_ROOT / "tests/data/trajectory_reference_4c98a64.json").read_text())
+    assert sha256(MAT_PATH.read_bytes()).hexdigest() == recorded["source_mat_sha256"]
+    expected = np.asarray(recorded["trajectory_transform"])
+    np.testing.assert_allclose(trajectory_to_base_transform(MAT_PATH), expected, atol=1e-14, rtol=0)
+    trajectory = load_repository_trajectory(str(MAT_PATH))
+    np.testing.assert_allclose(trajectory.T_traj_to_base, expected, atol=1e-14, rtol=0)
+
+
+@pytest.mark.parametrize("span", [0, -1, float("nan"), float("inf"), True, "0.351"])
+def test_physical_path_transform_rejects_invalid_span(span):
+    from work.ik_data_loader import reference_trajectory_transform
+
+    with pytest.raises(ValueError, match="trajectory_span_m"):
+        reference_trajectory_transform(str(MAT_PATH), np.eye(3), np.zeros(3), span_m=span)
 
 
 def test_viewer_display_path_matches_controller_path():

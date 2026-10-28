@@ -8,6 +8,8 @@
 
 基坐标为 Y-up 的 `base_link`，J1 沿 `+Z` 移动。`fk` 返回 TCP 的齐次变换，`jacobian` 使用 `[linear; angular]` 行顺序。`link_poses` 同时提供各原始 link、`tool0` 和修正后的 `tcp`。`tool_axis_jacobian` 对应实际 TCP 局部 `+X` 工作轴。原 URDF 的 `tool0` 沿 `Link9` 局部 `+X` 延伸 235 mm。
 
+当前模型 revision 为 `ninezzhou-m02-j1-origin85mm-v2`，J1 固定起点为 `0.085 m`，关节行程为 `0–0.5 m`。新坐标与原坐标满足 `q_old_m=0.085+q_new_m`；模型身份、生成关节链、封闭碰撞来源和几何制品随该定义更新。网格的局部几何保持来源身份，历史实验与参考关节配置保留原模型身份。旧标定须重新验证适用性。三组位置、两组其余关节姿态的参考数据与离线验证见[交接记录](../joint_motion_handoff_20261028.md)。
+
 `RigidTransform` 明确来源和目标 frame、SE(3) 矩阵、平移单位 m、来源、版本、验证状态及残差。`ModelCalibration` 保存 `T_tool0_tcp`、可选 `T_base_workpiece` 和关节映射证据。两类记录都需要 keyword-only 的 `applicable_model_hash=model.asset_model_hash`。该身份由未应用标定的模型 revision、配置和已验证源资产产生，独立于标定结果。容器核对各份变换的适用身份；`load` 和 `with_calibration` 核对记录与目标模型，模型 revision 或基准工具配置变化时拒绝使用不同身份的记录。标定变化生成新的完整模型和几何身份，`asset_model_hash` 保持其源资产含义。`source_pose_to_base` 对源 `+Z` 轴表达应用固定旋转，再得到项目 TCP 的 `+X` 工作轴；工件变换作用于位置和姿态。
 
 当前默认配置保存名义仿真 TCP。真实工件、关节设备映射、TCP 和附加工具几何的取得方式保持可见。标定检查只说明所列标定项目的状态，真实设备执行仍需要相应现场任务与系统准入证据。

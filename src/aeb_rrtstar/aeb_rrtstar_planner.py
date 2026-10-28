@@ -74,8 +74,8 @@ def _manhattan_distance(a: np.ndarray, b: np.ndarray) -> float:
         d = diff[idx]
         if d > np.pi:
             diff[idx] = 2.0 * np.pi - d
-    # Scale J1 (prismatic, index 0): 0.585 m range ≈ π rad
-    diff[0] = diff[0] * (np.pi / 0.585)
+    # J1 完整行程对应 π rad 的距离权重。
+    diff[0] = diff[0] * (np.pi / (JOINT_LIMITS[0][1] - JOINT_LIMITS[0][0]))
     return float(np.sum(diff))
 
 
@@ -87,7 +87,7 @@ def _euclidean_distance(a: np.ndarray, b: np.ndarray) -> float:
         # Wrap to [-π, π]
         diff[idx] = (d + np.pi) % (2.0 * np.pi) - np.pi
     # Scale J1
-    diff[0] = diff[0] * (np.pi / 0.585)
+    diff[0] = diff[0] * (np.pi / (JOINT_LIMITS[0][1] - JOINT_LIMITS[0][0]))
     return float(np.linalg.norm(diff))
 
 

@@ -35,6 +35,7 @@ from rclpy.context import Context
 from rclpy.executors import SingleThreadedExecutor
 from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import JointState
+from tracking_configurations import DISTANT
 
 
 _PACKAGE_NAME = "robot_safecontrol_moveit"
@@ -216,10 +217,7 @@ class TestFinalLaunchRuntime(unittest.TestCase):
 
         plant = JointState()
         plant.name = ["J1", "J2", "J3", "J4", "J5", "J6", "J7", "J8", "J9"]
-        plant.position = [
-            0.2303562, 0.1112539, 1.0167209, -0.6810303, -1.8294025,
-            -0.4664294, 0.4743473, -1.0429228, 0.0289233,
-        ]
+        plant.position = DISTANT.tolist()
         plant.position[0] += 0.01
         plant_positions = np.asarray(plant.position, dtype=float)
 

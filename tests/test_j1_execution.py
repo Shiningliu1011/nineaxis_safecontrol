@@ -1,6 +1,8 @@
 from dataclasses import replace
 import json
 from pathlib import Path
+import shutil
+import xml.etree.ElementTree as ET
 
 import pytest
 
@@ -30,6 +32,24 @@ def test_confirmed_linear_position_and_feedback(position_mm, encoder_deg):
     state = control.decode_state("J1", encoder_deg, -3)
     assert state.angle_deg / control.degrees_per_mm == pytest.approx(position_mm)
     assert state.speed_rpm / 12 == pytest.approx(0.25)
+
+
+@pytest.mark.parametrize("element,attribute,value", [
+    ("limit", "upper", "0.585"), ("limit", "lower", "-0.001"),
+    ("origin", "xyz", "0 0 0"), ("origin", "rpy", "0 0 0.01"),
+    ("axis", "xyz", "0 0 -1"),
+])
+def test_linear_control_rejects_inconsistent_real_model(tmp_path, element, attribute, value):
+    (tmp_path / "config").mkdir()
+    for name in ("j1_transmission.yaml", "hardware_joint_zero.yaml", "drempower.yaml"):
+        shutil.copyfile(ROOT / "config" / name, tmp_path / "config" / name)
+    model_path = tmp_path / "models/ninezzhou/urdf/ninezzhou.urdf"
+    model_path.parent.mkdir(parents=True)
+    description = ET.parse(ROOT / "models/ninezzhou/urdf/ninezzhou.urdf")
+    description.getroot().find("joint[@name='J1']").find(element).set(attribute, value)
+    description.write(model_path, encoding="utf-8")
+    with pytest.raises(ValueError, match="模型"):
+        J1ScrewControl.from_root(tmp_path)
 
 
 @pytest.mark.parametrize("position_mm", [-0.00001, 500.00001, float("nan"), float("inf")])
@@ -99,7 +119,7 @@ def test_mismatched_motion_node_rejected_before_opening_transport(node, axis_typ
         DrEmpowerSerial(str(ROOT / "setup.py"), command_node=node, axis_type=axis_type)
 
 
-def test_real_j1_motion_pair_preserves_position_change_protection():
+def test_real_j1_motion_pair_uses_transaction_interval():
     report = json.loads(ABORT_TRACE.read_text(encoding="utf-8"))
     control = J1ScrewControl.from_root(ROOT)
     guard = SingleJointMonitor(1, ExecutionLimits(**report["limits"]))
@@ -114,10 +134,9 @@ def test_real_j1_motion_pair_preserves_position_change_protection():
                                position_speed_rpm=recorded["position_speed_rpm"],
                                window_duration_s=recorded["window_duration_s"]))
     guard.validate_feedback(samples[0], report["trigger_pair"][0]["monotonic_s"])
-    with pytest.raises(MotionRejected, match="feedback_position_jump"):
-        guard.validate_feedback(samples[1], report["trigger_pair"][1]["monotonic_s"])
-    assert guard.phase == "aborted"
-    assert report["result"]["reason"] == guard.reason
+    guard.validate_feedback(samples[1], report["trigger_pair"][1]["monotonic_s"])
+    assert guard.phase == "ready"
+    assert report["result"]["reason"] == "feedback_position_jump"
 
 
 def test_real_j1_hold_trace_preserves_external_stop_requirement():
@@ -137,3 +156,5 @@ def test_real_j1_hold_trace_preserves_external_stop_requirement():
     assert sample.traj_done and not sample.axis_error
     assert abs(sample.state.angle_deg - target) < limits.tolerance_deg
     assert sample.mean_speed_rpm > limits.stopped_rpm
+    assert arrival.max_settled_s == pytest.approx(0.330146752001383)
+    assert arrival.last_conditions == dict(position=True, speed=False, trajectory_done=True)

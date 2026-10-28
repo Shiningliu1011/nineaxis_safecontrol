@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "format": "nineaxis-butterfly-continuous",
-  "identity": "62049d74d7f44e85b7d70715105a7821dabca29bc0687c0b06c852739e4d9972",
+  "identity": "f7eaac3d827505e1697440e81432111d9e0ac20b0260f9c02fd7f04ecb6fbc09",
   "description": {
     "source_sha256": {
       "ik_input.mat": "79868b03afd68f9d4cca1cba568320f0f48efd355d020a9372f2037549c3293f",
@@ -25,21 +25,21 @@
     "transform_kind": "nominal_simulation_similarity",
     "transform": [
       [
-        0.967379812532678,
+        0.9673798125326781,
         0.0,
         0.0,
-        -4.538030229213852e-05
+        -4.538030229213853e-05
       ],
       [
         0.0,
-        0.967379812532678,
+        0.9673798125326781,
         0.0,
         0.33200184706543157
       ],
       [
         0.0,
         0.0,
-        0.967379812532678,
+        0.9673798125326781,
         1.3668826946321033
       ],
       [
@@ -63,19 +63,19 @@
     ],
     "projection_centres_m": [
       [
-        -7.246874682720339e-05,
-        0.3466393505935161,
-        1.6372593390674273
+        -7.246874682698135e-05,
+        0.34663935059351614,
+        1.637259339067428
       ],
       [
-        -7.246874682720339e-05,
-        0.3466393505935161,
-        1.6372593390674266
+        -7.246874682698135e-05,
+        0.34663935059351614,
+        1.6372593390674277
       ]
     ],
     "projection_radii_m": [
-      0.2706009973196956,
-      0.2706009973196956
+      0.27060099731970383,
+      0.27060099731970627
     ],
     "tool_frame": "tool0",
     "tool_axis": "+X",
@@ -106,8 +106,8 @@
         "revolute",
         "revolute"
       ],
-      "kinematics_data_sha256": "aaed3e29d965bb3b4bd00dd4e20f2c96090dee0464f428da7b3c5a9761882a3f",
-      "geometry_config_sha256": "c9e54de9f3de95e1733a1e4e60de24289eb3363d50d8789d243f0be5c64e6286"
+      "kinematics_data_sha256": "59073373868d5c124ea7187a48276feb3dd8e4097f98dbee7dc8f3cac6573b49",
+      "geometry_config_sha256": "8104d12823161ea548f66488b567bebb1080a69b63d4d40fb100b6e9441cc051"
     },
     "C_source_tcp": [
       [
@@ -151,11 +151,11 @@
   },
   "config_inputs": {
     "kinematics": {
-      "path": "/home/lsn/robot/robot_safecontrol/portable_oscbf/config/nineaxis.yaml",
-      "sha256": "c9e54de9f3de95e1733a1e4e60de24289eb3363d50d8789d243f0be5c64e6286"
+      "path": "/home/lsn/robot-safecontrol/portable_oscbf/config/nineaxis.yaml",
+      "sha256": "8104d12823161ea548f66488b567bebb1080a69b63d4d40fb100b6e9441cc051"
     },
     "controller": {
-      "path": "/home/lsn/robot/robot_safecontrol/config/oscbf_controller.yaml",
+      "path": "/home/lsn/robot-safecontrol/config/oscbf_controller.yaml",
       "sha256": "5f45e74285921208d8d5904f24232e1cdb87922db85020dc9640abc4930f35ac"
     }
   },
@@ -163,175 +163,175 @@
     {
       "kind": "source_cubic_node",
       "u": 0.0416666666666667,
-      "s": 0.06359644719436663,
+      "s": 0.06359644719436634,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.0625,
-      "s": 0.09452868497783233,
+      "s": 0.09452868497783244,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.0833333333333333,
-      "s": 0.12064264886794179,
+      "s": 0.12064264886794235,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.104166666666667,
-      "s": 0.13899522760560581,
+      "s": 0.13899522760560618,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.125,
-      "s": 0.15774177006853776,
+      "s": 0.15774177006853804,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.145833333333333,
-      "s": 0.1754839542843846,
+      "s": 0.1754839542843852,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.166666666666667,
-      "s": 0.19616008972782953,
+      "s": 0.19616008972783017,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.1875,
-      "s": 0.21849916281024623,
+      "s": 0.21849916281024687,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.208333333333333,
-      "s": 0.2404766453298053,
+      "s": 0.24047664532980598,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.229166666666667,
-      "s": 0.2625804907865696,
+      "s": 0.26258049078657014,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.25,
-      "s": 0.28506778033919045,
+      "s": 0.28506778033919133,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.270833333333333,
-      "s": 0.30297719496436215,
+      "s": 0.3029771949643632,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.291666666666667,
-      "s": 0.32609394284654863,
+      "s": 0.3260939428465498,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.3125,
-      "s": 0.3506574157767417,
+      "s": 0.35065741577674275,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.333333333333333,
-      "s": 0.372642507290905,
+      "s": 0.3726425072909063,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.354166666666667,
-      "s": 0.39288043700585684,
+      "s": 0.39288043700585806,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.375,
-      "s": 0.4176151907325208,
+      "s": 0.41761519073252196,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.395833333333333,
-      "s": 0.4380560254697263,
+      "s": 0.4380560254697271,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.416666666666667,
-      "s": 0.4487285688303772,
+      "s": 0.448728568830378,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.4375,
-      "s": 0.4629038934375563,
+      "s": 0.46290389343755683,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.458333333333333,
-      "s": 0.4749025053532357,
+      "s": 0.4749025053532361,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.479166666666667,
-      "s": 0.4891946292731155,
+      "s": 0.4891946292731156,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.5,
-      "s": 0.5001428266074811,
+      "s": 0.5001428266074813,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.520833333333333,
-      "s": 0.5110910924521007,
+      "s": 0.511091092452101,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.541666666666667,
-      "s": 0.525383232301398,
+      "s": 0.5253832323013982,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
@@ -352,84 +352,84 @@
     {
       "kind": "source_cubic_node",
       "u": 0.604166666666667,
-      "s": 0.5622298739644049,
+      "s": 0.5622298739644047,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.625,
-      "s": 0.5826708281172773,
+      "s": 0.5826708281172768,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.645833333333333,
-      "s": 0.6074060225997149,
+      "s": 0.6074060225997139,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.666666666666667,
-      "s": 0.6276446046236036,
+      "s": 0.6276446046236027,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.6875,
-      "s": 0.6496318619193929,
+      "s": 0.6496318619193924,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.708333333333333,
-      "s": 0.6741972705722638,
+      "s": 0.6741972705722633,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.729166666666667,
-      "s": 0.6973162166670501,
+      "s": 0.6973162166670496,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.75,
-      "s": 0.7152273247348253,
+      "s": 0.7152273247348251,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.770833333333333,
-      "s": 0.7377158424852113,
+      "s": 0.7377158424852108,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.791666666666667,
-      "s": 0.7598201733505088,
+      "s": 0.7598201733505082,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.8125,
-      "s": 0.7817988998359126,
+      "s": 0.7817988998359124,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.833333333333333,
-      "s": 0.8041397674860304,
+      "s": 0.8041397674860303,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
@@ -443,35 +443,35 @@
     {
       "kind": "source_cubic_node",
       "u": 0.875,
-      "s": 0.8425621811261662,
+      "s": 0.8425621811261663,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.895833333333333,
-      "s": 0.861310355902112,
+      "s": 0.8613103559021121,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.916666666666667,
-      "s": 0.8796639268292038,
+      "s": 0.8796639268292036,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.9375,
-      "s": 0.9057817324630061,
+      "s": 0.9057817324630062,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.958333333333333,
-      "s": 0.9367124348175888,
+      "s": 0.9367124348175893,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
@@ -633,18 +633,18 @@
     "source_points": 14992,
     "source_blocks": 23,
     "raw_position_max_error_mm": 8.526512829121202e-14,
-    "source_position_max_error_m": 2.498001805406602e-16,
-    "source_axis_max_error": 1.2212453270876722e-15,
-    "final_length_m": 1.8167657348637822,
+    "source_position_max_error_m": 2.220446049250313e-16,
+    "source_axis_max_error": 9.992007221626409e-16,
+    "final_length_m": 1.8167657348638186,
     "source_length_mm": 1900.119574583678,
     "source_duration_s": 29.98199999999426,
-    "certified_minimum_parameter_speed_m_per_u": 0.00887839368908638,
+    "certified_minimum_parameter_speed_m_per_u": 0.008878393689086446,
     "speed_certificate": "Bernstein_interval_bounds_axial_and_angular_polynomials",
     "source_nonfinite": {
       "speed_series": 1
     },
-    "arc_error_estimate_m": 5.1549088032233105e-11,
-    "independent_arc_difference_m": 2.220446049250313e-16,
+    "arc_error_estimate_m": 5.154908365950996e-11,
+    "independent_arc_difference_m": 4.440892098500626e-16,
     "inverse_max_u_error": 2.6867397195928788e-14,
     "inverse_max_residual_m": 1.9984014443252818e-14
   },
@@ -681,7 +681,7 @@
     }
   },
   "generator": {
-    "command": "/home/lsn/robot/robot_safecontrol/.scratch/host-recovery/venv/bin/python -m robot_safecontrol_moveit.pipe_assets.butterfly_reference generate --source-dir /home/lsn/robot/robot_safecontrol/data/nurbs --kinematics-config portable_oscbf/config/nineaxis.yaml --controller-profile config/oscbf_controller.yaml --output data/nurbs/butterfly_reference_v1/production",
+    "command": "/home/lsn/robot/robot_safecontrol/.scratch/host-recovery/venv/bin/python3 -m robot_safecontrol_moveit.pipe_assets.butterfly_reference generate --source-dir data/nurbs/butterfly_reference_v1/production/source --kinematics-config portable_oscbf/config/nineaxis.yaml --controller-profile config/oscbf_controller.yaml --output .scratch/j1-motion-recovery/butterfly-physical-production",
     "python": "3.10.12",
     "packages": {
       "numpy": "1.26.4",
@@ -689,17 +689,17 @@
       "PyYAML": "6.0.2"
     },
     "source_code_sha256": {
-      "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/pipe_assets/butterfly_reference.py": "ced8449b8b0ec89bf614c0ff762ee456fadc8ec67193653bd9849ea36a53a0fd",
-      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/continuous_path_reference.py": "6444f551dc7d44098687362446047fee900bf7a1c9c1ca06f58c55d8798765a2",
-      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/ik_data_loader.py": "cbc8eae6b853c0ea2206a9a129e1267715e3cb0628caa9c98883abfcc57ef401",
-      "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/pipe_assets/pipe_nurbs_geometry.py": "fcff0ea99af1a96155079bde713a5dec3cd7739674df2c29c665ac1ffd58e065",
-      "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/robot_spec.py": "22eff820ede1f3d740ddeac5eddc732aceec1041eca58745a7ec5ef350ac0260"
+      "/home/lsn/robot-safecontrol/src/robot_safecontrol_moveit/pipe_assets/butterfly_reference.py": "ced8449b8b0ec89bf614c0ff762ee456fadc8ec67193653bd9849ea36a53a0fd",
+      "/home/lsn/robot-safecontrol/portable_oscbf/work/continuous_path_reference.py": "6444f551dc7d44098687362446047fee900bf7a1c9c1ca06f58c55d8798765a2",
+      "/home/lsn/robot-safecontrol/portable_oscbf/work/ik_data_loader.py": "1fac73721568e711122827e61700529a82c735788196a427413fa4839fe4bfcb",
+      "/home/lsn/robot-safecontrol/src/robot_safecontrol_moveit/pipe_assets/pipe_nurbs_geometry.py": "fcff0ea99af1a96155079bde713a5dec3cd7739674df2c29c665ac1ffd58e065",
+      "/home/lsn/robot-safecontrol/src/robot_safecontrol_moveit/robot_spec.py": "22eff820ede1f3d740ddeac5eddc732aceec1041eca58745a7ec5ef350ac0260"
     }
   },
   "loader_output": "[IKTrajectoryData] 加载完成: 14992 点, 23 块, Ts=0.002s, 总时长=29.982s\n",
   "outputs": {
-    "reference.npz": "7dda36b857966242c6e215babb305ef0faa3e073ed5b5e1e9affbdf8aa1e5a72",
-    "samples.npz": "b581e6934e9361ef862980b7082f845080a251477660b32254288ff3ee4cfee6",
+    "reference.npz": "d547214068e5b2840c0cc2dfff579129b9e6773957142780d447dbaecff0ac00",
+    "samples.npz": "b90408fd682e2cb8a743c6f4deb86ec48306be5acf9bd30e2e5d7a13507f40b7",
     "source/control_points.txt": "e34c363f1da3a6de51781fe5836d632290354481bcd8b2b5532e97e2c5e29bd7",
     "source/ik_input.mat": "79868b03afd68f9d4cca1cba568320f0f48efd355d020a9372f2037549c3293f",
     "source/knot_vector.txt": "94c975c90fed33f2106af9c2db161cdd962bdf97c6ffdf59ac4377f0647246d6",

@@ -6,6 +6,7 @@ from pathlib import Path
 import time
 from threading import Lock
 from types import ModuleType
+from typing import NoReturn
 import xml.etree.ElementTree as ET
 
 from .drempower_can import (
@@ -101,7 +102,7 @@ class ObservedFeedback:
 class VelocityWindow:
     def __init__(self, duration_s: float):
         self.duration_s = duration_s
-        self.rows = deque()
+        self.rows: deque[ObservedFeedback] = deque()
 
     def add(self, sample: ObservedFeedback) -> ObservedFeedback:
         if self.rows and sample.request_s <= self.rows[-1].received_s:
@@ -150,17 +151,25 @@ class ArrivalWindow:
     def __init__(self, target_deg: float, limits: ExecutionLimits):
         self.target_deg = target_deg
         self.limits = limits
-        self.since_s = None
+        self.since_s: float | None = None
+        self.max_settled_s = 0.0
+        self.last_conditions: dict[str, bool] = {}
 
     def observe(self, sample: ObservedFeedback, now_s: float) -> bool:
-        settled = (abs(sample.state.angle_deg - self.target_deg) <= self.limits.tolerance_deg
-                   and checked_speed(sample) <= self.limits.stopped_rpm and sample.traj_done)
+        self.last_conditions = {
+            "position": abs(sample.state.angle_deg - self.target_deg) <= self.limits.tolerance_deg,
+            "speed": checked_speed(sample) <= self.limits.stopped_rpm,
+            "trajectory_done": sample.traj_done,
+        }
+        settled = all(self.last_conditions.values())
         if not settled:
             self.since_s = None
             return False
         if self.since_s is None:
             self.since_s = now_s
-        return now_s - self.since_s >= self.limits.settle_s
+        duration = now_s - self.since_s
+        self.max_settled_s = max(self.max_settled_s, duration)
+        return duration >= self.limits.settle_s
 
 
 def decode_observation(control, joint, frame_id, data, request_s, received_s):
@@ -182,21 +191,28 @@ class SingleJointMonitor:
         self.limits = limits
         self.phase = "ready"
         self.reason = ""
-        self.target_deg = None
-        self.start_deg = None
-        self.started_s = None
-        self.last_received_s = None
-        self.last_angle_deg = None
-        self.arrival = None
-        self.position_arrived_s = None
+        self.target_deg: float | None = None
+        self.start_deg: float | None = None
+        self.started_s: float | None = None
+        self.last_request_s: float | None = None
+        self.last_received_s: float | None = None
+        self.last_angle_deg: float | None = None
+        self.arrival: ArrivalWindow | None = None
+        self.position_arrived_s: float | None = None
 
-    def reject(self, reason: str):
+    def reject(self, reason: str) -> NoReturn:
         if not self.reason:
             self.reason = reason
         self.phase = "aborted"
         raise MotionRejected(self.reason)
 
     def validate_feedback(self, sample: ObservedFeedback, now_s: float):
+        self.validate_hold_feedback(sample, now_s)
+        if checked_speed(sample) > self.limits.max_feedback_rpm:
+            self.reject("velocity_limit")
+
+    def validate_hold_feedback(self, sample: ObservedFeedback, now_s: float):
+        # 保持请求需要可信位置；运动超速仍由 validate_feedback 拒绝。
         values = (sample.request_s, sample.received_s, now_s,
                   sample.state.angle_deg, sample.state.speed_rpm)
         if not all(isfinite(value) for value in values):
@@ -212,18 +228,22 @@ class SingleJointMonitor:
             self.reject("axis_error")
         if not self.limits.lower_deg <= sample.state.angle_deg <= self.limits.upper_deg:
             self.reject("joint_limit")
-        if checked_speed(sample) > self.limits.max_feedback_rpm:
-            self.reject("velocity_limit")
+        checked_speed(sample)
         if self.last_received_s is not None and sample.request_s <= self.last_received_s:
             self.reject("feedback_repeated_or_out_of_order")
         if (self.last_received_s is not None
                 and sample.request_s - self.last_received_s > self.limits.feedback_timeout_s):
             self.reject("feedback_gap")
         if self.last_received_s is not None:
-            elapsed = sample.received_s - self.last_received_s
+            if self.last_request_s is None or self.last_angle_deg is None:
+                self.reject("feedback_history_invalid")
+            # 两次事务时长会变化，接收间隔不能代表设备采样间隔。
+            # 使用主机事务的外侧时间范围检查位置一致性，不声明设备采样年龄。
+            elapsed = sample.received_s - self.last_request_s
             allowed = self.limits.max_feedback_rpm * 6 * elapsed + self.limits.position_noise_deg
             if abs(sample.state.angle_deg - self.last_angle_deg) > allowed:
                 self.reject("feedback_position_jump")
+        self.last_request_s = sample.request_s
         self.last_received_s = sample.received_s
         self.last_angle_deg = sample.state.angle_deg
 
@@ -248,7 +268,8 @@ class SingleJointMonitor:
         return target
 
     def observe(self, sample: ObservedFeedback, now_s: float) -> bool:
-        if self.phase not in ("moving", "settling"):
+        if (self.phase not in ("moving", "settling") or self.started_s is None
+                or self.start_deg is None or self.target_deg is None or self.arrival is None):
             self.reject("execution_not_moving")
         self.validate_feedback(sample, now_s)
         if self.phase == "moving" and now_s - self.started_s > self.limits.motion_timeout_s:
@@ -261,6 +282,8 @@ class SingleJointMonitor:
             self.phase = "settling"
             self.position_arrived_s = now_s
         if self.phase == "settling":
+            if self.position_arrived_s is None:
+                self.reject("settling_clock_invalid")
             if not position_arrived:
                 self.reject("target_left_settling_tolerance")
             if now_s - self.position_arrived_s > self.limits.hold_timeout_s:
@@ -361,6 +384,8 @@ def _run_single_joint(vendor, control, joint, delta_deg, limits, log_path, targe
 
         record("start", joint=joint, node_id=node, delta_deg=delta_deg, requested_target_deg=target_deg,
                limits=asdict(limits),
+               position_change_time_basis="previous_request_to_current_receive",
+               device_sample_time_known=False,
                coordinate_basis=("forward_output_shaft_deg" if limits.axis_type == "prismatic"
                                  else "joint_angle_deg"),
                calibration=asdict(control.converter.calibration.for_joint(joint)))
@@ -412,12 +437,13 @@ def _run_single_joint(vendor, control, joint, delta_deg, limits, log_path, targe
             # 包括 Ctrl+C：终止后续运动；不清错、不失能、不广播。
             stop_result = "no_motion_command_attempted"
             stop_error = ""
+            stop_observation = None
             if command_attempted:
                 stop_result = "external_stop_required"
             can_hold = (command_attempted and not reader.in_transaction
                         and (isinstance(error, KeyboardInterrupt) or monitor.reason in
                              ("motion_timeout", "motion_outside_requested_interval",
-                              "velocity_limit", "feedback_position_jump", "settling_timeout",
+                              "velocity_limit", "settling_timeout",
                               "target_left_settling_tolerance")))
             if can_hold:
                 try:
@@ -425,9 +451,13 @@ def _run_single_joint(vendor, control, joint, delta_deg, limits, log_path, targe
                     current = window.add(reader.read(joint))
                     record("hold_requested", sample=asdict(current))
                     stop_monitor = SingleJointMonitor(node, limits)
-                    stop_monitor.validate_feedback(current, time.monotonic())
+                    stop_monitor.last_request_s = monitor.last_request_s
+                    stop_monitor.last_received_s = monitor.last_received_s
+                    stop_monitor.last_angle_deg = monitor.last_angle_deg
+                    stop_monitor.validate_hold_feedback(current, time.monotonic())
                     control.set_angle(vendor, joint, current.state.angle_deg,
                                       speed_rpm=limits.speed_rpm, accel_rpm_s=limits.accel_rpm_s)
+                    record("hold_command_call_returned")
                     # 命令返回不证明物理停车，必须继续读取并观察。
                     hold_started = time.monotonic()
                     until = hold_started + limits.hold_timeout_s
@@ -444,6 +474,12 @@ def _run_single_joint(vendor, control, joint, delta_deg, limits, log_path, targe
                             break
                     if stop_result != "hold_observed":
                         stop_error = "hold_observation_timeout"
+                        stop_observation = dict(
+                            conditions=arrival.last_conditions,
+                            max_settled_s=arrival.max_settled_s,
+                            required_settle_s=limits.settle_s,
+                            stopped_rpm=limits.stopped_rpm,
+                        )
                 except BaseException as hold_error:
                     # 停止尝试失败仍保留原始异常；必须通知现场操作人员。
                     stop_result = "external_stop_required"
@@ -451,5 +487,6 @@ def _run_single_joint(vendor, control, joint, delta_deg, limits, log_path, targe
             print(f"执行已终止：{error}；停止状态：{stop_result}", flush=True)
             if stop_result == "external_stop_required":
                 print("无法确认电机已经停止，请立即操作现场急停。", flush=True)
-            record("aborted", reason=str(error), stop_result=stop_result, stop_error=stop_error)
+            record("aborted", reason=str(error), stop_result=stop_result, stop_error=stop_error,
+                   stop_observation=stop_observation)
             raise

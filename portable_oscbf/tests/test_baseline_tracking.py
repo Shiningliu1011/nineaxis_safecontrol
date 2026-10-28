@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from pathlib import Path
 from time import perf_counter
 
 import _path_setup  # noqa: F401
@@ -8,14 +7,12 @@ import numpy as np
 import pytest
 from artifact_paths import TEST_OUTPUT
 
-from work.ik_data_loader import load_repository_trajectory
+from historical_trajectory import load_historical_trajectory
 from work.jax_control_facade import JaxControlLoop
 from work.nineaxis_kinematics import NineaxisKinematics
 from work.path_following import PathFollowingConfig
 
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
-CURRENT_TRAJECTORY = REPO_ROOT / "data" / "nurbs" / "ik_input.mat"
 OUTPUT_PATH = TEST_OUTPUT / "baseline_tracking.npz"
 NUM_STEPS = 3000
 STEADY_START = 100
@@ -44,7 +41,8 @@ def _work_start_configuration(trajectory) -> np.ndarray:
 
 
 def _run_baseline() -> tuple[dict, float, float]:
-    trajectory = load_repository_trajectory(str(CURRENT_TRAJECTORY))
+    # 保持基准轨迹的物理尺寸和速度，使用当前模型重新求解有效起点。
+    trajectory = load_historical_trajectory()
     geometry = trajectory.path_geometry()
     initial_q = _work_start_configuration(trajectory)
 

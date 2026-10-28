@@ -1,0 +1,19 @@
+{
+  "id": "j1-model-motion-recovery",
+  "name": "j1-model-motion-recovery",
+  "title": "修复 J1 模型坐标并核查单关节保护与恢复证据",
+  "status": "in_progress",
+  "branch": "main",
+  "base_branch": "main",
+  "base_commit": "59525424e4b3d6485ff0f0d0d8477f93a93d0dbb",
+  "code_test_baseline": "4c98a64d9bfc474e0e2efd253df642a4bc48b4f4",
+  "issues": [
+    153,
+    164
+  ],
+  "risk": "high",
+  "risk_reason": "模型坐标、碰撞几何及真实设备反馈与停车保护",
+  "commit_authorized": true,
+  "push_authorized": true,
+  "hardware_actions_authorized": false
+}

@@ -1,7 +1,5 @@
 """Parity tests for the fixed-shape JAX arc-length path state machine."""
 
-from pathlib import Path
-
 import _path_setup  # noqa: F401
 import jax
 import jax.numpy as jnp
@@ -216,15 +214,10 @@ def test_jax_endpoint_brake_matches_host_before_the_final_sample():
 
 
 def test_repository_dense_turn_projection_follows_recorded_feedback():
-    from work.ik_data_loader import load_repository_trajectory
+    from historical_trajectory import load_historical_trajectory
     from work.nineaxis_kinematics import NineaxisKinematics
 
-    root = Path(__file__).resolve().parents[2]
-    trajectory = load_repository_trajectory(
-        str(root / "data/nurbs/ik_input.mat"),
-        config_yaml_path=str(root / "portable_oscbf/config/nineaxis.yaml"),
-        feedrate_scale=3.5,
-    )
+    trajectory = load_historical_trajectory(feedrate_scale=3.5)
     geometry = trajectory.path_geometry()
     # 2026-10-14 实际仿真转弯处的关节反馈与路径状态。
     q = np.array([0.2444442898502571, -0.5623388198302471,
@@ -232,6 +225,7 @@ def test_repository_dense_turn_projection_follows_recorded_feedback():
                   0.3437439091361125, -0.49302994538208084,
                   -0.21349692718176297, -0.8447508369212231,
                   -0.1967738609849288])
+    q[0] -= 0.085
     position = NineaxisKinematics().ee_position(q)
     state = PathFollowerState(reference_progress_m=1.5062819914607943,
                               projected_progress_m=1.4962819914607943,

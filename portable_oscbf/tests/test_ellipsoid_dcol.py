@@ -27,7 +27,10 @@ def _geometry(links, centers, radii, capacity=1):
         "source": "analytic ellipsoids for numerical validation; no mesh coverage claim",
         "links": [
             {"link": name, "slots": [
-                {"center_m": list(center), "radii_m": list(radius), "active_mask": True},
+                # 解析参考场景随 J1 新起点整体平移，保持椭球间相对位置。
+                {"center_m": (np.asarray(center) + [0, 0, 0.085]).tolist()
+                 if name == "base_link" else list(center),
+                 "radii_m": list(radius), "active_mask": True},
                 *[{"center_m": [0.0]*3, "radii_m": [1.0]*3, "active_mask": False}
                   for _ in range(capacity - 1)],
             ]} for name, center, radius in zip(links, centers, radii)
@@ -228,7 +231,7 @@ def test_geometry_identity_complete_pairs_and_capacity_are_checked():
 def test_query_symmetric_dangers_keep_opposing_primitive_gradients():
     doc = _geometry(["base_link", "Link1"], [[0, 0, -0.2], [0, 0, 0]], [[0.05]*3]*2, capacity=2)
     doc["geometry"]["links"][0]["slots"][1] = {
-        "center_m": [0, 0, 0.2], "radii_m": [0.05]*3, "active_mask": True,
+        "center_m": [0, 0, 0.285], "radii_m": [0.05]*3, "active_mask": True,
     }
     _sign_geometry(doc)
     module = _module(doc, clearance_mm=150.0)

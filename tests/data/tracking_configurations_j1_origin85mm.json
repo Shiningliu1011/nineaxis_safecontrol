@@ -1,0 +1,11 @@
+{
+  "kind": "simulation_initial_configuration",
+  "model_hash": "7bfec76f1a8830a8009ae9f35b0d9f18a724ae2358af018ecba5f281d50093c6",
+  "reference_identity": "f7eaac3d827505e1697440e81432111d9e0ac20b0260f9c02fd7f04ecb6fbc09",
+  "start_q_si": [0.029694053414681915, 0.157267586212721, 0.640807620567238, -1.2842251424224784, 1.434898853137905, -0.19585593964237, 0.6309619333882485, 0.23842120366645347, -0.13081992337792248],
+  "distant_q_si": [0.1453562, 0.1112539, 1.0167209, -0.6810303, -1.8294025, -0.4664294, 0.4743473, -1.0429228, 0.0289233],
+  "position_error_m": 1.0500243644016712e-14,
+  "tool_axis_error_rad": 1.2416751335005742e-15,
+  "start_joint_margin_si": 0.02,
+  "generator": "scipy.optimize.least_squares, position_and_tool_axis_5d, bounded_by_START_IK_MIN_JOINT_MARGIN, seed_from_original_posture, xtol=ftol=gtol=1e-12"
+}

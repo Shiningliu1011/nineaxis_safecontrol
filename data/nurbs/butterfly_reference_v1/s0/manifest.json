@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "format": "nineaxis-butterfly-continuous",
-  "identity": "58ff1e18b3c7f874f9ec2a3557785d6316bd4a2136bb40b25014d089b91f877e",
+  "identity": "a5f5dfa4e609a3cdbc27cc0552e223c85017b9b7a2f519d887dea5f2cdbe320a",
   "description": {
     "source_sha256": {
       "ik_input.mat": "79868b03afd68f9d4cca1cba568320f0f48efd355d020a9372f2037549c3293f",
@@ -25,21 +25,21 @@
     "transform_kind": "nominal_simulation_similarity",
     "transform": [
       [
-        0.967379812532678,
+        0.9673798125326781,
         0.0,
         0.0,
-        -4.538030229213852e-05
+        -4.538030229213853e-05
       ],
       [
         0.0,
-        0.967379812532678,
+        0.9673798125326781,
         0.0,
         0.33200184706543157
       ],
       [
         0.0,
         0.0,
-        0.967379812532678,
+        0.9673798125326781,
         1.3668826946321033
       ],
       [
@@ -63,18 +63,18 @@
     ],
     "projection_centres_m": [
       [
-        -7.246874682720339e-05,
-        0.3466393505935161,
-        1.6372593390674273
+        -7.246874682698135e-05,
+        0.34663935059351614,
+        1.637259339067428
       ],
       [
-        -7.246874682720339e-05,
-        0.3466393505935161,
-        1.6372593390674266
+        -7.246874682698135e-05,
+        0.34663935059351614,
+        1.6372593390674277
       ]
     ],
     "projection_radii_m": [
-      0.2706009973196956,
+      0.27060099731970383,
       0.2706
     ],
     "tool_frame": "tool0",
@@ -106,8 +106,8 @@
         "revolute",
         "revolute"
       ],
-      "kinematics_data_sha256": "aaed3e29d965bb3b4bd00dd4e20f2c96090dee0464f428da7b3c5a9761882a3f",
-      "geometry_config_sha256": "c9e54de9f3de95e1733a1e4e60de24289eb3363d50d8789d243f0be5c64e6286"
+      "kinematics_data_sha256": "59073373868d5c124ea7187a48276feb3dd8e4097f98dbee7dc8f3cac6573b49",
+      "geometry_config_sha256": "8104d12823161ea548f66488b567bebb1080a69b63d4d40fb100b6e9441cc051"
     },
     "C_source_tcp": [
       [
@@ -154,23 +154,23 @@
   },
   "config_inputs": {
     "kinematics": {
-      "path": "/home/lsn/robot/robot_safecontrol/portable_oscbf/config/nineaxis.yaml",
-      "sha256": "c9e54de9f3de95e1733a1e4e60de24289eb3363d50d8789d243f0be5c64e6286"
+      "path": "/home/lsn/robot-safecontrol/portable_oscbf/config/nineaxis.yaml",
+      "sha256": "8104d12823161ea548f66488b567bebb1080a69b63d4d40fb100b6e9441cc051"
     },
     "controller": {
-      "path": "/home/lsn/robot/robot_safecontrol/config/oscbf_controller.yaml",
+      "path": "/home/lsn/robot-safecontrol/config/oscbf_controller.yaml",
       "sha256": "5f45e74285921208d8d5904f24232e1cdb87922db85020dc9640abc4930f35ac"
     },
     "scenario": {
-      "path": "/home/lsn/robot/robot_safecontrol/config/static_experiment_s0.yaml",
-      "sha256": "2b2859312fca886a235b30d20727665b841e2f26e826f86fd26cda79a724c08e"
+      "path": "/home/lsn/robot-safecontrol/config/static_experiment_s0.yaml",
+      "sha256": "2be0189342326d1055e07f2f9661b802adcfc9ccdff8450af049e76376e7c55a"
     }
   },
   "events": [
     {
       "kind": "source_cubic_node",
       "u": 0.0416666666666667,
-      "s": 0.06359647710713506,
+      "s": 0.06359647710713508,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
@@ -184,7 +184,7 @@
     {
       "kind": "source_cubic_node",
       "u": 0.0833333333333333,
-      "s": 0.12064259956817673,
+      "s": 0.12064259956817669,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
@@ -198,21 +198,21 @@
     {
       "kind": "source_cubic_node",
       "u": 0.125,
-      "s": 0.15774174428310053,
+      "s": 0.1577417442831005,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.145833333333333,
-      "s": 0.1754839023673634,
+      "s": 0.1754839023673633,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.166666666666667,
-      "s": 0.19616003869038826,
+      "s": 0.19616003869038823,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
@@ -226,252 +226,252 @@
     {
       "kind": "source_cubic_node",
       "u": 0.208333333333333,
-      "s": 0.24047658515109838,
+      "s": 0.24047658515109843,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.229166666666667,
-      "s": 0.26258043458569114,
+      "s": 0.2625804345856912,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.25,
-      "s": 0.2850676950213741,
+      "s": 0.2850676950213742,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.270833333333333,
-      "s": 0.3029770921709595,
+      "s": 0.30297709217095964,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.291666666666667,
-      "s": 0.3260938441363942,
+      "s": 0.32609384413639436,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.3125,
-      "s": 0.350657320375854,
+      "s": 0.35065732037585423,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.333333333333333,
-      "s": 0.3726423887643746,
+      "s": 0.3726423887643749,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.354166666666667,
-      "s": 0.3928803285351241,
+      "s": 0.3928803285351244,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.375,
-      "s": 0.4176150890433399,
+      "s": 0.4176150890433402,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.395833333333333,
-      "s": 0.43805595074039,
+      "s": 0.4380559507403904,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.416666666666667,
-      "s": 0.4487285077267147,
+      "s": 0.4487285077267151,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.4375,
-      "s": 0.4629038500121604,
+      "s": 0.46290385001216083,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.458333333333333,
-      "s": 0.4749024824612162,
+      "s": 0.47490248246121664,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.479166666666667,
-      "s": 0.4891946326420706,
+      "s": 0.489194632642071,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.5,
-      "s": 0.5001428269805432,
+      "s": 0.5001428269805437,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.520833333333333,
-      "s": 0.5110910898290748,
+      "s": 0.5110910898290751,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.541666666666667,
-      "s": 0.5253832559392669,
+      "s": 0.5253832559392673,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.5625,
-      "s": 0.5373819075530131,
+      "s": 0.5373819075530135,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.583333333333333,
-      "s": 0.5515573285910735,
+      "s": 0.551557328591074,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.604166666666667,
-      "s": 0.5622299494389111,
+      "s": 0.5622299494389116,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.625,
-      "s": 0.5826709305512003,
+      "s": 0.5826709305512009,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.645833333333333,
-      "s": 0.6074061318137055,
+      "s": 0.6074061318137061,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.666666666666667,
-      "s": 0.6276447238911815,
+      "s": 0.627644723891182,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.6875,
-      "s": 0.6496319580569571,
+      "s": 0.6496319580569575,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.708333333333333,
-      "s": 0.6741973700135169,
+      "s": 0.6741973700135174,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.729166666666667,
-      "s": 0.6973163201847511,
+      "s": 0.6973163201847515,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.75,
-      "s": 0.7152274107730439,
+      "s": 0.7152274107730443,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.770833333333333,
-      "s": 0.7377158994043282,
+      "s": 0.7377158994043285,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.791666666666667,
-      "s": 0.7598202342462725,
+      "s": 0.7598202342462729,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.8125,
-      "s": 0.7817989578276155,
+      "s": 0.7817989578276158,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.833333333333333,
-      "s": 0.8041398192326931,
+      "s": 0.8041398192326932,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.854166666666667,
-      "s": 0.8248176994914908,
+      "s": 0.824817699491491,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.875,
-      "s": 0.8425622076115187,
+      "s": 0.8425622076115189,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.895833333333333,
-      "s": 0.8613103866023182,
+      "s": 0.8613103866023183,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.916666666666667,
-      "s": 0.8796639768202121,
+      "s": 0.8796639768202124,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
     {
       "kind": "source_cubic_node",
       "u": 0.9375,
-      "s": 0.9057817429991047,
+      "s": 0.9057817429991049,
       "continuity": "C2",
       "third_derivative": "left_and_right"
     },
@@ -640,17 +640,17 @@
     "source_points": 14992,
     "source_blocks": 23,
     "raw_position_max_error_mm": 8.526512829121202e-14,
-    "source_position_max_error_m": 2.498001805406602e-16,
-    "source_axis_max_error": 1.1102230246251565e-15,
-    "final_length_m": 1.8167619852376178,
+    "source_position_max_error_m": 2.220446049250313e-16,
+    "source_axis_max_error": 9.992007221626409e-16,
+    "final_length_m": 1.8167619852376147,
     "source_length_mm": 1900.119574583678,
     "source_duration_s": 29.98199999999426,
-    "certified_minimum_parameter_speed_m_per_u": 0.00887836096711943,
+    "certified_minimum_parameter_speed_m_per_u": 0.008878360967119206,
     "speed_certificate": "Bernstein_interval_bounds_axial_and_angular_polynomials",
     "source_nonfinite": {
       "speed_series": 1
     },
-    "arc_error_estimate_m": 5.1551073031534857e-11,
+    "arc_error_estimate_m": 5.1551069582382296e-11,
     "independent_arc_difference_m": 1.1102230246251565e-15,
     "inverse_max_u_error": 2.6451063561694355e-14,
     "inverse_max_residual_m": 1.9984014443252818e-14
@@ -688,7 +688,7 @@
     }
   },
   "generator": {
-    "command": "/home/lsn/robot/robot_safecontrol/.scratch/host-recovery/venv/bin/python -m robot_safecontrol_moveit.pipe_assets.butterfly_reference generate --source-dir /home/lsn/robot/robot_safecontrol/data/nurbs --kinematics-config portable_oscbf/config/nineaxis.yaml --controller-profile config/oscbf_controller.yaml --scenario-config config/static_experiment_s0.yaml --output data/nurbs/butterfly_reference_v1/s0",
+    "command": "/home/lsn/robot/robot_safecontrol/.scratch/host-recovery/venv/bin/python3 -m robot_safecontrol_moveit.pipe_assets.butterfly_reference generate --source-dir data/nurbs/butterfly_reference_v1/s0/source --kinematics-config portable_oscbf/config/nineaxis.yaml --controller-profile config/oscbf_controller.yaml --scenario-config config/static_experiment_s0.yaml --output .scratch/j1-motion-recovery/butterfly-physical-s0",
     "python": "3.10.12",
     "packages": {
       "numpy": "1.26.4",
@@ -696,17 +696,17 @@
       "PyYAML": "6.0.2"
     },
     "source_code_sha256": {
-      "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/pipe_assets/butterfly_reference.py": "ced8449b8b0ec89bf614c0ff762ee456fadc8ec67193653bd9849ea36a53a0fd",
-      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/continuous_path_reference.py": "6444f551dc7d44098687362446047fee900bf7a1c9c1ca06f58c55d8798765a2",
-      "/home/lsn/robot/robot_safecontrol/portable_oscbf/work/ik_data_loader.py": "cbc8eae6b853c0ea2206a9a129e1267715e3cb0628caa9c98883abfcc57ef401",
-      "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/pipe_assets/pipe_nurbs_geometry.py": "fcff0ea99af1a96155079bde713a5dec3cd7739674df2c29c665ac1ffd58e065",
-      "/home/lsn/robot/robot_safecontrol/src/robot_safecontrol_moveit/robot_spec.py": "22eff820ede1f3d740ddeac5eddc732aceec1041eca58745a7ec5ef350ac0260"
+      "/home/lsn/robot-safecontrol/src/robot_safecontrol_moveit/pipe_assets/butterfly_reference.py": "ced8449b8b0ec89bf614c0ff762ee456fadc8ec67193653bd9849ea36a53a0fd",
+      "/home/lsn/robot-safecontrol/portable_oscbf/work/continuous_path_reference.py": "6444f551dc7d44098687362446047fee900bf7a1c9c1ca06f58c55d8798765a2",
+      "/home/lsn/robot-safecontrol/portable_oscbf/work/ik_data_loader.py": "1fac73721568e711122827e61700529a82c735788196a427413fa4839fe4bfcb",
+      "/home/lsn/robot-safecontrol/src/robot_safecontrol_moveit/pipe_assets/pipe_nurbs_geometry.py": "fcff0ea99af1a96155079bde713a5dec3cd7739674df2c29c665ac1ffd58e065",
+      "/home/lsn/robot-safecontrol/src/robot_safecontrol_moveit/robot_spec.py": "22eff820ede1f3d740ddeac5eddc732aceec1041eca58745a7ec5ef350ac0260"
     }
   },
   "loader_output": "[IKTrajectoryData] 加载完成: 14992 点, 23 块, Ts=0.002s, 总时长=29.982s\n",
   "outputs": {
-    "reference.npz": "53be888fc67051fc82c62729262434c49f01f5da01f52456b457618b81085d2b",
-    "samples.npz": "7bbf4c91b7c3e1fcb4ef814280d16db0843137466987679aa8760624bfe60815",
+    "reference.npz": "4d56d92131f34314c0fbcc555c4cd7596d75caad49f219a341335dd0dfdff941",
+    "samples.npz": "205c4aac3f9022bd686e83a3950b1c4d7d198d27c8f435701cd93eb393e0464f",
     "source/control_points.txt": "e34c363f1da3a6de51781fe5836d632290354481bcd8b2b5532e97e2c5e29bd7",
     "source/ik_input.mat": "79868b03afd68f9d4cca1cba568320f0f48efd355d020a9372f2037549c3293f",
     "source/knot_vector.txt": "94c975c90fed33f2106af9c2db161cdd962bdf97c6ffdf59ac4377f0647246d6",

@@ -50,7 +50,7 @@ namespace
         {
             double diff = va[i] - vb[i];
             if (i == 0)
-                diff *= PI / 0.585;
+                diff *= PI / 0.5;
             sum += diff * diff;
         }
         return std::sqrt(sum);
@@ -68,7 +68,7 @@ namespace
         {
             double diff = std::fabs(va[i] - vb[i]);
             if (i == 0)
-                diff *= PI / 0.585;
+                diff *= PI / 0.5;
             total += diff;
         }
         return total;

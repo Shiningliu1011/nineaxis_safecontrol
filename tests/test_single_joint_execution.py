@@ -114,6 +114,35 @@ def test_position_jump_rejected_even_with_zero_reported_speed():
         guard.observe(sample(1.02, 4), 1.022)
 
 
+def test_hold_request_allows_motion_overspeed_with_trusted_position():
+    guard = monitor()
+    guard.validate_hold_feedback(sample(speed=0.42), 1.002)
+    with pytest.raises(MotionRejected, match="velocity_limit"):
+        monitor().validate_feedback(sample(speed=0.42), 1.002)
+
+
+@pytest.mark.parametrize("feedback,now,reason", [
+    (replace(sample(), node_id=3), 1.002, "feedback_node_mismatch"),
+    (replace(sample(), axis_error=True), 1.002, "axis_error"),
+    (sample(angle=91), 1.002, "joint_limit"),
+    (sample(angle=nan), 1.002, "nonfinite_feedback"),
+    (sample(), 1.3, "feedback_timeout"),
+])
+def test_hold_request_rejects_untrusted_position(feedback, now, reason):
+    with pytest.raises(MotionRejected, match=reason):
+        monitor().validate_hold_feedback(feedback, now)
+
+
+def test_hold_request_keeps_position_continuity_and_aborted_state():
+    guard = monitor()
+    guard.validate_hold_feedback(sample(), 1.002)
+    with pytest.raises(MotionRejected, match="feedback_position_jump"):
+        guard.validate_hold_feedback(sample(1.02, 4), 1.022)
+    assert guard.phase == "aborted"
+    with pytest.raises(MotionRejected, match="feedback_position_jump"):
+        guard.start(sample(2), 1, 2.002)
+
+
 def test_wrong_direction_rejected():
     guard = monitor()
     guard.start(sample(), 5, 1.002)

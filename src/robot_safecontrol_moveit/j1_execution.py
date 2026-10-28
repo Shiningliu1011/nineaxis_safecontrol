@@ -50,8 +50,17 @@ class J1ScrewControl:
         if len(joints) != 1 or joints[0].get("type") != "prismatic":
             raise ValueError("模型必须提供唯一的 J1 移动关节")
         limit = joints[0].find("limit")
-        if limit is None or float(limit.get("lower")) > 0 or float(limit.get("upper")) < 0.5:
-            raise ValueError("模型行程未覆盖已确认的 J1 运行范围")
+        if limit is None or not {"lower", "upper"} <= limit.attrib.keys():
+            raise ValueError("J1 模型缺少位置范围")
+        if (float(limit.attrib["lower"]) != spec["lower_mm"] / 1000
+                or float(limit.attrib["upper"]) != spec["upper_mm"] / 1000):
+            raise ValueError("模型行程与已确认的 J1 运行范围不符")
+        origin, axis = joints[0].find("origin"), joints[0].find("axis")
+        if (origin is None or axis is None
+                or [float(value) for value in origin.get("xyz", "").split()] != [0, 0, 0.085]
+                or [float(value) for value in origin.get("rpy", "").split()] != [0, 0, 0]
+                or [float(value) for value in axis.get("xyz", "").split()] != [0, 0, 1]):
+            raise ValueError("J1 模型起点或轴向与已确认的坐标定义不符")
         converter = UnitConverter(
             node_map=node_map,
             calibration=JointCalibrationTable.from_entries([PerJointCalibration("J1", **calibration)]),

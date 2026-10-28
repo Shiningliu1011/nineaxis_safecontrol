@@ -130,7 +130,7 @@ def test_closest_self_pair_changes_and_intersection_has_no_gradient():
     geometry = StaticGeometry(config.scene())
     first = [row for row in geometry.query(config.initial_position) if row.kind == "self"]
     q = np.array([
-        .5610871585363391, 1.109274689614743, -.11432832268201332,
+        .5610871585363391 - .085, 1.109274689614743, -.11432832268201332,
         -.8213535687386871, -2.751676740221647, -1.3727219851907795,
         1.4564652580335808, 1.3963494994681076, .39895462501701884,
     ])
@@ -141,12 +141,15 @@ def test_closest_self_pair_changes_and_intersection_has_no_gradient():
     assert all(row.distance.valid for row in second)
     intersecting_q = np.array([
         .010020933078072601, -.18142433735842833, -1.3532870341361734,
-        -1.4186785575682663, 2.5216669723618232, .7238508762788514,
+        -1.5708, 2.5216669723618232, .7238508762788514,
         .5082563556425679, 1.3252169416531787, -.45214738627998274,
     ])
+    assert np.all(intersecting_q >= geometry.kinematics.joint_limits.q_min)
+    assert np.all(intersecting_q <= geometry.kinematics.joint_limits.q_max)
     intersections = [
         row for row in geometry.query(intersecting_q)
         if row.kind == "self" and row.distance.status == "collision"
     ]
     assert intersections
+    assert ("Link1", "Link9") in {row.pair for row in intersections}
     assert all(not row.distance.valid and row.gradient is None for row in intersections)

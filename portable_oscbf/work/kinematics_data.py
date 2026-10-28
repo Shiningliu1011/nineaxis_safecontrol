@@ -6,7 +6,7 @@ from work.robot_geometry import LINK_NAMES
 
 JOINT_CHAIN = [
     ('world', 'base_link', 'fixed', 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, (0.0, 0.0, 1.0)),
-    ('base_link', 'Link1', 'prismatic', 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, (0.0, 0.0, 1.0)),
+    ('base_link', 'Link1', 'prismatic', 0.0, 0.0, 0.085, 0.0, 0.0, 0.0, (0.0, 0.0, 1.0)),
     ('Link1', 'Link2', 'revolute', 0.0, 0.343, 0.0, 1.5708, -1.5708, 0.0, (0.0, 0.0, 1.0)),
     ('Link2', 'Link3', 'revolute', 0.225, 0.0, 0.0, 0.0, 0.0, 0.0, (0.0, 0.0, 1.0)),
     ('Link3', 'Link4', 'revolute', 0.225, 0.0, 0.0, 0.0, 0.0, 1.5708, (0.0, 0.0, 1.0)),
@@ -31,7 +31,7 @@ JOINT_POSITION_LOWER = (
 )
 
 JOINT_POSITION_UPPER = (
-    0.585,
+    0.5,
     1.5708,
     1.5708,
     1.5708,

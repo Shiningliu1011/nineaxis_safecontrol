@@ -1,0 +1,22 @@
+{
+  "kind": "simulation_initial_configuration",
+  "model_hash": "7bfec76f1a8830a8009ae9f35b0d9f18a724ae2358af018ecba5f281d50093c6",
+  "reference_identity": "a5f5dfa4e609a3cdbc27cc0552e223c85017b9b7a2f519d887dea5f2cdbe320a",
+  "source_record_sha256": "3afaa613933aa980c09a20ad8fbbded83ee47e9cef7da3259aab3097074b6474",
+  "reference_progress_m": 1.8167409361407634,
+  "position_si": [
+    0.02222735778635624,
+    -0.6768133021442293,
+    0.6290096805706722,
+    0.6808644360755959,
+    0.3535055970795955,
+    -0.8665997931173458,
+    -0.17240437048233745,
+    0.25826155218167257,
+    -0.039653157445870675
+  ],
+  "position_error_m": 7.70104153103502e-12,
+  "tool_axis_vector_error": 3.8503054994456516e-13,
+  "start_joint_margin_si": 0.02,
+  "generator": "scipy.optimize.least_squares, position_and_tool_axis_5d, bounded_by_START_IK_MIN_JOINT_MARGIN"
+}

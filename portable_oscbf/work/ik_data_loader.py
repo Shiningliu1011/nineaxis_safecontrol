@@ -12,15 +12,11 @@ import numpy as np
 from scipy.spatial.transform import Rotation as R, Slerp
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple
 
 import yaml
 
 from work.actuator_limits import JOINT_NAMES
-
-if TYPE_CHECKING:
-    from work.nineaxis_kinematics import NineaxisKinematics
-
 
 def load_kinematics_config(config_yaml_path: str | Path) -> dict:
     """读取轨迹配置并核对九轴关节顺序。"""
@@ -44,36 +40,23 @@ def reference_trajectory_transform(
         mat_path: str,
         align_rotation: np.ndarray,
         ee_center: np.ndarray,
-        kinematics: Optional["NineaxisKinematics"] = None,
-        max_span_fraction: float = 0.6) -> np.ndarray:
-    """Build the reference trajectory-to-base transform (M4/M5 shared helper).
-
-    Mirrors the reference runner's ``_compute_traj_transform``: rotate the raw
-    trajectory by ``align_rotation``, scale it so its largest span covers 60%
-    of the J1 prismatic stroke, and align its centroid to ``ee_center``.
-    Returns a 4x4 homogeneous transform ``T_traj_to_base`` (uniform scale in
-    the rotation block, matching ``IKTrajectoryData``'s scale handling).
-    """
+        *, span_m: float) -> np.ndarray:
+    """按明确的物理尺寸与中心生成轨迹到 base_link 的相似变换。"""
 
     import scipy.io as sio
 
-    if kinematics is None:
-        from work.nineaxis_kinematics import NineaxisKinematics
-
-        kinematics = NineaxisKinematics()
+    if type(span_m) not in (float, int) or not np.isfinite(span_m) or span_m <= 0:
+        raise ValueError("trajectory_span_m 必须为有限正数，单位 m")
     raw = np.asarray(sio.loadmat(mat_path)["ik_input"][0, 0]["position_series"],
                      dtype=float) / 1000.0
     rotation = np.asarray(align_rotation, dtype=float)
     rotated = (rotation @ raw.T).T
 
-    ee_min = kinematics.ee_position(np.zeros(9))
-    q_j1_max = np.zeros(9)
-    q_j1_max[0] = kinematics.joint_limits.q_max[0]
-    ee_max = kinematics.ee_position(q_j1_max)
-    ws_z_extent = ee_max[2] - ee_min[2]
     max_extent = max(
         rotated[:, axis].max() - rotated[:, axis].min() for axis in range(3))
-    scale = ws_z_extent / max_extent * max_span_fraction
+    if not np.isfinite(max_extent) or max_extent <= 0:
+        raise ValueError("源轨迹需要有限且非零的物理尺寸")
+    scale = span_m / max_extent
 
     centroid = scale * rotated.mean(axis=0)
     translation = np.asarray(ee_center, dtype=float) - centroid
@@ -104,6 +87,7 @@ def load_repository_trajectory(
         mat_path,
         np.asarray(kinematics_config["trajectory_align_rotation"], dtype=float),
         np.asarray(kinematics_config["ee_center"], dtype=float),
+        span_m=kinematics_config["trajectory_span_m"],
     )
     data = IKTrajectoryData(mat_path, transform, feedrate_scale=feedrate_scale)
     data.set_orientation_mode(
