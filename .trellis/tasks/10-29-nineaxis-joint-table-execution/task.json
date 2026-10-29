@@ -1,0 +1,41 @@
+{
+  "id": "nineaxis-joint-table-execution",
+  "name": "nineaxis-joint-table-execution",
+  "title": "实现九轴标定姿态逐组执行与真实反馈保护",
+  "description": "接续 a95831b；完整九轴目标、真实反馈监控、停车与测量记录；运动锁定与ROS live保持关闭；本会话授权代码、非运动检查、提交与推送",
+  "status": "in_progress",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "Lsn",
+  "assignee": "Lsn",
+  "createdAt": "2026-10-29",
+  "completedAt": null,
+  "branch": "main",
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [
+    "10-29-camera-joint-table-measurement",
+    "10-29-tracker-joint-table-measurement"
+  ],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "九轴离线与仿真验证314项通过；首组目标已收到，J1现场参照约28mm；多圈已授权开启并回读，运动与零位恢复验收未完成",
+  "meta": {
+    "base_commit": "a95831bd6a452364e224eb4bcbbc02b1c8d3ec43",
+    "issues": [164, 153],
+    "risk": "high",
+    "risk_reason": "九轴真实设备位置写入权限、反馈与停车保护",
+    "commit_authorized": true,
+    "push_authorized": true,
+    "hardware_actions_authorized": true,
+    "hardware_authorization_scope": "仅 J1 多圈开关 31207=1 及保存配置；已执行并独立回读",
+    "motion_commands_authorized": false,
+    "zero_writes_authorized": false,
+    "reboot_authorized": false
+  }
+}

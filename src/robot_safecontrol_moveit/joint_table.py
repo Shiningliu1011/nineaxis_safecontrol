@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import csv
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from hashlib import sha256
 import io
 import json
@@ -16,12 +16,30 @@ from .drempower_can import CMD_POSITION_ANGLE_MODE1, can_id, encode_trapezoid_po
 from .drempower_joint_control import DrEmpowerJointControl
 from .j1_execution import J1ScrewControl
 from .motor_motion_limits import MAX_SINGLE_JOINT_SPEED_RPM, validate_motion_parameters
+from .motor_stop_latch import MotorStopLatch
 from .robot_spec import DEFAULT_JOINT_NAMES
 from .single_joint_execution import ExecutionLimits, MotionRejected
 
 
 TABLE_COLUMNS = ("pose_id", "J1_mm", *(f"{name}_deg" for name in DEFAULT_JOINT_NAMES[1:]))
 MEASUREMENT_KINDS = ("camera", "laser_tracker")
+
+
+def require_hardware_qualification(root: Path):
+    MotorStopLatch(root / ".scratch/motor_control/stop.json").require_clear()
+    raise RuntimeError(
+        "joint_table_live_disabled: 缺少九轴停止、反馈时效、独立保护、碰撞路径及J1零位恢复资格；"
+        "真实动作还需要当前会话的具体授权")
+
+
+def joint_execution_limits(root: Path) -> dict[str, ExecutionLimits]:
+    linear = J1ScrewControl.from_root(root)
+    return {
+        "J1": linear.limits(speed_mm_s=0.25, accel_mm_s2=0.05),
+        **{joint: replace(ExecutionLimits.from_urdf(root / "models/ninezzhou/urdf/ninezzhou.urdf", joint),
+                           speed_rpm=0.41)
+           for joint in DEFAULT_JOINT_NAMES[1:]},
+    }
 
 
 def _device_commands(q_mm_deg, linear: J1ScrewControl, rotary: DrEmpowerJointControl) -> list[dict]:

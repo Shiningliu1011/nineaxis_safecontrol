@@ -6,7 +6,7 @@ from pathlib import Path
 import time
 from threading import Lock
 from types import ModuleType
-from typing import NoReturn
+from typing import Any, NoReturn, Protocol
 import xml.etree.ElementTree as ET
 
 from .drempower_can import (
@@ -248,10 +248,16 @@ class SingleJointMonitor:
         self.last_angle_deg = sample.state.angle_deg
 
     def start(self, sample: ObservedFeedback, delta_deg: float, now_s: float) -> float:
+        return self._start(sample, delta_deg, now_s, allow_zero=False)
+
+    def start_absolute(self, sample: ObservedFeedback, target_deg: float, now_s: float) -> float:
+        return self._start(sample, target_deg - sample.state.angle_deg, now_s, allow_zero=True)
+
+    def _start(self, sample, delta_deg, now_s, *, allow_zero):
         if self.phase != "ready":
             self.reject("execution_not_ready")
         self.validate_feedback(sample, now_s)
-        if (not isfinite(delta_deg) or delta_deg == 0
+        if (not isfinite(delta_deg) or (delta_deg == 0 and not allow_zero)
                 or (self.limits.max_step_deg is not None
                     and abs(delta_deg) > self.limits.max_step_deg)):
             self.reject("step_limit")
@@ -294,8 +300,24 @@ class SingleJointMonitor:
         return False
 
 
+class FeedbackControl(Protocol):
+    def _node(self, joint: str) -> int: ...
+
+    def decode_state(self, joint: str, angle_deg: float, speed_rpm: float) -> JointFeedback: ...
+
+
+class FeedbackVendor(Protocol):
+    uart: Any
+    READ_FLAG: int
+    enable_replay_state: int
+
+    def send_command(self, id_num, cmd, data, rtr=0): ...
+
+    def receive_data(self, return_id=False): ...
+
+
 class VendorFeedbackReader:
-    def __init__(self, vendor: ModuleType, control: DrEmpowerJointControl, timeout_s: float):
+    def __init__(self, vendor: ModuleType | FeedbackVendor, control: FeedbackControl, timeout_s: float):
         if not 0 < timeout_s <= 0.2:
             raise ValueError("串口事务超时必须在 (0, 0.2] 内")
         # 厂家库打开的串口必须已经独占；这里不改变设备配置或连接。

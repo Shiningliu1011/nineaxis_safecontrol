@@ -52,6 +52,7 @@ setup(
             "docs/host_recovery_20261020.md",
             "docs/pipe_assets.md", "docs/pipe_feed_assets.md", "docs/pipe_pose_assets.md",
             "docs/calibration_joint_table.md",
+            "docs/joint_motion_limits_evidence.md",
         ]),
         (f"share/{package_name}/docs/modules", ["docs/modules/collision_scene_server.md"]),
         (f"share/{package_name}/docs/specs", ["docs/specs/static-obstacle-experiments.md"]),
