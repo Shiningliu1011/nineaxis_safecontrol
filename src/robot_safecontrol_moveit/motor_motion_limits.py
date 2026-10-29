@@ -1,5 +1,6 @@
 from math import isfinite
 from dataclasses import dataclass
+from decimal import Decimal
 
 
 MAX_SINGLE_JOINT_SPEED_RPM = 2.5 / 6
@@ -50,5 +51,5 @@ def validate_motion_parameters(
     if not 0.01 <= accel_rpm_s <= max_accel:
         raise ValueError(f"accel_rpm_s 必须在 [0.01, {max_accel}] rpm/s 内")
     for name, value in values:
-        if value != int(value * 100) / 100:
+        if Decimal(str(value)) % Decimal("0.01"):
             raise ValueError(f"{name} 必须为 0.01 的整数倍")

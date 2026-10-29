@@ -24,6 +24,7 @@ from __future__ import annotations
 import math
 import struct
 from dataclasses import dataclass
+from decimal import Decimal
 from typing import Union
 
 # --- 帧布局常量 ---------------------------------------------------------------
@@ -99,10 +100,9 @@ def can_node_id(frame_id: int) -> tuple[int, int]:
 
 
 def _int16_scaled(value: float, name: str) -> int:
-    scaled = float(value) / 0.01
-    if not math.isfinite(scaled):
+    if not math.isfinite(float(value)):
         raise ValueError(f"{name} 必须是有限值，got {value}")
-    rounded = int(scaled)
+    rounded = int(Decimal(str(value)) * 100)
     if not -32768 <= rounded <= 32767:
         raise ValueError(f"{name}*100 超出 int16 范围: {rounded}")
     return rounded

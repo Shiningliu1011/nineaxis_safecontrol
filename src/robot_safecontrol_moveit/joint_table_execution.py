@@ -8,7 +8,7 @@ from uuid import uuid4
 
 from .drempower_joint_control import DrEmpowerJointControl
 from .j1_execution import J1ScrewControl
-from .joint_table import JointTable, joint_execution_limits
+from .joint_table import JointTable, JointTableRow, joint_execution_limits
 from .measurement_files import PreparedMeasurementFile, prepare_measurement_files
 from .robot_spec import DEFAULT_JOINT_NAMES
 from .single_joint_execution import (
@@ -53,9 +53,11 @@ class JointTableControl:
 class JointTableExecutor:
     def __init__(self, table: JointTable, model, *, measurement_kind: str, task_id: str,
                  feedback_source: str, measurement_timeout_s: float = 300.0,
-                 limits: dict | None = None):
-        self.preview = table.preview(model, measurement_kind=measurement_kind)
-        if measurement_kind == "positioning" and len(table.rows) != 1:
+                 limits: dict | None = None, manual_positioning: bool = False):
+        self.preview = table.preview(model, measurement_kind=measurement_kind, execution_limits=limits)
+        if manual_positioning and measurement_kind != "positioning":
+            raise ValueError("手动定位必须使用 positioning")
+        if measurement_kind == "positioning" and len(table.rows) != 1 and not manual_positioning:
             raise ValueError("positioning 仅支持一组绝对目标")
         if not task_id.strip():
             raise ValueError("标定任务必须具有独立 task_id")
@@ -65,6 +67,7 @@ class JointTableExecutor:
             raise ValueError("测量等待期限必须为有限正数")
         self.table, self.model = table, model
         self.measurement_kind, self.task_id = measurement_kind, task_id
+        self.manual_positioning = manual_positioning
         self.feedback_source = feedback_source
         self.measurement_timeout_s = measurement_timeout_s
         self.measurement_started_s: float | None = None
@@ -89,14 +92,18 @@ class JointTableExecutor:
         self.reference: dict[str, float] = {}
         self.commands: list[dict] = []
         self.records: list[dict] = []
+        self.positioning_records: list[dict] = []
+        self.return_to_zero_attempt: dict | None = None
         self.attempts: list[dict] = []
         self.used_measurements: set[str] = set()
         self.termination: dict | None = None
         self.rejection_observation: dict | None = None
 
     def current_attempt(self) -> dict | None:
-        if (self.index < len(self.table.rows) and self.attempts
-                and self.attempts[-1]["pose_id"] == self.table.rows[self.index].pose_id
+        if (self.attempts
+                and (self.attempts[-1] is self.return_to_zero_attempt
+                     or (self.index < len(self.table.rows)
+                         and self.attempts[-1]["pose_id"] == self.table.rows[self.index].pose_id))
                 and self.attempts[-1]["status"] != "completed"):
             return self.attempts[-1]
         return None
@@ -197,7 +204,7 @@ class JointTableExecutor:
             attempt["last_conditions"] = conditions
             attempt["feedback"] = self.feedback_report()
         if not stationary:
-            if self.phase in ("ready", "awaiting_measurement"):
+            if self.phase in ("ready", "awaiting_measurement", "holding_position", "holding_zero"):
                 self.reject("joint_table_pose_changed_while_stopped")
             self.settled_since_s = None
             if self.phase == "initializing":
@@ -214,27 +221,78 @@ class JointTableExecutor:
             if self.row_started_s is None:
                 self.reject("joint_table_row_clock_invalid")
             self.phase = "awaiting_measurement"
-            self.measurement_started_s = now_s
+            if self.manual_positioning:
+                self.phase = "holding_zero" if self.return_to_zero_attempt is not None else "holding_position"
+            self.measurement_started_s = None if self.manual_positioning else now_s
             self.attempts[-1].update(status=self.phase, arrival_elapsed_s=now_s - self.row_started_s,
                                      feedback_stopped=True, stop_result="all_joint_feedback_stationary",
                                      stop_confirmed_s=now_s)
+            if self.manual_positioning:
+                self.attempts[-1].update(completed_s=now_s)
+                if self.return_to_zero_attempt is None:
+                    self.attempts[-1].update(status="positioning_completed")
+                    self.positioning_records.append({
+                        "pose_id": self.table.rows[self.index].pose_id, "completed_s": now_s,
+                        "feedback": self.feedback_report(), "feedback_source": self.feedback_source,
+                    })
         return True
+
+    def advance_positioning(self, *, now_s: float):
+        if (not self.manual_positioning or self.phase != "holding_position"
+                or self.index + 1 >= len(self.table.rows)):
+            raise ValueError("当前没有允许执行的下一组定位目标")
+        self.check_time(now_s)
+        self.attempts[-1]["status"] = "completed"
+        self.index += 1
+        self.phase = "ready"
+
+    def finish_positioning(self, *, now_s: float):
+        if not self.manual_positioning or self.phase not in ("ready", "holding_position", "holding_zero"):
+            raise ValueError("正常退出需要九轴反馈已经确认停车")
+        self.check_time(now_s)
+        returned_to_zero = self.phase == "holding_zero"
+        if self.phase in ("holding_position", "holding_zero"):
+            self.attempts[-1]["status"] = "completed"
+        self.phase = "completed"
+        self.termination = {"reason": "operator_exit", "stop_result": "all_joint_feedback_stationary",
+                            "disable_command_sent": False, "returned_to_zero": returned_to_zero}
+
+    def begin_return_to_zero(self, *, now_s: float) -> list[dict]:
+        if (not self.manual_positioning or self.phase not in ("ready", "holding_position")
+                or self.return_to_zero_attempt is not None):
+            raise ValueError("回零需要本次手动定位仍在正常停车状态")
+        self.check_time(now_s)
+        if self.phase == "holding_position":
+            self.attempts[-1]["status"] = "completed"
+        row = JointTableRow("return_to_zero", (0.,) * len(DEFAULT_JOINT_NAMES))
+        return self._begin_motion(row, [0.] * len(DEFAULT_JOINT_NAMES), now_s=now_s,
+                                  motion_kind="return_to_zero")
 
     def begin(self, *, now_s: float) -> list[dict]:
         if self.phase != "ready":
             self.reject("joint_table_not_ready")
         row = self.table.rows[self.index]
+        return self._begin_motion(row, self.preview["rows"][self.index]["target_mm_deg"],
+                                  now_s=now_s, motion_kind="table_pose")
+
+    def _begin_motion(self, row: JointTableRow, target_mm_deg: list, *, now_s: float,
+                      motion_kind: str) -> list[dict]:
         reference = {joint: self.control.target_deg(joint, target_si)
                      for joint, target_si in zip(DEFAULT_JOINT_NAMES, row.q_si)}
         self.attempts.append({
-            "pose_id": row.pose_id, "target_si": list(row.q_si),
-            "target_mm_deg": self.preview["rows"][self.index]["target_mm_deg"],
+            "pose_id": row.pose_id, "motion_kind": motion_kind, "target_si": list(row.q_si),
+            "target_mm_deg": target_mm_deg,
             "started_s": None, "status": "preparing", "feedback_stopped": False,
             "stop_result": "not_confirmed", "rejection_reason": "", "commands": [],
             "feedback": self.feedback_report(reference=reference),
         })
+        if motion_kind == "return_to_zero":
+            self.return_to_zero_attempt = self.attempts[-1]
         self.check_time(now_s)
         self.attempts[-1]["started_s"] = now_s
+        if any(not lower <= value <= upper for value, lower, upper
+               in zip(row.q_si, self.model.position_lower, self.model.position_upper)):
+            self.reject("joint_table_target_outside_model_limits")
         if set(self.latest) != set(DEFAULT_JOINT_NAMES):
             self.reject("joint_table_incomplete_feedback")
         commands, monitors = [], {}
@@ -334,6 +392,12 @@ class JointTableExecutor:
             "transmission_sha256": self.preview["transmission_sha256"],
             "node_mapping_sha256": self.preview["node_mapping_sha256"],
             "attempts": self.attempts, "records": self.records, "termination": self.termination,
+            "manual_positioning": self.manual_positioning, "positioning_records": self.positioning_records,
+            "return_to_zero": self.return_to_zero_attempt,
+            "positioning_completed_count": len(self.positioning_records),
+            "positioning_total_count": len(self.table.rows) if self.manual_positioning else 0,
+            "all_positioning_targets_completed": (self.manual_positioning
+                                                   and len(self.positioning_records) == len(self.table.rows)),
             "rejection_observation": self.rejection_observation,
         }
 

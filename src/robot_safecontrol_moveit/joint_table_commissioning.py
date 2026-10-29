@@ -5,6 +5,7 @@ import time
 from dataclasses import asdict, dataclass, replace
 from decimal import ROUND_FLOOR, Decimal
 from hashlib import sha256
+from math import isfinite
 from pathlib import Path
 from zipfile import ZipFile
 
@@ -127,56 +128,7 @@ class SinglePoseCommissioning:
         return result
 
     def stationary_noise(self, root: Path):
-        if sha256(self.noise_evidence_path.read_bytes()).hexdigest() != self.noise_evidence_sha256:
-            raise RuntimeError("停车反馈噪声证据身份变化")
-        with ZipFile(self.noise_evidence_path) as archive:
-            provenance = json.loads(archive.read("provenance.json"))
-            for item in provenance["files"]:
-                content = archive.read(item["member"])
-                if len(content) != item["bytes"] or sha256(content).hexdigest() != item["sha256"]:
-                    raise RuntimeError("停车反馈原始归档校验失败")
-            report = json.loads(archive.read("first-group-gui-readiness-20261029.report.json"))
-            frames = json.loads(archive.read("first-group-gui-readiness-20261029.frames.json"))
-            events = [json.loads(line) for line in archive.read("first-group-gui-readiness-20261029.jsonl").splitlines()]
-        if report["motion_commands_sent"] != 0 or report["parameter_writes_sent"] != 0:
-            raise ValueError("停车噪声证据中存在设备动作")
-        current = {name: sha256((root / "config" / name).read_bytes()).hexdigest()
-                   for name in ("hardware_joint_zero.yaml", "j1_transmission.yaml", "drempower.yaml")}
-        if (report["executor"]["zero_calibration_sha256"] != current["hardware_joint_zero.yaml"]
-                or report["executor"]["transmission_sha256"] != current["j1_transmission.yaml"]
-                or report["executor"]["node_mapping_sha256"] != current["drempower.yaml"]
-                or report["executor"]["model_hash"] != self.model_hash):
-            raise RuntimeError("停车噪声证据的模型或设备坐标配置不符")
-        for row in frames:
-            if row["direction"] == "tx":
-                frame = SERIAL_CAN_FRAME.parse(bytes.fromhex(row["raw_hex"]))
-                if frame.frame_id & 31 != CMD_PROPERTY_READ or not 1 <= frame.frame_id >> 5 <= 9:
-                    raise ValueError("停车噪声证据含非读取命令")
-        windows = {joint: VelocityWindow(1.) for joint in DEFAULT_JOINT_NAMES}
-        angles: dict[str, list[float]] = {joint: [] for joint in DEFAULT_JOINT_NAMES}
-        means: dict[str, list[float]] = {joint: [] for joint in DEFAULT_JOINT_NAMES}
-        for event in events:
-            if event["event"] != "feedback":
-                continue
-            if set(event["samples"]) != set(DEFAULT_JOINT_NAMES):
-                raise ValueError("停车噪声证据缺少完整九轴")
-            for index, joint in enumerate(DEFAULT_JOINT_NAMES, 1):
-                row = event["samples"][joint]
-                sample = ObservedFeedback(**{**row, "state": JointFeedback(**row["state"])})
-                if sample.node_id != index or sample.axis_error or not sample.traj_done:
-                    raise ValueError(f"{joint} 停车噪声证据状态无效")
-                checked = windows[joint].add(sample)
-                angles[joint].append(sample.state.angle_deg)
-                if checked.mean_speed_rpm is not None:
-                    means[joint].append(abs(checked.mean_speed_rpm))
-        noise = {}
-        for joint in DEFAULT_JOINT_NAMES:
-            if (len(means[joint]) < 50 or max(angles[joint]) - min(angles[joint]) > .01
-                    or max(means[joint]) >= .2):
-                raise ValueError(f"{joint} 停车噪声证据范围或时长无效")
-            # 原始速度保持原值；此范围仅检查速度估计与静止位置记录是否相容。
-            noise[joint] = max(means[joint]) + .01
-        return noise
+        return stationary_noise(root, self.noise_evidence_path, self.noise_evidence_sha256, self.model_hash)
 
     def consume(self, log_path: Path):
         # 每个请求只允许一次执行尝试；读取失败同样需要新的现场请求。
@@ -187,58 +139,12 @@ class SinglePoseCommissioning:
             os.fsync(stream.fileno())
 
     def verify_device(self, device):
-        properties = {}
-        source = self.settings()
-        for joint in DEFAULT_JOINT_NAMES:
-            node = device.executor.control._node(joint)
-            values = {}
-            for name, address, kind in (
-                ("node_id", 31001, "u32"), ("axis_state", 30002, "u32"),
-                ("axis_error", 30001, "u32"), ("can_error", 20001, "u32"),
-                ("motor_error", 33001, "u32"), ("encoder_error", 34001, "u32"),
-                ("controller_error", 32001, "u32"),
-                ("circular_limit_enabled", 31202, "u32"), ("circular_min_deg", 38010, "f32"),
-                ("circular_max_deg", 38011, "f32"),
-                ("output_vel_limit_rpm", 38012, "f32"), ("trap_velocity_rpm", 38014, "f32"),
-                ("trap_acceleration_rpm_s", 38015, "f32"), ("trap_deceleration_rpm_s", 38016, "f32"),
-                ("traj_mode", 35104, "u32"),
-            ):
-                values[name] = device.vendor.read_property(node, address, kind)
-            properties[joint] = values
-            if values["node_id"] != node or values["axis_state"] != 8:
-                raise RuntimeError(f"{joint} 实际身份或闭环状态无效：{values}")
-            if any(values[name] != 0 for name in ("axis_error", "can_error", "motor_error", "encoder_error", "controller_error")):
-                raise RuntimeError(f"{joint} 实际故障检查失败：{values}")
-            for name in ("output_vel_limit_rpm", "trap_velocity_rpm", "trap_acceleration_rpm_s",
-                         "trap_deceleration_rpm_s", "traj_mode"):
-                if values[name] != source[joint][name]:
-                    raise RuntimeError(f"{joint} 上位机参数在授权后变化：{name}")
-        j1 = properties["J1"]
-        for name, address, kind in (("serial_number_l", 3, "u32"), ("zero_offset_counts", 31205, "f32"),
-                                     ("multi_circle_enabled", 31207, "u32"), ("encoder_turn_abs", 34010, "s32")):
-            j1[name] = device.vendor.read_property(1, address, kind)
-        if (j1["serial_number_l"] != self.expected_j1_serial_number_l
-                or j1["zero_offset_counts"] != self.expected_j1_zero_offset_counts
-                or j1["multi_circle_enabled"] != 1 or j1["encoder_turn_abs"] != 0):
-            raise RuntimeError("J1 设备身份或现场零位恢复回读变化")
-        for command in device.executor.preview["rows"][0]["device_commands"]:
-            joint = command["joint"]
-            values = properties[joint]
-            target = command["arguments"]["angle"]
-            if values["circular_limit_enabled"] not in (0, 1) or (
-                    values["circular_limit_enabled"] == 1
-                    and not values["circular_min_deg"] <= target <= values["circular_max_deg"]):
-                raise RuntimeError(f"{joint} 目标超出当前设备限位")
-        return properties
+        return verify_positioning_device(
+            device, source=self.settings(), expected_j1_serial_number_l=self.expected_j1_serial_number_l,
+            expected_j1_zero_offset_counts=self.expected_j1_zero_offset_counts)
 
     def require_initial_zero(self, executor):
-        executor.check_time(time.monotonic())
-        if executor.phase != "ready":
-            raise RuntimeError("九轴共同停车尚未通过")
-        if any(abs(sample.state.angle_deg) > (executor.limits[joint].position_noise_deg if joint == "J1"
-                                              else executor.limits[joint].tolerance_deg)
-               for joint, sample in executor.latest.items()):
-            raise RuntimeError("当前姿态与用户确认的九轴初始零位不符")
+        require_initial_zero(executor)
 
     def report(self):
         return {**asdict(self), "request_path": str(self.request_path), "settings_path": str(self.settings_path),
@@ -247,6 +153,130 @@ class SinglePoseCommissioning:
                 "maximum_poses": 1, "automatic_csv_execution_qualified": False,
                 "internal_velocity_limit_enable_verified": False, "can_timeout_protection_verified": False,
                 "device_sample_time_known": False, "physical_stop_independently_verified": False}
+
+
+def stationary_noise(root: Path, evidence_path: Path, evidence_sha256: str, model_hash: str):
+    if sha256(evidence_path.read_bytes()).hexdigest() != evidence_sha256:
+        raise RuntimeError("停车反馈噪声证据身份变化")
+    with ZipFile(evidence_path) as archive:
+        provenance = json.loads(archive.read("provenance.json"))
+        for item in provenance["files"]:
+            content = archive.read(item["member"])
+            if len(content) != item["bytes"] or sha256(content).hexdigest() != item["sha256"]:
+                raise RuntimeError("停车反馈原始归档校验失败")
+        report = json.loads(archive.read("first-group-gui-readiness-20261029.report.json"))
+        frames = json.loads(archive.read("first-group-gui-readiness-20261029.frames.json"))
+        events = [json.loads(line) for line in archive.read("first-group-gui-readiness-20261029.jsonl").splitlines()]
+    if report["motion_commands_sent"] != 0 or report["parameter_writes_sent"] != 0:
+        raise ValueError("停车噪声证据中存在设备动作")
+    current = {name: sha256((root / "config" / name).read_bytes()).hexdigest()
+               for name in ("hardware_joint_zero.yaml", "j1_transmission.yaml", "drempower.yaml")}
+    if (report["executor"]["zero_calibration_sha256"] != current["hardware_joint_zero.yaml"]
+            or report["executor"]["transmission_sha256"] != current["j1_transmission.yaml"]
+            or report["executor"]["node_mapping_sha256"] != current["drempower.yaml"]
+            or report["executor"]["model_hash"] != model_hash):
+        raise RuntimeError("停车噪声证据的模型或设备坐标配置不符")
+    for row in frames:
+        if row["direction"] == "tx":
+            frame = SERIAL_CAN_FRAME.parse(bytes.fromhex(row["raw_hex"]))
+            if frame.frame_id & 31 != CMD_PROPERTY_READ or not 1 <= frame.frame_id >> 5 <= 9:
+                raise ValueError("停车噪声证据含非读取命令")
+    windows = {joint: VelocityWindow(1.) for joint in DEFAULT_JOINT_NAMES}
+    angles: dict[str, list[float]] = {joint: [] for joint in DEFAULT_JOINT_NAMES}
+    means: dict[str, list[float]] = {joint: [] for joint in DEFAULT_JOINT_NAMES}
+    for event in events:
+        if event["event"] != "feedback":
+            continue
+        if set(event["samples"]) != set(DEFAULT_JOINT_NAMES):
+            raise ValueError("停车噪声证据缺少完整九轴")
+        for index, joint in enumerate(DEFAULT_JOINT_NAMES, 1):
+            row = event["samples"][joint]
+            sample = ObservedFeedback(**{**row, "state": JointFeedback(**row["state"])})
+            if sample.node_id != index or sample.axis_error or not sample.traj_done:
+                raise ValueError(f"{joint} 停车噪声证据状态无效")
+            checked = windows[joint].add(sample)
+            angles[joint].append(sample.state.angle_deg)
+            if checked.mean_speed_rpm is not None:
+                means[joint].append(abs(checked.mean_speed_rpm))
+    noise = {}
+    for joint in DEFAULT_JOINT_NAMES:
+        if (len(means[joint]) < 50 or max(angles[joint]) - min(angles[joint]) > .01
+                or max(means[joint]) >= .2):
+            raise ValueError(f"{joint} 停车噪声证据范围或时长无效")
+        # 原始速度保持原值；此范围仅检查速度估计与静止位置记录是否相容。
+        noise[joint] = max(means[joint]) + .01
+    return noise
+
+
+def verify_positioning_device(device, *, source: dict | None, expected_j1_serial_number_l: int,
+                              expected_j1_zero_offset_counts: float, include_return_zero: bool = False,
+                              require_zero_turn: bool = True):
+    properties = {}
+    for joint in DEFAULT_JOINT_NAMES:
+        node = device.executor.control._node(joint)
+        values = {}
+        for name, address, kind in (
+            ("node_id", 31001, "u32"), ("axis_state", 30002, "u32"),
+            ("axis_error", 30001, "u32"), ("can_error", 20001, "u32"),
+            ("motor_error", 33001, "u32"), ("encoder_error", 34001, "u32"),
+            ("controller_error", 32001, "u32"),
+            ("circular_limit_enabled", 31202, "u32"), ("circular_min_deg", 38010, "f32"),
+            ("circular_max_deg", 38011, "f32"),
+            ("output_vel_limit_rpm", 38012, "f32"), ("trap_velocity_rpm", 38014, "f32"),
+            ("trap_acceleration_rpm_s", 38015, "f32"), ("trap_deceleration_rpm_s", 38016, "f32"),
+            ("traj_mode", 35104, "u32"),
+        ):
+            values[name] = device.vendor.read_property(node, address, kind)
+        properties[joint] = values
+        if not all(isfinite(value) for value in values.values()):
+            raise RuntimeError(f"{joint} 设备参数包含非有限数值")
+        if values["node_id"] != node or values["axis_state"] != 8:
+            raise RuntimeError(f"{joint} 实际身份或闭环状态无效：{values}")
+        if any(values[name] != 0 for name in ("axis_error", "can_error", "motor_error", "encoder_error", "controller_error")):
+            raise RuntimeError(f"{joint} 实际故障检查失败：{values}")
+        if source is not None:
+            for name in ("output_vel_limit_rpm", "trap_velocity_rpm", "trap_acceleration_rpm_s",
+                         "trap_deceleration_rpm_s", "traj_mode"):
+                if values[name] != source[joint][name]:
+                    raise RuntimeError(f"{joint} 上位机参数在授权后变化：{name}")
+        if (values["traj_mode"] != 1
+                or values["output_vel_limit_rpm"] < device.executor.limits[joint].speed_rpm):
+            raise RuntimeError(f"{joint} 轨迹模式或设备速度限制不支持本次目标")
+    j1 = properties["J1"]
+    for name, address, kind in (("serial_number_l", 3, "u32"), ("zero_offset_counts", 31205, "f32"),
+                                 ("multi_circle_enabled", 31207, "u32"), ("encoder_turn_abs", 34010, "s32")):
+        j1[name] = device.vendor.read_property(1, address, kind)
+    if (j1["serial_number_l"] != expected_j1_serial_number_l
+            or j1["zero_offset_counts"] != expected_j1_zero_offset_counts
+            or j1["multi_circle_enabled"] != 1 or (require_zero_turn and j1["encoder_turn_abs"] != 0)):
+        raise RuntimeError("J1 设备身份或现场零位恢复回读变化")
+    commands = [command for row in device.executor.preview["rows"] for command in row["device_commands"]]
+    if include_return_zero:
+        commands.extend({"joint": joint, "arguments": device.executor.control.position_arguments(joint, 0., limit)}
+                        for joint, limit in device.executor.limits.items())
+    for command in commands:
+        joint = command["joint"]
+        values = properties[joint]
+        target = command["arguments"]["angle"]
+        if values["circular_limit_enabled"] not in (0, 1) or (
+                values["circular_limit_enabled"] == 1
+                and not values["circular_min_deg"] <= target <= values["circular_max_deg"]):
+            raise RuntimeError(f"{joint} 目标超出当前设备限位")
+    return properties
+
+
+def require_initial_zero(executor):
+    require_stationary_position(executor)
+    if any(abs(sample.state.angle_deg) > (executor.limits[joint].position_noise_deg if joint == "J1"
+                                          else executor.limits[joint].tolerance_deg)
+           for joint, sample in executor.latest.items()):
+        raise RuntimeError("当前姿态与用户确认的九轴初始零位不符")
+
+
+def require_stationary_position(executor):
+    executor.check_time(time.monotonic())
+    if executor.phase != "ready" or set(executor.latest) != set(DEFAULT_JOINT_NAMES):
+        raise RuntimeError("九轴共同停车尚未通过")
 
 
 def main():

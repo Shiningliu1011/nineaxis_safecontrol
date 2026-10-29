@@ -1,5 +1,63 @@
 # 实验室笔记本验证
 
+## 确认后回零验证
+
+用户已确认 r 加 Enter 才执行九轴全零目标，沿用各轴梯形参数；回零后持续使能及监测，q 正常退出。Enter 继续表格、q 直接退出保持当前位置，运动期间的 r 不预约回零。执行器使用独立回零尝试，表格来源、索引和完成组数保持准确。当前停止锁定不解除，本轮不连接设备。
+
+在 Python 3.10.12、ROS 2 Humble、已有 MuJoCo、CPU JAX 和设备依赖环境中运行：
+
+```bash
+source /opt/ros/humble/setup.bash
+PYTHONPATH="$PWD/src:$PWD/portable_oscbf:$PWD/.scratch/motor_tools/deps:$PWD/.scratch/nineaxis-execution/deps${PYTHONPATH:+:$PYTHONPATH}" \
+TMPDIR="$PWD/.scratch/joint-positioning/work" python3 -m pytest \
+  tests/test_joint_positioning.py tests/test_joint_table_execution.py \
+  tests/test_joint_table_commissioning.py tests/test_joint_table.py \
+  tests/test_single_joint_execution.py tests/test_j1_execution.py \
+  tests/test_motor_connection.py tests/test_drempower_can.py \
+  tests/test_drempower_joint_control.py tests/test_motion_log_replay.py \
+  tests/test_hardware_contract.py tests/test_hardware_bridge.py \
+  tests/test_launch_structure.py tests/test_unit_conversion.py \
+  -q -p no:cacheprovider --basetemp=.scratch/joint-positioning/return-zero-final-tests \
+  --junitxml=.scratch/joint-positioning/return-zero-final-tests.xml
+```
+
+结果 `334 passed in 28.73s`，退出码 0。首轮三个直接受影响测试文件为 70 passed in 20.24s。新增行为使用真实管道、CSV 与 MuJoCo qpos/qvel，验证从非零姿态确认回零、持续零位监测、提示前和运动期间 r 无效、回零不继续表格、不增加完成组数、q 退出、真实位置变化及反馈中断拒绝；非手动会话和运动期间拒绝直接调用回零。没有 mock 或设备成功结果替代。
+
+三个行为修改模块的 mypy 通过（follow-imports=silent、ignore-missing-imports），五个文件完整 Ruff 通过。`setup.py build_py --build-lib .scratch/joint-positioning/built-lib install_data --install-dir .scratch/joint-positioning/installed` 退出码 0；六个运行模块、安装参数脚本和主题文档与源码内容一致。独立安装进程的单组及两组 CSV 预览均包含完整回零目标与相同有效运动参数，未取得资格的执行在创建日志目录和传输对象前拒绝。六份文档的 50 个本地链接目标存在，锚点未验收。`git diff --check` 通过。
+
+锁定 SHA-256 保持 `8d983e8bf1905ebdd87a1698dca072cfb8963a971c0a1c0b6d188ad144e82554`，没有真实连接、运动、参数或零位写入。真实反馈初始化、独立停止与回零路径尚未取得验收证据。上一阶段已授权的真实读取和启动拒绝单独记录于 diagnosis.md，不计为本轮回零动作验收。
+
+## 手动定位入口验证
+
+当前增量基点为 `15a03557a973bd3c5074e0da1b7e3622cbda4bce`，分支 `main`，开始时工作区干净。用户确认文件顶部九轴绝对目标、CSV、Enter 逐组推进、梯形运动、到位后持续使能与监测，并说明失能重力转动无法解决。手动入口的本地实现阶段只完成代码与验证；后续新的设备动作请求及启动拒绝单独记录于 diagnosis.md。
+
+环境为 Python 3.10.12、ROS 2 Humble、已有 CPU JAX 和 MuJoCo；设备相关依赖使用仓库已有的 `.scratch/motor_tools/deps` 与 `.scratch/nineaxis-execution/deps`。测试临时目录、构建和依赖检查均位于 `.scratch/joint-positioning/`。
+
+最终行为命令：
+
+```bash
+source /opt/ros/humble/setup.bash
+PYTHONPATH="$PWD/src:$PWD/portable_oscbf:$PWD/.scratch/motor_tools/deps:$PWD/.scratch/nineaxis-execution/deps${PYTHONPATH:+:$PYTHONPATH}" \
+TMPDIR="$PWD/.scratch/joint-positioning/work" python3 -m pytest \
+  tests/test_joint_positioning.py tests/test_joint_table_execution.py \
+  tests/test_joint_table_commissioning.py tests/test_joint_table.py \
+  tests/test_single_joint_execution.py tests/test_j1_execution.py \
+  tests/test_motor_connection.py tests/test_drempower_can.py \
+  tests/test_drempower_joint_control.py tests/test_motion_log_replay.py \
+  tests/test_hardware_contract.py tests/test_hardware_bridge.py \
+  tests/test_launch_structure.py tests/test_unit_conversion.py \
+  -q -p no:cacheprovider --basetemp=.scratch/joint-positioning/final-tests \
+  --junitxml=.scratch/joint-positioning/final-tests.xml
+```
+
+结果为 `326 passed in 24.46s`，退出码 0。新入口使用真实管道输入和既有 MuJoCo 动力学，检查 Enter 不提前预约、第一组手动启动、单组自动启动、两组运动、最后一组持续保持、部分输入不阻塞反馈、q 退出、未执行组计数、反馈中断及实际位置变化拒绝。实际设备日志按原始记录回放，未连接串口。定位记录与测量记录分开，测试没有 mock 或伪造设备成功结果。
+
+静态检查：`joint_positioning.py`、执行器、runtime、参数脚本和新测试共五个文件的完整 Ruff 通过；`joint_table.py`、`motor_motion_limits.py`、`drempower_can.py`、`setup.py` 的 E9/F63/F7/F82 检查通过。七个运行文件的 mypy 通过，使用 `--follow-imports silent --ignore-missing-imports`，第三方库内部未作类型验收。`git diff --check` 通过。
+
+构建命令为 `python3 setup.py build_py --build-lib .scratch/joint-positioning/built-lib install_data --install-dir .scratch/joint-positioning/installed`，退出码 0。`verify_delivery.py` 确认六个修改模块、参数脚本及主题文档与源码字节一致；在仅使用构建模块、安装资源、设备依赖和 ROS Python 路径的独立进程中，单组和 CSV 预览分别取得 1、2 组目标。未取得资格的安装入口在创建运行目录与传输对象前拒绝。结果保存在 `delivery-check.json`。
+
+MarkdownIt 检查六份变更文档的 50 个本地链接目标存在，未验收锚点。当前运动锁定 SHA-256 为 `8d983e8bf1905ebdd87a1698dca072cfb8963a971c0a1c0b6d188ad144e82554`，没有清除或改写。ROS live、独立停止、断电保持及九轴真机到位验收继续保持原状态；本轮没有执行设备连接、位置动作、零位或设备参数写入。
+
 ## 单组调试补充与当前阻塞
 
 本轮变更基点为 1f78ce9。首组调用前的相关组合运行 `tests/test_joint_table_commissioning.py`、`test_joint_table_execution.py`、`test_single_joint_execution.py`、`test_j1_execution.py`、`test_motion_log_replay.py`、`test_joint_table.py` 和 `test_motor_connection.py`，192 passed in 19.11s，退出码 0；日志和 JUnit 为 `.scratch/nineaxis-execution/commissioning-final-tests.log`、`commissioning-final-tests.xml`。其中实际位置来自 MuJoCo 的持续小幅摆动仍触发停车超时。
@@ -95,3 +153,13 @@ python3 -m pytest tests/test_joint_position_evidence.py -q -p no:cacheprovider \
 原始报告为 `j1-operator-zero-20261029T102356.json`，SHA-256 为 acb5f86db0aecfab4b46c97aa9ebff87cfea670f5e1055904b0dadb866090d5d；归档 `tests/data/j1_operator_zero_20261029.zip` 的 SHA-256 为 71f56b6d764c0986a7e7b3b341f7eb9100963de10362a7af9b03065f8c5fab75。数据归档时逐帧确认发送均为节点 1 的属性读取，未修改原始内容；运动锁定 SHA-256 保持。
 
 按用户要求不追加行为测试。此次仅更新证据与状态文档，没有修改运行模块；已运行的 314 项组合与后退证据六项分别保留原命令和结果。当前记录没有提供断电保持、完整行程、物理停车或九轴动作验收。
+
+## 有人值守手动定位与确认回零
+
+本轮运行十五份相关测试，JUnit 为 `.scratch/joint-positioning/pytest-attended-final.xml`：345 passed in 32.40s，退出码 0。范围包含手动定位、有人值守范围、真实 J7 运动回放、真实静止记录、九轴与单轴执行、协议、硬件接口、launch 和单位转换。六个相关文件完整 Ruff 通过，五个运行文件限定 mypy 通过。构建与安装后核对九个源码文件、单组和 CSV 预览、缺少现场记录时在真实 I/O 前拒绝，退出码 0；六份文档的五十个本地链接目标存在。
+
+实际第二次定位发送九条目标，J2–J9 到达目标，J1 在反馈约 35.54 mm 时发生编码器量程故障，任务中止。原始故障归档含七份文件，SHA-256 为 `757d5a88db24b57cbbc7cb782de65f3a571e6672f37e588d90dc663021812eda`；没有自动重试或回零。
+
+用户随后要求回零。实际六秒静止记录回放通过后，执行 `.scratch/joint-positioning/return_healthy_joints_zero.py --execute`，退出码 0，八条位置命令仅对应 J2–J9。经过约 38.1 秒的运动与持续静止检查，八轴反馈确认回到原机械零位，退出后的六秒独立读取确认仍保持使能；J1 故障状态保留，未收到运动或参数命令。
+
+用户自行恢复 J1 机械零位并重置零点后，执行只读脚本 `read_current_zero.py`，退出码 0，九轴均闭环使能，轴与编码器故障均为 0，位置反馈均接近零位。新 J1 零位计数 11145 已同步至现场记录；此次没有新的运动、清错或设备参数写入。50 mm 目标和完整行程尚未验收，父任务保持 in_progress。

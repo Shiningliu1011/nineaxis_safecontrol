@@ -1,7 +1,7 @@
 from collections import deque
 from dataclasses import asdict, dataclass, replace
 import json
-from math import degrees, isfinite
+from math import degrees, isfinite, sqrt
 from pathlib import Path
 import time
 from threading import Lock
@@ -45,6 +45,12 @@ class ExecutionLimits:
     @property
     def hold_timeout_s(self) -> float:
         return (self.max_feedback_rpm / self.accel_rpm_s + self.stationary_window_s
+                + self.settle_s + 2 * self.feedback_timeout_s)
+
+    @property
+    def reposition_hold_timeout_s(self) -> float:
+        # 运动中请求当前位置需要减速、反向返回目标，再取得完整的静止观察窗口。
+        return ((1 + sqrt(2)) * self.max_feedback_rpm / self.accel_rpm_s + self.stationary_window_s
                 + self.settle_s + 2 * self.feedback_timeout_s)
 
     def __post_init__(self):

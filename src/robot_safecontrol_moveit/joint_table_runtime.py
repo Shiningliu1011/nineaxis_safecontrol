@@ -23,6 +23,8 @@ from .single_joint_execution import (
 )
 
 if TYPE_CHECKING:
+    from .attended_positioning import AttendedPositioning
+    from .joint_positioning import PositioningOperator
     from .joint_table_commissioning import SinglePoseCommissioning
 
 POSITION_NODES = {1: "prismatic", **{node: "revolute" for node in range(2, 10)}}
@@ -92,7 +94,7 @@ class JointTableDevice:
                 record("hold_requested", **command)
                 self.vendor.set_angle(**command["arguments"])
                 record("hold_command_call_returned", joint=joint)
-            until = time.monotonic() + max(limit.hold_timeout_s for limit in self.executor.limits.values())
+            until = time.monotonic() + max(limit.reposition_hold_timeout_s for limit in self.executor.limits.values())
             settled_since = None
             while time.monotonic() < until:
                 samples = self.read_cycle()
@@ -118,15 +120,24 @@ class JointTableDevice:
 
 
 def run_joint_table(executor: JointTableExecutor, *, port: str, log_path: Path,
-                    measurement_dir: Path, commissioning: "SinglePoseCommissioning | None" = None):
-    # 本边界在创建文件和真实 I/O 前检查资格；当前缺项时保持拒绝。
-    if commissioning is None:
+                    measurement_dir: Path, commissioning: "SinglePoseCommissioning | None" = None,
+                    positioning_operator: "PositioningOperator | None" = None,
+                    attended: "AttendedPositioning | None" = None):
+    # 每种执行入口在创建文件和真实 I/O 前核对自己的范围。
+    if attended is not None:
+        if commissioning is not None or positioning_operator is None:
+            raise ValueError("有人值守定位需要独立的手动入口")
+        attended.require_scope(executor, port=port)
+    elif commissioning is None:
         require_hardware_qualification(executor.model.root)
     else:
         commissioning.require_scope(executor.table, executor.model, port=port)
         if (executor.limits != commissioning.limits(executor.model.root) or executor.feedback_source != "hardware_feedback"
                 or executor.measurement_kind != "positioning"):
             raise ValueError("单组调试必须完整采用本次来源参数和真实反馈")
+    if executor.manual_positioning != (positioning_operator is not None) or (
+            positioning_operator is not None and commissioning is not None):
+        raise ValueError("手动定位需要独立终端操作入口")
     frames_path = log_path.with_suffix(".frames.json")
     report_path = log_path.with_suffix(".report.json")
     if any(path.exists() for path in (log_path, frames_path, report_path)):
@@ -135,7 +146,8 @@ def run_joint_table(executor: JointTableExecutor, *, port: str, log_path: Path,
         raise FileNotFoundError(measurement_dir)
     if commissioning is not None:
         commissioning.consume(log_path)
-    latch = MotorStopLatch(executor.model.root / ".scratch/motor_control/stop.json")
+    latch = attended.stop_latch if attended is not None else MotorStopLatch(
+        executor.model.root / ".scratch/motor_control/stop.json")
     with log_path.open("x", encoding="utf-8") as log:
         def record(event, **fields):
             log.write(json.dumps(dict(event=event, monotonic_s=time.monotonic(), **fields),
@@ -159,18 +171,56 @@ def run_joint_table(executor: JointTableExecutor, *, port: str, log_path: Path,
                 record("session_started", **executor.report())
                 if commissioning is not None:
                     record("single_pose_commissioning", **commissioning.report())
+                if attended is not None:
+                    record("attended_positioning", **attended.report())
                 device.prepare()
                 if commissioning is not None:
                     record("device_verified", properties=commissioning.verify_device(device))
+                if attended is not None:
+                    record("device_verified", properties=attended.verify_device(device))
                 recovery_pending = commissioning is not None
+                initial_position_pending = attended is not None
+                next_progress_s = time.monotonic() + 5.
                 while executor.phase != "completed":
-                    if not recovery_pending:
+                    if attended is not None:
+                        attended.check_stop()
+                    elif not recovery_pending:
                         latch.require_clear()
                     executor.check_time(time.monotonic())
                     samples = device.read_cycle()
                     record("feedback", samples={joint: asdict(sample) for joint, sample in samples.items()})
+                    previous_phase = executor.phase
                     executor.observe(samples, now_s=time.monotonic())
-                    if executor.phase == "ready":
+                    if positioning_operator is not None:
+                        if initial_position_pending and executor.phase == "ready":
+                            if attended is None:
+                                raise RuntimeError("初始位置检查缺少现场记录")
+                            attended.require_initial_position(executor)
+                            initial_position_pending = False
+                            record("initial_position_verified", feedback=executor.feedback_report())
+                            print("九轴实际位置与静止检查通过。", flush=True)
+                        if previous_phase == "moving" and executor.phase == "holding_position":
+                            record("positioning_completed", pose_id=executor.table.rows[executor.index].pose_id,
+                                   feedback=executor.feedback_report())
+                        if previous_phase == "moving" and executor.phase == "holding_zero":
+                            record("return_to_zero_completed", feedback=executor.feedback_report())
+                        commands = positioning_operator.step(executor, now_s=time.monotonic())
+                        if commands:
+                            if initial_position_pending:
+                                raise RuntimeError("发送位置命令前尚未确认实际位置")
+                            if attended is not None:
+                                attended.check_stop()
+                            if executor.return_to_zero_attempt is not None:
+                                record("return_to_zero_requested", target_mm_deg=[0.] * len(DEFAULT_JOINT_NAMES),
+                                       feedback=executor.feedback_report())
+                            device.send(commands, record)
+                            print("九轴位置指令已发送，正在监测到位。", flush=True)
+                        if executor.phase == "moving" and time.monotonic() >= next_progress_s:
+                            position = [round(row["position_mm_deg"], 3)
+                                        for row in executor.feedback_report().values()]
+                            print(f"当前位置：{position}（J1：mm；J2–J9：°）", flush=True)
+                            next_progress_s = time.monotonic() + 5.
+                    elif executor.phase == "ready":
                         if recovery_pending:
                             if commissioning is None:
                                 raise RuntimeError("人工恢复缺少本次请求")
@@ -218,7 +268,8 @@ def run_joint_table(executor: JointTableExecutor, *, port: str, log_path: Path,
                 stop = (device.hold_and_observe(record) if device.commands_attempted
                         else {"stop_result": "no_motion_command_attempted", "stop_error": ""})
                 if not executor.reason:
-                    executor.reason = str(error)
+                    executor.reason = str(error) or ("operator_interrupt" if isinstance(error, KeyboardInterrupt)
+                                                      else type(error).__name__)
                 executor.phase = "aborted"
                 executor.termination = {"reason": executor.reason, **stop}
                 attempt = executor.current_attempt()
