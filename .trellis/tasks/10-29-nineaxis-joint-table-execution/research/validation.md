@@ -47,3 +47,26 @@ MuJoCo 使用重力关闭、接触关闭、明确的 kp=60/kv=10 位置伺服和
 本次原始数据归档：`joint_motion_logs_20261028.zip`、`joint_position_readonly_20261029.zip`、`j1_multi_circle_20261029.zip`，均位于 `tests/data/`；文件身份和证据范围见主题文档与各归档的 provenance.json。最后一份同时保存用户位置参照。
 
 运动锁定文件原字节保留，SHA-256 为 e7fb5fb03a5ee76671db0973c7d4ca66ecc230b36300740756656f1fb78440c2，ROS live 与九轴执行入口继续关闭。本次没有运动、回零、限位设置、零位写入或清错。九轴真机位置运动、快速到位、物理加速度、独立停车、J1 设备坐标对应、零点初始化与断电保持尚未验收。既有完整项目性能及独立规划原型问题沿用交接证据，本次没有执行全项目性能或完整原型检查。
+
+## 后续已授权的 J1 后退检查
+
+代码基点为 6a92d0a，用户授权仅 J1 后退约 28 mm，到位后由用户设置零点。运动前非运动读取退出码 0，142 条反馈及全部参数/原始帧保存在 `.scratch/j1-motion/preflight_20261029T101049.json`。审查脚本 `review_j1_retreat.py` 退出码 0，结果为 `rejected_before_motion`：目标超出现有设备限位，连续停车仅 0.168280681 s。没有自动重试，运动、参数和零位命令均为零。
+
+三份原始数据保存在 `tests/data/j1_retreat28_preflight_20261029.zip`，SHA-256 为 2fcf8d10a2a60e7767ce4e7971deee4eab297a29789675aa912ad12df0618618。针对本次证据运行：
+
+```bash
+PYTHONPATH=src:.scratch/motor_tools/deps TMPDIR="$PWD/.scratch/nineaxis-execution/work" \
+python3 -m pytest tests/test_joint_position_evidence.py -q -p no:cacheprovider \
+  --basetemp=.scratch/nineaxis-execution/retreat28-tests \
+  --junitxml=.scratch/nineaxis-execution/retreat28.xml
+```
+
+结果为 6 passed in 0.06s，退出码 0；Ruff、diff 和运动锁定 SHA-256 检查通过。此次仅补充证据、测试和文档，没有修改运行模块，前述 314 项为其原始运行结果。
+
+## 用户自行归零后的当前记录
+
+用户自行完成 J1 新行程 0 位与上位机零点设置，旧后退请求结束。运行 `.scratch/nineaxis-execution/read_j1_after_operator_zero.py`，退出码 0，得到 95 条反馈与 117 条只读请求，当前位置与用户确认的 0 mm 相符。多圈开关 1、圈数 0、零位计数 7733、各项故障 0；设备限位 −36000°–+1000°，项目目标范围保持 0–500 mm。
+
+原始报告为 `j1-operator-zero-20261029T102356.json`，SHA-256 为 acb5f86db0aecfab4b46c97aa9ebff87cfea670f5e1055904b0dadb866090d5d；归档 `tests/data/j1_operator_zero_20261029.zip` 的 SHA-256 为 71f56b6d764c0986a7e7b3b341f7eb9100963de10362a7af9b03065f8c5fab75。数据归档时逐帧确认发送均为节点 1 的属性读取，未修改原始内容；运动锁定 SHA-256 保持。
+
+按用户要求不追加行为测试。此次仅更新证据与状态文档，没有修改运行模块；已运行的 314 项组合与后退证据六项分别保留原命令和结果。当前记录没有提供断电保持、完整行程、物理停车或九轴动作验收。

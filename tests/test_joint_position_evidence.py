@@ -15,6 +15,7 @@ from robot_safecontrol_moveit.drempower_serial import SERIAL_CAN_FRAME
 
 ARCHIVE = Path(__file__).with_name("data") / "joint_position_readonly_20261029.zip"
 MULTI_CIRCLE_ARCHIVE = ARCHIVE.with_name("j1_multi_circle_20261029.zip")
+RETREAT_ARCHIVE = ARCHIVE.with_name("j1_retreat28_preflight_20261029.zip")
 
 
 def test_current_original_evidence_only_contains_read_commands():
@@ -107,3 +108,34 @@ def test_j1_enabled_flag_is_separate_from_zero_and_retention_verification():
     assert reference["position_new_mm"] == 500 - reference["distance_to_original_585mm_endpoint_mm"] == 28
     assert reference["zero_reference_approximate"] is True
     assert reference["device_to_model_coordinate_verified"] is False
+
+
+def test_authorized_j1_retreat_keeps_device_limits_and_stationary_rejections():
+    with ZipFile(RETREAT_ARCHIVE) as archive:
+        index = json.loads(archive.read("provenance.json"))
+        for entry in index["files"]:
+            content = archive.read(entry["member"])
+            assert sha256(content).hexdigest() == entry["sha256"]
+            assert len(content) == entry["bytes"]
+        original = archive.read("preflight_20261029T101049.json")
+        raw = json.loads(original)
+        review = json.loads(archive.read("j1-retreat28-review.json"))
+        authorization = json.loads(archive.read("j1-retreat28-authorization.json"))
+    assert authorization["requested_delta_mm"] == review["requested_delta_mm"] == -28
+    assert authorization["other_joints_authorized"] is False
+    assert authorization["device_zero_write_authorized"] is False
+    assert review["source_sha256"] == sha256(original).hexdigest()
+    assert raw["properties"]["limit_min_deg"] == -36000
+    assert raw["properties"]["limit_max_deg"] == 0
+    assert review["proposed_raw_target_deg"] > raw["properties"]["limit_max_deg"]
+    assert review["longest_stationary_s"] < review["required_stationary_s"] == .5
+    assert review["windows_above_stopped_rpm"] == 82
+    assert review["full_velocity_windows"] == 95
+    assert review["rejection_reasons"] == ["target_outside_current_device_limits",
+                                          "initial_stationary_duration_not_met"]
+    assert review["motion_commands_sent"] == review["parameter_writes_sent"] == 0
+    for frame in raw["frames"]:
+        if frame["direction"] == "tx":
+            parsed = SERIAL_CAN_FRAME.parse(bytes.fromhex(frame["raw_hex"]))
+            assert parsed.frame_id >> 5 == 1
+            assert parsed.frame_id & 0x1F == CMD_PROPERTY_READ

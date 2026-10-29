@@ -24,7 +24,7 @@
   ],
   "parent": null,
   "relatedFiles": [],
-  "notes": "九轴离线与仿真验证314项通过；首组目标已收到，J1现场参照约28mm；多圈已授权开启并回读，运动与零位恢复验收未完成",
+  "notes": "用户已自行将J1移至新0–500mm行程零位并重设零点，只读回读相符；旧后退请求结束；多圈1、圈数0、零位计数7733，断电保持和九轴真实执行未验收",
   "meta": {
     "base_commit": "a95831bd6a452364e224eb4bcbbc02b1c8d3ec43",
     "issues": [164, 153],
@@ -33,8 +33,13 @@
     "commit_authorized": true,
     "push_authorized": true,
     "hardware_actions_authorized": true,
-    "hardware_authorization_scope": "仅 J1 多圈开关 31207=1 及保存配置；已执行并独立回读",
+    "hardware_authorization_scope": "J1多圈开关31207=1及保存已执行；用户自行完成J1归零，当前只读复查",
     "motion_commands_authorized": false,
+    "prior_motion_authorization_scope": "仅J1后退约28mm请求，已由用户自行归零结束；原授权不可作为下一次动作范围",
+    "latest_motion_attempt_status": "ended_by_operator_zero",
+    "j1_zero_confirmed_by_user": true,
+    "j1_zero_readback_matches": true,
+    "power_cycle_retention_verified": false,
     "zero_writes_authorized": false,
     "reboot_authorized": false
   }
