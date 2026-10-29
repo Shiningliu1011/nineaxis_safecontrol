@@ -15,7 +15,7 @@ from .drempower_can import (
 )
 from .drempower_joint_control import DrEmpowerJointControl, JointFeedback
 from .motor_motion_limits import (
-    MAX_SINGLE_JOINT_SPEED_RPM, feedback_speed_limit, validate_motion_parameters,
+    MAX_SINGLE_JOINT_SPEED_RPM, MotionBounds, feedback_speed_limit, validate_motion_parameters,
 )
 
 
@@ -38,15 +38,19 @@ class ExecutionLimits:
     velocity_window_s: float = 1.0
     position_noise_deg: float = 0.01
     axis_type: str = "revolute"
+    bounds: MotionBounds | None = None
+    stationary_window_s: float = 1.0
+    stationary_velocity_noise_rpm: float = 0.0
 
     @property
     def hold_timeout_s(self) -> float:
-        return (self.max_feedback_rpm / self.accel_rpm_s + self.velocity_window_s
+        return (self.max_feedback_rpm / self.accel_rpm_s + self.stationary_window_s
                 + self.settle_s + 2 * self.feedback_timeout_s)
 
     def __post_init__(self):
         values = asdict(self)
         del values["axis_type"]
+        del values["bounds"]
         if self.max_step_deg is None:
             del values["max_step_deg"]
         if not all(isfinite(value) for value in values.values()):
@@ -54,10 +58,16 @@ class ExecutionLimits:
         if self.lower_deg >= self.upper_deg:
             raise ValueError("关节下限必须小于上限")
         for name, value in values.items():
+            if name == "stationary_velocity_noise_rpm":
+                if value < 0:
+                    raise ValueError("停车速度测量噪声必须非负")
+                continue
             if name not in ("lower_deg", "upper_deg") and value <= 0:
                 raise ValueError(f"{name} 必须为正数")
-        validate_motion_parameters(self.speed_rpm, self.accel_rpm_s, axis_type=self.axis_type)
-        if self.max_feedback_rpm > feedback_speed_limit(self.axis_type):
+        validate_motion_parameters(self.speed_rpm, self.accel_rpm_s, axis_type=self.axis_type,
+                                   bounds=self.bounds)
+        maximum = self.bounds.feedback_rpm if self.bounds else feedback_speed_limit(self.axis_type)
+        if self.max_feedback_rpm > maximum:
             raise ValueError("单关节检查反馈速度超过对应轴的保护上限")
         if not self.stopped_rpm < self.speed_rpm <= self.max_feedback_rpm:
             raise ValueError("静止、指令及反馈速度阈值顺序无效")
@@ -67,6 +77,8 @@ class ExecutionLimits:
             raise ValueError("到位误差或运动超时无效")
         if not 0.5 <= self.velocity_window_s <= 1.0 or self.position_noise_deg > 0.01:
             raise ValueError("速度窗口必须在 0.5–1 秒，位置测量裕量最多 0.01°")
+        if not self.velocity_window_s <= self.stationary_window_s <= 10:
+            raise ValueError("停车速度窗口必须覆盖运动速度窗口且不超过 10 秒")
 
     def for_motion(self, delta_deg: float):
         if not isfinite(delta_deg) or delta_deg == 0:
@@ -97,11 +109,17 @@ class ObservedFeedback:
     mean_speed_rpm: float | None = None
     position_speed_rpm: float | None = None
     window_duration_s: float = 0.0
+    stationary_mean_speed_rpm: float | None = None
+    stationary_window_duration_s: float = 0.0
+    stationary_position_span_deg: float | None = None
 
 
 class VelocityWindow:
-    def __init__(self, duration_s: float):
+    def __init__(self, duration_s: float, stationary_duration_s: float | None = None):
         self.duration_s = duration_s
+        self.stationary_duration_s = duration_s if stationary_duration_s is None else stationary_duration_s
+        if not 0 < duration_s <= self.stationary_duration_s <= 10:
+            raise ValueError("反馈速度窗口范围无效")
         self.rows: deque[ObservedFeedback] = deque()
 
     def add(self, sample: ObservedFeedback) -> ObservedFeedback:
@@ -114,23 +132,39 @@ class VelocityWindow:
             raise MotionRejected("nonfinite_feedback")
         if not 0 <= sample.request_s <= sample.received_s:
             raise MotionRejected("feedback_clock_invalid")
+        sample = replace(sample, mean_speed_rpm=None, position_speed_rpm=None, window_duration_s=0.,
+                         stationary_mean_speed_rpm=None, stationary_window_duration_s=0.,
+                         stationary_position_span_deg=None)
         self.rows.append(sample)
-        while len(self.rows) > 2 and sample.received_s - self.rows[1].received_s >= self.duration_s:
+        while len(self.rows) > 2 and sample.received_s - self.rows[1].received_s >= self.stationary_duration_s:
             self.rows.popleft()
-        span = sample.received_s - self.rows[0].received_s
+        motion_rows = list(self.rows)
+        while len(motion_rows) > 2 and sample.received_s - motion_rows[1].received_s >= self.duration_s:
+            motion_rows.pop(0)
+        span = sample.received_s - motion_rows[0].received_s
         if span < self.duration_s:
             return sample
         # 对不等间隔的原始速度做时间积分；位置速度来自独立的位置变化。
         integral = sum((b.received_s - a.received_s) * (a.state.speed_rpm + b.state.speed_rpm) / 2
-                       for a, b in zip(self.rows, list(self.rows)[1:]))
+                       for a, b in zip(motion_rows, motion_rows[1:]))
         recent = [row for row in self.rows if sample.received_s - row.received_s <= 0.2]
         if len(recent) < 2:
             raise MotionRejected("insufficient_recent_position_feedback")
         first = recent[0]
         position_speed = ((sample.state.angle_deg - first.state.angle_deg)
                           / (sample.received_s - first.received_s) / 6)
-        return replace(sample, mean_speed_rpm=integral / span,
-                       position_speed_rpm=position_speed, window_duration_s=span)
+        result = replace(sample, mean_speed_rpm=integral / span,
+                         position_speed_rpm=position_speed, window_duration_s=span)
+        stationary_span = sample.received_s - self.rows[0].received_s
+        if stationary_span >= self.stationary_duration_s:
+            stationary_integral = sum(
+                (b.received_s - a.received_s) * (a.state.speed_rpm + b.state.speed_rpm) / 2
+                for a, b in zip(self.rows, list(self.rows)[1:]))
+            angles = [row.state.angle_deg for row in self.rows]
+            result = replace(result, stationary_mean_speed_rpm=stationary_integral / stationary_span,
+                             stationary_window_duration_s=stationary_span,
+                             stationary_position_span_deg=max(angles) - min(angles))
+        return result
 
 
 def checked_speed(sample: ObservedFeedback) -> float:
@@ -141,6 +175,25 @@ def checked_speed(sample: ObservedFeedback) -> float:
     if not all(isfinite(value) for value in (sample.mean_speed_rpm, sample.position_speed_rpm)):
         raise MotionRejected("nonfinite_velocity_window")
     return max(abs(sample.mean_speed_rpm), abs(sample.position_speed_rpm))
+
+
+def stationary_conditions(sample: ObservedFeedback, limits: ExecutionLimits) -> dict[str, bool]:
+    if limits.stationary_window_s == limits.velocity_window_s:
+        return {"speed": checked_speed(sample) <= limits.stopped_rpm}
+    mean = sample.stationary_mean_speed_rpm
+    span = sample.stationary_position_span_deg
+    speed = sample.position_speed_rpm
+    if mean is None or span is None or speed is None:
+        return {"speed": False, "position_stability": False, "stationary_window": False}
+    if (not all(isfinite(value) for value in (mean, span, speed, sample.stationary_window_duration_s))
+            or span < 0 or sample.stationary_window_duration_s < 0):
+        raise MotionRejected("nonfinite_stationary_window")
+    return {
+        "speed": abs(speed) <= limits.stopped_rpm,
+        "raw_speed_consistent": abs(mean) <= limits.stopped_rpm + limits.stationary_velocity_noise_rpm,
+        "position_stability": span <= limits.position_noise_deg,
+        "stationary_window": sample.stationary_window_duration_s >= limits.stationary_window_s,
+    }
 
 
 class MotionRejected(RuntimeError):
@@ -158,7 +211,7 @@ class ArrivalWindow:
     def observe(self, sample: ObservedFeedback, now_s: float) -> bool:
         self.last_conditions = {
             "position": abs(sample.state.angle_deg - self.target_deg) <= self.limits.tolerance_deg,
-            "speed": checked_speed(sample) <= self.limits.stopped_rpm,
+            **stationary_conditions(sample, self.limits),
             "trajectory_done": sample.traj_done,
         }
         settled = all(self.last_conditions.values())
@@ -261,7 +314,7 @@ class SingleJointMonitor:
                 or (self.limits.max_step_deg is not None
                     and abs(delta_deg) > self.limits.max_step_deg)):
             self.reject("step_limit")
-        if checked_speed(sample) > self.limits.stopped_rpm:
+        if not all(stationary_conditions(sample, self.limits).values()):
             self.reject("initial_joint_moving")
         target = sample.state.angle_deg + delta_deg
         if not self.limits.lower_deg <= target <= self.limits.upper_deg:

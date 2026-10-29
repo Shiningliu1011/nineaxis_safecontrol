@@ -104,8 +104,8 @@ class JointTable:
     def preview(self, model, *, measurement_kind: str) -> dict:
         from work.robot_units import joints_si_to_mm_deg
 
-        if measurement_kind not in MEASUREMENT_KINDS:
-            raise ValueError("measurement_kind 必须为 camera 或 laser_tracker")
+        if measurement_kind not in (*MEASUREMENT_KINDS, "positioning"):
+            raise ValueError("measurement_kind 必须为 camera、laser_tracker 或单组 positioning")
         if self.model_hash != model.model_hash:
             raise ValueError("姿态表 model_hash 与当前模型不符")
         if not self.rows or len({row.pose_id for row in self.rows}) != len(self.rows):
@@ -137,6 +137,8 @@ class JointTable:
 class JointTableProgress:
     def __init__(self, table: JointTable, model, root: Path, *, measurement_kind: str,
                  feedback_source: str):
+        if measurement_kind not in MEASUREMENT_KINDS:
+            raise ValueError("测量任务必须选择 camera 或 laser_tracker")
         if feedback_source != "simulation_feedback":
             raise RuntimeError("joint_table_live_disabled: 多轴真实反馈与停车资格尚未完成验证")
         table.preview(model, measurement_kind=measurement_kind)

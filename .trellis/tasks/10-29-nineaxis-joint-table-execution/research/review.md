@@ -1,5 +1,16 @@
 # 九轴执行高风险审查
 
+## 单组真机调试与重力阻塞增量
+
+spec_review 与 standards_review 两名独立审查者已完成当前增量的只读复核，没有设备 I/O 或编辑。他们核对了请求身份与一次性使用、GUI 0.75 参数链路、五秒停车窗口、真实命令与保持、中止锁定，以及当前重力停止阻塞。
+
+- `SinglePoseCommissioning.require_scope()` 在真实 I/O 前调用 `MotorStopLatch.require_recoverable()`；`acknowledge_stop()` 复用同一检查，当前非空 hardware_blocker 无法由本 API 清除。`trip()` 保留现有锁定。
+- 拒绝观察独立标记 trusted=false，非有限数值保存为 null 并列入 invalid_fields，报告可使用 allow_nan=False 保存；保持目标使用新读取且独立检查通过的反馈。
+- 四份新归档中的 27 份原始文件通过字节数与 SHA-256 核验，真实回放使用归档成员，不依赖原日志绝对路径。
+- 参数文档分别说明默认低速入口、当次非运动读取和实际单组调试范围。首组未完成、停车未确认、全零请求未执行及缺少机械支撑的状态保持可见。
+
+最终纯真实数据回放 15 项通过，最终 lint、九个源码的限定 mypy 和构建来源检查通过。审查没有确认新增的软件阻塞问题。当前无法继续动作的原因是已确认的重力停止条件，软件审查和测试不提供物理停止验收。
+
 按项目 code-review skill，在主会话完成 trellis-check 后，由 spec_review 与 standards_review 两名独立只读审查者检查本次完整范围，并对具体问题复核。审查者没有修改文件或连接设备，主会话完成所有实现与测试。
 
 | 审查内容 | 当前实现与验证 |

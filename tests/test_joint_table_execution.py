@@ -22,6 +22,8 @@ from robot_safecontrol_moveit.mujoco_viewer_with_cylinder import MuJoCoJointStat
 from robot_safecontrol_moveit.single_joint_execution import (
     MotionRejected,
     ObservedFeedback,
+    SingleJointMonitor,
+    VelocityWindow,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -311,6 +313,24 @@ def test_offline_cli_does_not_load_hardware_extras():
         ("import sys; import robot_safecontrol_moveit.joint_table_cli; "
          "assert 'serial' not in sys.modules; assert 'construct' not in sys.modules"),
     ], env=environment, check=True, capture_output=True, text=True)
+
+
+def test_long_stationary_estimator_rejects_slow_physical_oscillation(model, tmp_path):
+    executor, plant = session(model, tmp_path / "oscillating.csv")
+    executor.limits = {joint: replace(limit, stationary_window_s=5., stationary_velocity_noise_rpm=.1)
+                       for joint, limit in executor.limits.items()}
+    executor.windows = {joint: VelocityWindow(limit.velocity_window_s, limit.stationary_window_s)
+                        for joint, limit in executor.limits.items()}
+    executor.monitors = {joint: SingleJointMonitor(executor.control._node(joint), limit)
+                         for joint, limit in executor.limits.items()}
+    with pytest.raises(MotionRejected, match="initial_stationary_timeout"):
+        for _ in range(400):
+            target = np.zeros(9)
+            target[-1] = np.deg2rad(.03) * np.sin(plant.data.time * np.pi / 2)
+            plant.observe(target=target)
+    assert executor.phase == "aborted"
+    assert np.rad2deg(plant.max_motion[-1]) > .02
+    assert not executor.attempts
 
 
 @pytest.mark.parametrize("nodes", [{}, {1: "prismatic"}, {**{i: "revolute" for i in range(1, 10)}},

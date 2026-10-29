@@ -16,7 +16,7 @@ from .single_joint_execution import (
     ObservedFeedback,
     SingleJointMonitor,
     VelocityWindow,
-    checked_speed,
+    stationary_conditions,
 )
 
 
@@ -40,6 +40,9 @@ class JointTableControl:
                      else degrees(value_si))
 
     def position_arguments(self, joint, target_deg, limits):
+        if joint == "J1":
+            return self.linear.position_arguments(joint, target_deg, speed_rpm=limits.speed_rpm,
+                                                  accel_rpm_s=limits.accel_rpm_s, bounds=limits.bounds)
         return self.control(joint).position_arguments(
             joint, target_deg, speed_rpm=limits.speed_rpm, accel_rpm_s=limits.accel_rpm_s)
 
@@ -49,8 +52,11 @@ class JointTableControl:
 
 class JointTableExecutor:
     def __init__(self, table: JointTable, model, *, measurement_kind: str, task_id: str,
-                 feedback_source: str, measurement_timeout_s: float = 300.0):
+                 feedback_source: str, measurement_timeout_s: float = 300.0,
+                 limits: dict | None = None):
         self.preview = table.preview(model, measurement_kind=measurement_kind)
+        if measurement_kind == "positioning" and len(table.rows) != 1:
+            raise ValueError("positioning 仅支持一组绝对目标")
         if not task_id.strip():
             raise ValueError("标定任务必须具有独立 task_id")
         if feedback_source not in ("hardware_feedback", "recorded_device_feedback", "simulation_feedback"):
@@ -64,9 +70,12 @@ class JointTableExecutor:
         self.measurement_started_s: float | None = None
         self.session_id = str(uuid4())
         self.control = JointTableControl(model.root)
-        self.limits = joint_execution_limits(model.root)
+        self.limits = joint_execution_limits(model.root) if limits is None else dict(limits)
+        if set(self.limits) != set(DEFAULT_JOINT_NAMES):
+            raise ValueError("执行限制必须完整包含九轴")
         # 每轴保持各自的速度与时间历史，开始下一组时继续使用。
-        self.windows = {joint: VelocityWindow(limit.velocity_window_s) for joint, limit in self.limits.items()}
+        self.windows = {joint: VelocityWindow(limit.velocity_window_s, limit.stationary_window_s)
+                        for joint, limit in self.limits.items()}
         self.monitors = {joint: SingleJointMonitor(self.control._node(joint), limit)
                          for joint, limit in self.limits.items()}
         self.phase = "initializing"
@@ -83,6 +92,7 @@ class JointTableExecutor:
         self.attempts: list[dict] = []
         self.used_measurements: set[str] = set()
         self.termination: dict | None = None
+        self.rejection_observation: dict | None = None
 
     def current_attempt(self) -> dict | None:
         if (self.index < len(self.table.rows) and self.attempts
@@ -112,7 +122,8 @@ class JointTableExecutor:
         for joint, sample in self.latest.items():
             if not 0 <= now_s - sample.request_s <= self.limits[joint].feedback_timeout_s:
                 self.reject(f"{joint}:feedback_timeout")
-        if self.phase == "initializing" and now_s - self.started_s > 5:
+        initial_timeout = max(5., max(limit.stationary_window_s for limit in self.limits.values()) + 2.)
+        if self.phase == "initializing" and now_s - self.started_s > initial_timeout:
             self.reject("joint_table_initial_stationary_timeout")
         if (self.phase == "awaiting_measurement" and self.measurement_started_s is not None
                 and now_s - self.measurement_started_s > self.measurement_timeout_s):
@@ -127,7 +138,7 @@ class JointTableExecutor:
                     self.reject(f"{joint}:settling_timeout")
 
     def observe(self, samples: dict[str, ObservedFeedback], *, now_s: float) -> bool:
-        if self.phase in ("aborted", "completed"):
+        if self.phase in ("aborted", "completed", "positioning_completed"):
             raise MotionRejected(self.reason or "joint_table_already_completed")
         # 一轮必须包含九个独立请求的反馈，保留逐轴时间。
         if set(samples) != set(DEFAULT_JOINT_NAMES):
@@ -151,11 +162,21 @@ class JointTableExecutor:
                     monitor.validate_feedback(sample, now_s)
                     if self.phase == "moving" and monitor.phase == "completed" and (
                         abs(sample.state.angle_deg - self.reference[joint]) > self.limits[joint].tolerance_deg
-                        or checked_speed(sample) > self.limits[joint].stopped_rpm or not sample.traj_done
+                        or not all(stationary_conditions(sample, self.limits[joint]).values()) or not sample.traj_done
                     ):
                         self.reject(f"{joint}:target_left_settling_tolerance")
                 current[joint] = sample
         except MotionRejected as error:
+            rejected = samples[joint]
+            values = {"angle_deg": rejected.state.angle_deg, "speed_rpm": rejected.state.speed_rpm,
+                      "request_s": rejected.request_s, "received_s": rejected.received_s}
+            self.rejection_observation = {
+                "joint": joint, "reason": str(error), "trusted": False,
+                "node_id": rejected.node_id, "target_deg": self.reference.get(joint),
+                "values": {name: value if isfinite(value) else None for name, value in values.items()},
+                "invalid_fields": [name for name, value in values.items() if not isfinite(value)],
+                "traj_done": rejected.traj_done, "axis_error": rejected.axis_error,
+            }
             self.latest.update(current)
             self.reject(f"{joint}:{error}")
         self.latest = current
@@ -166,7 +187,7 @@ class JointTableExecutor:
             limit = self.limits[joint]
             conditions[joint] = {
                 "position": bool(abs(sample.state.angle_deg - target) <= limit.tolerance_deg),
-                "speed": bool(checked_speed(sample) <= limit.stopped_rpm),
+                **stationary_conditions(sample, limit),
                 "trajectory_done": bool(sample.traj_done),
                 "velocity_window": bool(sample.window_duration_s >= limit.velocity_window_s),
             }
@@ -260,7 +281,7 @@ class JointTableExecutor:
 
     def validate_measurement_identity(self, *, now_s, session_id, task_id, pose_id, measurement_kind):
         self.check_time(now_s)
-        if (self.phase != "awaiting_measurement" or session_id != self.session_id
+        if (self.measurement_kind == "positioning" or self.phase != "awaiting_measurement" or session_id != self.session_id
                 or task_id != self.task_id or measurement_kind != self.measurement_kind
                 or pose_id != self.table.rows[self.index].pose_id):
             self.reject("joint_table_measurement_identity_invalid")
@@ -313,6 +334,7 @@ class JointTableExecutor:
             "transmission_sha256": self.preview["transmission_sha256"],
             "node_mapping_sha256": self.preview["node_mapping_sha256"],
             "attempts": self.attempts, "records": self.records, "termination": self.termination,
+            "rejection_observation": self.rejection_observation,
         }
 
     def write_report(self, path: Path):

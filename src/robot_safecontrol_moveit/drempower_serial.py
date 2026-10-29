@@ -10,7 +10,7 @@ from .drempower_can import (
     SYSTEM_ORDER_SAVE, MotorFeedback, can_id, decode_feedback, decode_property_reply,
     encode_property_read, encode_property_write, encode_system, encode_trapezoid_position,
 )
-from .motor_motion_limits import feedback_speed_limit, validate_motion_parameters
+from .motor_motion_limits import MotionBounds, feedback_speed_limit, validate_motion_parameters
 
 
 # 厂家 DrEmpower_can.py 的 can_to_uart/uart_to_can 标准模式布局。
@@ -26,6 +26,7 @@ class DrEmpowerSerial:
     def __init__(
         self, port: str, *, command_node: int | None = None, axis_type: str = "revolute",
         position_nodes: dict[int, str] | None = None,
+        motion_bounds: dict[int, MotionBounds] | None = None,
     ):
         if not Path(port).exists():
             raise FileNotFoundError(port)
@@ -43,6 +44,9 @@ class DrEmpowerSerial:
         self.command_node = command_node
         self.axis_type = axis_type
         self.position_nodes = dict(position_nodes or {})
+        self.motion_bounds = dict(motion_bounds or {})
+        if self.motion_bounds and (not self.position_nodes or set(self.motion_bounds) != set(self.position_nodes)):
+            raise ValueError("调试参数范围必须对应完整九轴位置连接")
         self._reply_states: dict[int, bool] = {}
         self.READ_FLAG = 0
         self.enable_replay_state = 0
@@ -116,7 +120,8 @@ class DrEmpowerSerial:
             raise ValueError("连接没有该节点的梯形位置命令权限")
         if not all(isfinite(value) for value in (angle, speed, param)):
             raise ValueError("运动参数必须为有限数值")
-        validate_motion_parameters(speed, param, axis_type=self.position_nodes.get(id_num, self.axis_type))
+        validate_motion_parameters(speed, param, axis_type=self.position_nodes.get(id_num, self.axis_type),
+                                   bounds=self.motion_bounds.get(id_num))
         if id_num not in self._latest:
             raise RuntimeError("发送前缺少实际反馈")
         feedback, stamp = self._latest[id_num]

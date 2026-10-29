@@ -4,6 +4,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from construct import ConstructError
 
@@ -11,6 +12,7 @@ from .drempower_serial import DrEmpowerSerial
 from .joint_table import require_hardware_qualification
 from .joint_table_execution import JointTableExecutor
 from .measurement_files import prepare_measurement_files
+from .motor_motion_limits import MotionBounds
 from .motor_stop_latch import MotorStopLatch
 from .robot_spec import DEFAULT_JOINT_NAMES
 from .single_joint_execution import (
@@ -19,6 +21,9 @@ from .single_joint_execution import (
     SingleJointMonitor,
     VendorFeedbackReader,
 )
+
+if TYPE_CHECKING:
+    from .joint_table_commissioning import SinglePoseCommissioning
 
 POSITION_NODES = {1: "prismatic", **{node: "revolute" for node in range(2, 10)}}
 
@@ -113,15 +118,23 @@ class JointTableDevice:
 
 
 def run_joint_table(executor: JointTableExecutor, *, port: str, log_path: Path,
-                    measurement_dir: Path):
+                    measurement_dir: Path, commissioning: "SinglePoseCommissioning | None" = None):
     # 本边界在创建文件和真实 I/O 前检查资格；当前缺项时保持拒绝。
-    require_hardware_qualification(executor.model.root)
+    if commissioning is None:
+        require_hardware_qualification(executor.model.root)
+    else:
+        commissioning.require_scope(executor.table, executor.model, port=port)
+        if (executor.limits != commissioning.limits(executor.model.root) or executor.feedback_source != "hardware_feedback"
+                or executor.measurement_kind != "positioning"):
+            raise ValueError("单组调试必须完整采用本次来源参数和真实反馈")
     frames_path = log_path.with_suffix(".frames.json")
     report_path = log_path.with_suffix(".report.json")
     if any(path.exists() for path in (log_path, frames_path, report_path)):
         raise FileExistsError("执行日志、收发记录或报告已经存在")
     if not measurement_dir.is_dir():
         raise FileNotFoundError(measurement_dir)
+    if commissioning is not None:
+        commissioning.consume(log_path)
     latch = MotorStopLatch(executor.model.root / ".scratch/motor_control/stop.json")
     with log_path.open("x", encoding="utf-8") as log:
         def record(event, **fields):
@@ -130,24 +143,56 @@ def run_joint_table(executor: JointTableExecutor, *, port: str, log_path: Path,
             log.flush()
             os.fsync(log.fileno())
 
-        with DrEmpowerSerial(port, position_nodes=POSITION_NODES) as vendor:
+        bounds: dict[int, MotionBounds] | None = None
+        if commissioning is not None:
+            bounds = {}
+            for joint, limit in executor.limits.items():
+                if limit.bounds is None:
+                    raise ValueError(f"{joint} 缺少本次参数范围")
+                bounds[executor.control._node(joint)] = limit.bounds
+        with DrEmpowerSerial(port, position_nodes=POSITION_NODES, motion_bounds=bounds) as vendor:
             device = JointTableDevice(vendor, executor)
             file_worker = ThreadPoolExecutor(max_workers=1, thread_name_prefix="measurement-files")
             pending_files = None
             pending_identity = None
             try:
                 record("session_started", **executor.report())
+                if commissioning is not None:
+                    record("single_pose_commissioning", **commissioning.report())
                 device.prepare()
+                if commissioning is not None:
+                    record("device_verified", properties=commissioning.verify_device(device))
+                recovery_pending = commissioning is not None
                 while executor.phase != "completed":
-                    latch.require_clear()
+                    if not recovery_pending:
+                        latch.require_clear()
                     executor.check_time(time.monotonic())
                     samples = device.read_cycle()
                     record("feedback", samples={joint: asdict(sample) for joint, sample in samples.items()})
                     executor.observe(samples, now_s=time.monotonic())
                     if executor.phase == "ready":
+                        if recovery_pending:
+                            if commissioning is None:
+                                raise RuntimeError("人工恢复缺少本次请求")
+                            commissioning.require_scope(executor.table, executor.model, port=port)
+                            commissioning.require_initial_zero(executor)
+                            record("manual_stop_recovery", request_sha256=commissioning.request_sha256,
+                                   feedback=executor.feedback_report())
+                            latch.acknowledge_stop(expected_sha256=commissioning.stop_latch_sha256,
+                                                   archive_path=log_path.with_suffix(".previous-stop.json"))
+                            recovery_pending = False
                         commands = executor.begin(now_s=time.monotonic())
                         device.send(commands, record)
                     elif executor.phase == "awaiting_measurement":
+                        if commissioning is not None:
+                            executor.phase = "positioning_completed"
+                            executor.attempts[-1].update(status="positioning_completed")
+                            record("single_pose_positioning_completed", feedback=executor.feedback_report(),
+                                   arrival_elapsed_s=executor.attempts[-1]["arrival_elapsed_s"],
+                                   measurement_recorded=False, next_pose_permitted=False)
+                            latch.trip(reason="single_pose_authorization_completed", log_path=log_path)
+                            print("首组九轴位置运动完成，全部反馈持续到位并停车；尚未采集标定测量。", flush=True)
+                            break
                         request_path = measurement_dir / f"{executor.index + 1:04d}.json"
                         if pending_files is None and request_path.exists():
                             with request_path.open(encoding="utf-8") as stream:
