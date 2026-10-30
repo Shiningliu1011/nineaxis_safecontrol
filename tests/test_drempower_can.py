@@ -92,6 +92,16 @@ class TestEncodeSystem:
             encode_system(1, 2**32)
 
 
+def test_timed_preset_uses_seconds_and_preserves_vendor_quantization():
+    from robot_safecontrol_moveit.drempower_can import encode_timed_preset
+
+    assert encode_timed_preset(1, -72., duration_s=60., accel_rpm_s=.12) == bytes.fromhex(
+        "000090c270170c00")
+    for duration, acceleration in ((0, .12), (327.68, .12), (60., 0), (60., float("nan"))):
+        with pytest.raises(ValueError):
+            encode_timed_preset(1, -72., duration_s=duration, accel_rpm_s=acceleration)
+
+
 class TestFeedbackDecode:
     def test_roundtrip_values(self) -> None:
         data = struct.pack("<fhh", 180.0, 318, -25)

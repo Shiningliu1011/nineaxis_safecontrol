@@ -18,11 +18,14 @@ from robot_safecontrol_moveit.joint_positioning import (
 from robot_safecontrol_moveit.joint_table import require_hardware_qualification
 from robot_safecontrol_moveit.joint_table_execution import JointTableExecutor
 from robot_safecontrol_moveit.joint_table_runtime import run_joint_table
+from robot_safecontrol_moveit.motor_motion_limits import MotionBounds
 from robot_safecontrol_moveit.robot_spec import DEFAULT_JOINT_NAMES
 from robot_safecontrol_moveit.single_joint_execution import (
+    ExecutionLimits,
     MotionRejected,
     ObservedFeedback,
 )
+from robot_safecontrol_moveit.tracking_log_replay import _match_commands, _raw_tracking
 
 ROOT = Path(__file__).resolve().parents[1]
 ARCHIVE = ROOT / "tests/data/attended_positioning_readiness_20261029.zip"
@@ -179,3 +182,77 @@ def test_actual_j7_motion_and_later_stationary_feedback_use_reviewed_experiment_
     assert stopped.phase == "ready"
     assert abs(stopped.latest["J7"].state.angle_deg) > 3
     assert len(stopped.begin(now_s=now_s)) == 9
+
+
+def test_actual_nineaxis_native_positioning_replays_arrival_and_continuous_hold(actual_model):
+    with ZipFile(ROOT / "tests/data/direct-position-02_20261030.zip") as archive:
+        for item in json.loads(archive.read("provenance.json"))["files"]:
+            source = archive.read(item["member"])
+            assert len(source) == item["bytes"]
+            assert sha256(source).hexdigest() == item["sha256"]
+        events = [json.loads(line) for line in archive.read("direct-position-02.jsonl").splitlines()]
+        report = json.loads(archive.read("direct-position-02.report.json"))
+        frames = json.loads(archive.read("direct-position-02.frames.json"))
+    target = dict(zip(DEFAULT_JOINT_NAMES, [2., 1., -1., 1., -1., 1., 1., -1., 1.]))
+    table = single_target_table(target, actual_model)
+    limits = {joint: ExecutionLimits(**{**values, "bounds": MotionBounds(**values["bounds"])
+                                        if values["bounds"] else None})
+              for joint, values in report["limits"].items()}
+    executor = JointTableExecutor(table, actual_model, measurement_kind="positioning", task_id="native-positioning",
+                                  feedback_source="recorded_device_feedback", limits=limits, manual_positioning=True)
+    trace = _raw_tracking({"frames": frames, "status": report["phase"]}, executor.control)
+    _match_commands([{**row, "event": "low_speed_seed_requested"} if row["event"] == "command_requested"
+                     else row for row in events], trace, executor.control)
+    assert len(trace["positions"]) == 9 and not trace["broadcasts"]
+    assert set(trace["tx_commands"]) == {"0x1a", "0x1e"}
+    arrived_s = None
+    for event in events:
+        if event["event"] == "command_requested" and not executor.attempts:
+            assert len(executor.begin(now_s=event["monotonic_s"])) == 9
+        if event["event"] == "feedback":
+            samples = {joint: ObservedFeedback(**{**row, "state": JointFeedback(**row["state"])})
+                       for joint, row in event["samples"].items()}
+            executor.observe(samples, now_s=event["monotonic_s"])
+        if event["event"] == "positioning_completed":
+            assert executor.phase == "holding_position"
+            arrived_s = event["monotonic_s"]
+        if event["event"] == "completed":
+            executor.finish_positioning(now_s=event["monotonic_s"])
+    assert arrived_s is not None and events[-1]["monotonic_s"] - arrived_s > 50
+    assert executor.phase == "completed"
+    assert executor.report()["all_positioning_targets_completed"] is True
+    assert executor.limits["J1"].tolerance_deg == 72.
+    assert all(abs(row["error_mm_deg"]) < (.001 if joint == "J1" else .01)
+               for joint, row in executor.feedback_report().items())
+
+
+def test_actual_larger_motion_waits_for_all_joint_stationarity(actual_model):
+    with ZipFile(ROOT / "tests/data/larger-position-01_20261030.zip") as archive:
+        for item in json.loads(archive.read("provenance.json"))["files"]:
+            source = archive.read(item["member"])
+            assert len(source) == item["bytes"]
+            assert sha256(source).hexdigest() == item["sha256"]
+        events = [json.loads(line) for line in archive.read("larger-position-01.jsonl").splitlines()]
+        report = json.loads(archive.read("larger-position-01.report.json"))
+    table = single_target_table(dict(zip(DEFAULT_JOINT_NAMES, report["attempts"][0]["target_mm_deg"])), actual_model)
+    limits = {joint: ExecutionLimits(**{**values, "bounds": MotionBounds(**values["bounds"])
+                                        if values["bounds"] else None})
+              for joint, values in report["limits"].items()}
+    executor = JointTableExecutor(table, actual_model, measurement_kind="positioning", task_id="larger-native-motion",
+                                  feedback_source="recorded_device_feedback", limits=limits, manual_positioning=True)
+    assert report["termination"]["reason"] == "J7:target_left_settling_tolerance"
+    for event in events:
+        if event["event"] == "command_requested" and not executor.attempts:
+            executor.begin(now_s=event["monotonic_s"])
+        if event["event"] == "feedback":
+            samples = {joint: ObservedFeedback(**{**row, "state": JointFeedback(**row["state"])})
+                       for joint, row in event["samples"].items()}
+            executor.observe(samples, now_s=event["monotonic_s"])
+    sample = executor.latest["J7"]
+    assert abs(sample.state.angle_deg - 7) < .003
+    assert sample.stationary_position_span_deg == .010471343994140625
+    assert executor.limits["J7"].position_noise_deg == .01
+    assert executor.attempts[-1]["last_conditions"]["J7"]["position_stability"] is False
+    assert executor.phase == "moving"
+    assert executor.settled_since_s is None
+    assert not executor.positioning_records

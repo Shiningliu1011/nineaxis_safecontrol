@@ -2,15 +2,17 @@ from math import isfinite
 from pathlib import Path
 import time
 
-from construct import Bytes, Const, Int16ub, Struct, Terminated
+from construct import Bytes, Const, Float32l, Int16ub, Struct, Terminated
 import serial
 
 from .drempower_can import (
-    CMD_POSITION_ANGLE_MODE1, CMD_PROPERTY_READ, CMD_PROPERTY_WRITE, CMD_SYSTEM,
-    SYSTEM_ORDER_SAVE, MotorFeedback, can_id, decode_feedback, decode_property_reply,
+    CMD_POSITION_ANGLE_MODE1, CMD_PRESET_ANGLE, CMD_PROPERTY_READ, CMD_PROPERTY_WRITE, CMD_SYSTEM,
+    SYSTEM_ORDER_SAVE, SYSTEM_ORDER_START_ANGLE_TRACKING, SYSTEM_ORDER_START_TIMED_ANGLE,
+    MotorFeedback, can_id, decode_feedback, decode_property_reply, encode_position,
     encode_property_read, encode_property_write, encode_system, encode_trapezoid_position,
+    encode_timed_preset,
 )
-from .motor_motion_limits import MotionBounds, feedback_speed_limit, validate_motion_parameters
+from .motor_motion_limits import MotionBounds, TrackingProbeBounds, feedback_speed_limit, validate_motion_parameters
 
 
 # 厂家 DrEmpower_can.py 的 can_to_uart/uart_to_can 标准模式布局。
@@ -27,6 +29,9 @@ class DrEmpowerSerial:
         self, port: str, *, command_node: int | None = None, axis_type: str = "revolute",
         position_nodes: dict[int, str] | None = None,
         motion_bounds: dict[int, MotionBounds] | None = None,
+        timed_probe: bool = False,
+        tracking_probe: bool = False,
+        tracking_bounds: TrackingProbeBounds | None = None,
     ):
         if not Path(port).exists():
             raise FileNotFoundError(port)
@@ -41,6 +46,17 @@ class DrEmpowerSerial:
                           else type(command_node) is int and 2 <= command_node <= 9)
             if type(command_node) is not int or not valid_node:
                 raise ValueError("直线运动必须指定 ID 1；旋转运动必须指定 ID 2–9")
+        if (type(timed_probe) is not bool or type(tracking_probe) is not bool
+                or ((timed_probe or tracking_probe) and position_nodes is None) or (timed_probe and tracking_probe)):
+            raise ValueError("共同时间实验需要完整九轴位置连接及明确实验权限")
+        if ((tracking_probe and not isinstance(tracking_bounds, TrackingProbeBounds))
+                or (not tracking_probe and tracking_bounds is not None)):
+            raise ValueError("连续参考实验需要对应的已检查范围")
+        self.timed_probe = timed_probe
+        self.tracking_probe = tracking_probe
+        self.tracking_bounds = tracking_bounds
+        self._last_tracking_probe_s: float | None = None
+        self._timed_probe_active = False
         self.command_node = command_node
         self.axis_type = axis_type
         self.position_nodes = dict(position_nodes or {})
@@ -50,7 +66,7 @@ class DrEmpowerSerial:
         self._reply_states: dict[int, bool] = {}
         self.READ_FLAG = 0
         self.enable_replay_state = 0
-        self._pending = None
+        self._pending: int | None = None
         self._failed = False
         self._latest: dict[int, tuple[MotorFeedback, float]] = {}
         self.motor_state: dict[int, list[float | int]] = {}
@@ -64,9 +80,13 @@ class DrEmpowerSerial:
     def _write_frame(self, node, cmd, data):
         if self._failed or self._pending is not None or self.uart.in_waiting:
             raise RuntimeError("串口会话无效或存在未处理数据")
-        if type(node) is not int or not 1 <= node <= 9:
+        probe_write = (self.timed_probe or self.tracking_probe) and self._timed_probe_active and (
+            (node in self.position_nodes and cmd == CMD_PRESET_ANGLE)
+            or (node == 0 and cmd == CMD_SYSTEM and data == encode_system(
+                0, SYSTEM_ORDER_START_TIMED_ANGLE if self.timed_probe else SYSTEM_ORDER_START_ANGLE_TRACKING)))
+        if type(node) is not int or (not 1 <= node <= 9 and not (node == 0 and probe_write)):
             raise ValueError("仅支持单节点 ID 1–9")
-        if cmd != CMD_PROPERTY_READ:
+        if cmd != CMD_PROPERTY_READ and not probe_write:
             if node in self.position_nodes:
                 if cmd != CMD_POSITION_ANGLE_MODE1:
                     raise ValueError("九轴位置连接仅允许单节点位置模式 1")
@@ -103,6 +123,8 @@ class DrEmpowerSerial:
             raise ValueError("反馈节点或 CAN ID 无效")
         if parsed.frame_id & 0x1F in (1, 3, 5, 7):
             feedback = decode_feedback(parsed.frame_id, parsed.data)
+            if self.tracking_bounds is not None:
+                self.tracking_bounds.require_position(feedback.node_id, feedback.pos_deg)
             self._latest[feedback.node_id] = (feedback, time.monotonic())
             self.motor_state[feedback.node_id - 1] = [
                 feedback.pos_deg, feedback.vel_rpm, feedback.torque_nm,
@@ -131,6 +153,8 @@ class DrEmpowerSerial:
         if reply_enabled is None:
             raise RuntimeError("发送前必须核对设备自动反馈设置")
         payload = encode_trapezoid_position(id_num, angle, speed=speed, accel=param)
+        if self.tracking_bounds is not None:
+            self.tracking_bounds.require_position(id_num, Float32l.parse(payload))
         self._write_frame(id_num, CMD_POSITION_ANGLE_MODE1, payload)
         if reply_enabled:
             self._pending = id_num
@@ -145,6 +169,96 @@ class DrEmpowerSerial:
         raw = self.receive_data(return_id=True)
         return decode_property_reply((raw[1] << 8) | raw[2], bytes(raw[3:]),
                                      node_id=node, address=address, value_kind=kind)
+
+    def set_timed_probe(self, targets_deg: dict[int, float], *, duration_s: float, accel_rpm_s: float):
+        if not self.timed_probe:
+            raise RuntimeError("连接没有共同时间实验权限")
+        if (set(targets_deg) != set(range(1, 10)) or set(self._reply_states) != set(targets_deg)
+                or not 30 <= duration_s <= 120 or not .01 <= accel_rpm_s <= .12):
+            raise ValueError("实验需要九轴目标、已核对反馈设置、30–120 s 及不超过 0.12 rpm/s")
+        before = {}
+        commands = []
+        for node in range(1, 10):
+            if node not in self._latest:
+                raise RuntimeError(f"节点 {node} 缺少实际反馈")
+            feedback, stamp = self._latest[node]
+            if time.monotonic() - stamp > .2 or feedback.axis_error or not feedback.traj_done:
+                raise RuntimeError(f"节点 {node} 反馈超时、故障或尚未完成")
+            limit = 43.2 if node == 1 else .6
+            target = targets_deg[node]
+            if not isfinite(target) or abs(target - feedback.pos_deg) > limit:
+                raise ValueError(f"节点 {node} 超出共同时间小范围实验位移")
+            before[node] = feedback.pos_deg
+            commands.append((node, encode_timed_preset(node, target, duration_s=duration_s,
+                                                       accel_rpm_s=accel_rpm_s)))
+        self._timed_probe_active = True
+        try:
+            for node, data in commands:
+                self._write_frame(node, CMD_PRESET_ANGLE, data)
+                if self._reply_states[node]:
+                    self._pending = node
+                    raw = self.receive_data(return_id=True)
+                    feedback = decode_feedback((raw[1] << 8) | raw[2], bytes(raw[3:]))
+                    if feedback.axis_error:
+                        raise RuntimeError(f"节点 {node} 预设回复报告故障")
+            # 预设完成后重新读取，核查尚未启动并取得发送前反馈。
+            for node in range(1, 10):
+                position, _ = self.get_state(node)
+                if self._latest[node][0].axis_error or abs(position - before[node]) > .01:
+                    raise RuntimeError(f"节点 {node} 预设期间发生故障或位置改变")
+            started_s = time.monotonic()
+            if any(started_s - stamp > .2 for _, stamp in self._latest.values()):
+                raise RuntimeError("共同时间启动前反馈超时")
+            self._write_frame(0, CMD_SYSTEM, encode_system(0, SYSTEM_ORDER_START_TIMED_ANGLE))
+            return {"broadcast_requested_s": started_s, "broadcast_write_finished_s": time.monotonic(),
+                    "duration_s": duration_s, "acceleration_rpm_s": accel_rpm_s,
+                    "targets_device_deg": targets_deg, "device_adoption_verified": False}
+        finally:
+            self._timed_probe_active = False
+
+    def set_tracking_probe(self, targets_deg: dict[int, float], *, restore_bandwidths: dict[int, float] | None = None):
+        if not self.tracking_probe or self.tracking_bounds is None:
+            raise RuntimeError("连接没有连续参考实验权限")
+        if set(targets_deg) != set(range(1, 10)) or set(self._reply_states) != set(targets_deg):
+            raise ValueError("连续参考实验需要完整九轴目标及反馈设置")
+        now = time.monotonic()
+        if self._last_tracking_probe_s is not None and not .04 <= now - self._last_tracking_probe_s <= .2:
+            raise RuntimeError("连续参考实验的发送间隔超出 40–200 ms")
+        widths = dict.fromkeys(targets_deg, 10.) if restore_bandwidths is None else restore_bandwidths
+        if set(widths) != set(targets_deg) or any(not isfinite(value) or not .01 <= value <= 100 for value in widths.values()):
+            raise ValueError("连续参考实验的恢复带宽无效")
+        commands = []
+        for node in range(1, 10):
+            if node not in self._latest:
+                raise RuntimeError(f"节点 {node} 缺少实际反馈")
+            feedback, stamp = self._latest[node]
+            self.tracking_bounds.require_position(node, feedback.pos_deg)
+            if now - stamp > .2 or feedback.axis_error:
+                raise RuntimeError(f"节点 {node} 反馈超时或故障")
+            limit = (43.2 if node == 1 else .6) if restore_bandwidths is None else .01
+            if not isfinite(targets_deg[node]) or abs(targets_deg[node] - feedback.pos_deg) > limit:
+                raise ValueError(f"节点 {node} 超出连续参考实验位移")
+            data = encode_position(node, targets_deg[node], speed=0., filter_accel=widths[node])
+            self.tracking_bounds.require_position(node, Float32l.parse(data))
+            commands.append((node, data))
+        self._timed_probe_active = True
+        try:
+            for node, data in commands:
+                self._write_frame(node, CMD_PRESET_ANGLE, data)
+                if self._reply_states[node]:
+                    self._pending = node
+                    raw = self.receive_data(return_id=True)
+                    feedback = decode_feedback((raw[1] << 8) | raw[2], bytes(raw[3:]))
+                    if feedback.axis_error:
+                        raise RuntimeError(f"节点 {node} 连续预设回复报告故障")
+            if any(time.monotonic() - stamp > .2 for _, stamp in self._latest.values()):
+                raise RuntimeError("连续参考启动前反馈超时")
+            self._write_frame(0, CMD_SYSTEM, encode_system(0, SYSTEM_ORDER_START_ANGLE_TRACKING))
+            self._last_tracking_probe_s = now
+            return {"broadcast_requested_s": now, "broadcast_write_finished_s": time.monotonic(),
+                    "targets_device_deg": targets_deg, "bandwidths": widths}
+        finally:
+            self._timed_probe_active = False
 
     def configure_j1_limits(self, angle_min: float, angle_max: float):
         if self.command_node != 1 or self.axis_type != "prismatic":

@@ -6,6 +6,8 @@ from time import monotonic
 from typing import NoReturn
 from uuid import uuid4
 
+import numpy as np
+
 from .drempower_joint_control import DrEmpowerJointControl
 from .j1_execution import J1ScrewControl
 from .joint_table import JointTable, JointTableRow, joint_execution_limits
@@ -38,6 +40,13 @@ class JointTableControl:
     def target_deg(self, joint: str, value_si: float) -> float:
         return float(value_si * 1000 * self.linear.degrees_per_mm if joint == "J1"
                      else degrees(value_si))
+
+    def encoder_targets(self, q_si) -> dict[int, float]:
+        values = np.asarray(q_si, dtype=float)
+        if values.shape != (len(DEFAULT_JOINT_NAMES),) or not np.all(np.isfinite(values)):
+            raise ValueError("设备目标需要完整九轴有限 SI 坐标")
+        return {self._node(joint): self.control(joint).converter.joint_to_encoder(joint, float(value))
+                for joint, value in zip(DEFAULT_JOINT_NAMES, values)}
 
     def position_arguments(self, joint, target_deg, limits):
         if joint == "J1":
@@ -143,6 +152,11 @@ class JointTableExecutor:
                 if (monitor.phase == "settling" and monitor.position_arrived_s is not None
                         and now_s - monitor.position_arrived_s > monitor.limits.hold_timeout_s):
                     self.reject(f"{joint}:settling_timeout")
+            arrivals = [monitor.position_arrived_s for monitor in self.monitors.values()]
+            if all(value is not None for value in arrivals):
+                last_arrival = max(value for value in arrivals if value is not None)
+                if now_s - last_arrival > max(limit.hold_timeout_s for limit in self.limits.values()):
+                    self.reject("joint_table_settling_timeout")
 
     def observe(self, samples: dict[str, ObservedFeedback], *, now_s: float) -> bool:
         if self.phase in ("aborted", "completed", "positioning_completed"):
@@ -169,7 +183,7 @@ class JointTableExecutor:
                     monitor.validate_feedback(sample, now_s)
                     if self.phase == "moving" and monitor.phase == "completed" and (
                         abs(sample.state.angle_deg - self.reference[joint]) > self.limits[joint].tolerance_deg
-                        or not all(stationary_conditions(sample, self.limits[joint]).values()) or not sample.traj_done
+                        or not sample.traj_done
                     ):
                         self.reject(f"{joint}:target_left_settling_tolerance")
                 current[joint] = sample

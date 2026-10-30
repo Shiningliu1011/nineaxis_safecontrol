@@ -1,0 +1,40 @@
+{
+  "node_id": 1,
+  "values": {
+    "gear_ratio": 36.0,
+    "cpr": 16384,
+    "pole_pairs": 14
+  },
+  "frames": [
+    {
+      "direction": "tx",
+      "monotonic_s": 25419.847599463,
+      "raw_hex": "aa0000080000003ee879000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 25419.848451091,
+      "raw_hex": "aa0000080000003ee879000000001042"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 25419.848514661,
+      "raw_hex": "aa0000080000003e3785040000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 25419.849291637,
+      "raw_hex": "aa0000080000003e3785040000400000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 25419.849330449,
+      "raw_hex": "aa0000080000003e4e81040000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 25419.850178155,
+      "raw_hex": "aa0000080000003e4e8104000e000000"
+    }
+  ]
+}

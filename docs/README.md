@@ -5,6 +5,8 @@
 ## 项目与运行
 
 - [九轴手动定位](joint_positioning.md)：Python 顶部修改九轴绝对目标、CSV 按 Enter 逐组定位及到位后的持续保持与监测。
+- [电机定位诊断](motor_positioning_diagnostics.md)：G 系列连续计数、有人值守动作记录、原始帧和离线复算。
+- [同步接口与断电恢复](planning/motor-positioning/live-interface-experiments.md)：共同时间与连续参考实机比较、非零位置断电记录和上电参数变化。
 - [标定姿态表](calibration_joint_table.md)：相机与激光跟踪仪分别采集，完整关节目标输入、模型检查和离线逐组流程。
 - [运动参数与反馈证据](joint_motion_limits_evidence.md)：位置模式、速度换算、完整真实回放及当前零位与通信检查。
 - [项目入门与结构](ONBOARDING.md)：源码入口、闭环数据流和开发环境。
@@ -33,6 +35,8 @@
 
 ## 设计与实施资料
 
+- [九轴电机定位与 J1 全行程规格](planning/nineaxis-full-project/motor-positioning-spec.md)：九值 Python 入口、同步定位、平滑往返、定位精度与设备调查。
+- [九轴电机独立任务清单](planning/motor-positioning/tasks.md)：#184 的 11 项子任务，覆盖单组定位、J1 完整行程与蝴蝶曲线跟踪，与 #147 并列管理。
 - [预测协调控制总体规格](specs/predictive-coordination-control.md)：研究目标、工艺与电机限制、运动参考协调、MPC、三方法和完整项目验收。
 - [2026-10-20 主机恢复](host_recovery_20261020.md)：环境、skills、字体、资料身份和验证入口。
 - [九轴曲面作业完整项目](planning/nineaxis-full-project/README.md)：M01–M12、QP/MPC、系统集成、实机实验与个人项目成果的 Wayfinder 入口。

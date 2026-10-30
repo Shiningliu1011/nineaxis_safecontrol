@@ -338,3 +338,12 @@ def test_long_stationary_estimator_rejects_slow_physical_oscillation(model, tmp_
 def test_multi_node_permission_is_checked_before_serial_open(tmp_path, nodes):
     with pytest.raises(ValueError, match="九轴位置连接"):
         DrEmpowerSerial(str(tmp_path), position_nodes=nodes)
+
+
+@pytest.mark.parametrize("timed,tracking,nodes", [
+    (True, False, None), (False, True, None),
+    (True, True, {1: "prismatic", **{i: "revolute" for i in range(2, 10)}}),
+])
+def test_position_probe_requires_one_explicit_complete_scope_before_serial_open(tmp_path, timed, tracking, nodes):
+    with pytest.raises(ValueError, match="实验权限"):
+        DrEmpowerSerial(str(tmp_path), position_nodes=nodes, timed_probe=timed, tracking_probe=tracking)

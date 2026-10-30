@@ -7,6 +7,7 @@ import subprocess
 import sys
 from dataclasses import replace
 from pathlib import Path
+from zipfile import ZipFile
 
 import numpy as np
 import pytest
@@ -20,8 +21,11 @@ from robot_safecontrol_moveit.joint_positioning import (
 )
 from robot_safecontrol_moveit.joint_table import TABLE_COLUMNS, JointTable
 from robot_safecontrol_moveit.joint_table_execution import JointTableExecutor
+from robot_safecontrol_moveit.drempower_joint_control import JointFeedback
 from robot_safecontrol_moveit.robot_spec import DEFAULT_JOINT_NAMES
-from robot_safecontrol_moveit.single_joint_execution import MotionRejected
+from robot_safecontrol_moveit.single_joint_execution import (
+    ExecutionLimits, MotionRejected, ObservedFeedback, SingleJointMonitor, VelocityWindow,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 SPEED = dict(zip(DEFAULT_JOINT_NAMES, [.25, *([2.46] * 8)]))
@@ -59,6 +63,45 @@ def test_project_units_effective_protocol_values_and_target_identity(model):
     assert limits["J1"].accel_rpm_s == .6
     assert limits["J2"].speed_rpm == .33
     assert limits["J9"].accel_rpm_s == .05
+    assert limits["J1"].tolerance_deg == 72.
+    assert all(limits[joint].tolerance_deg == .1 for joint in DEFAULT_JOINT_NAMES[1:])
+
+
+def test_actual_native_j1_start_feedback_uses_linear_position_tolerance():
+    with ZipFile(ROOT / "tests/data/direct-position-01_20261030.zip") as archive:
+        events = [json.loads(line) for line in archive.read("direct-position-01.jsonl").splitlines()]
+        report = json.loads(archive.read("direct-position-01.report.json"))
+    original = ExecutionLimits(**report["limits"]["J1"])
+    corrected = replace(original, tolerance_deg=positioning_limits(ROOT, SPEED, ACCELERATION)["J1"].tolerance_deg)
+    guards = [SingleJointMonitor(1, limits) for limits in (original, corrected)]
+    window = VelocityWindow(original.velocity_window_s, original.stationary_window_s)
+    moving = False
+    rejection = None
+    for event in events:
+        if event["event"] == "command_requested" and event["joint"] == "J1":
+            for guard in guards:
+                guard.start_absolute(sample, 144., event["monotonic_s"])
+            moving = True
+        if event["event"] != "feedback":
+            continue
+        value = event["samples"]["J1"]
+        sample = window.add(ObservedFeedback(**{**value, "state": JointFeedback(**value["state"])}))
+        if not moving:
+            continue
+        guards[1].observe(sample, event["monotonic_s"])
+        try:
+            guards[0].observe(sample, event["monotonic_s"])
+        except MotionRejected as error:
+            rejection = str(error)
+            break
+    assert rejection == "motion_outside_requested_interval"
+    assert guards[1].phase == "moving"
+    assert guards[1].start_deg is not None
+    reverse_mm = (guards[1].start_deg - sample.state.angle_deg) / 72
+    assert original.tolerance_deg / 72 < reverse_mm < .002
+    assert reverse_mm < corrected.tolerance_deg / 72
+    with pytest.raises(ValueError, match="到位误差"):
+        replace(corrected, tolerance_deg=72.01)
 
 
 def test_protocol_integer_steps_preserve_editable_decimal_speed(model):
@@ -423,3 +466,294 @@ def test_positioning_import_does_not_load_serial_or_open_devices():
     subprocess.run([sys.executable, "-c", ("import sys; import robot_safecontrol_moveit.joint_positioning; "
                     "assert 'serial' not in sys.modules; assert 'construct' not in sys.modules")],
                    cwd=ROOT, capture_output=True, text=True, check=True)
+
+
+def test_explicit_nine_joint_values_preview_native_position_commands():
+    target = [2., 1., -1., 1., -1., 1., 1., -1., 1.]
+    result = subprocess.run([
+        sys.executable, str(ROOT / "scripts/joint_positioning.py"), "--preview",
+        "--joints", *map(str, target), "--port", "/absent"],
+        cwd=ROOT, capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    report = json.loads(result.stdout)
+    assert report["input_kind"] == "joints"
+    assert report["rows"][0]["target_mm_deg"] == pytest.approx(target)
+    assert report["first_pose_requires_enter"] is False
+    commands = report["rows"][0]["device_commands"]
+    assert len(commands) == 9
+    assert all(row["arguments"]["mode"] == 1 for row in commands)
+    assert commands[0]["arguments"]["angle"] == -144.
+
+
+@pytest.mark.parametrize("arguments", [
+    ["--joints", *(["0"] * 8)],
+    ["--joints", *(["0"] * 10)],
+    ["--joints", "nan", *(["0"] * 8)],
+    ["--joints", *(["0"] * 9), "--csv", "config/calibration_joint_table.example.csv"],
+])
+def test_explicit_joint_input_rejects_invalid_count_values_or_csv_conflict(arguments, tmp_path):
+    output = tmp_path / "not-created.json"
+    result = subprocess.run([
+        sys.executable, str(ROOT / "scripts/joint_positioning.py"), "--preview",
+        "--port", "/absent", "--output", str(output), *arguments],
+        cwd=ROOT, capture_output=True, text=True)
+    assert result.returncode != 0
+    assert not output.exists()
+
+
+def test_real_recording_preview_has_common_progress_and_complete_reference(tmp_path):
+    archive_path = ROOT / "tests/data/j1_bounded_counter_experiments_20261030.zip"
+    with ZipFile(archive_path) as archive:
+        source = archive.read("final-nineaxis-readonly.json")
+    recording = tmp_path / "current-readonly.json"
+    recording.write_bytes(source)
+    output = tmp_path / "synchronized-preview.json"
+    result = subprocess.run([
+        sys.executable, str(ROOT / "scripts/joint_positioning.py"), "--preview",
+        "--start-readonly", str(recording), "--output", str(output),
+    ], cwd=ROOT, capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    report = json.loads(output.read_bytes())
+    plan = report["synchronized_plan"]
+    assert plan["status"] == "planned_reference_only"
+    assert plan["duration_s"] > 200
+    assert plan["hardware_executable"] is False
+    assert plan["coordinate_rules_verified"] is False
+    assert plan["common_progress_verified"] is True
+    assert plan["motion_commands_sent"] == 0
+    assert plan["parameter_writes_sent"] == 0
+    rows = plan["rows"]
+    assert len(rows) == 1
+    samples = rows[0]["samples"]
+    assert len(samples) >= 129
+    start = np.asarray(rows[0]["start_mm_deg"])
+    goal = np.array([50., 10., -20., 30., -30., 60., 10., 20., 30.])
+    original = json.loads(source)
+    original_last = {row["joint"]: row for row in original["samples"][-9:]}
+    expected = [original_last[joint]["state"]["angle_deg"] / (72 if joint == "J1" else 1)
+                for joint in DEFAULT_JOINT_NAMES]
+    np.testing.assert_allclose(start, expected, atol=1e-10)
+    np.testing.assert_allclose(samples[0]["position_mm_deg"], start, atol=1e-10)
+    np.testing.assert_allclose(samples[-1]["position_mm_deg"], goal, atol=1e-9)
+    previous = -1.
+    moving = goal != start
+    for sample in samples:
+        assert sample["time_s"] > previous
+        previous = sample["time_s"]
+        fractions = (np.asarray(sample["position_mm_deg"])[moving] - start[moving]) / (goal - start)[moving]
+        np.testing.assert_allclose(fractions, sample["progress"], atol=1e-9)
+        assert -.000000001 <= sample["progress"] <= 1.000000001
+        assert np.all(np.abs(sample["velocity_mm_deg_s"]) <= np.array([.25, *([2.46] * 8)]) + 1e-10)
+        assert np.all(np.abs(sample["acceleration_mm_deg_s2"]) <= np.array([.05, *([.3] * 8)]) + 1e-10)
+        assert np.asarray(sample["tcp_position_mm"]).shape == (3,)
+    for endpoint in (samples[0], samples[-1]):
+        np.testing.assert_allclose(endpoint["velocity_mm_deg_s"], 0., atol=1e-10)
+        np.testing.assert_allclose(endpoint["acceleration_mm_deg_s2"], 0., atol=1e-10)
+    assert rows[0]["reference_profiles"]
+    assert plan["start_evidence"]["device_sample_time_known"] is False
+    assert report["hardware_executable"] is False
+
+
+def test_common_preview_preserves_zero_displacement_axes_and_static_rows(tmp_path):
+    with ZipFile(ROOT / "tests/data/j1_bounded_counter_experiments_20261030.zip") as archive:
+        source = archive.read("final-nineaxis-readonly.json")
+    recording = tmp_path / "recording.json"
+    recording.write_bytes(source)
+    last = {row["joint"]: row["state"]["angle_deg"] for row in json.loads(source)["samples"][-9:]}
+    start = [last[joint] / (72 if joint == "J1" else 1) for joint in DEFAULT_JOINT_NAMES]
+    target = [start[0] + 5, start[1] - 1, *start[2:]]
+    table_path = tmp_path / "targets.csv"
+    with table_path.open("w", newline="") as stream:
+        writer = csv.writer(stream)
+        writer.writerow(TABLE_COLUMNS)
+        writer.writerows([["mixed", *target], ["static", *target]])
+    result = subprocess.run([
+        sys.executable, str(ROOT / "scripts/joint_positioning.py"), "--preview", "--csv", str(table_path),
+        "--start-readonly", str(recording),
+    ], cwd=ROOT, capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    report = json.loads(result.stdout)["synchronized_plan"]
+    moving, stationary = report["rows"]
+    for sample in moving["samples"]:
+        np.testing.assert_allclose(sample["position_mm_deg"][2:], start[2:], atol=1e-12)
+        np.testing.assert_array_equal(sample["velocity_mm_deg_s"][2:], 0.)
+        np.testing.assert_array_equal(sample["acceleration_mm_deg_s2"][2:], 0.)
+        assert sample["velocity_mm_deg_s"][0] >= -1e-12
+        assert sample["velocity_mm_deg_s"][1] <= 1e-12
+    for sample in stationary["samples"]:
+        np.testing.assert_allclose(sample["position_mm_deg"], target, atol=1e-12)
+        np.testing.assert_allclose(sample["velocity_mm_deg_s"], 0., atol=1e-12)
+        np.testing.assert_allclose(sample["acceleration_mm_deg_s2"], 0., atol=1e-12)
+
+
+def test_recorded_out_of_range_start_is_rejected_without_clipping_or_creating_output(tmp_path):
+    with ZipFile(ROOT / "tests/data/motor_positioning_research_20261030.zip") as archive:
+        source = archive.read("nineaxis-current-readonly.json")
+    recording = tmp_path / "recording.json"
+    recording.write_bytes(source)
+    output = tmp_path / "absent/plan.json"
+    result = subprocess.run([
+        sys.executable, str(ROOT / "scripts/joint_positioning.py"), "--preview",
+        "--start-readonly", str(recording), "--output", str(output),
+    ], cwd=ROOT, capture_output=True, text=True)
+    assert result.returncode != 0
+    assert "原始反馈起点超出共同模型范围" in result.stderr
+    assert not output.parent.exists()
+
+
+def test_preview_certifies_full_route_and_rejects_collision_between_clear_endpoints(model, tmp_path):
+    from robot_safecontrol_moveit.static_experiment_config import ExperimentConfig
+    from work.obb_collision_model import OBB_LINK_NAMES, OBB_LOCAL_CENTERS_M
+    from work.static_collision import StaticGeometry
+
+    with ZipFile(ROOT / "tests/data/j1_bounded_counter_experiments_20261030.zip") as archive:
+        source = archive.read("final-nineaxis-readonly.json")
+    recording = tmp_path / "recording.json"
+    recording.write_bytes(source)
+    last = {row["joint"]: row["state"]["angle_deg"] for row in json.loads(source)["samples"][-9:]}
+    start = [last[joint] / (72 if joint == "J1" else 1) for joint in DEFAULT_JOINT_NAMES]
+    target = [start[0], 30., *start[2:]]
+    table_path = tmp_path / "target.csv"
+    with table_path.open("w", newline="") as stream:
+        writer = csv.writer(stream)
+        writer.writerow(TABLE_COLUMNS)
+        writer.writerow(["swing", *target])
+    scene = ExperimentConfig.load(ROOT / "config/static_experiment_s0.yaml", resource_root=ROOT).scene()
+    scene.pop("config_sha256")
+    scene["workpiece"]["center_m"] = [10., 10., 10.]
+    scene["table"]["center_m"] = [10., -10., 10.]
+    scene_path = tmp_path / "declared-simulation-scene.json"
+    from work.robot_units import joints_mm_deg_to_si
+
+    first, last_si = joints_mm_deg_to_si(start), joints_mm_deg_to_si(target)
+    midpoint = (first + last_si) / 2
+    link_pose = model.link_poses(midpoint)["Link9"]
+    center = link_pose[:3, :3] @ OBB_LOCAL_CENTERS_M[OBB_LINK_NAMES.index("Link9")] + link_pose[:3, 3]
+    for blocked in (False, True):
+        scene["obstacles"] = ([{"name": "middle_obstacle", "center_m": center.tolist(), "radius_m": .06}]
+                              if blocked else [])
+        geometry = StaticGeometry(scene)
+        for q in (first, last_si):
+            assert all(row.distance.valid and row.distance.distance_m >= row.required_m
+                       for row in geometry.query(q, gradients=False))
+        if blocked:
+            assert any(not row.distance.valid or row.distance.distance_m < row.required_m
+                       for row in geometry.query(midpoint, gradients=False))
+        scene_path.write_text(json.dumps(scene), encoding="utf-8")
+        output = tmp_path / f"route-{blocked}.json"
+        result = subprocess.run([
+            sys.executable, str(ROOT / "scripts/joint_positioning.py"), "--preview", "--csv", str(table_path),
+            "--start-readonly", str(recording), "--scene-config", str(scene_path), "--output", str(output),
+        ], cwd=ROOT, capture_output=True, text=True)
+        assert result.returncode == (2 if blocked else 0), result.stderr
+        report = json.loads(output.read_bytes())
+        plan = report["synchronized_plan"]
+        collision = plan["rows"][0]["collision"]
+        assert collision["accepted"] is (not blocked)
+        assert collision["checked_intervals"] > 0
+        assert collision["policy"] == {"minimum_interval_s": 1e-5, "maximum_intervals": 4096}
+        assert len(collision["checker_sha256"]) == 64
+        assert plan["scene_identity"]["physical_scene_verified"] is False
+        assert plan["motion_commands_sent"] == 0
+        assert report["hardware_executable"] is False
+        if blocked:
+            assert "middle_obstacle" in collision["pair"]
+        else:
+            assert collision["status"] == "proven"
+            assert collision["minimum_proven_margin_m"] > 0
+
+
+def test_preview_rejects_incomplete_original_capture_and_execution_option_misuse(tmp_path):
+    with ZipFile(ROOT / "tests/data/motor_positioning_research_20261030.zip") as archive:
+        source = archive.read("nineaxis-operating-readonly.json")
+    recording = tmp_path / "incomplete.json"
+    recording.write_bytes(source)
+    output = tmp_path / "absent/output.json"
+    result = subprocess.run([
+        sys.executable, str(ROOT / "scripts/joint_positioning.py"), "--preview",
+        "--start-readonly", str(recording), "--output", str(output),
+    ], cwd=ROOT, capture_output=True, text=True)
+    assert result.returncode != 0
+    assert "定位起点需要完整的原始只读记录" in result.stderr
+    assert not output.parent.exists()
+    result = subprocess.run([
+        sys.executable, str(ROOT / "scripts/joint_positioning.py"), "--port", "/absent/device",
+        "--start-readonly", str(recording), "--output", str(output),
+    ], cwd=ROOT, capture_output=True, text=True)
+    assert result.returncode == 2
+    assert "需要 --preview" in result.stderr
+    assert not output.parent.exists()
+
+
+def test_common_reference_reaches_target_and_holds_five_seconds_in_mujoco(model, tmp_path):
+    import mujoco
+    from scipy.interpolate import CubicHermiteSpline
+
+    with ZipFile(ROOT / "tests/data/j1_bounded_counter_experiments_20261030.zip") as archive:
+        source = archive.read("final-nineaxis-readonly.json")
+    recording = tmp_path / "recording.json"
+    recording.write_bytes(source)
+    last = {row["joint"]: row["state"]["angle_deg"] for row in json.loads(source)["samples"][-9:]}
+    start = [last[joint] / (72 if joint == "J1" else 1) for joint in DEFAULT_JOINT_NAMES]
+    target = [start[0] + .1, start[1] + .4, *start[2:]]
+    table_path = tmp_path / "target.csv"
+    with table_path.open("w", newline="") as stream:
+        writer = csv.writer(stream)
+        writer.writerow(TABLE_COLUMNS)
+        writer.writerow(["mujoco_reference", *target])
+    result = subprocess.run([
+        sys.executable, str(ROOT / "scripts/joint_positioning.py"), "--preview", "--csv", str(table_path),
+        "--start-readonly", str(recording),
+    ], cwd=ROOT, capture_output=True, text=True, check=True)
+    row = json.loads(result.stdout)["synchronized_plan"]["rows"][0]
+    from work.robot_units import joints_mm_deg_to_si
+
+    times = np.array([sample["time_s"] for sample in row["samples"]])
+    positions = joints_mm_deg_to_si([sample["position_mm_deg"] for sample in row["samples"]])
+    speeds = joints_mm_deg_to_si([sample["velocity_mm_deg_s"] for sample in row["samples"]])
+    reference = CubicHermiteSpline(times, positions, speeds, axis=0, extrapolate=False)
+    table = single_target_table(dict(zip(DEFAULT_JOINT_NAMES, target)), model)
+    executor = JointTableExecutor(table, model, measurement_kind="positioning", task_id="common-reference",
+                                  feedback_source="simulation_feedback", manual_positioning=True)
+    plant = MuJoCoObservations(executor)
+    plant.data.qpos[plant.qpos] = positions[0]
+    plant.data.ctrl[plant.actuators] = positions[0]
+    mujoco.mj_forward(plant.physics, plant.data)
+    goal = joints_mm_deg_to_si(target)
+    observations = []
+    while plant.data.time <= row["duration_s"] + 8.1:
+        target_time = min(plant.data.time, row["duration_s"])
+        feedback = plant.step(target=reference(target_time))
+        if plant.data.time >= row["duration_s"] + 3:
+            actual = plant.data.qpos[plant.qpos].copy()
+            assert np.all(np.abs(actual - goal) <= np.array([.001, *([np.deg2rad(.1)] * 8)]))
+            assert set(feedback) == set(DEFAULT_JOINT_NAMES)
+            observations.append(plant.data.time)
+    assert observations[-1] - observations[0] >= 5
+
+
+def test_full_stroke_reference_preview_keeps_both_model_endpoints(tmp_path):
+    with ZipFile(ROOT / "tests/data/j1_bounded_counter_experiments_20261030.zip") as archive:
+        source = archive.read("final-nineaxis-readonly.json")
+    recording = tmp_path / "recording.json"
+    recording.write_bytes(source)
+    last = {row["joint"]: row["state"]["angle_deg"] for row in json.loads(source)["samples"][-9:]}
+    rotary = [last[joint] for joint in DEFAULT_JOINT_NAMES[1:]]
+    table_path = tmp_path / "full-stroke.csv"
+    with table_path.open("w", newline="") as stream:
+        writer = csv.writer(stream)
+        writer.writerow(TABLE_COLUMNS)
+        writer.writerows([["full_outward", 500, *rotary], ["full_return", 0, *rotary]])
+    result = subprocess.run([
+        sys.executable, str(ROOT / "scripts/joint_positioning.py"), "--preview", "--csv", str(table_path),
+        "--start-readonly", str(recording),
+    ], cwd=ROOT, capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    plan = json.loads(result.stdout)["synchronized_plan"]
+    assert plan["hardware_executable"] is False
+    assert plan["duration_s"] > 4000
+    assert plan["rows"][0]["samples"][-1]["position_mm_deg"][0] == pytest.approx(500, abs=1e-10)
+    assert plan["rows"][1]["samples"][-1]["position_mm_deg"][0] == pytest.approx(0, abs=1e-10)
+    for row in plan["rows"]:
+        for sample in row["samples"]:
+            assert 0 <= sample["position_mm_deg"][0] <= 500

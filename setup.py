@@ -55,6 +55,7 @@ setup(
             "docs/pipe_assets.md", "docs/pipe_feed_assets.md", "docs/pipe_pose_assets.md",
             "docs/calibration_joint_table.md",
             "docs/joint_positioning.md",
+            "docs/motor_positioning_diagnostics.md",
             "docs/joint_motion_limits_evidence.md",
         ]),
         (f"share/{package_name}/docs/modules", ["docs/modules/collision_scene_server.md"]),

@@ -1,4 +1,5 @@
 import argparse
+from contextlib import redirect_stdout
 import json
 import os
 import select
@@ -35,7 +36,9 @@ def positioning_limits(root: Path, maximum_speed: dict, acceleration: dict) -> d
         factor = Decimal(str(linear.degrees_per_mm if joint == "J1" else 1))
         speed, accel = (float((Decimal(str(value)) * factor / 6).quantize(Decimal("0.01"), rounding=ROUND_FLOOR))
                         for value in values)
-        limits[joint] = replace(limits[joint], speed_rpm=speed, accel_rpm_s=accel)
+        # 单组定位采用项目单位：J1 为 1 mm，其余关节为 0.1°。
+        tolerance = linear.degrees_per_mm if joint == "J1" else .1
+        limits[joint] = replace(limits[joint], speed_rpm=speed, accel_rpm_s=accel, tolerance_deg=tolerance)
     return limits
 
 
@@ -150,12 +153,24 @@ def run_positioning_cli(*, root: Path, target_joints: dict, maximum_speed: dict,
                         csv_path: Path | None = None, port: str | None = None, argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="九轴绝对位置与 CSV 手动逐组定位")
     parser.add_argument("--root", type=Path, default=root)
-    parser.add_argument("--csv", type=Path, default=csv_path)
+    targets = parser.add_mutually_exclusive_group()
+    targets.add_argument("--csv", type=Path, default=csv_path)
+    targets.add_argument("--joints", type=float, nargs=9, metavar="VALUE",
+                         help="按 J1–J9 输入九个绝对目标；J1 使用 mm，其余使用 °")
     parser.add_argument("--port", default=port)
     parser.add_argument("--preview", action="store_true", help="检查目标与参数并显示报告")
+    parser.add_argument("--start-readonly", type=Path, help="从完整原始只读记录生成共同进度预览")
+    parser.add_argument("--scene-config", type=Path, help="共同进度预览使用的静态实验场景配置")
     parser.add_argument("--experiment-policy", type=Path, help="本机有人值守定位的现场记录")
     parser.add_argument("--output", type=Path, help="预览 JSON 或运行 JSONL 的新文件路径")
     args = parser.parse_args(argv)
+    if (args.start_readonly is not None or args.scene_config is not None) and not args.preview:
+        parser.error("--start-readonly 和 --scene-config 需要 --preview")
+    if args.scene_config is not None and args.start_readonly is None:
+        parser.error("--scene-config 需要 --start-readonly")
+    if args.joints is not None:
+        args.csv = None
+        target_joints = dict(zip(DEFAULT_JOINT_NAMES, args.joints))
     root = args.root.resolve()
     if not args.preview and not args.port:
         parser.error("请设置 SERIAL_PORT 或提供 --port")
@@ -172,11 +187,13 @@ def run_positioning_cli(*, root: Path, target_joints: dict, maximum_speed: dict,
         joint: {"requested_speed": maximum_speed[joint], "requested_acceleration": acceleration[joint],
                 "effective_speed": limit.speed_rpm * 6 / (control.degrees_per_mm if joint == "J1" else 1),
                 "effective_acceleration": limit.accel_rpm_s * 6 / (control.degrees_per_mm if joint == "J1" else 1),
+                "position_tolerance": limit.tolerance_deg / (control.degrees_per_mm if joint == "J1" else 1),
+                "position_unit": "mm" if joint == "J1" else "°",
                 "speed_unit": "mm/s" if joint == "J1" else "°/s",
                 "acceleration_unit": "mm/s²" if joint == "J1" else "°/s²", "limits": asdict(limit)}
         for joint, limit in limits.items()
     }
-    preview["input_kind"] = "csv" if args.csv is not None else "TARGET_JOINTS"
+    preview["input_kind"] = "csv" if args.csv is not None else "joints" if args.joints is not None else "TARGET_JOINTS"
     preview["first_pose_requires_enter"] = args.csv is not None
     preview["subsequent_poses_require_enter"] = True
     preview["continue_monitoring_after_last_pose"] = True
@@ -187,12 +204,24 @@ def run_positioning_cli(*, root: Path, target_joints: dict, maximum_speed: dict,
     preview["return_to_zero_command"] = "r"
     preview["continue_monitoring_after_return_to_zero"] = True
     if args.preview:
+        if args.start_readonly is not None:
+            from .positioning_plan import synchronized_preview
+
+            start_path = args.start_readonly if args.start_readonly.is_absolute() else root / args.start_readonly
+            scene_path = (None if args.scene_config is None else args.scene_config if args.scene_config.is_absolute()
+                          else root / args.scene_config)
+            with redirect_stdout(sys.stderr):
+                preview["synchronized_plan"] = synchronized_preview(
+                    root, model, table, limits, start_path, scene_config=scene_path)
+            preview["collision_checked"] = preview["synchronized_plan"]["collision_checked"]
         if args.output is not None:
             args.output.parent.mkdir(parents=True, exist_ok=True)
             with args.output.open("x", encoding="utf-8") as stream:
                 json.dump(preview, stream, ensure_ascii=False, indent=2, allow_nan=False)
                 stream.write("\n")
         print(json.dumps(preview, ensure_ascii=False, indent=2, allow_nan=False))
+        if args.scene_config is not None and not preview["synchronized_plan"]["reference_route_accepted"]:
+            return 2
         return 0
     from .attended_positioning import AttendedPositioning
     from .joint_table_runtime import run_joint_table

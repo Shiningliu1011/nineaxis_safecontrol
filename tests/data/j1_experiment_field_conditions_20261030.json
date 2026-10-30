@@ -1,0 +1,22 @@
+{
+  "evidence_kind": "operator_confirmed_installation_and_load_conditions",
+  "coordinate_frame": "base_link",
+  "j1_motion": "horizontal_translation",
+  "j1_axis_in_base": [0, 0, 1],
+  "up_direction_in_base": [0, 1, 0],
+  "gravity_unit_direction_in_base": [0, -1, 0],
+  "gravity_direction_basis": "根据用户确认的基坐标系 +Y 向上确定方向",
+  "installation_description": "J1 水平沿基坐标系 Z 轴前后移动",
+  "moving_parts_and_tool_total_mass_kg": null,
+  "maximum_planned_payload_kg": null,
+  "mass_status": "待定",
+  "operator_attended": true,
+  "emergency_button_available": true,
+  "support_available": true,
+  "tape_measure_resolution_mm": 1,
+  "reported_tape_readings_mm": [500, 495, 500],
+  "measurement_uncertainty_mm": null,
+  "physical_stop_independently_verified": false,
+  "hardware_qualified": false,
+  "motion_archive": "j1_bounded_counter_experiments_20261030.zip"
+}

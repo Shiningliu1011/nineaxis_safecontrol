@@ -2,6 +2,8 @@
 
 [完整项目地图](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/147)管理 **59 项主线任务**。标题采用 **01–59 连续编号**，按前置关系排序；GitHub issue 编号用于保持原链接与评论。
 
+[九轴电机定位与 J1 全行程 #184](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/184)与 #147 为并列任务组，各自管理子任务和前置关系。电机定位、J1 完整行程和蝴蝶曲线跟踪使用[独立任务清单](../motor-positioning/tasks.md)。
+
 读取方法：某项任务的全部开放前置完成后，才能领取该任务。任务编号表达依赖顺序，各条独立路线可以同时推进。主表列出地图内全部直接前置，文末补充 19 条指向已完成来源任务的依赖；GitHub 原生 blocking 是状态依据。
 
 ## 主要汇合关系
@@ -136,7 +138,9 @@ flowchart TD
 | #125 | #106、#107、#109 |
 | #132 | #85、#93、#128、#130、#131 |
 
-## 当前可推进的入口
+## 主线前置状态
+
+以下状态描述 #147 内部的完成情况与直接前置。
 
 - [[01] 核验完整项目基线与 M01–M12 资产](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/148)：已完成，证据见[基线核验](baseline-audit.md)。
 - [[02] 取得完整工件、路径与 MATLAB 程序资产](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/135)：已完成，证据见[资产核验](asset-inventory.md)和[Python 运行入口](../../pipe_assets.md)。
@@ -161,6 +165,6 @@ flowchart TD
 - #95 激光雷达外参标定：没有开放前置，由 `lsn`（GitHub `Shiningliu1011`）继续。
 - #132 基础文档：已指派，等待 #95；#145 总体规格已指派，等待 #150。
 
-当前原生快照 `.scratch/map147-104/parent/frontier-after-104.json` 为59项主线、179条依赖、40项开放，其中32项仍有开放前置；图无循环且原生摘要一致。场景服务实现及本票验收完成，设备协议任务保留明确的现场证据缺口；本会话没有领取后续实现任务。编号01–57的主线范围与相互关系保持现有定义；58、59负责最终汇合。#171、#182、#183已取消并移出地图，#172–#181的完成记录见[前期证据](../../static_obstacle_experiments_handoff.md)。
+当前编排包含 59 项主线任务及其 179 条直接前置。设备协议、通用模型和系统集成可复用 #184 取得的设备与运行证据，并按各自范围继续验收。编号 01–57 的主线范围与相互关系保持现有定义，58、59 负责最终汇合。#171、#182、#183 已取消并移出地图，#172–#181 的完成记录见[前期证据](../../static_obstacle_experiments_handoff.md)。
 
 仓库由 `lsn` 一人跨设备使用。assignee 表示当前正在跟进的任务；未指派任务属于项目待办。

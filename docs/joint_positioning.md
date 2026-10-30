@@ -2,11 +2,19 @@
 
 [Python 程序](../scripts/joint_positioning.py)提供单组绝对目标和 CSV 逐组定位入口。每组全部九轴到位并停车后保持目标、持续监测，按 Enter 才开始下一组。真实执行采用有人值守的低速实验流程，要求全部可能运动范围内无人，操作者在范围外全程看护。每次启动核验设备零位配置、实际位置及连续静止反馈。
 
+已确认的同步定位、整段路线检查、精度及断电保持要求见[九轴电机定位与 J1 全行程规格](planning/nineaxis-full-project/motor-positioning-spec.md)。本页说明现有入口、运行方式和设备记录。
+
+设备静态属性、连续计数及小范围动作记录的离线核查见[电机定位诊断](motor_positioning_diagnostics.md)。共同时间、20 Hz 连续参考和非零位置断电的实际结果见[同步接口实验](planning/motor-positioning/live-interface-experiments.md)。
+
+原生单组定位已完成[九轴实机验证](planning/motor-positioning/native-positioning-experiment.md)：目标 `[2, 1, -1, 1, -1, 1, 1, -1, 1]` 在约 13 秒后到位，并连续保持约 52 秒。J1 使用 mm，其余使用 °。[连续参考实验](planning/motor-positioning/nineaxis-continuous-experiment.md)的 J4 动态问题继续单独调查。
+
 ## 修改目标与参数
 
 在程序顶部修改 `TARGET_JOINTS`、`MAXIMUM_SPEED` 和 `ACCELERATION`，每项完整包含 J1–J9。目标相对于已有机械零位；程序不设置设备零点。J1 使用 mm、mm/s、mm/s²，J2–J9 使用 °、°/s、°/s²。方向、零位与 J1 传动复用项目配置。
 
 参数初值沿用现有低速入口：J1 为 0.25 mm/s、0.05 mm/s²，J2–J9 为 2.46°/s、0.3°/s²。J1 按此参数移动 50 mm 的名义时间约为 205 秒。输入转换为输出轴 rpm 和 rpm/s，再向下取到协议 0.01 步长；预览列出请求值、有效值及单位。现有运动限制继续检查，参数超出范围会拒绝；模型规定 J1 单次位移最多 50 mm，绝对目标范围为 0–500 mm，当前设备多圈计数尚未完成该行程验收。
+
+也可以使用 `--joints` 直接输入九个值，覆盖程序内的 `TARGET_JOINTS`。该选项与 `--csv` 互斥；数量错误、非有限数值和目标超出模型范围时拒绝执行。预览的 `position_tolerance`、`position_unit` 分别显示到位误差阈值及单位：J1 为 1 mm，J2–J9 为 0.1°。
 
 `SERIAL_PORT` 设置实际串口路径，或运行时提供 `--port`。`CSV_PATH` 保持 `None` 时使用文件顶部的单组目标；设置 CSV 路径或提供 `--csv` 时使用表格。相对 CSV 路径以项目根目录解析。
 
@@ -16,17 +24,47 @@
 
 ```bash
 source /opt/ros/humble/setup.bash
+source install/setup.bash
 export PYTHONPATH="$PWD/src:$PWD/portable_oscbf:$PWD/.scratch/motor_tools/deps:$PWD/.scratch/nineaxis-execution/deps${PYTHONPATH:+:$PYTHONPATH}"
 python3 scripts/joint_positioning.py --preview
 python3 scripts/joint_positioning.py --preview --csv config/calibration_joint_table.example.csv
 ```
 
-预览只检查目标、参数、共同模型及单位转换，不连接设备。可通过 `--output .scratch/joint-positioning/preview.json` 保存新报告；现有文件不会覆盖。预览中的 `collision_checked=false` 表示尚未检查整段路径碰撞，`hardware_executable=false` 表示未取得执行资格。预览的 `parameters.limits` 列出默认检查参数；有人值守流程采用的反馈与静止检查参数记录在运行报告的 `limits` 中。
+基本预览检查目标、参数、共同模型及单位转换，不连接设备。可通过 `--output .scratch/joint-positioning/preview.json` 保存新报告；现有文件不会覆盖。预览的 `parameters.limits` 列出默认检查参数；有人值守流程采用的反馈与静止检查参数记录在运行报告的 `limits` 中。
+
+## 从原始起点生成共同进度预览
+
+`--preview --start-readonly <JSON>` 从完整原始只读记录重建九轴末次反馈，核对节点、设备故障、九轴读取时间跨度、当前坐标配置摘要及模型范围，生成共同进度参考。输入文件只用于离线研究；设备上电坐标规则、当前实时反馈、静止资格及本批次协议能力仍需各自证据。
+
+下面使用归档中的实际记录生成预览，不连接设备：
+
+```bash
+mkdir -p .scratch/motor-positioning-preview
+unzip -n tests/data/j1_bounded_counter_experiments_20261030.zip \
+  final-nineaxis-readonly.json -d .scratch/motor-positioning-preview
+python3 scripts/joint_positioning.py --preview \
+  --start-readonly .scratch/motor-positioning-preview/final-nineaxis-readonly.json \
+  --output .scratch/motor-positioning-preview/reference.json
+```
+
+报告中的 `synchronized_plan` 包含实际记录的起点、目标、共同时长、各轴完整分段系数、位置／速度／加速度样本及共同模型计算的 TCP 路线。J1 使用 mm，J2–J9 使用 °，导数明确时间单位；完整系数的位置采用 m/rad，时间采用 s，各阶导数采用相应时间单位。`duration_s` 只累计运动参考，逐组等待和到位保持另行计时。
+
+参考使用项目已有 Ruckig，按全部运动轴允许的归一化限制生成一个共同进度，再转换为九轴参考。检查全部运动轴的分段时间及归一化位置、速度、加速度和 jerk 相同，并验证进度单调、零位移轴保持、完整位置与导数范围。起终点速度及加速度为零，末段通过终点边界条件计算，CSV 各组在静止目标处衔接。参考 jerk 与最小时长采用 `config/oscbf_plant.yaml` 中的平滑设置，报告保存文件摘要；该设置不提供实际设备 jerk 能力证明。请求速度与加速度继续使用既有 0.01 协议量化后的限制。
+
+原始反馈数值保持原值，超出模型范围的起点会拒绝，程序不把越界读数改为边界位置。无回复、部分读取、配置变化、缺少九轴、故障或未完成反馈均不能提供完整起点。到位后的速度资格、上电绝对坐标与位置有效性仍分别标记为未验证。
+
+提供 `--scene-config <路径>` 时，对同一条完整参考调用既有连续运动检查。参数接受静态实验 YAML，或 `ExperimentConfig.scene()` 格式的 JSON 场景；JSON 必须明确 `frame_id`、工件、桌面、障碍物、安全距离及完整自碰撞来源。场景使用当前十个闭合凸 mesh、全部 36 个非相邻组合，外部和自身间距分别至少为 30 mm、10 mm。场景坐标、几何与输入文件身份保存于报告。
+
+沿途碰撞或区间尚未证明时，保留报告并返回退出码 2；已证明路线记录检查区间和最小剩余裕量。报告保存检查程序摘要、最小检查区间 10 µs 与最多 4096 个区间的检查策略。检查范围为参考与名义终端停止，运动中任意时刻的实际停车、工具几何及现场场景资格保持各自的未验证状态。`reference_route_accepted=true` 表达声明场景中的参考区间结果，`hardware_executable` 继续为 `false`。
+
+`--start-readonly` 和 `--scene-config` 只用于 `--preview`，不能用于启动真实运动。已有预览中的 `rows.device_commands` 描述单节点梯形接口；共同参考的完整定义保存在 `synchronized_plan.rows.reference_profiles`。本批次同步和连续接口已取得[小范围实机记录](planning/motor-positioning/live-interface-experiments.md)，公开入口的共同进度设备执行仍需对应资格与接入验证。
+
+## 真实定位入口
 
 真实入口为：
 
 ```bash
-python3 scripts/joint_positioning.py
+python3 scripts/joint_positioning.py --joints 2 1 -1 1 -1 1 1 -1 1
 python3 scripts/joint_positioning.py --csv config/calibration_joint_table.example.csv
 ```
 
@@ -38,7 +76,9 @@ python3 scripts/joint_positioning.py --csv config/calibration_joint_table.exampl
 
 ## 到位、等待与退出
 
-各轴采用驱动器梯形位置模式，可重叠运动并先后到位。位置误差、速度、轨迹完成标志和共同稳定时间继续检查，旋转轴位置容差为 0.1°，J1 对应约 0.00139 mm。静止判定同时要求五秒位置范围不超过 0.01°、位置变化速度不超过 0.02 rpm、速度估计与独立静止记录的噪声范围相容、轨迹完成，并共同满足至少 0.5 秒。运动速度保护使用独立的一秒窗口、近期位置变化速度及相邻反馈位置连续性检查。本次有人值守实验的旋转轴反馈速度上限为 5°/s，位置指令速度初值为 2.46°/s；J1 反馈速度上限仍为 0.3 mm/s。这些数值用于编码器反馈判定；机械精度需要独立测量。
+整组完成前，各轴的静止状态参与共同稳定时间累计。暂时未满足静止条件时继续等待并重新计时；位置离开到位容差、反馈故障和速度违例仍中止。最后一轴到位之后，全组必须在报告中的稳定超时内完成共同检查。
+
+各轴采用驱动器梯形位置模式，可重叠运动并先后到位。位置误差、速度、轨迹完成标志和共同稳定时间继续检查；单组定位的位置容差为 J1 1 mm、J2–J9 0.1°。J1 按已确认的 5 mm 导程转换为输出轴 72°，用于执行器的 `tolerance_deg`；关节行程限制独立生效。静止判定同时要求五秒输出轴位置范围不超过 0.01°、位置变化速度不超过 0.02 rpm、速度估计与独立静止记录的噪声范围相容、轨迹完成，并共同满足至少 0.5 秒。运动速度保护使用独立的一秒窗口、近期位置变化速度及相邻反馈位置连续性检查。本次有人值守实验的旋转轴反馈速度上限为 5°/s，位置指令速度初值为 2.46°/s；J1 反馈速度上限仍为 0.3 mm/s。这些数值用于编码器反馈判定；机械精度需要独立测量。
 
 到位后程序显示每轴误差，并继续读取反馈。等待 Enter 期间没有新的运动目标，也没有测量文件要求。最后一组及单组到位后均继续保持和监测。
 
@@ -74,4 +114,4 @@ Ctrl+C、运动期间的 q 或任何执行异常会终止本次序列，不自�
 
 用户随后自行将 J1 回到原机械零位并重置零点。独立六秒读取确认九轴均为闭环状态 8，轴与编码器故障均为 0；J1 反馈约 0 mm，新的 `zero_offset_counts=11145`，多圈使能为 1。有人值守现场记录已同步该零位计数。J2–J9 均接近 0°。回零操作及用户恢复后的原始读取归档为 `tests/data/requested_zero_recovery_20261029.zip`。
 
-当前零位及故障清除已经得到回读确认；多圈计数量程问题仍未完成诊断，异常记录保留。没有继续发送此前的 50 mm 目标。
+零位计数 11145 的配置下，J1 已完成 0→1→0 mm、0→5→0 mm 双向计数实验；卷尺往返读数为 500→495→500 mm，最小刻度 1 mm。后续实际移动并保持约 32.0068 mm，再次执行 50 mm 目标时，最后有效位置约 35.538 mm，随后通信中断。用户急停并重新供电后，J1 多圈使能为 1、计数为 −2047、编码器错误 512、轴错误 257、状态 1；运动锁定保持有效。详细条件、原始帧及当前结果见[较大目标实机验证](planning/motor-positioning/larger-positioning-experiment.md)。完整行程修复仍待本批次计数范围及相应固件或编码器方案。

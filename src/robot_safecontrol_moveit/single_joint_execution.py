@@ -1,4 +1,5 @@
 from collections import deque
+from collections.abc import Callable
 from dataclasses import asdict, dataclass, replace
 import json
 from math import degrees, isfinite, sqrt
@@ -15,7 +16,8 @@ from .drempower_can import (
 )
 from .drempower_joint_control import DrEmpowerJointControl, JointFeedback
 from .motor_motion_limits import (
-    MAX_SINGLE_JOINT_SPEED_RPM, MotionBounds, feedback_speed_limit, validate_motion_parameters,
+    MAX_J1_POSITION_TOLERANCE_DEG, MAX_SINGLE_JOINT_SPEED_RPM,
+    MotionBounds, feedback_speed_limit, validate_motion_parameters,
 )
 
 
@@ -79,7 +81,8 @@ class ExecutionLimits:
             raise ValueError("静止、指令及反馈速度阈值顺序无效")
         if self.feedback_timeout_s > 0.2 or self.settle_s < 0.5:
             raise ValueError("反馈超时最多 0.2 秒，到位持续时间至少 0.5 秒")
-        if self.tolerance_deg > 0.1 or self.motion_timeout_s <= self.settle_s:
+        maximum_tolerance = MAX_J1_POSITION_TOLERANCE_DEG if self.axis_type == "prismatic" else 0.1
+        if self.tolerance_deg > maximum_tolerance or self.motion_timeout_s <= self.settle_s:
             raise ValueError("到位误差或运动超时无效")
         if not 0.5 <= self.velocity_window_s <= 1.0 or self.position_noise_deg > 0.01:
             raise ValueError("速度窗口必须在 0.5–1 秒，位置测量裕量最多 0.01°")
@@ -431,17 +434,19 @@ class VendorFeedbackReader:
 def run_single_joint(
     vendor: ModuleType, control: DrEmpowerJointControl, joint: str, delta_deg: float | None,
     limits: ExecutionLimits, log_path: Path, *, target_deg: float | None = None,
+    observation_callback: Callable[[ObservedFeedback, Callable[..., None]], None] | None = None,
 ) -> None:
     """执行单关节事务；调用方负责现场停车、标定及串口所有权。"""
     if not _EXECUTION_LOCK.acquire(blocking=False):
         raise MotionRejected("another_joint_execution_active")
     try:
-        _run_single_joint(vendor, control, joint, delta_deg, limits, log_path, target_deg)
+        _run_single_joint(vendor, control, joint, delta_deg, limits, log_path, target_deg,
+                          observation_callback)
     finally:
         _EXECUTION_LOCK.release()
 
 
-def _run_single_joint(vendor, control, joint, delta_deg, limits, log_path, target_deg):
+def _run_single_joint(vendor, control, joint, delta_deg, limits, log_path, target_deg, observation_callback):
     if limits.axis_type != control.axis_type:
         raise ValueError("执行限制与关节类型不符")
     node = control._node(joint)
@@ -455,7 +460,7 @@ def _run_single_joint(vendor, control, joint, delta_deg, limits, log_path, targe
         raise ValueError("绝对目标必须位于关节范围内")
     monitor = SingleJointMonitor(node, limits)
     reader = VendorFeedbackReader(vendor, control, limits.feedback_timeout_s)
-    window = VelocityWindow(limits.velocity_window_s)
+    window = VelocityWindow(limits.velocity_window_s, limits.stationary_window_s)
     # 使用 x 模式，保留每次独立的命令、反馈和终态记录。
     with Path(log_path).open("x", encoding="utf-8") as log:
         def record(event, **fields):
@@ -473,14 +478,16 @@ def _run_single_joint(vendor, control, joint, delta_deg, limits, log_path, targe
         command_attempted = False
         try:
             reader.require_closed_loop(joint)
-            startup_until = time.monotonic() + 5
+            startup_until = time.monotonic() + limits.stationary_window_s + 5
             while True:
                 initial = window.add(reader.read(joint))
                 record("feedback", sample=asdict(initial))
+                if observation_callback is not None:
+                    observation_callback(initial, record)
                 if initial.axis_error:
                     raise MotionRejected("axis_error")
                 if (initial.window_duration_s >= limits.velocity_window_s
-                        and checked_speed(initial) <= limits.stopped_rpm):
+                        and all(stationary_conditions(initial, limits).values())):
                     break
                 if time.monotonic() > startup_until:
                     raise MotionRejected("initial_joint_not_stationary")
@@ -506,6 +513,8 @@ def _run_single_joint(vendor, control, joint, delta_deg, limits, log_path, targe
                 reader.require_closed_loop(joint)
                 sample = window.add(reader.read(joint))
                 record("feedback", sample=asdict(sample))
+                if observation_callback is not None:
+                    observation_callback(sample, record)
                 previous_phase = monitor.phase
                 done = monitor.observe(sample, time.monotonic())
                 if previous_phase == "moving" and monitor.phase == "settling":
@@ -549,6 +558,8 @@ def _run_single_joint(vendor, control, joint, delta_deg, limits, log_path, targe
                         reader.require_closed_loop(joint)
                         observed = window.add(reader.read(joint))
                         record("hold_feedback", sample=asdict(observed))
+                        if observation_callback is not None:
+                            observation_callback(observed, record)
                         stop_monitor.validate_feedback(observed, time.monotonic())
                         if arrival.observe(observed, time.monotonic()):
                             stop_result = "hold_observed"

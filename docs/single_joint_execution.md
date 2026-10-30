@@ -48,7 +48,9 @@ J9 的执行日志、原始收发帧、汇总、独立复查和人工审查记�
 
 ## 程序入口
 
-[single_joint_execution.py](../src/robot_safecontrol_moveit/single_joint_execution.py) 提供 `run_single_joint(vendor, control, joint, delta_deg, limits, log_path, *, target_deg=None)`。每次调用只操作 J2–J9 中的一个关节；同一进程中其他执行请求会被拒绝。模块导入不打开设备、不发送命令。
+[single_joint_execution.py](../src/robot_safecontrol_moveit/single_joint_execution.py) 提供 `run_single_joint(vendor, control, joint, delta_deg, limits, log_path, *, target_deg=None, observation_callback=None)`。每次调用只操作一个关节；旋转轴采用 `DrEmpowerJointControl`，J1 采用 `J1ScrewControl`。同一进程中其他执行请求会被拒绝。模块导入不打开设备、不发送命令。
+
+可选 `observation_callback(sample, record)` 在启动、运动和异常保持的每次反馈后同步运行，用于真实计数采集及其他关节监测。回调异常继续进入原有终止处理；回调耗时计入反馈时效检查。该参数不提供设备写入或恢复授权。
 
 `control` 使用 [DrEmpowerJointControl](../src/robot_safecontrol_moveit/drempower_joint_control.py)，从方向配置转换模型角度和电机角度。`delta_deg` 为相对当前位置的模型角度增量。使用绝对模型目标时传入 `delta_deg=None, target_deg=目标角度`。相对增量和绝对目标必须选择一项。`limits` 使用 `ExecutionLimits`；`ExecutionLimits.from_urdf(path, joint)` 通过 XML 库读取旋转关节限位。默认 `max_step_deg=None`，当前位置与目标位置均须处于 URDF 限位内；调用方可以通过 `max_step_deg` 设置本次操作的增量范围。
 
@@ -89,7 +91,7 @@ PYTHONPATH=src:.scratch/motor_tools/deps python3 -m robot_safecontrol_moveit.mot
 5. 每轮间隔 0.02 秒检查闭环状态和位置反馈。任一请求超时、反馈间隔超过 0.2 秒、位置突变、速度超过 2.5°/s、超出请求区间或超过按行程计算的运动时限仍未到位均终止执行。该间隔为主机轮询目标，不提供实时调度保证。
 6. 位置进入 0.1° 容差且 `traj_done` 为真后，进入独立的静止观察阶段，时限由减速度及反馈观察参数确定，默认约 10.23 秒；所有保护继续生效，离开目标容差立即终止。位置误差不超过 0.1°、速度不超过 0.02 rpm 且 `traj_done` 连续满足至少 0.5 秒，才记录 `completed`。正常完成后电机继续保持已有位置目标。
 
-静止实测中，快速反馈与独立速度属性均有瞬时波动，八个关节的位置变化范围小于 0.007°。程序保留原始速度，同时使用 1 秒速度时间平均值和最近 0.2 秒的位置变化速度，二者都必须满足速度阈值。两帧位置变化另有独立限制，位置测量裕量最多 0.01°。启动时先采集完整速度窗口再判断静止。
+静止实测中，快速反馈与独立速度属性均有瞬时波动，八个关节的位置变化范围小于 0.007°。程序保留原始速度，同时使用 1 秒速度时间平均值和最近 0.2 秒的位置变化速度，二者都必须满足速度阈值。两帧位置变化另有独立限制，位置测量裕量最多 0.01°。启动采集同时覆盖 `velocity_window_s` 和 `stationary_window_s`，完整静止条件通过后才发送；启动检查时限为 `stationary_window_s + 5 s`。原始日志回放按相同窗口重算全部已记录的速度和位置范围。
 
 相邻位置变化检查使用 `max_feedback_rpm * 6 * (current.received_s - previous.request_s) + position_noise_deg`。主机请求、接收与设备采样时间分别保存其含义；日志标明设备采样时间未知。反馈过期、请求重复、轮询中断、位置变化超过上述范围及速度窗口超限继续拒绝。该主机一致性检查不提供设备采样年龄或瞬时物理速度证明。
 

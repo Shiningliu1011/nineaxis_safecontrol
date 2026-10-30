@@ -46,6 +46,7 @@ SYSTEM_ORDER_CLEAR_ERROR = 0x04
 SYSTEM_ORDER_SET_ZERO = 0x05
 SYSTEM_ORDER_ESTOP = 0x06
 SYSTEM_ORDER_START_ANGLE_TRACKING = 0x10
+SYSTEM_ORDER_START_TIMED_ANGLE = 0x11
 SYSTEM_ORDER_START_SPEED = 0x13
 
 # 属性地址表（键值来自协议摘要；地址分布待厂商库确认）
@@ -144,6 +145,15 @@ def encode_trapezoid_position(node_id: int, target_deg: float, *, speed: float, 
     if not all(math.isfinite(value) and 0.01 <= value < 300 for value in (speed, accel)):
         raise ValueError("梯形轨迹速度与加速度必须在 [0.01, 300) 内")
     return struct.pack("<fhh", target_deg, _int16_scaled(speed, "speed"), _int16_scaled(accel, "accel"))
+
+
+def encode_timed_preset(node_id: int, target_deg: float, *, duration_s: float, accel_rpm_s: float) -> bytes:
+    if not 1 <= node_id <= MAX_NODE_ID or not math.isfinite(target_deg):
+        raise ValueError("共同时间预设需要单节点及有限角度")
+    if not all(math.isfinite(value) and .01 <= value <= 327.67 for value in (duration_s, accel_rpm_s)):
+        raise ValueError("共同时间预设的秒数与加速度必须在 [0.01, 327.67] 内")
+    return struct.pack("<fhh", target_deg, _int16_scaled(duration_s, "duration_s"),
+                       _int16_scaled(accel_rpm_s, "accel_rpm_s"))
 
 
 def _as_u16(value: int, name: str) -> int:

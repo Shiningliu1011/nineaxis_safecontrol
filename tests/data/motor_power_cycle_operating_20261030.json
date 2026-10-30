@@ -1,0 +1,1506 @@
+{
+  "evidence_kind": "post_power_cycle_readonly_operating_snapshot",
+  "started_at": "2026-10-30T15:21:29.521319+08:00",
+  "status": "readonly_completed",
+  "motion_commands_sent": 0,
+  "parameter_writes_sent": 0,
+  "device_sample_time_known": false,
+  "hardware_qualified": false,
+  "field_definitions": {
+    "node_id": [
+      "axis0.config.can_node_id",
+      31001,
+      "u32"
+    ],
+    "hw_version": [
+      "hw_version",
+      5,
+      "u32"
+    ],
+    "fw_version": [
+      "fw_version",
+      6,
+      "u32"
+    ],
+    "control_mode": [
+      "axis0.controller.config.control_mode",
+      32105,
+      "u32"
+    ],
+    "input_mode": [
+      "axis0.controller.config.input_mode",
+      32106,
+      "u32"
+    ],
+    "input_filter_bandwidth": [
+      "axis0.controller.config.input_filter_bandwidth",
+      32118,
+      "f32"
+    ],
+    "trajectory_done": [
+      "axis0.controller.trajectory_done",
+      32008,
+      "u32"
+    ]
+  },
+  "properties": {
+    "J1": {
+      "node_id": 1,
+      "hw_version": 220905,
+      "fw_version": 16843008,
+      "control_mode": 3,
+      "input_mode": 5,
+      "input_filter_bandwidth": 100.0,
+      "trajectory_done": 1
+    },
+    "J2": {
+      "node_id": 2,
+      "hw_version": 220905,
+      "fw_version": 16843008,
+      "control_mode": 3,
+      "input_mode": 5,
+      "input_filter_bandwidth": 100.0,
+      "trajectory_done": 1
+    },
+    "J3": {
+      "node_id": 3,
+      "hw_version": 220905,
+      "fw_version": 16843008,
+      "control_mode": 3,
+      "input_mode": 5,
+      "input_filter_bandwidth": 100.0,
+      "trajectory_done": 1
+    },
+    "J4": {
+      "node_id": 4,
+      "hw_version": 220905,
+      "fw_version": 16843008,
+      "control_mode": 3,
+      "input_mode": 5,
+      "input_filter_bandwidth": 66.0,
+      "trajectory_done": 1
+    },
+    "J5": {
+      "node_id": 5,
+      "hw_version": 220905,
+      "fw_version": 16843008,
+      "control_mode": 3,
+      "input_mode": 5,
+      "input_filter_bandwidth": 66.0,
+      "trajectory_done": 1
+    },
+    "J6": {
+      "node_id": 6,
+      "hw_version": 220905,
+      "fw_version": 16843008,
+      "control_mode": 3,
+      "input_mode": 5,
+      "input_filter_bandwidth": 66.0,
+      "trajectory_done": 1
+    },
+    "J7": {
+      "node_id": 7,
+      "hw_version": 220905,
+      "fw_version": 16843008,
+      "control_mode": 3,
+      "input_mode": 5,
+      "input_filter_bandwidth": 100.0,
+      "trajectory_done": 1
+    },
+    "J8": {
+      "node_id": 8,
+      "hw_version": 220905,
+      "fw_version": 16843008,
+      "control_mode": 3,
+      "input_mode": 5,
+      "input_filter_bandwidth": 100.0,
+      "trajectory_done": 1
+    },
+    "J9": {
+      "node_id": 9,
+      "hw_version": 220905,
+      "fw_version": 16843008,
+      "control_mode": 3,
+      "input_mode": 5,
+      "input_filter_bandwidth": 100.0,
+      "trajectory_done": 1
+    }
+  },
+  "observations": [
+    {
+      "node_id": 1,
+      "name": "node_id",
+      "address": 31001,
+      "kind": "u32",
+      "value": 1,
+      "request_s": 23141.55961599,
+      "received_s": 23141.560452334
+    },
+    {
+      "node_id": 1,
+      "name": "hw_version",
+      "address": 5,
+      "kind": "u32",
+      "value": 220905,
+      "request_s": 23141.560466484,
+      "received_s": 23141.561247077
+    },
+    {
+      "node_id": 1,
+      "name": "fw_version",
+      "address": 6,
+      "kind": "u32",
+      "value": 16843008,
+      "request_s": 23141.561258419,
+      "received_s": 23141.562042476
+    },
+    {
+      "node_id": 1,
+      "name": "control_mode",
+      "address": 32105,
+      "kind": "u32",
+      "value": 3,
+      "request_s": 23141.562054201,
+      "received_s": 23141.562867111
+    },
+    {
+      "node_id": 1,
+      "name": "input_mode",
+      "address": 32106,
+      "kind": "u32",
+      "value": 5,
+      "request_s": 23141.562877634,
+      "received_s": 23141.563690088
+    },
+    {
+      "node_id": 1,
+      "name": "input_filter_bandwidth",
+      "address": 32118,
+      "kind": "f32",
+      "value": 100.0,
+      "request_s": 23141.563700575,
+      "received_s": 23141.564481995
+    },
+    {
+      "node_id": 1,
+      "name": "trajectory_done",
+      "address": 32008,
+      "kind": "u32",
+      "value": 1,
+      "request_s": 23141.564492568,
+      "received_s": 23141.565273975
+    },
+    {
+      "node_id": 2,
+      "name": "node_id",
+      "address": 31001,
+      "kind": "u32",
+      "value": 2,
+      "request_s": 23141.566088433,
+      "received_s": 23141.566840557
+    },
+    {
+      "node_id": 2,
+      "name": "hw_version",
+      "address": 5,
+      "kind": "u32",
+      "value": 220905,
+      "request_s": 23141.566851466,
+      "received_s": 23141.567703253
+    },
+    {
+      "node_id": 2,
+      "name": "fw_version",
+      "address": 6,
+      "kind": "u32",
+      "value": 16843008,
+      "request_s": 23141.567716772,
+      "received_s": 23141.568552517
+    },
+    {
+      "node_id": 2,
+      "name": "control_mode",
+      "address": 32105,
+      "kind": "u32",
+      "value": 3,
+      "request_s": 23141.568566943,
+      "received_s": 23141.569322781
+    },
+    {
+      "node_id": 2,
+      "name": "input_mode",
+      "address": 32106,
+      "kind": "u32",
+      "value": 5,
+      "request_s": 23141.569335692,
+      "received_s": 23141.570138874
+    },
+    {
+      "node_id": 2,
+      "name": "input_filter_bandwidth",
+      "address": 32118,
+      "kind": "f32",
+      "value": 100.0,
+      "request_s": 23141.570152098,
+      "received_s": 23141.57089672
+    },
+    {
+      "node_id": 2,
+      "name": "trajectory_done",
+      "address": 32008,
+      "kind": "u32",
+      "value": 1,
+      "request_s": 23141.570908208,
+      "received_s": 23141.571646994
+    },
+    {
+      "node_id": 3,
+      "name": "node_id",
+      "address": 31001,
+      "kind": "u32",
+      "value": 3,
+      "request_s": 23141.572454361,
+      "received_s": 23141.573186652
+    },
+    {
+      "node_id": 3,
+      "name": "hw_version",
+      "address": 5,
+      "kind": "u32",
+      "value": 220905,
+      "request_s": 23141.573197566,
+      "received_s": 23141.574009073
+    },
+    {
+      "node_id": 3,
+      "name": "fw_version",
+      "address": 6,
+      "kind": "u32",
+      "value": 16843008,
+      "request_s": 23141.574019872,
+      "received_s": 23141.574781819
+    },
+    {
+      "node_id": 3,
+      "name": "control_mode",
+      "address": 32105,
+      "kind": "u32",
+      "value": 3,
+      "request_s": 23141.574792184,
+      "received_s": 23141.575651021
+    },
+    {
+      "node_id": 3,
+      "name": "input_mode",
+      "address": 32106,
+      "kind": "u32",
+      "value": 5,
+      "request_s": 23141.575662332,
+      "received_s": 23141.576372163
+    },
+    {
+      "node_id": 3,
+      "name": "input_filter_bandwidth",
+      "address": 32118,
+      "kind": "f32",
+      "value": 100.0,
+      "request_s": 23141.576382422,
+      "received_s": 23141.577131822
+    },
+    {
+      "node_id": 3,
+      "name": "trajectory_done",
+      "address": 32008,
+      "kind": "u32",
+      "value": 1,
+      "request_s": 23141.577144045,
+      "received_s": 23141.577897099
+    },
+    {
+      "node_id": 4,
+      "name": "node_id",
+      "address": 31001,
+      "kind": "u32",
+      "value": 4,
+      "request_s": 23141.578689579,
+      "received_s": 23141.579416909
+    },
+    {
+      "node_id": 4,
+      "name": "hw_version",
+      "address": 5,
+      "kind": "u32",
+      "value": 220905,
+      "request_s": 23141.579428035,
+      "received_s": 23141.580139242
+    },
+    {
+      "node_id": 4,
+      "name": "fw_version",
+      "address": 6,
+      "kind": "u32",
+      "value": 16843008,
+      "request_s": 23141.580150233,
+      "received_s": 23141.580978376
+    },
+    {
+      "node_id": 4,
+      "name": "control_mode",
+      "address": 32105,
+      "kind": "u32",
+      "value": 3,
+      "request_s": 23141.58099126,
+      "received_s": 23141.581708117
+    },
+    {
+      "node_id": 4,
+      "name": "input_mode",
+      "address": 32106,
+      "kind": "u32",
+      "value": 5,
+      "request_s": 23141.58171849,
+      "received_s": 23141.582513879
+    },
+    {
+      "node_id": 4,
+      "name": "input_filter_bandwidth",
+      "address": 32118,
+      "kind": "f32",
+      "value": 66.0,
+      "request_s": 23141.58252385,
+      "received_s": 23141.583248569
+    },
+    {
+      "node_id": 4,
+      "name": "trajectory_done",
+      "address": 32008,
+      "kind": "u32",
+      "value": 1,
+      "request_s": 23141.583258919,
+      "received_s": 23141.584048397
+    },
+    {
+      "node_id": 5,
+      "name": "node_id",
+      "address": 31001,
+      "kind": "u32",
+      "value": 5,
+      "request_s": 23141.58490569,
+      "received_s": 23141.585657827
+    },
+    {
+      "node_id": 5,
+      "name": "hw_version",
+      "address": 5,
+      "kind": "u32",
+      "value": 220905,
+      "request_s": 23141.585668719,
+      "received_s": 23141.586389135
+    },
+    {
+      "node_id": 5,
+      "name": "fw_version",
+      "address": 6,
+      "kind": "u32",
+      "value": 16843008,
+      "request_s": 23141.586399707,
+      "received_s": 23141.587088298
+    },
+    {
+      "node_id": 5,
+      "name": "control_mode",
+      "address": 32105,
+      "kind": "u32",
+      "value": 3,
+      "request_s": 23141.587099223,
+      "received_s": 23141.587855887
+    },
+    {
+      "node_id": 5,
+      "name": "input_mode",
+      "address": 32106,
+      "kind": "u32",
+      "value": 5,
+      "request_s": 23141.587870061,
+      "received_s": 23141.588623767
+    },
+    {
+      "node_id": 5,
+      "name": "input_filter_bandwidth",
+      "address": 32118,
+      "kind": "f32",
+      "value": 66.0,
+      "request_s": 23141.588635033,
+      "received_s": 23141.589386647
+    },
+    {
+      "node_id": 5,
+      "name": "trajectory_done",
+      "address": 32008,
+      "kind": "u32",
+      "value": 1,
+      "request_s": 23141.589397411,
+      "received_s": 23141.590140554
+    },
+    {
+      "node_id": 6,
+      "name": "node_id",
+      "address": 31001,
+      "kind": "u32",
+      "value": 6,
+      "request_s": 23141.590923468,
+      "received_s": 23141.591649277
+    },
+    {
+      "node_id": 6,
+      "name": "hw_version",
+      "address": 5,
+      "kind": "u32",
+      "value": 220905,
+      "request_s": 23141.591659916,
+      "received_s": 23141.592413813
+    },
+    {
+      "node_id": 6,
+      "name": "fw_version",
+      "address": 6,
+      "kind": "u32",
+      "value": 16843008,
+      "request_s": 23141.592425495,
+      "received_s": 23141.593141323
+    },
+    {
+      "node_id": 6,
+      "name": "control_mode",
+      "address": 32105,
+      "kind": "u32",
+      "value": 3,
+      "request_s": 23141.59315206,
+      "received_s": 23141.593872607
+    },
+    {
+      "node_id": 6,
+      "name": "input_mode",
+      "address": 32106,
+      "kind": "u32",
+      "value": 5,
+      "request_s": 23141.59388292,
+      "received_s": 23141.594610402
+    },
+    {
+      "node_id": 6,
+      "name": "input_filter_bandwidth",
+      "address": 32118,
+      "kind": "f32",
+      "value": 66.0,
+      "request_s": 23141.59462086,
+      "received_s": 23141.595355761
+    },
+    {
+      "node_id": 6,
+      "name": "trajectory_done",
+      "address": 32008,
+      "kind": "u32",
+      "value": 1,
+      "request_s": 23141.595366491,
+      "received_s": 23141.596141509
+    },
+    {
+      "node_id": 7,
+      "name": "node_id",
+      "address": 31001,
+      "kind": "u32",
+      "value": 7,
+      "request_s": 23141.597064866,
+      "received_s": 23141.597807732
+    },
+    {
+      "node_id": 7,
+      "name": "hw_version",
+      "address": 5,
+      "kind": "u32",
+      "value": 220905,
+      "request_s": 23141.597818564,
+      "received_s": 23141.598562595
+    },
+    {
+      "node_id": 7,
+      "name": "fw_version",
+      "address": 6,
+      "kind": "u32",
+      "value": 16843008,
+      "request_s": 23141.598573008,
+      "received_s": 23141.5992683
+    },
+    {
+      "node_id": 7,
+      "name": "control_mode",
+      "address": 32105,
+      "kind": "u32",
+      "value": 3,
+      "request_s": 23141.599278503,
+      "received_s": 23141.600013443
+    },
+    {
+      "node_id": 7,
+      "name": "input_mode",
+      "address": 32106,
+      "kind": "u32",
+      "value": 5,
+      "request_s": 23141.600023782,
+      "received_s": 23141.600734655
+    },
+    {
+      "node_id": 7,
+      "name": "input_filter_bandwidth",
+      "address": 32118,
+      "kind": "f32",
+      "value": 100.0,
+      "request_s": 23141.600744785,
+      "received_s": 23141.601475334
+    },
+    {
+      "node_id": 7,
+      "name": "trajectory_done",
+      "address": 32008,
+      "kind": "u32",
+      "value": 1,
+      "request_s": 23141.601497159,
+      "received_s": 23141.60224402
+    },
+    {
+      "node_id": 8,
+      "name": "node_id",
+      "address": 31001,
+      "kind": "u32",
+      "value": 8,
+      "request_s": 23141.603022912,
+      "received_s": 23141.6037431
+    },
+    {
+      "node_id": 8,
+      "name": "hw_version",
+      "address": 5,
+      "kind": "u32",
+      "value": 220905,
+      "request_s": 23141.60375516,
+      "received_s": 23141.604491716
+    },
+    {
+      "node_id": 8,
+      "name": "fw_version",
+      "address": 6,
+      "kind": "u32",
+      "value": 16843008,
+      "request_s": 23141.604502012,
+      "received_s": 23141.605229191
+    },
+    {
+      "node_id": 8,
+      "name": "control_mode",
+      "address": 32105,
+      "kind": "u32",
+      "value": 3,
+      "request_s": 23141.6052395,
+      "received_s": 23141.606003927
+    },
+    {
+      "node_id": 8,
+      "name": "input_mode",
+      "address": 32106,
+      "kind": "u32",
+      "value": 5,
+      "request_s": 23141.606014389,
+      "received_s": 23141.606759172
+    },
+    {
+      "node_id": 8,
+      "name": "input_filter_bandwidth",
+      "address": 32118,
+      "kind": "f32",
+      "value": 100.0,
+      "request_s": 23141.606769699,
+      "received_s": 23141.607524053
+    },
+    {
+      "node_id": 8,
+      "name": "trajectory_done",
+      "address": 32008,
+      "kind": "u32",
+      "value": 1,
+      "request_s": 23141.607537949,
+      "received_s": 23141.608219538
+    },
+    {
+      "node_id": 9,
+      "name": "node_id",
+      "address": 31001,
+      "kind": "u32",
+      "value": 9,
+      "request_s": 23141.608995177,
+      "received_s": 23141.609747472
+    },
+    {
+      "node_id": 9,
+      "name": "hw_version",
+      "address": 5,
+      "kind": "u32",
+      "value": 220905,
+      "request_s": 23141.609759011,
+      "received_s": 23141.610520913
+    },
+    {
+      "node_id": 9,
+      "name": "fw_version",
+      "address": 6,
+      "kind": "u32",
+      "value": 16843008,
+      "request_s": 23141.610533093,
+      "received_s": 23141.611213373
+    },
+    {
+      "node_id": 9,
+      "name": "control_mode",
+      "address": 32105,
+      "kind": "u32",
+      "value": 3,
+      "request_s": 23141.611224137,
+      "received_s": 23141.612012266
+    },
+    {
+      "node_id": 9,
+      "name": "input_mode",
+      "address": 32106,
+      "kind": "u32",
+      "value": 5,
+      "request_s": 23141.612022691,
+      "received_s": 23141.612762712
+    },
+    {
+      "node_id": 9,
+      "name": "input_filter_bandwidth",
+      "address": 32118,
+      "kind": "f32",
+      "value": 100.0,
+      "request_s": 23141.612772447,
+      "received_s": 23141.613515655
+    },
+    {
+      "node_id": 9,
+      "name": "trajectory_done",
+      "address": 32008,
+      "kind": "u32",
+      "value": 1,
+      "request_s": 23141.613525957,
+      "received_s": 23141.614212999
+    }
+  ],
+  "feedback": [
+    {
+      "node_id": 1,
+      "request_s": 23141.565287326,
+      "received_s": 23141.566086169,
+      "pos_deg": -72.00202178955078,
+      "vel_rpm": 0.18,
+      "axis_error": false,
+      "traj_done": true
+    },
+    {
+      "node_id": 2,
+      "request_s": 23141.571657529,
+      "received_s": 23141.572452111,
+      "pos_deg": -0.07838845252990723,
+      "vel_rpm": -0.18,
+      "axis_error": false,
+      "traj_done": true
+    },
+    {
+      "node_id": 3,
+      "request_s": 23141.577908016,
+      "received_s": 23141.578687,
+      "pos_deg": -0.0030291080474853516,
+      "vel_rpm": -0.22,
+      "axis_error": false,
+      "traj_done": true
+    },
+    {
+      "node_id": 4,
+      "request_s": 23141.584060461,
+      "received_s": 23141.584904367,
+      "pos_deg": -0.09151041507720947,
+      "vel_rpm": 0.13,
+      "axis_error": false,
+      "traj_done": true
+    },
+    {
+      "node_id": 5,
+      "request_s": 23141.590151177,
+      "received_s": 23141.59092109,
+      "pos_deg": 0.008453726768493652,
+      "vel_rpm": 0.18,
+      "axis_error": false,
+      "traj_done": true
+    },
+    {
+      "node_id": 6,
+      "request_s": 23141.596151982,
+      "received_s": 23141.5970629,
+      "pos_deg": -0.031050443649291992,
+      "vel_rpm": 0.04,
+      "axis_error": false,
+      "traj_done": true
+    },
+    {
+      "node_id": 7,
+      "request_s": 23141.602255244,
+      "received_s": 23141.603021147,
+      "pos_deg": -0.014709532260894775,
+      "vel_rpm": 0.09,
+      "axis_error": false,
+      "traj_done": true
+    },
+    {
+      "node_id": 8,
+      "request_s": 23141.608229873,
+      "received_s": 23141.608993615,
+      "pos_deg": -0.034224726259708405,
+      "vel_rpm": -0.09,
+      "axis_error": false,
+      "traj_done": true
+    },
+    {
+      "node_id": 9,
+      "request_s": 23141.614223236,
+      "received_s": 23141.615022577,
+      "pos_deg": -0.001303553581237793,
+      "vel_rpm": 0.22,
+      "axis_error": false,
+      "traj_done": true
+    }
+  ],
+  "sdk_sha256": "c81f492afa9eb09946d55da05d282eb86c989cae3335fafa59aa9fe3e68bf016",
+  "source_code": "from datetime import datetime\nfrom hashlib import sha256\nimport json\nfrom pathlib import Path\nimport runpy\nimport time\nfrom zoneinfo import ZoneInfo\n\nfrom robot_safecontrol_moveit.drempower_can import can_node_id, decode_feedback, decode_property_reply\nfrom robot_safecontrol_moveit.drempower_serial import DrEmpowerSerial, SERIAL_CAN_FRAME\n\n\nroot = Path(__file__).resolve().parents[2]\nfolder = Path(__file__).parent\nsdk_path = root / \"大然电机/大然电机所有资料/drempower-wiki-master/4-库函数/python/interface_enums.py\"\ndefinitions = runpy.run_path(str(sdk_path))\nfields = {\n    \"node_id\": (\"axis0.config.can_node_id\", 31001, \"u32\"),\n    \"hw_version\": (\"hw_version\", 5, \"u32\"), \"fw_version\": (\"fw_version\", 6, \"u32\"),\n    \"control_mode\": (\"axis0.controller.config.control_mode\", 32105, \"u32\"),\n    \"input_mode\": (\"axis0.controller.config.input_mode\", 32106, \"u32\"),\n    \"input_filter_bandwidth\": (\"axis0.controller.config.input_filter_bandwidth\", 32118, \"f32\"),\n    \"trajectory_done\": (\"axis0.controller.trajectory_done\", 32008, \"u32\"),\n}\nfor name, (canonical, address, kind) in fields.items():\n    vendor_kind = definitions[\"property_type\"][canonical]\n    if definitions[\"property_addresss\"][canonical] != address or (\n            \"f32\" if vendor_kind == \"f\" else vendor_kind) != kind:\n        raise ValueError(f\"{name} 与厂家字段地址或类型不符\")\nreport = {\n    \"evidence_kind\": \"post_power_cycle_readonly_operating_snapshot\",\n    \"started_at\": datetime.now(ZoneInfo(\"Asia/Shanghai\")).isoformat(),\n    \"status\": \"reading\", \"motion_commands_sent\": 0, \"parameter_writes_sent\": 0,\n    \"device_sample_time_known\": False, \"hardware_qualified\": False,\n    \"field_definitions\": fields, \"properties\": {}, \"observations\": [], \"feedback\": [],\n    \"sdk_sha256\": sha256(sdk_path.read_bytes()).hexdigest(),\n    \"source_code\": Path(__file__).read_text(encoding=\"utf-8\"),\n    \"source_sha256\": sha256(Path(__file__).read_bytes()).hexdigest(),\n}\noutput = folder / \"after-power-operating.json\"\nwith output.open(\"x\", encoding=\"utf-8\") as stream:\n    try:\n        with DrEmpowerSerial(\"/dev/serial/by-id/usb-Dr-Tech_DR-USB_CAN_87949380174B-if00\") as vendor:\n            try:\n                for node in range(1, 10):\n                    values = report[\"properties\"][f\"J{node}\"] = {}\n                    for name, (_, address, kind) in fields.items():\n                        requested = time.monotonic()\n                        value = vendor.read_property(node, address, kind)\n                        received = time.monotonic()\n                        raw = SERIAL_CAN_FRAME.parse(bytes.fromhex(vendor.frames[-1][\"raw_hex\"]))\n                        if decode_property_reply(raw.frame_id, raw.data, node_id=node,\n                                                 address=address, value_kind=kind) != value:\n                            raise ValueError(\"运行属性与原始回复不符\")\n                        values[name] = value\n                        report[\"observations\"].append({\"node_id\": node, \"name\": name, \"address\": address,\n                                                       \"kind\": kind, \"value\": value,\n                                                       \"request_s\": requested, \"received_s\": received})\n                    if values[\"node_id\"] != node:\n                        raise ValueError(\"运行配置节点身份不符\")\n                    requested = time.monotonic()\n                    vendor.get_state(node)\n                    raw = SERIAL_CAN_FRAME.parse(bytes.fromhex(vendor.frames[-1][\"raw_hex\"]))\n                    feedback = decode_feedback(raw.frame_id, raw.data)\n                    if feedback.axis_error or not feedback.traj_done:\n                        raise ValueError(\"上电运行快照存在故障或运动未完成\")\n                    report[\"feedback\"].append({\"node_id\": node, \"request_s\": requested,\n                                               \"received_s\": time.monotonic(), \"pos_deg\": feedback.pos_deg,\n                                               \"vel_rpm\": feedback.vel_rpm, \"axis_error\": feedback.axis_error,\n                                               \"traj_done\": feedback.traj_done})\n                for frame in vendor.frames:\n                    if frame[\"direction\"] == \"tx\" and can_node_id(SERIAL_CAN_FRAME.parse(\n                            bytes.fromhex(frame[\"raw_hex\"])).frame_id)[1] != 0x1e:\n                        raise ValueError(\"运行配置读取发送了属性读取之外的命令\")\n                report[\"status\"] = \"readonly_completed\"\n            finally:\n                report[\"frames\"] = vendor.frames\n    except BaseException as error:\n        report.update(status=\"readonly_failed\", reason=str(error))\n        raise\n    finally:\n        json.dump(report, stream, ensure_ascii=False, indent=2, allow_nan=False)\n        stream.write(\"\\n\")\nprint(json.dumps({\"status\": report[\"status\"], \"properties\": report[\"properties\"],\n                  \"sha256\": sha256(output.read_bytes()).hexdigest()}, ensure_ascii=False, indent=2))\n",
+  "source_sha256": "5067b677bc4c797fa26221bc2cb12434e6cde977aa7f6f78a52a16d5e0aa2505",
+  "frames": [
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.559653423,
+      "raw_hex": "aa0000080000003e1979030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.560398343,
+      "raw_hex": "aa0000080000003e1979030001000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.560483069,
+      "raw_hex": "aa0000080000003e0500030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.561231084,
+      "raw_hex": "aa0000080000003e05000300e95e0300"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.561272199,
+      "raw_hex": "aa0000080000003e0600030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.56202693,
+      "raw_hex": "aa0000080000003e0600030000010101"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.562067737,
+      "raw_hex": "aa0000080000003e697d030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.562845601,
+      "raw_hex": "aa0000080000003e697d030003000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.56289096,
+      "raw_hex": "aa0000080000003e6a7d030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.563663339,
+      "raw_hex": "aa0000080000003e6a7d030005000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.563713466,
+      "raw_hex": "aa0000080000003e767d000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.564451857,
+      "raw_hex": "aa0000080000003e767d00000000c842"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.56450489,
+      "raw_hex": "aa0000080000003e087d030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.565244753,
+      "raw_hex": "aa0000080000003e087d030001000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.565312299,
+      "raw_hex": "aa0000080000003e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.56603692,
+      "raw_hex": "aa00000800000023090190c212000200"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.56610546,
+      "raw_hex": "aa0000080000005e1979030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.566825137,
+      "raw_hex": "aa0000080000005e1979030002000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.566864415,
+      "raw_hex": "aa0000080000005e0500030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.567674719,
+      "raw_hex": "aa0000080000005e05000300e95e0300"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.567737066,
+      "raw_hex": "aa0000080000005e0600030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.568507085,
+      "raw_hex": "aa0000080000005e0600030000010101"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.568581721,
+      "raw_hex": "aa0000080000005e697d030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.569293983,
+      "raw_hex": "aa0000080000005e697d030003000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.569356016,
+      "raw_hex": "aa0000080000005e6a7d030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.570110386,
+      "raw_hex": "aa0000080000005e6a7d030005000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.570171974,
+      "raw_hex": "aa0000080000005e767d000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.570876353,
+      "raw_hex": "aa0000080000005e767d00000000c842"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.570924656,
+      "raw_hex": "aa0000080000005e087d030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.571629623,
+      "raw_hex": "aa0000080000005e087d030001000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.571670176,
+      "raw_hex": "aa0000080000005e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.572414064,
+      "raw_hex": "aa00000800000043208aa0bdeeff2f00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.572467542,
+      "raw_hex": "aa0000080000007e1979030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.573171895,
+      "raw_hex": "aa0000080000007e1979030003000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.573209994,
+      "raw_hex": "aa0000080000007e0500030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.573986582,
+      "raw_hex": "aa0000080000007e05000300e95e0300"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.574037347,
+      "raw_hex": "aa0000080000007e0600030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.574752473,
+      "raw_hex": "aa0000080000007e0600030000010101"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.574805071,
+      "raw_hex": "aa0000080000007e697d030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.575542855,
+      "raw_hex": "aa0000080000007e697d030003000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.575676186,
+      "raw_hex": "aa0000080000007e6a7d030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.576357861,
+      "raw_hex": "aa0000080000007e6a7d030005000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.576395461,
+      "raw_hex": "aa0000080000007e767d000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.577116165,
+      "raw_hex": "aa0000080000007e767d00000000c842"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.577158002,
+      "raw_hex": "aa0000080000007e087d030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.577882004,
+      "raw_hex": "aa0000080000007e087d030001000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.577919969,
+      "raw_hex": "aa0000080000007e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.578651393,
+      "raw_hex": "aa00000800000063008446bbeaffdaff"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.57870306,
+      "raw_hex": "aa0000080000009e1979030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.579400185,
+      "raw_hex": "aa0000080000009e1979030004000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.579440231,
+      "raw_hex": "aa0000080000009e0500030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.580125038,
+      "raw_hex": "aa0000080000009e05000300e95e0300"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.580162781,
+      "raw_hex": "aa0000080000009e0600030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.5809629,
+      "raw_hex": "aa0000080000009e0600030000010101"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.58101182,
+      "raw_hex": "aa0000080000009e697d030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.581693699,
+      "raw_hex": "aa0000080000009e697d030003000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.581731111,
+      "raw_hex": "aa0000080000009e6a7d030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.582498951,
+      "raw_hex": "aa0000080000009e6a7d030005000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.582536112,
+      "raw_hex": "aa0000080000009e767d000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.583234151,
+      "raw_hex": "aa0000080000009e767d000000008442"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.583290356,
+      "raw_hex": "aa0000080000009e087d030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.584027069,
+      "raw_hex": "aa0000080000009e087d030001000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.584077703,
+      "raw_hex": "aa0000080000009e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.584863699,
+      "raw_hex": "aa00000800000083d069bbbd0d001b00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.584918826,
+      "raw_hex": "aa000008000000be1979030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.585642832,
+      "raw_hex": "aa000008000000be1979030005000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.585681208,
+      "raw_hex": "aa000008000000be0500030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.586361658,
+      "raw_hex": "aa000008000000be05000300e95e0300"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.586413331,
+      "raw_hex": "aa000008000000be0600030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.587073685,
+      "raw_hex": "aa000008000000be0600030000010101"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.587111576,
+      "raw_hex": "aa000008000000be697d030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.58784089,
+      "raw_hex": "aa000008000000be697d030003000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.587885482,
+      "raw_hex": "aa000008000000be6a7d030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.588608608,
+      "raw_hex": "aa000008000000be6a7d030005000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.588648215,
+      "raw_hex": "aa000008000000be767d000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.589369708,
+      "raw_hex": "aa000008000000be767d000000008442"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.589409902,
+      "raw_hex": "aa000008000000be087d030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.590121729,
+      "raw_hex": "aa000008000000be087d030001000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.590163595,
+      "raw_hex": "aa000008000000be0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.590880991,
+      "raw_hex": "aa000008000000a380810a3c12000600"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.590937439,
+      "raw_hex": "aa000008000000de1979030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.591629311,
+      "raw_hex": "aa000008000000de1979030006000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.591672726,
+      "raw_hex": "aa000008000000de0500030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.592398224,
+      "raw_hex": "aa000008000000de05000300e95e0300"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.592438025,
+      "raw_hex": "aa000008000000de0600030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.593127244,
+      "raw_hex": "aa000008000000de0600030000010101"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.593164718,
+      "raw_hex": "aa000008000000de697d030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.593858319,
+      "raw_hex": "aa000008000000de697d030003000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.593896197,
+      "raw_hex": "aa000008000000de6a7d030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.594587874,
+      "raw_hex": "aa000008000000de6a7d030005000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.594633358,
+      "raw_hex": "aa000008000000de767d000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.595335117,
+      "raw_hex": "aa000008000000de767d000000008442"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.59537945,
+      "raw_hex": "aa000008000000de087d030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.596103664,
+      "raw_hex": "aa000008000000de087d030001000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.596163979,
+      "raw_hex": "aa000008000000de0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.59696968,
+      "raw_hex": "aa000008000000c3805dfebc04002f00"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.59707979,
+      "raw_hex": "aa000008000000fe1979030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.597785983,
+      "raw_hex": "aa000008000000fe1979030007000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.597831853,
+      "raw_hex": "aa000008000000fe0500030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.598547203,
+      "raw_hex": "aa000008000000fe05000300e95e0300"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.598585609,
+      "raw_hex": "aa000008000000fe0600030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.599254254,
+      "raw_hex": "aa000008000000fe0600030000010101"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.599290665,
+      "raw_hex": "aa000008000000fe697d030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.599981688,
+      "raw_hex": "aa000008000000fe697d030003000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.600036039,
+      "raw_hex": "aa000008000000fe6a7d030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.600721305,
+      "raw_hex": "aa000008000000fe6a7d030005000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.600756869,
+      "raw_hex": "aa000008000000fe767d000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.601461579,
+      "raw_hex": "aa000008000000fe767d00000000c842"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.601528079,
+      "raw_hex": "aa000008000000fe087d030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.602225667,
+      "raw_hex": "aa000008000000fe087d030001000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.60226802,
+      "raw_hex": "aa000008000000fe0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.602967406,
+      "raw_hex": "aa000008000000e3400071bc0900f2ff"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.603038447,
+      "raw_hex": "aa0000080000011e1979030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.603727086,
+      "raw_hex": "aa0000080000011e1979030008000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.603768573,
+      "raw_hex": "aa0000080000011e0500030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.604464973,
+      "raw_hex": "aa0000080000011e05000300e95e0300"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.604514577,
+      "raw_hex": "aa0000080000011e0600030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.605188244,
+      "raw_hex": "aa0000080000011e0600030000010101"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.605251904,
+      "raw_hex": "aa0000080000011e697d030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.605984206,
+      "raw_hex": "aa0000080000011e697d030003000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.60602706,
+      "raw_hex": "aa0000080000011e6a7d030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.606741528,
+      "raw_hex": "aa0000080000011e6a7d030005000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.606782408,
+      "raw_hex": "aa0000080000011e767d000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.607509116,
+      "raw_hex": "aa0000080000011e767d00000000c842"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.607550737,
+      "raw_hex": "aa0000080000011e087d030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.608205238,
+      "raw_hex": "aa0000080000011e087d030001000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.608241444,
+      "raw_hex": "aa0000080000011e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.608955105,
+      "raw_hex": "aa000008000001033a2f0cbdf7ff3300"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.609011925,
+      "raw_hex": "aa0000080000013e1979030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.609730689,
+      "raw_hex": "aa0000080000013e1979030009000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.609772929,
+      "raw_hex": "aa0000080000013e0500030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.610501664,
+      "raw_hex": "aa0000080000013e05000300e95e0300"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.610546298,
+      "raw_hex": "aa0000080000013e0600030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.611198432,
+      "raw_hex": "aa0000080000013e0600030000010101"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.611236369,
+      "raw_hex": "aa0000080000013e697d030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.611975071,
+      "raw_hex": "aa0000080000013e697d030003000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.612035339,
+      "raw_hex": "aa0000080000013e6a7d030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.61274921,
+      "raw_hex": "aa0000080000013e6a7d030005000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.612784634,
+      "raw_hex": "aa0000080000013e767d000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.613500375,
+      "raw_hex": "aa0000080000013e767d00000000c842"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.613538056,
+      "raw_hex": "aa0000080000013e087d030000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.614198863,
+      "raw_hex": "aa0000080000013e087d030001000000"
+    },
+    {
+      "direction": "tx",
+      "monotonic_s": 23141.614235141,
+      "raw_hex": "aa0000080000013e0000000000000000"
+    },
+    {
+      "direction": "rx",
+      "monotonic_s": 23141.614978947,
+      "raw_hex": "aa0000080000012300dcaaba16001a00"
+    }
+  ]
+}

@@ -4,16 +4,17 @@
 
 项目负责人为 `lsn`，覆盖 M01–M12、Runtime、LiDAR、CollisionSafety、系统集成、仿真、受控实机、正式实验及个人成果展示。仓库由 `lsn` 在不同设备上使用，项目开发和跨设备接手使用 `main`。
 
-- [完整项目 Wayfinder 地图](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/147)：唯一当前地图，保留原任务身份、完成证据和已有指派。
+- [完整项目 Wayfinder 地图](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/147)：总项目任务地图，保留原任务身份、完成证据和已有指派，与 #184 并列管理。
 - [总体项目规格](../../specs/predictive-coordination-control.md)：目标、模块、约束、三类进度、三种方法及验收；[GitHub 正文](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/145)。
 - [实现方案](implementation-design.md)：共同输入、实际运动与参考、MPC 研究、时序及实施顺序。
 - [需求与模块覆盖](coverage.md)：需求、决定、实现和验收的对应。
-- [任务编号与依赖](dependencies.md)：59 项主线任务的连续编号、主要依赖图、全部直接前置和可领取入口。
+- [任务编号与依赖](dependencies.md)：59 项主线任务的连续编号、主要依赖图、全部直接前置和推进条件。
 - [事实依据](requirements-evidence.md)：当前控制代码、NURBS ZIP 参数与独立核查、实验状态和数据保存。
 - [基线核验](baseline-audit.md)：当前 M01–M12 能力、实际运行与待补充输入。
 - [原始资产与 Python 运行核验](asset-inventory.md)：来源身份、资料包、真实样本与完整生成证据；[Python 使用说明](../../pipe_assets.md)。
 - [电机与 NURBS 约束数值依据](motor-nurbs-constraint-limits-research.md)：厂家能力条件、源程序限制、独立数值核验及尚待确定的研究参数。
 - [J1 直线运动规格说明书](j1-motion-spec.md)：已确认的现场零位、前进正方向、500 mm 行程、角度与位移换算，以及设备限位与执行验收要求。
+- [九轴电机定位与 J1 全行程规格](motor-positioning-spec.md)：九值入口的共同运动进度、整段路线检查、蝴蝶曲线衔接、定位精度和设备调查所需证据；当前执行范围见[独立任务清单](../motor-positioning/tasks.md)。
 - [MPC求解研究](mpc-solver-research.md)：九轴连续参考、导数接口、真实候选测量及完整约束/预算的待测条件。
 - [地图维护验证](verification-20261027.md)：原生关系、取消状态、文档与本地远程同步检查。
 - [前期工作证据](../../static_obstacle_experiments_handoff.md)：已完成基础能力、原始记录和复用范围。
@@ -21,7 +22,7 @@
 
 ## 任务使用
 
-开放任务从地图的原生子 issue 查询，原生 blocking 表示前置关系。开放、没有开放前置且未指派的任务可以领取。标题按依赖使用 01–59 编号，GitHub issue 编号和评论保持永久身份。
+#184 和 #147 为并列任务组，分别管理 11 项电机任务和 59 项总项目任务，各组按自己的前置关系推进。开放、没有开放前置且未指派的任务可以领取。本地图标题按依赖使用 01–59 编号，GitHub issue 编号和评论保持永久身份。
 
 [核验完整项目基线与 M01–M12 资产](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/148)和[取得完整工件、路径与 MATLAB 程序资产](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/135)已完成核验与运行交付。[[04] 完整项目技术复用与实施依赖（需你拍板）](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/149)、[[05] M02 九轴模型、TCP 与标定接口（需你拍板）](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/136)及[[06] M01 工件路径与五维任务参考（需你拍板）](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/137)已经用户确认并完成。研究机构采用现有九自由度机械臂，跟踪现有蝴蝶曲线，缺少信息使用新 NURBS 程序生成新文件。
 
@@ -34,6 +35,8 @@
 [[23] 建立动态 tracking 与 reachable support tube](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/101)已完成main集成和独立双线审查；最终组合456项相关消费者、30项独立及组合检查、43项安装公开检查通过，36份安装资源身份一致，见[完成记录](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/101#issuecomment-6446396500)和[模块接口](../../modules/dynamic_support.md)。原9ms静态个案在四个P-core条件保留原断言通过。标定和基础文档沿用现有指派；MPC的数学模型、求解器与周期由[联合预测模型与求解方案](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/150)研究确定。
 
 [[19] 实现 M11 真实设备协议与执行保护](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/164)已领取。用户确认全部电机资料位于项目 `大然电机/`；厂家协议、SDK 和现有通信记录的[核验结果](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/164#issuecomment-6459917358)已保存。命令实际采用、反馈采样时间、全轴身份及独立保护仍缺少确认依据，任务保持开放。
+
+九轴单组定位、J1 完整行程和蝴蝶曲线跟踪的 11 项任务 #185–#195 直接归属 #184，交付与前置见[电机任务清单](../motor-positioning/tasks.md)。当前可领取 [01 J1 编码器依据](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/185)、[02 坐标与同步接口](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/186)和 [03 装配与测量条件](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/187)。本组取得的协议、运行参数、独立测量和跟踪证据供后续总项目复用。
 
 [[24] 实现 collision_scene_server 与双缓冲共享场景](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/104)已完成并关闭，22 份文件已集成至 `main`，本次代码、测试及相关文档纳入提交与远程同步范围。322 项受影响真实测试、69 项纯逻辑检查、独立 Spec/Standards 审查及安装后的默认 ROS 入口验收通过，13 份安装文件与源码身份一致，见[完成记录](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/104#issuecomment-6460673198)及[运行说明](../../modules/collision_scene_server.md)。验证覆盖真实进程、共享内存和 JAX；真实 LiDAR 回放、现场参数、目标设备 deadline 与正式控制来源切换分别由对应任务验收。
 
