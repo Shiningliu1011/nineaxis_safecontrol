@@ -2,7 +2,7 @@
 
 现有 `scripts/joint_positioning.py` 接受 `--joints` 输入一组九轴绝对目标，J1 使用 mm，J2–J9 使用 °。本次目标为 `[2, 1, -1, 1, -1, 1, 1, -1, 1]`，全部九轴实际移动、到位并持续保持。运行方式见[九轴定位](../../joint_positioning.md)。
 
-后续 ±7° 与 J1 50 mm 的当前结果见[较大目标实机验证](larger-positioning-experiment.md)；J1 在约 35.538 mm 再次出现计数范围故障，目前处于故障锁定状态。
+后续 ±7° 与 J1 50 mm 的结果见[较大目标实机验证](larger-positioning-experiment.md)。最新状态见[J1 多圈计数实验与零位恢复](j1-multi-circle-experiment.md)。
 
 ## 实际结果
 

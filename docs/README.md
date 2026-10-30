@@ -6,6 +6,7 @@
 
 - [九轴手动定位](joint_positioning.md)：Python 顶部修改九轴绝对目标、CSV 按 Enter 逐组定位及到位后的持续保持与监测。
 - [电机定位诊断](motor_positioning_diagnostics.md)：G 系列连续计数、有人值守动作记录、原始帧和离线复算。
+- [J1 多圈计数实验与零位恢复](planning/motor-positioning/j1-multi-circle-experiment.md)：保留限位的 40 mm 实验、完整回程、错误 512 恢复与最终九轴状态。
 - [同步接口与断电恢复](planning/motor-positioning/live-interface-experiments.md)：共同时间与连续参考实机比较、非零位置断电记录和上电参数变化。
 - [标定姿态表](calibration_joint_table.md)：相机与激光跟踪仪分别采集，完整关节目标输入、模型检查和离线逐组流程。
 - [运动参数与反馈证据](joint_motion_limits_evidence.md)：位置模式、速度换算、完整真实回放及当前零位与通信检查。
