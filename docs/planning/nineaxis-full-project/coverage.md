@@ -19,6 +19,31 @@
 | R11 真实反馈与停止 | [执行准入](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/151) | [设备协议](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/164)、[标定与测量](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/165) | [独立实机](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/167)、[协同实机](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/168) |
 | R12 完整项目复现 | [总体规格](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/145) | [M12](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/159)及全部模块任务 | [复现与个人成果展示](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/170) |
 
+## 专项规格与实施责任
+
+[DCOL 与双传感器规格](../../specs/dcol-collision-core.md)管理碰撞专项要求，[模块边界与清理规格](../../specs/module-boundaries-and-reuse.md)管理现有功能整合。两份规格在各自范围内优先；同一能力共用一个实施任务，既有完成记录保持原验证范围。
+
+| 当前要求 | 实施与独立验收责任 |
+|---|---|
+| 碰撞 R01/R02、T01/T02：OBB、拓扑、附件与完整覆盖 | [OBB 几何资产](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/198)、[独立几何验收](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/125) |
+| 碰撞 R03/R07、T03–T05：凸体 DCOL、几何外扩及导数 | [DCOL 后端及导数](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/199)、[独立 query 行](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/112)、[独立数值验收](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/125) |
+| 碰撞 R04/R05、T06–T09/T11：双源、占据、时间和覆盖 | [PCL/OctoMap 共享场景](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/200)、[双源基座标定](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/95)、[真实回放](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/122) |
+| 碰撞 R07/R08、T12/T13：独立行、连续运动及停止 | [query](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/112)、[certify](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/113)、[CBF 行与期限](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/118)、[场景接入](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/154) |
+| 碰撞 R09、T16：完整周期、参数和适用条件 | [参数测量](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/117)、[目标设备完整周期](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/119) |
+| 碰撞 R06/R10、T10/T14/T15/T17：回放、仿真、在线与装置 | [双源回放](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/122)、[规划控制恢复仿真](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/127)、[在线双源及丝杠障碍](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/205) |
+| 碰撞全部 R/T 与来源切换、清理及文档 | [唯一碰撞来源](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/123)、[碰撞清理](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/124)、[当前文档](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/120)、[通用碰撞证据核对](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/126) |
+| 模块 R01–R03、T01/T02：独立边界、共同模型/限制/参考 | [现有消费者复用](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/201)，其余消费者任务使用相同公共接口 |
+| 模块 R04、T03：配置、方法可用性与共同入口 | [运行入口、配置与演示](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/202)，完整新增方法由原任务注册和验证 |
+| 模块 R05、T05：OBB 与共同碰撞 | 共用本表的 OBB、DCOL、双源、query/certify 和专项证据 |
+| 模块 R06、T04/T09：替换后的清理与文档 | [共同入口](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/202)、[碰撞清理](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/124)、[当前文档](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/120)；KDL/PSO 接入等待[五维 IK](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/111)，正式[AEB-RRT*](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/115)继续保留 |
+| 模块 R07、T04：独立 Python benchmark 清理 | [benchmark 专用实现清理](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/203) |
+| 模块 R08、T06：速度、加速度、jerk | [共同联合 QP](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/157)与[公共运动/最终准入](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/156)，限值与必要约束沿用原确认 |
+| 模块 R09、T07：Ruckig 边界与完整停止 | [公共运动与仿真执行](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/156)，取消前逐项满足 I08 |
+| 模块 T08：反馈、执行进度、恢复与只读评价 | [状态与进度](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/155)、[Runtime](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/158)、[记录评价](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/159) |
+| 模块 R10 及全部 R/T：本轮完整整合验收 | [模块边界、复用与清理验收](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/204)；完整 MPC、完整逐点方法和正式三方法比较各自继续验收 |
+
+需求确认、源码实施、数值通过、仿真通过和现场证据分别记录；必要替换尚缺前置时相应项目保持未完成。当前原生关系见[依赖表](dependencies.md)。
+
 ## 系统与阶段
 
 M01/M02/M07 提供共用路径、模型和限制；M03/M04 提供环境及碰撞；M05/M06 提供反馈与执行参考；M08/M09 负责预测和实时协调；M10/M11 负责检查、执行和反馈；M12 负责独立评价。Runtime 管理工艺阶段、入场退出、异步计划、异常和完成条件。
