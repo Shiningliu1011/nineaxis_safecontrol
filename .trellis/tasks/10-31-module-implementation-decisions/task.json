@@ -21,6 +21,6 @@
   "children": [],
   "parent": null,
   "relatedFiles": [],
-  "notes": "规格已发布：https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/197。用户确认的地图组织已完成：更新 40 项开放任务、新增 8 项任务，67 项归属及 239 条原生前置核验通过，无循环，原有状态与指派保留。源码实施尚未开始。",
+  "notes": "规格已发布：https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/197。用户确认的地图组织已完成：更新 40 项开放任务、新增 8 项任务，67 项归属及 239 条原生前置核验通过，无循环，原有状态与指派保留。全部开放 issue 审查后，按当前规格维护 7 项正文与 3 条导航评论，远程回读及本地文档检查通过。源码实施尚未开始。",
   "meta": {}
 }

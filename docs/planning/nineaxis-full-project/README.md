@@ -9,6 +9,7 @@
 - [实现方案](implementation-design.md)：共同输入、实际运动与参考、MPC 研究、时序及实施顺序。
 - [需求与模块覆盖](coverage.md)：需求、决定、实现和验收的对应。
 - [模块边界、复用与实现清理规格](../../specs/module-boundaries-and-reuse.md)：本轮现有功能整合的范围、公共接口、清理和验证要求；[GitHub #197](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/197)。
+- [跟踪执行状态与过渡结果规格](../../specs/tracking-execution-state.md)：共同状态、进度、运动、Runtime 与评价的补充要求；[GitHub #146](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/146)。
 - [任务编号与依赖](dependencies.md)：67 项主线任务、239 条直接前置、主要关系图和可领取入口。
 - [事实依据](requirements-evidence.md)：当前控制代码、NURBS ZIP 参数与独立核查、实验状态和数据保存。
 - [基线核验](baseline-audit.md)：当前 M01–M12 能力、实际运行与待补充输入。

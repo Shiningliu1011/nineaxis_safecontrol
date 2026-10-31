@@ -34,6 +34,7 @@
 ## 设计与实施资料
 
 - [模块边界、复用与实现清理规格](specs/module-boundaries-and-reuse.md)：各模块独立、公共能力复用、替换前置、入口清理与验收；[GitHub #197](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/197)。
+- [跟踪执行状态与过渡结果规格](specs/tracking-execution-state.md)：状态职责、执行进度、阶段结果和异步报告；[GitHub #146](https://github.com/Shiningliu1011/nineaxis_safecontrol/issues/146)。
 - [DCOL 碰撞核心与双传感器点云规格](specs/dcol-collision-core.md)：相邻连杆排除、凸体缩放、点云处理、共同接口和完整验收要求。
 - [预测协调控制总体规格](specs/predictive-coordination-control.md)：研究目标、工艺与电机限制、运动参考协调、MPC、三方法和完整项目验收。
 - [2026-10-20 主机恢复](host_recovery_20261020.md)：环境、skills、字体、资料身份和验证入口。
