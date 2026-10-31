@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import csv
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from hashlib import sha256
 import io
 import json
@@ -16,6 +16,7 @@ from .drempower_can import CMD_POSITION_ANGLE_MODE1, can_id, encode_trapezoid_po
 from .drempower_joint_control import DrEmpowerJointControl
 from .j1_execution import J1ScrewControl
 from .motor_motion_limits import MAX_SINGLE_JOINT_SPEED_RPM, validate_motion_parameters
+from .motor_stop_latch import MotorStopLatch
 from .robot_spec import DEFAULT_JOINT_NAMES
 from .single_joint_execution import ExecutionLimits, MotionRejected
 
@@ -24,16 +25,40 @@ TABLE_COLUMNS = ("pose_id", "J1_mm", *(f"{name}_deg" for name in DEFAULT_JOINT_N
 MEASUREMENT_KINDS = ("camera", "laser_tracker")
 
 
-def _device_commands(q_mm_deg, linear: J1ScrewControl, rotary: DrEmpowerJointControl) -> list[dict]:
+def require_hardware_qualification(root: Path):
+    MotorStopLatch(root / ".scratch/motor_control/stop.json").require_clear()
+    raise RuntimeError(
+        "joint_table_live_disabled: 缺少九轴停止、反馈时效、独立保护、碰撞路径及J1零位恢复资格；"
+        "真实动作还需要当前会话的具体授权")
+
+
+def joint_execution_limits(root: Path) -> dict[str, ExecutionLimits]:
+    linear = J1ScrewControl.from_root(root)
+    return {
+        "J1": linear.limits(speed_mm_s=0.25, accel_mm_s2=0.05),
+        **{joint: replace(ExecutionLimits.from_urdf(root / "models/ninezzhou/urdf/ninezzhou.urdf", joint),
+                           speed_rpm=0.41)
+           for joint in DEFAULT_JOINT_NAMES[1:]},
+    }
+
+
+def _device_commands(q_mm_deg, linear: J1ScrewControl, rotary: DrEmpowerJointControl,
+                     execution_limits: dict | None = None) -> list[dict]:
     commands = []
     linear_limits = linear.limits(speed_mm_s=0.25, accel_mm_s2=0.05)
     rotary_limits = ExecutionLimits(-90, 90, speed_rpm=0.41)
     for index, joint in enumerate(DEFAULT_JOINT_NAMES):
-        control, limits = (linear, linear_limits) if index == 0 else (rotary, rotary_limits)
+        limits = (execution_limits[joint] if execution_limits is not None
+                  else linear_limits if index == 0 else rotary_limits)
         target = q_mm_deg[index] * linear.degrees_per_mm if index == 0 else q_mm_deg[index]
-        validate_motion_parameters(limits.speed_rpm, limits.accel_rpm_s, axis_type=limits.axis_type)
-        arguments = control.position_arguments(joint, target, speed_rpm=limits.speed_rpm,
-                                               accel_rpm_s=limits.accel_rpm_s)
+        validate_motion_parameters(limits.speed_rpm, limits.accel_rpm_s, axis_type=limits.axis_type,
+                                   bounds=limits.bounds)
+        if index == 0:
+            arguments = linear.position_arguments(joint, target, speed_rpm=limits.speed_rpm,
+                                                  accel_rpm_s=limits.accel_rpm_s, bounds=limits.bounds)
+        else:
+            arguments = rotary.position_arguments(joint, target, speed_rpm=limits.speed_rpm,
+                                                  accel_rpm_s=limits.accel_rpm_s)
         payload = encode_trapezoid_position(arguments["id_num"], arguments["angle"],
                                             speed=arguments["speed"], accel=arguments["param"])
         commands.append(dict(joint=joint, arguments=arguments,
@@ -83,11 +108,13 @@ class JointTable:
             raise ValueError("姿态表至少需要一组目标")
         return cls(tuple(rows), sha256(source).hexdigest(), model.model_hash)
 
-    def preview(self, model, *, measurement_kind: str) -> dict:
+    def preview(self, model, *, measurement_kind: str, execution_limits: dict | None = None) -> dict:
         from work.robot_units import joints_si_to_mm_deg
 
-        if measurement_kind not in MEASUREMENT_KINDS:
-            raise ValueError("measurement_kind 必须为 camera 或 laser_tracker")
+        if measurement_kind not in (*MEASUREMENT_KINDS, "positioning"):
+            raise ValueError("measurement_kind 必须为 camera、laser_tracker 或 positioning")
+        if execution_limits is not None and set(execution_limits) != set(DEFAULT_JOINT_NAMES):
+            raise ValueError("执行限制必须完整包含九轴")
         if self.model_hash != model.model_hash:
             raise ValueError("姿态表 model_hash 与当前模型不符")
         if not self.rows or len({row.pose_id for row in self.rows}) != len(self.rows):
@@ -103,7 +130,8 @@ class JointTable:
         return dict(
             status="targets_validated", execution="not_started", hardware_executable=False,
             collision_checked=False, measurement_kind=measurement_kind,
-            position_mode="absolute_trapezoid", parameter_scope="existing_low_speed_checks",
+            position_mode="absolute_trapezoid",
+            parameter_scope="explicit_motion_limits" if execution_limits is not None else "existing_low_speed_checks",
             zero_calibration_sha256=sha256(calibration_path.read_bytes()).hexdigest(),
             transmission_sha256=sha256((model.root / "config/j1_transmission.yaml").read_bytes()).hexdigest(),
             node_mapping_sha256=sha256((model.root / "config/drempower.yaml").read_bytes()).hexdigest(),
@@ -111,7 +139,8 @@ class JointTable:
             joint_names=list(DEFAULT_JOINT_NAMES), columns=list(TABLE_COLUMNS),
             rows=[dict(pose_id=row.pose_id, target_mm_deg=joints_si_to_mm_deg(row.q_si).tolist(),
                        target_si=list(row.q_si), nominal_tcp_matrix_m=model.fk(row.q_si).tolist(),
-                       device_commands=_device_commands(joints_si_to_mm_deg(row.q_si), linear, rotary))
+                       device_commands=_device_commands(joints_si_to_mm_deg(row.q_si), linear, rotary,
+                                                        execution_limits))
                   for row in self.rows],
         )
 
@@ -119,6 +148,8 @@ class JointTable:
 class JointTableProgress:
     def __init__(self, table: JointTable, model, root: Path, *, measurement_kind: str,
                  feedback_source: str):
+        if measurement_kind not in MEASUREMENT_KINDS:
+            raise ValueError("测量任务必须选择 camera 或 laser_tracker")
         if feedback_source != "simulation_feedback":
             raise RuntimeError("joint_table_live_disabled: 多轴真实反馈与停车资格尚未完成验证")
         table.preview(model, measurement_kind=measurement_kind)

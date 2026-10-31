@@ -4,7 +4,9 @@
 
 ## 项目与运行
 
+- [九轴手动定位](joint_positioning.md)：Python 顶部修改九轴绝对目标、CSV 按 Enter 逐组定位及到位后的持续保持与监测。
 - [标定姿态表](calibration_joint_table.md)：相机与激光跟踪仪分别采集，完整关节目标输入、模型检查和离线逐组流程。
+- [运动参数与反馈证据](joint_motion_limits_evidence.md)：位置模式、速度换算、完整真实回放及当前零位与通信检查。
 - [项目入门与结构](ONBOARDING.md)：源码入口、闭环数据流和开发环境。
 - [Linux 主机迁移](project_migration.md)：完整资料包、skills、环境恢复与接手提示词。
 - [双设备工作流程](two_machine_workflow.md)：笔记本与台式机通过 GitHub 交替开发、同步进度和传输数据。

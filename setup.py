@@ -44,7 +44,9 @@ setup(
             "package.xml", "setup.py", "setup.cfg", "requirements-static-report.txt",
             "requirements-static-recording.txt", "requirements-pipe-assets.txt",
         ]),
-        (f"share/{package_name}/scripts", ["scripts/static_obstacle_experiment.py", "scripts/pipe_assets.py"]),
+        (f"share/{package_name}/scripts", [
+            "scripts/static_obstacle_experiment.py", "scripts/pipe_assets.py", "scripts/joint_positioning.py",
+        ]),
         (f"share/{package_name}/docs", [
             "docs/static_obstacle_experiments.md",
             "docs/static_obstacle_experiments_handoff.md",
@@ -52,6 +54,8 @@ setup(
             "docs/host_recovery_20261020.md",
             "docs/pipe_assets.md", "docs/pipe_feed_assets.md", "docs/pipe_pose_assets.md",
             "docs/calibration_joint_table.md",
+            "docs/joint_positioning.md",
+            "docs/joint_motion_limits_evidence.md",
         ]),
         (f"share/{package_name}/docs/modules", ["docs/modules/collision_scene_server.md"]),
         (f"share/{package_name}/docs/specs", ["docs/specs/static-obstacle-experiments.md"]),

@@ -7,7 +7,7 @@ import xml.etree.ElementTree as ET
 import yaml
 
 from .drempower_joint_control import JointFeedback
-from .motor_motion_limits import MAX_J1_FEEDBACK_RPM, validate_motion_parameters
+from .motor_motion_limits import MAX_J1_FEEDBACK_RPM, MotionBounds, validate_motion_parameters
 from .single_joint_execution import ExecutionLimits
 from .unit_conversion import (
     JointCalibrationTable, JointNodeMap, PerJointCalibration, TransmissionSpec, UnitConverter,
@@ -77,9 +77,10 @@ class J1ScrewControl:
             raise ValueError("该执行接口只支持 J1")
         return self.converter.node_map.node_of(joint)
 
-    def position_arguments(self, joint, angle_deg, *, speed_rpm, accel_rpm_s):
+    def position_arguments(self, joint, angle_deg, *, speed_rpm, accel_rpm_s,
+                           bounds: MotionBounds | None = None):
         node = self._node(joint)
-        validate_motion_parameters(speed_rpm, accel_rpm_s, axis_type=self.axis_type)
+        validate_motion_parameters(speed_rpm, accel_rpm_s, axis_type=self.axis_type, bounds=bounds)
         position_mm = angle_deg / self.degrees_per_mm
         if not isfinite(position_mm) or not self.lower_mm <= position_mm <= self.upper_mm:
             raise ValueError("J1 目标位置必须在 0–500 mm 内")
